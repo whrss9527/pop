@@ -66,33 +66,20 @@ jobs:
 
       - name: Build Pop.app (Release, universal, ad-hoc signed, without iCloud)
         run: |
-          xcodegen generate
-          # CFBundleVersion 用提交数，和正式发布脚本保持一致
-          BUILD_NUMBER=$(git rev-list --count HEAD)
-          xcodebuild build \
-            -project Pop.xcodeproj \
-            -scheme Pop \
-            -configuration Release \
-            -destination 'generic/platform=macOS' \
-            -derivedDataPath build/DerivedData \
-            -clonedSourcePackagesDirPath build/SourcePackages \
-            MARKETING_VERSION="$VERSION" \
-            CURRENT_PROJECT_VERSION="$BUILD_NUMBER" \
-            POP_ENTITLEMENTS=Pop/Resources/Pop-NoCloud.entitlements \
-            CODE_SIGN_STYLE=Manual \
-            CODE_SIGN_IDENTITY=- \
-            DEVELOPMENT_TEAM= \
-            > build.log 2>&1 || { grep -E "error:" build.log | sort -u | head -50; tail -60 build.log; exit 1; }
-          grep -E "warning:" build.log | grep -v -e SourcePackages -e appintentsmetadataprocessor | sort -u | head -50 || true
+          APP=$(scripts/build-preview.sh "$VERSION" build/preview | tail -n 1)
+          echo "APP=$APP" >> "$GITHUB_ENV"
+          grep -E "warning:" build/preview/build.log | grep -v -e SourcePackages -e appintentsmetadataprocessor | sort -u | head -50 || true
+
+      - name: Launch smoke test
+        run: scripts/launch-smoke.sh "$APP"
 
       - name: Verify and package
         run: |
-          APP=build/DerivedData/Build/Products/Release/Pop.app
-          codesign --verify --deep --strict --verbose=2 "$APP"
+          codesign -dv --verbose=2 "$APP" 2>&1 | grep -E "Identifier|Format|flags|Signature"
           echo "Architectures: $(lipo -archs "$APP/Contents/MacOS/Pop")"
           /usr/libexec/PlistBuddy -c "Print CFBundleIdentifier" -c "Print CFBundleShortVersionString" -c "Print CFBundleVersion" "$APP/Contents/Info.plist"
-          ditto -c -k --keepParent "$APP" "Pop-$VERSION.zip"
-          echo "SHA256=$(shasum -a 256 "Pop-$VERSION.zip" | cut -d ' ' -f 1)" >> "$GITHUB_ENV"
+          ditto -c -k --keepParent "$APP" "Pop-${VERSION}.zip"
+          echo "SHA256=$(shasum -a 256 "Pop-${VERSION}.zip" | cut -d ' ' -f 1)" >> "$GITHUB_ENV"
 
       - name: Create GitHub pre-release
         env:
@@ -111,12 +98,13 @@ jobs:
              xattr -dr com.apple.quarantine /Applications/Pop.app
              ```
              也可以先双击一次，再到「系统设置 → 隐私与安全性」页面底部点「仍要打开」。
-          3. Pop 只在菜单栏显示图标。按提示到「系统设置 → 隐私与安全性 → 辅助功能」里打开 Pop。
-          4. 选中一段英文，长按鼠标右键试试；在空白处长按右键会弹出圆盘。第一次翻译前，需要在 Pop 的「设置 → 翻译」里下载离线语言包。
+          3. 第一次打开会弹出 Pop 的设置窗口（这时程序坞里也会出现 Pop 的图标）。按「快速上手」的提示，到「系统设置 → 隐私与安全性 → 辅助功能」里打开 Pop，几秒内自动生效。
+          4. 选中一段英文，**按住**鼠标右键约 0.25 秒再松开，就会弹出翻译；在空白处按住右键会弹出圆盘。普通点一下右键仍然是系统菜单。第一次翻译前，需要在「设置 → 翻译」里下载离线语言包。
 
           ### 注意
 
-          - 每个测试包的签名都不一样。换新版本后如果长按右键没反应，到「辅助功能」列表里把旧的 Pop 删掉（选中后点「−」），再重新添加授权。
+          - Pop 平时只在菜单栏显示 ◎ 图标。图标被刘海挡住、或者在 macOS 26 的「系统设置 → 菜单栏」里被隐藏时，再次打开 Pop 应用就会弹出设置窗口。
+          - 每个测试包的签名都不一样。换新版本后如果按住右键没反应，到「辅助功能」列表里把旧的 Pop 删掉（选中后点「−」），再重新添加授权。
           - 设置里的「iCloud 同步」和「检查更新」在测试包里会显示为不可用，这是正常的。
 
           SHA-256：`__SHA256__`

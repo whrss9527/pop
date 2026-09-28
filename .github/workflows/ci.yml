@@ -66,3 +66,35 @@ jobs:
           name: build-log-xcode-${{ matrix.xcode }}
           path: build.log
           if-no-files-found: ignore
+
+  # 单元测试不会执行 App 启动流程（测试宿主会跳过初始化），这里真正启动一次 Release 包。
+  launch-smoke:
+    name: launch-smoke (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [macos-15, macos-26]
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - name: Select newest stable Xcode
+        run: |
+          XCODE=$(ls -d /Applications/Xcode_*.app | grep -iv -e beta -e release_candidate | sort -V | tail -1)
+          sudo xcode-select -s "$XCODE"
+          xcodebuild -version
+
+      - name: Install XcodeGen
+        run: brew install xcodegen
+
+      - name: Build Release app
+        run: |
+          APP=$(scripts/build-preview.sh 0.0.0-ci build/preview | tail -n 1)
+          echo "APP=$APP" >> "$GITHUB_ENV"
+
+      - name: Launch smoke test
+        run: scripts/launch-smoke.sh "$APP"
+

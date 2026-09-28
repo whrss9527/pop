@@ -25,6 +25,8 @@ enum Permissions {
 @MainActor
 final class PermissionMonitor: ObservableObject {
     @Published private(set) var isTrusted = Permissions.isAccessibilityTrusted
+    /// 鼠标拦截是否已经生效。偶尔刚授权时拦截还建立不起来，需要重启 Pop。
+    @Published var isTriggerRunning = false
     private var timer: Timer?
 
     func start() {
@@ -43,6 +45,19 @@ final class PermissionMonitor: ObservableObject {
         if trusted != isTrusted {
             isTrusted = trusted
         }
+    }
+}
+
+enum AppRelauncher {
+    /// 退出后重新打开自己（等当前进程退出一秒后由 shell 重新 open）。
+    @MainActor
+    static func relaunch() {
+        let path = Bundle.main.bundleURL.path(percentEncoded: false)
+        let process = Process()
+        process.executableURL = URL(fileURLWithPath: "/bin/sh")
+        process.arguments = ["-c", "sleep 1; /usr/bin/open \"$0\"", path]
+        try? process.run()
+        NSApp.terminate(nil)
     }
 }
 

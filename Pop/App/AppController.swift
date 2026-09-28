@@ -110,11 +110,20 @@ final class AppController {
         updates.start()
         cloudSync.start()
 
-        if !permissions.isTrusted {
-            Permissions.requestAccessibility()
+        // 第一次启动、或者还没授权时，主动打开设置窗口：Pop 没有程序坞图标，
+        // 菜单栏图标也可能被刘海或其他图标挤掉，不弹窗的话用户会以为什么都没发生。
+        let defaults = UserDefaults.standard
+        let isFirstLaunch = !defaults.bool(forKey: Self.launchedBeforeKey)
+        defaults.set(true, forKey: Self.launchedBeforeKey)
+        if isFirstLaunch || !permissions.isTrusted {
             settingsWindow.show(tab: .general)
+            if !permissions.isTrusted {
+                Permissions.requestAccessibility()
+            }
         }
     }
+
+    private static let launchedBeforeKey = "pop.hasLaunchedBefore"
 
     func stop() {
         trigger.stop()
@@ -137,14 +146,18 @@ final class AppController {
             startTriggerIfPossible()
         } else {
             trigger.stop()
+            permissions.isTriggerRunning = false
         }
         statusItem.refresh()
     }
 
-    /// 刚授权的一小段时间里 event tap 可能还创建不出来，隔一会儿重试。
+    /// 刚授权的一小段时间里 event tap 可能还创建不出来，隔一会儿重试；
+    /// 一直失败时设置页会提示重启 Pop。
     private func startTriggerIfPossible() {
         guard permissions.isTrusted, !trigger.isRunning else { return }
-        if !trigger.start() {
+        if trigger.start() {
+            permissions.isTriggerRunning = true
+        } else {
             DispatchQueue.main.asyncAfter(deadline: .now() + 2) { [weak self] in
                 MainActor.assumeIsolated {
                     self?.startTriggerIfPossible()

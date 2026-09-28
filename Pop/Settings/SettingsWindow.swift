@@ -20,30 +20,47 @@ final class SettingsNavigation: ObservableObject {
 
 /// 设置窗口用 AppKit 自己管理：菜单栏 App 从 AppKit 代码里打开 SwiftUI Settings 场景并不可靠。
 @MainActor
-final class SettingsWindowController {
+final class SettingsWindowController: NSObject, NSWindowDelegate {
     let navigation = SettingsNavigation()
     private var window: NSWindow?
     private let makeContent: (SettingsNavigation) -> AnyView
 
     init(makeContent: @escaping (SettingsNavigation) -> AnyView) {
         self.makeContent = makeContent
+        super.init()
     }
+
+    var isVisible: Bool { window?.isVisible ?? false }
 
     func show(tab: SettingsTab? = nil) {
         if let tab {
             navigation.tab = tab
         }
-        if window == nil {
-            let controller = NSHostingController(rootView: makeContent(navigation))
-            let window = NSWindow(contentViewController: controller)
-            window.title = "Pop 设置"
-            window.styleMask = [.titled, .closable, .miniaturizable]
-            window.isReleasedWhenClosed = false
-            window.center()
-            self.window = window
-        }
+        let window = self.window ?? makeWindow()
+        // Pop 平时只在菜单栏（LSUIElement），系统启动它时不会把它切到前台，
+        // 这时普通的 makeKeyAndOrderFront 会把窗口放到当前 App 的窗口后面，用户根本看不到。
+        // 所以打开设置时临时变成普通 App（程序坞里出现图标、可以 ⌘Tab 切换），
+        // 并且无条件把窗口放到最前面；关闭设置窗口后再变回菜单栏 App。
+        NSApp.setActivationPolicy(.regular)
+        window.orderFrontRegardless()
+        window.makeKey()
         NSApp.activate()
-        window?.makeKeyAndOrderFront(nil)
+    }
+
+    private func makeWindow() -> NSWindow {
+        let controller = NSHostingController(rootView: makeContent(navigation))
+        let window = NSWindow(contentViewController: controller)
+        window.title = "Pop 设置"
+        window.styleMask = [.titled, .closable, .miniaturizable]
+        window.isReleasedWhenClosed = false
+        window.delegate = self
+        window.center()
+        self.window = window
+        return window
+    }
+
+    func windowWillClose(_ notification: Notification) {
+        NSApp.setActivationPolicy(.accessory)
     }
 }
 

@@ -13,14 +13,23 @@ struct GeneralSettingsView: View {
 
     var body: some View {
         Form {
+            Section("快速上手") {
+                QuickStartRow(number: 1, title: "授予辅助功能权限",
+                              detail: "Pop 要靠它识别长按右键、读取选中的内容，所有处理都在本机完成。")
+                QuickStartRow(number: 2, title: "按住右键，不要松开",
+                              detail: triggerHint)
+                QuickStartRow(number: 3, title: "菜单栏里的 ◎ 就是 Pop",
+                              detail: "点它可以打开设置、暂停或退出。菜单栏图标太多时可能被刘海挡住；macOS 26 也可能在「系统设置 → 菜单栏」里把它隐藏了。找不到图标时，再次打开 Pop 应用就会弹出这个窗口。")
+            }
+
             Section("权限") {
                 HStack(spacing: 10) {
-                    Image(systemName: permissions.isTrusted ? "checkmark.seal.fill" : "exclamationmark.triangle.fill")
-                        .foregroundStyle(permissions.isTrusted ? Color.green : Color.orange)
+                    Image(systemName: permissionSymbol)
+                        .foregroundStyle(permissionReady ? Color.green : Color.orange)
                         .font(.title3)
                     VStack(alignment: .leading, spacing: 2) {
-                        Text(permissions.isTrusted ? "已获得辅助功能权限" : "需要辅助功能权限")
-                        Text("用来识别长按右键、读取选中的内容。所有处理都在本机完成。")
+                        Text(permissionTitle)
+                        Text(permissionDetail)
                             .font(.caption)
                             .foregroundStyle(.secondary)
                     }
@@ -29,6 +38,10 @@ struct GeneralSettingsView: View {
                         Button("去授权") {
                             Permissions.requestAccessibility()
                             Permissions.openAccessibilitySettings()
+                        }
+                    } else if !permissions.isTriggerRunning {
+                        Button("重启 Pop") {
+                            AppRelauncher.relaunch()
                         }
                     }
                 }
@@ -103,6 +116,71 @@ struct GeneralSettingsView: View {
             }
         }
         .formStyle(.grouped)
+    }
+}
+
+extension GeneralSettingsView {
+    private var permissionReady: Bool {
+        permissions.isTrusted && permissions.isTriggerRunning
+    }
+
+    private var permissionSymbol: String {
+        permissionReady ? "checkmark.seal.fill" : "exclamationmark.triangle.fill"
+    }
+
+    private var permissionTitle: String {
+        if !permissions.isTrusted { return "需要辅助功能权限" }
+        return permissions.isTriggerRunning ? "已获得辅助功能权限，Pop 已就绪" : "已授权，但鼠标拦截还没生效"
+    }
+
+    private var permissionDetail: String {
+        if !permissions.isTrusted {
+            return "点「去授权」，在「系统设置 → 隐私与安全性 → 辅助功能」里打开 Pop。授权后不用重启，几秒内自动生效。"
+        }
+        if !permissions.isTriggerRunning {
+            return "偶尔刚授权时系统还没放行，点「重启 Pop」即可。"
+        }
+        return "所有处理都在本机完成。"
+    }
+
+    private var triggerHint: String {
+        let trigger = store.settings.trigger
+        switch trigger.mode {
+        case .longPressRight:
+            let ms = Int((trigger.holdDuration * 1000).rounded())
+            return "选中文字后按住鼠标右键约 \(ms) 毫秒再松开：选中外文会直接翻译，其他情况弹出圆盘。普通点一下右键仍然是系统菜单。"
+        case .modifierRightClick:
+            return "按住 \(trigger.modifier.title) 再点鼠标右键唤起 Pop。"
+        case .middleClick:
+            return "点击鼠标中键唤起 Pop。"
+        case .disabled:
+            return trigger.hotKey == .none ? "鼠标唤起已关闭，可以在下面设置一个键盘快捷键。" : "用键盘快捷键 \(trigger.hotKey.title) 唤起 Pop。"
+        }
+    }
+}
+
+private struct QuickStartRow: View {
+    let number: Int
+    let title: String
+    let detail: String
+
+    var body: some View {
+        HStack(alignment: .firstTextBaseline, spacing: 10) {
+            Text("\(number)")
+                .font(.system(size: 12, weight: .bold))
+                .foregroundStyle(.white)
+                .frame(width: 20, height: 20)
+                .background(Circle().fill(Color.accentColor))
+            VStack(alignment: .leading, spacing: 2) {
+                Text(title)
+                    .fontWeight(.medium)
+                Text(detail)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+        }
+        .padding(.vertical, 2)
     }
 }
 
