@@ -85,8 +85,17 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
+          # CHANGELOG.md 里这个版本的那一节（「## 0.2.0」到下一个「## 」之前）放进发布说明
+          awk -v v="${VERSION}" '
+            $0 == "## " v { found = 1; next }
+            /^## / { if (found) exit }
+            found { print }
+          ' CHANGELOG.md > changes.md 2>/dev/null || : > changes.md
+
           cat > notes.md <<'EOF'
           Pop __VERSION__ 测试版，用于在自己的 Mac 上试用（需要 macOS 15 或更新版本，Apple 芯片和 Intel 通用）。
+
+          __CHANGES__
 
           > 这是 CI 自动构建的测试包：只做了本地签名，没有 Developer ID 签名和苹果公证，也没有启用 iCloud 同步和自动更新（这两项需要用你自己的开发者账号签名后才能启用，见 README）。
 
@@ -106,10 +115,16 @@ jobs:
           - Pop 平时只在菜单栏显示 ◎ 图标。图标被刘海挡住、或者在 macOS 26 的「系统设置 → 菜单栏」里被隐藏时，再次打开 Pop 应用就会弹出设置窗口。
           - 每个测试包的签名都不一样。换新版本后如果按住右键没反应，到「辅助功能」列表里把旧的 Pop 删掉（选中后点「−」），再重新添加授权。
           - 设置里的「iCloud 同步」和「检查更新」在测试包里会显示为不可用，这是正常的。
+          - 截图识字第一次使用时，系统会请求「录屏与系统录音」权限；授权后如果截到的只有桌面背景，重新打开 Pop 即可。
 
           SHA-256：`__SHA256__`
           EOF
           perl -pi -e "s/__VERSION__/${VERSION}/g; s/__SHA256__/${SHA256}/g" notes.md
+          awk '
+            $0 == "__CHANGES__" { while ((getline line < "changes.md") > 0) print line; next }
+            { print }
+          ' notes.md > notes-full.md
+          mv notes-full.md notes.md
           TITLE="Pop ${VERSION}（测试版）"
           if [ "${{ steps.check.outputs.exists }}" = "true" ]; then
             gh release upload "v${VERSION}" "Pop-${VERSION}.zip" --repo "$GITHUB_REPOSITORY" --clobber
