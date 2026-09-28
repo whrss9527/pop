@@ -1,0 +1,76 @@
+name: Launch Diagnostics
+
+# 手动运行：在 macOS runner 上像用户一样启动发布包，收集进程状态、窗口、日志和崩溃报告。
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "要测试的发布标签，例如 v0.1.0"
+        required: true
+
+jobs:
+  diagnose:
+    runs-on: macos-15
+    timeout-minutes: 20
+    steps:
+      - name: Download release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ inputs.tag }}
+        run: |
+          sw_vers
+          gh release download "$TAG" --repo "$GITHUB_REPOSITORY" --pattern '*.zip' --dir dl
+          ditto -x -k dl/*.zip app
+          xattr -dr com.apple.quarantine app/Pop.app || true
+          codesign -dv --verbose=2 app/Pop.app 2>&1 | head -20
+          spctl --assess --type execute -vv app/Pop.app 2>&1 || true
+
+      - name: Launch with LaunchServices
+        run: |
+          mkdir -p out
+          open --stdout "$PWD/out/stdout.txt" --stderr "$PWD/out/stderr.txt" app/Pop.app
+          sleep 15
+          echo "== process"
+          pgrep -lx Pop || echo "Pop is NOT running"
+          echo "== windows owned by Pop (layer / bounds)"
+          cat > windows.swift <<'EOF'
+          import CoreGraphics
+          let info = CGWindowListCopyWindowInfo([.optionAll], kCGNullWindowID) as? [[String: Any]] ?? []
+          for window in info where (window[kCGWindowOwnerName as String] as? String) == "Pop" {
+              print("layer", window[kCGWindowLayer as String] ?? "?",
+                    "bounds", window[kCGWindowBounds as String] ?? "?",
+                    "onscreen", window[kCGWindowIsOnscreen as String] ?? "?")
+          }
+          EOF
+          swift windows.swift || true
+          echo "== stdout"; cat out/stdout.txt || true
+          echo "== stderr"; cat out/stderr.txt || true
+
+      - name: Unified log
+        if: always()
+        run: |
+          log show --last 3m --style compact --predicate 'process == "Pop"' | tail -150 || true
+          echo "== launchservices / runningboard / tcc mentions"
+          log show --last 3m --style compact --predicate '(process == "runningboardd" OR process == "launchservicesd" OR process == "tccd" OR process == "amfid" OR process == "syspolicyd") AND eventMessage CONTAINS[c] "pop"' | tail -80 || true
+
+      - name: Crash reports
+        if: always()
+        run: |
+          ls -la ~/Library/Logs/DiagnosticReports/ 2>/dev/null | tail -20 || true
+          for report in ~/Library/Logs/DiagnosticReports/Pop*; do
+            [ -f "$report" ] || continue
+            echo "===== $report"
+            head -c 12000 "$report"
+            echo
+          done
+
+      - name: Launch binary directly (stdout / stderr)
+        if: always()
+        run: |
+          pkill -x Pop || true
+          sleep 1
+          app/Pop.app/Contents/MacOS/Pop > out/direct.txt 2>&1 &
+          PID=$!
+          sleep 10
+          if kill -0 "$PID" 2>/dev/null; then echo "still running after 10s"; kill "$PID"; else wait "$PID"; echo "exited with status $?"; fi
+          cat out/direct.txt | tail -80
