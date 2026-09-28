@@ -12,15 +12,24 @@ concurrency:
 
 jobs:
   build-and-test:
+    name: build-and-test (Xcode ${{ matrix.xcode }})
     runs-on: macos-15
     timeout-minutes: 40
+    strategy:
+      fail-fast: false
+      matrix:
+        # 最低支持的 Xcode 16 和 runner 上最新的稳定版各跑一遍
+        xcode: ["16.4", "latest"]
     steps:
       - uses: actions/checkout@v5
 
-      - name: Select newest stable Xcode
+      - name: Select Xcode
         run: |
-          ls -d /Applications/Xcode*.app || true
-          XCODE=$(ls -d /Applications/Xcode_*.app | grep -iv -e beta -e release_candidate | sort -V | tail -1)
+          if [ "${{ matrix.xcode }}" = "latest" ]; then
+            XCODE=$(ls -d /Applications/Xcode_*.app | grep -iv -e beta -e release_candidate | sort -V | tail -1)
+          else
+            XCODE="/Applications/Xcode_${{ matrix.xcode }}.app"
+          fi
           echo "Using $XCODE"
           sudo xcode-select -s "$XCODE"
           xcodebuild -version
@@ -54,6 +63,6 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: build-log
+          name: build-log-xcode-${{ matrix.xcode }}
           path: build.log
           if-no-files-found: ignore

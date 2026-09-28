@@ -192,7 +192,7 @@ final class SelectionReader: @unchecked Sendable {
 struct PasteboardSnapshot {
     private let items: [[(type: NSPasteboard.PasteboardType, data: Data)]]
 
-    /// 剪贴板管理器（Maccy、Paste 等）约定忽略带这个类型的内容，避免还原时多出一条重复历史。
+    /// 剪贴板历史类工具约定忽略带这个类型的内容，避免还原时多出一条重复历史。
     static let transientType = NSPasteboard.PasteboardType("org.nspasteboard.TransientType")
 
     init(_ pasteboard: NSPasteboard) {
