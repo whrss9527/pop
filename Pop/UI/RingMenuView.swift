@@ -15,7 +15,8 @@ final class RingViewModel: ObservableObject {
     @Published private(set) var isLoading: Bool
 
     init(layout: RingLayout, catalog: [PluginInfo], installed: Set<String>, content: ClassifiedContent?) {
-        geometry = RingGeometry(slotCount: max(layout.slotCount, 1))
+        let count = max(layout.slotCount, 1)
+        geometry = RingGeometry(slotCount: count, outerRadius: RingGeometry.outerRadius(forSlotCount: count))
         slots = layout.slots.enumerated().map { index, pluginID in
             let info = pluginID.flatMap { id in installed.contains(id) ? catalog.first(where: { $0.id == id }) : nil }
             return Slot(id: index, info: info, enabled: false)

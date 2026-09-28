@@ -8,6 +8,11 @@ struct RingGeometry: Equatable {
     var innerRadius: CGFloat = 38
     var outerRadius: CGFloat = 124
 
+    /// 格子多于 8 个时加大半径，避免相邻格子的文字挤在一起。
+    static func outerRadius(forSlotCount count: Int) -> CGFloat {
+        124 + CGFloat(max(count - 8, 0)) * 12
+    }
+
     var diameter: CGFloat { outerRadius * 2 }
     var labelRadius: CGFloat { (innerRadius + outerRadius) / 2 }
     var slotStep: CGFloat { 2 * .pi / CGFloat(max(slotCount, 1)) }

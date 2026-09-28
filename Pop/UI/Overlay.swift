@@ -157,6 +157,10 @@ final class OverlayController {
         if mode == .toast {
             removeMonitors()
             panel.ignoresMouseEvents = true
+            // 提示不需要键盘：先收起面板交还键盘焦点，再不抢焦点地显示出来。
+            if panel.isKeyWindow {
+                panel.orderOut(nil)
+            }
             panel.orderFrontRegardless()
         } else {
             panel.ignoresMouseEvents = false

@@ -15,7 +15,7 @@ jobs:
     runs-on: macos-15
     timeout-minutes: 40
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Select newest stable Xcode
         run: |
@@ -42,8 +42,9 @@ jobs:
             CODE_SIGNING_ALLOWED=NO \
             > build.log 2>&1
           status=$?
+          echo "Swift files compiled: $(grep -cE '^SwiftCompile normal' build.log)"
           echo "::group::Diagnostics (errors / warnings in our sources)"
-          grep -E "(error|warning):" build.log | grep -v "/SourcePackages/" | sort -u | head -300
+          grep -E "(error|warning):" build.log | grep -v "/SourcePackages/" | grep -v appintentsmetadataprocessor | sort -u | head -300
           echo "::endgroup::"
           echo "---- tail of build.log ----"
           tail -80 build.log
