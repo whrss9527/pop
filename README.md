@@ -78,6 +78,12 @@ make clean
 - 多台 Mac 都改过时以最后一次修改为准；新装的 Mac 第一次同步会直接采用云端配置，不会用默认设置覆盖云端；
 - iCloud 的存储标识由 Team ID + Bundle ID 组成，**正式发布后不要再改 Bundle ID**，否则老用户的同步数据会找不到。发布前在 `Config/Pop.xcconfig` 里把 `POP_BUNDLE_ID` 改成你自己的。
 
+## 测试版（给自己的 Mac 试用）
+
+不想配置证书、只想装一个包试试：在 GitHub 的 Actions 页面手动运行「Preview Release」工作流，填上版本号（比如 `0.1.0`）。CI 会在 macOS 上构建一个本地签名的通用版（Apple 芯片 / Intel），作为 Pre-release 发布到 Releases，安装步骤写在发布说明里。
+
+测试包没有经过公证，第一次打开需要执行 `xattr -dr com.apple.quarantine /Applications/Pop.app`；也不带 iCloud 同步和自动更新，这两项要用你自己的开发者账号签名后才能启用（见下文）。
+
 ## 发布新版本（App 内一键更新）
 
 更新流程：`scripts/release.sh` 打包 → Developer ID 签名 → Apple 公证 → 用 Sparkle 私钥签名并生成 `appcast.xml` → 上传到 GitHub Release。用户的 Pop 会定期读取 `https://github.com/whrss9527/pop/releases/latest/download/appcast.xml`，发现新版本后点「安装更新」即可完成下载、替换和重启。

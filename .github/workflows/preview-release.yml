@@ -1,0 +1,114 @@
+name: Preview Release
+
+# 手动运行：构建一个本地签名（ad-hoc）的测试包，发布为 GitHub Pre-release，方便在自己的 Mac 上试用。
+# 没有 Developer ID 签名和公证，也不带 iCloud / 自动更新。正式版请在本机用 scripts/release.sh 发布。
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "版本号，例如 0.1.0（会创建 v0.1.0 标签）"
+        required: true
+
+permissions:
+  contents: write
+
+jobs:
+  preview-release:
+    runs-on: macos-15
+    timeout-minutes: 40
+    env:
+      VERSION: ${{ inputs.version }}
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - name: Check version
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          V="${VERSION#v}"
+          if [[ ! "$V" =~ ^[0-9]+\.[0-9]+\.[0-9]+([-.][0-9A-Za-z.]+)?$ ]]; then
+            echo "版本号格式不对：$VERSION（应该像 0.1.0）"
+            exit 1
+          fi
+          if gh release view "v$V" --repo "$GITHUB_REPOSITORY" > /dev/null 2>&1; then
+            echo "v$V 已经发布过了，换一个版本号"
+            exit 1
+          fi
+          echo "VERSION=$V" >> "$GITHUB_ENV"
+
+      - name: Select newest stable Xcode
+        run: |
+          XCODE=$(ls -d /Applications/Xcode_*.app | grep -iv -e beta -e release_candidate | sort -V | tail -1)
+          echo "Using $XCODE"
+          sudo xcode-select -s "$XCODE"
+          xcodebuild -version
+
+      - name: Install XcodeGen
+        run: brew install xcodegen
+
+      - name: Build Pop.app (Release, universal, ad-hoc signed, without iCloud)
+        run: |
+          xcodegen generate
+          # CFBundleVersion 用提交数，和正式发布脚本保持一致
+          BUILD_NUMBER=$(git rev-list --count HEAD)
+          xcodebuild build \
+            -project Pop.xcodeproj \
+            -scheme Pop \
+            -configuration Release \
+            -destination 'generic/platform=macOS' \
+            -derivedDataPath build/DerivedData \
+            -clonedSourcePackagesDirPath build/SourcePackages \
+            MARKETING_VERSION="$VERSION" \
+            CURRENT_PROJECT_VERSION="$BUILD_NUMBER" \
+            POP_ENTITLEMENTS=Pop/Resources/Pop-NoCloud.entitlements \
+            CODE_SIGN_STYLE=Manual \
+            CODE_SIGN_IDENTITY=- \
+            DEVELOPMENT_TEAM= \
+            > build.log 2>&1 || { grep -E "error:" build.log | sort -u | head -50; tail -60 build.log; exit 1; }
+          grep -E "warning:" build.log | grep -v -e SourcePackages -e appintentsmetadataprocessor | sort -u | head -50 || true
+
+      - name: Verify and package
+        run: |
+          APP=build/DerivedData/Build/Products/Release/Pop.app
+          codesign --verify --deep --strict --verbose=2 "$APP"
+          echo "Architectures: $(lipo -archs "$APP/Contents/MacOS/Pop")"
+          /usr/libexec/PlistBuddy -c "Print CFBundleIdentifier" -c "Print CFBundleShortVersionString" -c "Print CFBundleVersion" "$APP/Contents/Info.plist"
+          ditto -c -k --keepParent "$APP" "Pop-$VERSION.zip"
+          echo "SHA256=$(shasum -a 256 "Pop-$VERSION.zip" | cut -d ' ' -f 1)" >> "$GITHUB_ENV"
+
+      - name: Create GitHub pre-release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          cat > notes.md <<'EOF'
+          Pop __VERSION__ 测试版，用于在自己的 Mac 上试用（需要 macOS 15 或更新版本，Apple 芯片和 Intel 通用）。
+
+          > 这是 CI 自动构建的测试包：只做了本地签名，没有 Developer ID 签名和苹果公证，也没有启用 iCloud 同步和自动更新（这两项需要用你自己的开发者账号签名后才能启用，见 README）。
+
+          ### 安装
+
+          1. 下载下面的 `Pop-__VERSION__.zip`，解压后把 `Pop.app` 拖进「应用程序」文件夹。
+          2. 因为没有经过公证，第一次打开会被系统拦截。在终端里执行下面这行解除拦截，然后正常打开：
+             ```
+             xattr -dr com.apple.quarantine /Applications/Pop.app
+             ```
+             也可以先双击一次，再到「系统设置 → 隐私与安全性」页面底部点「仍要打开」。
+          3. Pop 只在菜单栏显示图标。按提示到「系统设置 → 隐私与安全性 → 辅助功能」里打开 Pop。
+          4. 选中一段英文，长按鼠标右键试试；在空白处长按右键会弹出圆盘。第一次翻译前，需要在 Pop 的「设置 → 翻译」里下载离线语言包。
+
+          ### 注意
+
+          - 每个测试包的签名都不一样。换新版本后如果长按右键没反应，到「辅助功能」列表里把旧的 Pop 删掉（选中后点「−」），再重新添加授权。
+          - 设置里的「iCloud 同步」和「检查更新」在测试包里会显示为不可用，这是正常的。
+
+          SHA-256：`__SHA256__`
+          EOF
+          perl -pi -e "s/__VERSION__/$VERSION/g; s/__SHA256__/$SHA256/g" notes.md
+          gh release create "v$VERSION" "Pop-$VERSION.zip" \
+            --repo "$GITHUB_REPOSITORY" \
+            --target "$GITHUB_SHA" \
+            --title "Pop $VERSION（测试版）" \
+            --notes-file notes.md \
+            --prerelease
