@@ -7,10 +7,15 @@ on:
       tag:
         description: "要测试的发布标签，例如 v0.1.0"
         required: true
+      runner:
+        description: "macOS runner"
+        type: choice
+        options: [macos-15, macos-26, macos-15-intel]
+        default: macos-15
 
 jobs:
   diagnose:
-    runs-on: macos-15
+    runs-on: ${{ inputs.runner }}
     timeout-minutes: 20
     steps:
       - name: Download release
