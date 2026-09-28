@@ -60,7 +60,37 @@ final class ContentClassifierTests: XCTestCase {
         XCTAssertFalse(kinds("9/28").contains(.math))
         XCTAssertFalse(kinds("50%").contains(.math))
         XCTAssertFalse(kinds("12345").contains(.math))
-        XCTAssertEqual(kinds("12345"), [.text])
+        XCTAssertEqual(kinds("12345"), [.text, .number])
+        XCTAssertEqual(kinds("138-0000-0000"), [.text])
+    }
+
+    func testColorsNumbersAndDates() {
+        XCTAssertEqual(kinds("#FF8800"), [.text, .color])
+        XCTAssertEqual(kinds("rgb(255, 136, 0)"), [.text, .color])
+        XCTAssertEqual(kinds("hsl(120, 100%, 50%)"), [.text, .color])
+        // #123 更像 issue 编号
+        XCTAssertFalse(kinds("#123").contains(.color))
+        XCTAssertEqual(kinds("0x1F"), [.text, .number])
+        XCTAssertEqual(kinds("3.14"), [.text, .number])
+        XCTAssertEqual(kinds("1,234,567"), [.text, .number])
+        XCTAssertEqual(kinds("2026-09-28"), [.text, .dateTime])
+        XCTAssertEqual(kinds("2026-09-28 14:30"), [.text, .dateTime])
+        XCTAssertEqual(kinds("2026年9月28日"), [.text, .dateTime])
+        XCTAssertEqual(ContentClassifier.classify(.text("#FF8800")).summary, "颜色")
+    }
+
+    func testWordsAndPaths() {
+        XCTAssertEqual(kinds("serendipity"), [.text, .foreignText, .word])
+        XCTAssertEqual(kinds("state-of-the-art"), [.text, .foreignText, .word])
+        XCTAssertEqual(kinds("你好"), [.text, .chineseText, .word])
+        XCTAssertFalse(kinds("hello world").contains(.word))
+        XCTAssertFalse(kinds("a").contains(.word))
+
+        let path = ContentClassifier.classify(.text("/tmp"))
+        XCTAssertEqual(path.kinds, [.text, .files])
+        XCTAssertEqual(path.files.first?.lastPathComponent, "tmp")
+        XCTAssertEqual(path.summary, "路径")
+        XCTAssertFalse(kinds("/definitely/not/here-\(UUID().uuidString)").contains(.files))
     }
 
     func testFilesAndImages() {
@@ -70,6 +100,8 @@ final class ContentClassifierTests: XCTestCase {
         XCTAssertEqual(content.files, files)
         XCTAssertEqual(content.summary, "2 个文件")
         XCTAssertEqual(ContentClassifier.classify(.image(Data([0x89]))).kinds, [.image])
+        let images = [URL(fileURLWithPath: "/tmp/a.png"), URL(fileURLWithPath: "/tmp/b.jpg")]
+        XCTAssertEqual(ContentClassifier.classify(.files(images)).kinds, [.files, .imageFile])
     }
 
     func testScriptProfile() {

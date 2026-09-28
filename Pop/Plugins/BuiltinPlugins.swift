@@ -1,19 +1,46 @@
 import AppKit
 
 enum BuiltinPlugins {
+    /// 顺序就是设置里「内置功能」和「全部功能」列表的顺序。
     static func make() -> [any PopPlugin] {
         [
             TranslatePlugin(),
             WebSearchPlugin(),
+            DictionaryPlugin(),
+            SpeakPlugin(),
             OpenLinkPlugin(),
             CalculatorPlugin(),
             CopyPlainTextPlugin(),
+            ChangeCasePlugin(),
+            EncodeDecodePlugin(),
+            TextStatsPlugin(),
             FormatJSONPlugin(),
             TimestampPlugin(),
+            NumberConvertPlugin(),
+            ColorConvertPlugin(),
+            HashPlugin(),
+            QRCodePlugin(),
+            OCRPlugin(),
+            ScreenshotOCRPlugin(),
+            ColorPickerPlugin(),
+            RandomPlugin(),
+            QuickNotePlugin(),
             CopyPathPlugin(),
             RevealInFinderPlugin(),
+            OpenInTerminalPlugin(),
+            ClipboardHistoryPlugin(),
+            AllPluginsPlugin(),
             OpenSettingsPlugin(),
         ]
+    }
+}
+
+/// 把耗时的工作（哈希、文字识别）放到后台线程，不卡住界面。
+func runInBackground<T>(_ work: @escaping () -> T) async -> T {
+    await withCheckedContinuation { continuation in
+        DispatchQueue.global(qos: .userInitiated).async {
+            continuation.resume(returning: work())
+        }
     }
 }
 
@@ -60,7 +87,8 @@ struct CalculatorPlugin: PopPlugin {
             return .failure("无法计算这个算式")
         }
         let result = Calculator.format(value)
-        return .card(ResultCard(title: "计算结果", body: result, detail: text, monospaced: true, copyText: result))
+        return .card(ResultCard(title: "计算结果", body: result, detail: text, monospaced: true,
+                                copyText: result, replaceText: result))
     }
 }
 
@@ -70,37 +98,39 @@ struct CopyPlainTextPlugin: PopPlugin {
 
     @MainActor func run(_ content: ClassifiedContent, context: PluginContext) async -> PluginOutcome {
         guard let text = content.text else { return .failure("没有文字") }
-        let pasteboard = NSPasteboard.general
-        pasteboard.clearContents()
-        pasteboard.setString(text, forType: .string)
+        PasteboardWriter.copy(text)
         return .done(toast: "已复制纯文本")
     }
 }
 
 struct FormatJSONPlugin: PopPlugin {
     let info = PluginInfo(id: BuiltinPluginID.formatJSON, name: "JSON 格式化", symbol: "curlybraces",
-                          summary: "格式化选中的 JSON", accepts: [.json])
+                          summary: "格式化或压缩选中的 JSON", accepts: [.json])
 
     @MainActor func run(_ content: ClassifiedContent, context: PluginContext) async -> PluginOutcome {
         guard let text = content.text, let pretty = JSONFormatter.prettyPrinted(text) else {
             return .failure("不是合法的 JSON")
         }
-        return .card(ResultCard(title: "JSON 格式化", body: pretty, monospaced: true, copyText: pretty))
+        var buttons: [CardButton] = []
+        if let minified = JSONFormatter.minified(text) {
+            buttons.append(CardButton(title: "复制压缩版", action: .copy(minified)))
+        }
+        return .card(ResultCard(title: "JSON 格式化", body: pretty, monospaced: true,
+                                copyText: pretty, replaceText: pretty, buttons: buttons))
     }
 }
 
 struct TimestampPlugin: PopPlugin {
-    let info = PluginInfo(id: BuiltinPluginID.timestamp, name: "时间戳", symbol: "clock",
-                          summary: "把 Unix 时间戳（秒/毫秒）转换成日期", accepts: [.timestamp])
+    let info = PluginInfo(id: BuiltinPluginID.timestamp, name: "时间转换", symbol: "clock",
+                          summary: "Unix 时间戳（秒/毫秒）和日期时间互相转换", accepts: [.timestamp, .dateTime])
 
     @MainActor func run(_ content: ClassifiedContent, context: PluginContext) async -> PluginOutcome {
-        guard let text = content.text, let date = TimestampConverter.date(from: text) else {
-            return .failure("不是有效的时间戳")
+        guard let text = content.text,
+              let date = TimestampConverter.date(from: text) ?? DateParser.parse(text) else {
+            return .failure("不是有效的时间")
         }
-        let local = TimestampConverter.localString(date)
-        return .card(ResultCard(title: "时间戳转换", body: local,
-                                detail: "UTC \(TimestampConverter.isoString(date))",
-                                monospaced: true, copyText: local))
+        return .card(ResultCard(title: "时间转换", body: TimestampConverter.localString(date), monospaced: true,
+                                rows: DateParser.rows(for: date), rowsReplaceable: true))
     }
 }
 
@@ -110,10 +140,7 @@ struct CopyPathPlugin: PopPlugin {
 
     @MainActor func run(_ content: ClassifiedContent, context: PluginContext) async -> PluginOutcome {
         guard !content.files.isEmpty else { return .failure("没有选中文件") }
-        let paths = content.files.map { $0.path(percentEncoded: false) }.joined(separator: "\n")
-        let pasteboard = NSPasteboard.general
-        pasteboard.clearContents()
-        pasteboard.setString(paths, forType: .string)
+        PasteboardWriter.copy(content.files.map { $0.path(percentEncoded: false) }.joined(separator: "\n"))
         return .done(toast: content.files.count == 1 ? "已复制路径" : "已复制 \(content.files.count) 个路径")
     }
 }
@@ -136,5 +163,23 @@ struct OpenSettingsPlugin: PopPlugin {
     @MainActor func run(_ content: ClassifiedContent, context: PluginContext) async -> PluginOutcome {
         context.openSettings()
         return .done(toast: nil)
+    }
+}
+
+struct ClipboardHistoryPlugin: PopPlugin {
+    let info = PluginInfo(id: BuiltinPluginID.clipboardHistory, name: "剪贴板", symbol: "list.clipboard",
+                          summary: "打开剪贴板历史，选一条粘贴", accepts: [])
+
+    @MainActor func run(_ content: ClassifiedContent, context: PluginContext) async -> PluginOutcome {
+        .showClipboardHistory
+    }
+}
+
+struct AllPluginsPlugin: PopPlugin {
+    let info = PluginInfo(id: BuiltinPluginID.allPlugins, name: "全部功能", symbol: "square.grid.2x2",
+                          summary: "列出所有能处理当前内容的功能，可以搜索", accepts: [])
+
+    @MainActor func run(_ content: ClassifiedContent, context: PluginContext) async -> PluginOutcome {
+        .showAllPlugins
     }
 }

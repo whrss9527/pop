@@ -185,11 +185,19 @@ private struct QuickStartRow: View {
 }
 
 struct ExcludedAppsView: View {
-    @EnvironmentObject private var store: SettingsStore
+    var body: some View {
+        BundleIDListView(keyPath: \.trigger.excludedBundleIDs)
+    }
+}
+
+/// 一组 App（按 Bundle ID 保存），可以添加和移除。
+struct BundleIDListView: View {
+    @EnvironmentObject var store: SettingsStore
+    let keyPath: WritableKeyPath<AppSettings, [String]>
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
-            ForEach(store.settings.trigger.excludedBundleIDs, id: \.self) { bundleID in
+            ForEach(store.settings[keyPath: keyPath], id: \.self) { bundleID in
                 HStack(spacing: 8) {
                     if let icon = AppInfo.icon(for: bundleID) {
                         Image(nsImage: icon)
@@ -202,7 +210,7 @@ struct ExcludedAppsView: View {
                         .foregroundStyle(.secondary)
                     Spacer()
                     Button {
-                        store.update { $0.trigger.excludedBundleIDs.removeAll { $0 == bundleID } }
+                        store.update { $0[keyPath: keyPath].removeAll { $0 == bundleID } }
                     } label: {
                         Image(systemName: "minus.circle")
                     }
@@ -220,9 +228,10 @@ struct ExcludedAppsView: View {
         panel.directoryURL = URL(fileURLWithPath: "/Applications")
         guard panel.runModal() == .OK else { return }
         let bundleIDs = panel.urls.compactMap { Bundle(url: $0)?.bundleIdentifier }
+        let keyPath = self.keyPath
         store.update { settings in
-            for id in bundleIDs where !settings.trigger.excludedBundleIDs.contains(id) {
-                settings.trigger.excludedBundleIDs.append(id)
+            for id in bundleIDs where !settings[keyPath: keyPath].contains(id) {
+                settings[keyPath: keyPath].append(id)
             }
         }
     }
@@ -383,56 +392,6 @@ struct RingEditorCanvas: View {
             Button("清空这一格") { onPlace(nil, index) }
         }
         .help(info?.summary ?? "空格子")
-    }
-}
-
-// MARK: - 功能（插件）
-
-struct PluginsSettingsView: View {
-    @EnvironmentObject var store: SettingsStore
-    let catalog: [PluginInfo]
-
-    var body: some View {
-        Form {
-            Section {
-                ForEach(catalog) { info in
-                    Toggle(isOn: installedBinding(for: info.id)) {
-                        HStack(spacing: 10) {
-                            Image(systemName: info.symbol)
-                                .frame(width: 22)
-                            VStack(alignment: .leading, spacing: 2) {
-                                Text(info.name)
-                                Text(info.summary)
-                                    .font(.caption)
-                                    .foregroundStyle(.secondary)
-                            }
-                        }
-                    }
-                }
-            } header: {
-                Text("内置功能")
-            } footer: {
-                Text("卸载的功能会从圆盘上移除，也不会再被直达规则调用。安装后到「圆盘」里拖到想要的位置。")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-            }
-
-            Section("搜索") {
-                Picker("搜索引擎", selection: store.binding(\.searchEngine)) {
-                    ForEach(SearchEngine.allCases) { engine in
-                        Text(engine.title).tag(engine)
-                    }
-                }
-            }
-        }
-        .formStyle(.grouped)
-    }
-
-    private func installedBinding(for id: String) -> Binding<Bool> {
-        Binding(
-            get: { store.settings.isInstalled(id) },
-            set: { installed in store.update { $0.setInstalled(id, installed) } }
-        )
     }
 }
 
@@ -669,7 +628,7 @@ struct SyncSettingsView: View {
                 }
                 .disabled(!sync.isEnabled || !sync.isAvailableInBuild)
             } footer: {
-                Text("同步圆盘布局、已安装的功能、直达规则、唤起方式和翻译设置。数据存在你自己的 iCloud 账号里（iCloud 键值存储），Pop 没有任何服务器。多台 Mac 都改过时，以最后一次修改为准。")
+                Text("同步圆盘布局、已安装的功能、自己添加的插件、直达规则、唤起方式、翻译和剪贴板设置（剪贴板历史本身只留在本机）。数据存在你自己的 iCloud 账号里（iCloud 键值存储），Pop 没有任何服务器。多台 Mac 都改过时，以最后一次修改为准。")
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }

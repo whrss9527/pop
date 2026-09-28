@@ -6,6 +6,7 @@ enum SettingsTab: String, CaseIterable, Identifiable, Hashable {
     case ring
     case plugins
     case rules
+    case clipboard
     case translation
     case sync
     case update
@@ -66,9 +67,10 @@ final class SettingsWindowController: NSObject, NSWindowDelegate {
 
 struct SettingsRootView: View {
     @ObservedObject var navigation: SettingsNavigation
-    let catalog: [PluginInfo]
+    @EnvironmentObject var registry: PluginRegistry
 
     var body: some View {
+        let catalog = registry.catalog
         TabView(selection: $navigation.tab) {
             GeneralSettingsView()
                 .tabItem { Label("通用", systemImage: "gearshape") }
@@ -82,6 +84,9 @@ struct SettingsRootView: View {
             RulesSettingsView(catalog: catalog)
                 .tabItem { Label("直达规则", systemImage: "arrow.turn.down.right") }
                 .tag(SettingsTab.rules)
+            ClipboardSettingsView()
+                .tabItem { Label("剪贴板", systemImage: "list.clipboard") }
+                .tag(SettingsTab.clipboard)
             TranslationSettingsView()
                 .tabItem { Label("翻译", systemImage: "character.bubble") }
                 .tag(SettingsTab.translation)

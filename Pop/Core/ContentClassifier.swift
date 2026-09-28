@@ -1,5 +1,6 @@
 import Foundation
 import NaturalLanguage
+import UniformTypeIdentifiers
 
 /// 把原始选中内容归类，供分发规则和插件匹配使用。
 enum ContentClassifier {
@@ -11,7 +12,11 @@ enum ContentClassifier {
             return ClassifiedContent(selection: selection, kinds: [.image], text: nil, language: nil, url: nil, files: [])
         case .files(let urls):
             guard !urls.isEmpty else { return .empty }
-            return ClassifiedContent(selection: selection, kinds: [.files], text: nil, language: nil, url: nil, files: urls)
+            var kinds: Set<ContentKind> = [.files]
+            if urls.allSatisfy(isImageFile) {
+                kinds.insert(.imageFile)
+            }
+            return ClassifiedContent(selection: selection, kinds: kinds, text: nil, language: nil, url: nil, files: urls)
         case .text(let raw):
             let text = raw.trimmingCharacters(in: .whitespacesAndNewlines)
             guard !text.isEmpty else { return .empty }
@@ -22,14 +27,26 @@ enum ContentClassifier {
     private static func classifyText(_ text: String) -> ClassifiedContent {
         var content = ClassifiedContent(selection: .text(text), kinds: [.text], text: text, language: nil, url: nil, files: [])
 
-        // 结构化文本（链接、JSON、时间戳、算式）不再算作自然语言，避免被「外文直接翻译」误触发。
+        // 结构化文本（链接、JSON、颜色、时间、数字、算式、路径）不再算作自然语言，避免被「外文直接翻译」误触发。
         if let url = detectLink(text) {
             content.url = url
             content.kinds.insert(url.scheme?.lowercased() == "mailto" ? .email : .url)
         } else if JSONFormatter.isJSON(text) {
             content.kinds.insert(.json)
+        } else if ColorValue.parse(text) != nil {
+            content.kinds.insert(.color)
         } else if TimestampConverter.date(from: text) != nil {
             content.kinds.insert(.timestamp)
+        } else if let path = detectFilePath(text) {
+            content.files = [path]
+            content.kinds.insert(.files)
+            if isImageFile(path) {
+                content.kinds.insert(.imageFile)
+            }
+        } else if DateParser.parse(text) != nil {
+            content.kinds.insert(.dateTime)
+        } else if NumberConverter.parse(text) != nil {
+            content.kinds.insert(.number)
         } else if looksLikeMath(text) {
             content.kinds.insert(.math)
         } else {
@@ -43,8 +60,35 @@ enum ContentClassifier {
                 let detected = dominantLanguage(text)
                 content.language = detected?.hasPrefix("zh") == true ? nil : detected
             }
+            if profile.hasLetters, isSingleWord(text) {
+                content.kinds.insert(.word)
+            }
         }
         return content
+    }
+
+    /// 单个英文单词（可以带连字符、撇号），或者不超过 8 个字的纯中文词。
+    static func isSingleWord(_ text: String) -> Bool {
+        guard text.count <= 40, text.first?.isLetter == true, text.last?.isLetter == true else { return false }
+        let allowed = text.allSatisfy { $0.isLetter || $0 == "-" || $0 == "'" || $0 == "’" }
+        guard allowed else { return false }
+        let profile = ScriptProfile(text)
+        if profile.han > 0 {
+            return profile.han == text.count && text.count <= 8
+        }
+        return text.count >= 2 && profile.kana == 0 && profile.hangul == 0
+    }
+
+    /// 选中的是一个本机上存在的路径（/ 或 ~/ 开头）。
+    static func detectFilePath(_ text: String) -> URL? {
+        guard text.count < 1024, text.hasPrefix("/") || text.hasPrefix("~/"), !text.contains(where: \.isNewline) else { return nil }
+        let path = (text as NSString).expandingTildeInPath
+        guard FileManager.default.fileExists(atPath: path) else { return nil }
+        return URL(fileURLWithPath: path)
+    }
+
+    static func isImageFile(_ url: URL) -> Bool {
+        UTType(filenameExtension: url.pathExtension)?.conforms(to: .image) == true
     }
 
     /// 整段文字是一个链接或邮箱时返回对应 URL。

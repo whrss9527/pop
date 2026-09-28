@@ -38,6 +38,14 @@ enum JSONFormatter {
         return String(data: data, encoding: .utf8)
     }
 
+    static func minified(_ text: String) -> String? {
+        guard let object = parse(text),
+              let data = try? JSONSerialization.data(withJSONObject: object, options: [.sortedKeys, .withoutEscapingSlashes]) else {
+            return nil
+        }
+        return String(data: data, encoding: .utf8)
+    }
+
     private static func parse(_ text: String) -> Any? {
         guard let first = text.first, let last = text.last,
               (first == "{" && last == "}") || (first == "[" && last == "]"),

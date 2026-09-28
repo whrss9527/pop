@@ -58,8 +58,8 @@ final class SelectionReader: @unchecked Sendable {
         }
 
         return copyThroughPasteboard(muteAlerts: true) {
-            waitForModifierRelease(timeout: 0.5)
-            postCommandC()
+            KeySimulator.waitForModifierRelease(timeout: 0.5)
+            KeySimulator.pressCommand(kVK_ANSI_C)
             return true
         }
     }
@@ -92,6 +92,9 @@ final class SelectionReader: @unchecked Sendable {
 
     private func copyThroughPasteboard(muteAlerts: Bool, trigger: () -> Bool) -> SelectionContent {
         let pasteboard = NSPasteboard.general
+        // 读取期间剪贴板历史不要记录（包括读完还原的那一次变化）
+        PasteboardGuard.shared.begin()
+        defer { PasteboardGuard.shared.end(changeCount: pasteboard.changeCount) }
         let snapshot = PasteboardSnapshot(pasteboard)
         let before = pasteboard.changeCount
 
@@ -132,30 +135,6 @@ final class SelectionReader: @unchecked Sendable {
             return .image(data)
         }
         return .none
-    }
-
-    // MARK: - 模拟按键
-
-    /// 用户可能还按着 ⌥ 之类的修饰键（比如用 ⌥+右键唤起），先等松开，避免变成 ⌘⌥C。
-    private func waitForModifierRelease(timeout: TimeInterval) {
-        let modifiers: CGEventFlags = [.maskCommand, .maskAlternate, .maskControl, .maskShift]
-        let deadline = Date().addingTimeInterval(timeout)
-        while !CGEventSource.flagsState(.combinedSessionState).intersection(modifiers).isEmpty, Date() < deadline {
-            Thread.sleep(forTimeInterval: 0.01)
-        }
-    }
-
-    private func postCommandC() {
-        let source = CGEventSource(stateID: .combinedSessionState)
-        source?.setLocalEventsFilterDuringSuppressionState([.permitLocalMouseEvents, .permitSystemDefinedEvents],
-                                                           state: .eventSuppressionStateSuppressionInterval)
-        let keyCode = CGKeyCode(kVK_ANSI_C)
-        let down = CGEvent(keyboardEventSource: source, virtualKey: keyCode, keyDown: true)
-        let up = CGEvent(keyboardEventSource: source, virtualKey: keyCode, keyDown: false)
-        down?.flags = .maskCommand
-        up?.flags = .maskCommand
-        down?.post(tap: .cgSessionEventTap)
-        up?.post(tap: .cgSessionEventTap)
     }
 
     // MARK: - 辅助功能小工具

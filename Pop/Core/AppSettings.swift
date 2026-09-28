@@ -13,7 +13,31 @@ enum BuiltinPluginID {
     static let revealInFinder = "revealInFinder"
     static let settings = "settings"
 
-    static let all = [translate, search, openURL, calculate, copyPlain, formatJSON, timestamp, copyPath, revealInFinder, settings]
+    static let dictionary = "dictionary"
+    static let speak = "speak"
+    static let changeCase = "changeCase"
+    static let encodeDecode = "encodeDecode"
+    static let textStats = "textStats"
+    static let hash = "hash"
+    static let numberConvert = "numberConvert"
+    static let colorConvert = "colorConvert"
+    static let random = "random"
+    static let qrCode = "qrCode"
+    static let ocr = "ocr"
+    static let screenshotOCR = "screenshotOCR"
+    static let colorPicker = "colorPicker"
+    static let openInTerminal = "openInTerminal"
+    static let quickNote = "quickNote"
+    static let clipboardHistory = "clipboardHistory"
+    static let allPlugins = "allPlugins"
+
+    /// 0.1 版就有的功能。旧版本的设置里没有记录「见过哪些内置功能」，按这个列表补齐。
+    static let legacy = [translate, search, openURL, calculate, copyPlain, formatJSON, timestamp, copyPath, revealInFinder, settings]
+
+    static let all = legacy + [
+        dictionary, speak, changeCase, encodeDecode, textStats, hash, numberConvert, colorConvert, random, qrCode,
+        ocr, screenshotOCR, colorPicker, openInTerminal, quickNote, clipboardHistory, allPlugins,
+    ]
 }
 
 enum TriggerMode: String, Codable, CaseIterable, Identifiable {
@@ -57,6 +81,10 @@ enum HotKeyPreset: String, Codable, CaseIterable, Identifiable {
     case optionSpace
     case commandShiftSpace
     case optionBacktick
+    case commandShiftV
+    case commandOptionV
+    case controlCommandV
+    case optionV
 
     var id: String { rawValue }
 
@@ -66,6 +94,10 @@ enum HotKeyPreset: String, Codable, CaseIterable, Identifiable {
         case .optionSpace: return "⌥ Space"
         case .commandShiftSpace: return "⌘ ⇧ Space"
         case .optionBacktick: return "⌥ `"
+        case .commandShiftV: return "⌘ ⇧ V"
+        case .commandOptionV: return "⌘ ⌥ V"
+        case .controlCommandV: return "⌃ ⌘ V"
+        case .optionV: return "⌥ V"
         }
     }
 }
@@ -100,15 +132,16 @@ struct RingLayout: Codable, Equatable {
 
     var slots: [String?]
 
+    /// 上半圈放处理选中文字的功能，下半圈放不需要选中内容的功能，什么都没选中时也有得用。
     static let `default` = RingLayout(slots: [
         BuiltinPluginID.translate,
         BuiltinPluginID.search,
+        BuiltinPluginID.dictionary,
         BuiltinPluginID.openURL,
-        BuiltinPluginID.calculate,
-        BuiltinPluginID.copyPlain,
-        BuiltinPluginID.formatJSON,
-        BuiltinPluginID.timestamp,
-        BuiltinPluginID.copyPath,
+        BuiltinPluginID.allPlugins,
+        BuiltinPluginID.clipboardHistory,
+        BuiltinPluginID.screenshotOCR,
+        BuiltinPluginID.colorPicker,
     ])
 
     init(slots: [String?]) {
@@ -158,12 +191,16 @@ struct RingLayout: Codable, Equatable {
 
 /// 直达规则的触发条件。
 enum RuleCondition: String, Codable, CaseIterable, Identifiable {
+    case color
+    case word
     case foreignText
     case chineseText
     case url
     case email
     case math
     case timestamp
+    case dateTime
+    case number
     case json
     case files
     case image
@@ -173,12 +210,16 @@ enum RuleCondition: String, Codable, CaseIterable, Identifiable {
 
     var kind: ContentKind {
         switch self {
+        case .color: return .color
+        case .word: return .word
         case .foreignText: return .foreignText
         case .chineseText: return .chineseText
         case .url: return .url
         case .email: return .email
         case .math: return .math
         case .timestamp: return .timestamp
+        case .dateTime: return .dateTime
+        case .number: return .number
         case .json: return .json
         case .files: return .files
         case .image: return .image
@@ -188,12 +229,16 @@ enum RuleCondition: String, Codable, CaseIterable, Identifiable {
 
     var title: String {
         switch self {
+        case .color: return "选中颜色值"
+        case .word: return "选中单个词"
         case .foreignText: return "选中外文"
         case .chineseText: return "选中中文"
         case .url: return "选中链接"
         case .email: return "选中邮箱"
         case .math: return "选中算式"
         case .timestamp: return "选中时间戳"
+        case .dateTime: return "选中日期时间"
+        case .number: return "选中数字"
         case .json: return "选中 JSON"
         case .files: return "选中文件"
         case .image: return "选中图片"
@@ -210,20 +255,26 @@ struct DirectRule: Codable, Equatable, Identifiable {
 
     var id: String { condition.rawValue }
 
+    /// 从上到下匹配，所以更具体的条件（单个词）要排在更宽泛的条件（外文）前面。
     static let defaults: [DirectRule] = [
+        DirectRule(condition: .color, pluginID: BuiltinPluginID.colorConvert, enabled: true),
+        DirectRule(condition: .word, pluginID: BuiltinPluginID.dictionary, enabled: false),
         DirectRule(condition: .foreignText, pluginID: BuiltinPluginID.translate, enabled: true),
         DirectRule(condition: .chineseText, pluginID: BuiltinPluginID.translate, enabled: false),
         DirectRule(condition: .url, pluginID: BuiltinPluginID.openURL, enabled: false),
         DirectRule(condition: .email, pluginID: BuiltinPluginID.openURL, enabled: false),
         DirectRule(condition: .math, pluginID: BuiltinPluginID.calculate, enabled: true),
         DirectRule(condition: .timestamp, pluginID: BuiltinPluginID.timestamp, enabled: false),
+        DirectRule(condition: .dateTime, pluginID: BuiltinPluginID.timestamp, enabled: false),
+        DirectRule(condition: .number, pluginID: BuiltinPluginID.numberConvert, enabled: false),
         DirectRule(condition: .json, pluginID: BuiltinPluginID.formatJSON, enabled: false),
         DirectRule(condition: .files, pluginID: BuiltinPluginID.copyPath, enabled: false),
-        DirectRule(condition: .image, pluginID: nil, enabled: false),
+        DirectRule(condition: .image, pluginID: BuiltinPluginID.ocr, enabled: true),
         DirectRule(condition: .anyText, pluginID: BuiltinPluginID.translate, enabled: false),
     ]
 
-    /// 保证每种条件恰好出现一次：保留已有顺序，去重，并补上新版本新增的条件。
+    /// 保证每种条件恰好出现一次：保留已有的规则和顺序，去重；
+    /// 新版本新增的条件按默认顺序插进去（插在默认排在它后面的第一条规则前面），这样匹配顺序依然合理。
     static func normalized(_ rules: [DirectRule]) -> [DirectRule] {
         var seen = Set<RuleCondition>()
         var result: [DirectRule] = []
@@ -231,8 +282,14 @@ struct DirectRule: Codable, Equatable, Identifiable {
             seen.insert(rule.condition)
             result.append(rule)
         }
-        for rule in defaults where !seen.contains(rule.condition) {
-            result.append(rule)
+        for (index, rule) in defaults.enumerated() where !seen.contains(rule.condition) {
+            let followers = Set(defaults[(index + 1)...].map(\.condition))
+            if let position = result.firstIndex(where: { followers.contains($0.condition) }) {
+                result.insert(rule, at: position)
+            } else {
+                result.append(rule)
+            }
+            seen.insert(rule.condition)
         }
         return result
     }
@@ -309,9 +366,53 @@ enum SearchEngine: String, Codable, CaseIterable, Identifiable {
 
     /// 手动编码查询词：URLComponents 不会编码 `+`、`&`，搜「C++」会变成搜「C」。
     func searchURL(for query: String) -> URL? {
-        let unreserved = CharacterSet(charactersIn: "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-._~")
-        guard let encoded = query.addingPercentEncoding(withAllowedCharacters: unreserved) else { return nil }
+        guard let encoded = query.addingPercentEncoding(withAllowedCharacters: .popURLValueAllowed) else { return nil }
         return URL(string: "\(endpoint.base)?\(endpoint.queryKey)=\(encoded)")
+    }
+}
+
+extension CharacterSet {
+    /// URL 里的参数值只保留这些字符不编码（RFC 3986 的 unreserved）。
+    static let popURLValueAllowed = CharacterSet(charactersIn: "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-._~")
+}
+
+/// 剪贴板历史的设置。历史记录本身只存在本机，这些偏好会随设置一起同步。
+struct ClipboardSettings: Codable, Equatable {
+    var enabled = true
+    var hotKey: HotKeyPreset = .commandShiftV
+    /// 保存天数，0 表示一直保存
+    var retentionDays = 7
+    var maxItems = 500
+    var recordImages = true
+    /// 不记录这些 App 里复制的内容（Bundle ID），比如密码管理器
+    var ignoredBundleIDs: [String] = ClipboardSettings.defaultIgnoredBundleIDs
+
+    static let retentionChoices = [1, 3, 7, 30, 90, 0]
+    static let maxItemChoices = [100, 200, 500, 1000, 5000]
+    static let defaultIgnoredBundleIDs = [
+        "com.apple.keychainaccess",
+        "com.apple.Passwords",
+        "com.1password.1password",
+        "com.agilebits.onepassword7",
+        "com.bitwarden.desktop",
+        "org.keepassxc.keepassxc",
+    ]
+
+    init() {}
+
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        let d = ClipboardSettings()
+        enabled = c.lenient(.enabled, default: d.enabled)
+        hotKey = c.lenient(.hotKey, default: d.hotKey)
+        retentionDays = max(c.lenient(.retentionDays, default: d.retentionDays), 0)
+        maxItems = min(max(c.lenient(.maxItems, default: d.maxItems), 10), 100_000)
+        recordImages = c.lenient(.recordImages, default: d.recordImages)
+        ignoredBundleIDs = c.lenient(.ignoredBundleIDs, default: d.ignoredBundleIDs)
+    }
+
+    static func retentionTitle(_ days: Int) -> String {
+        days == 0 ? "一直保存" : "\(days) 天"
     }
 }
 
@@ -324,6 +425,9 @@ struct AppSettings: Codable, Equatable {
     var rules: [DirectRule] = DirectRule.defaults
     var translation = TranslationSettings()
     var searchEngine: SearchEngine = .google
+    var clipboard = ClipboardSettings()
+    /// 已经「见过」的内置功能。新版本新增的内置功能不在这里面，读取旧设置时会自动装上。
+    var knownBuiltinPlugins: [String] = BuiltinPluginID.all
     /// 用户最后一次修改的时间，iCloud 同步时用它判断哪边更新。
     /// 全新安装是 distantPast，这样新设备第一次同步会直接采用云端的配置。
     var modifiedAt: Date = .distantPast
@@ -339,7 +443,20 @@ struct AppSettings: Codable, Equatable {
         rules = DirectRule.normalized(c.lenient(.rules, default: d.rules))
         translation = c.lenient(.translation, default: d.translation)
         searchEngine = c.lenient(.searchEngine, default: d.searchEngine)
+        clipboard = c.lenient(.clipboard, default: d.clipboard)
+        knownBuiltinPlugins = c.lenient(.knownBuiltinPlugins, default: BuiltinPluginID.legacy)
         modifiedAt = c.lenient(.modifiedAt, default: d.modifiedAt)
+        adoptNewBuiltinPlugins()
+    }
+
+    /// 新版本新增的内置功能默认装上（用户之后卸载了就不会再自动装回来）。
+    mutating func adoptNewBuiltinPlugins() {
+        for id in BuiltinPluginID.all where !knownBuiltinPlugins.contains(id) {
+            if !installedPlugins.contains(id) {
+                installedPlugins.append(id)
+            }
+            knownBuiltinPlugins.append(id)
+        }
     }
 
     /// 忽略 modifiedAt，只比较内容。

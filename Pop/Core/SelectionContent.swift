@@ -25,6 +25,36 @@ enum ContentKind: String, Codable, CaseIterable {
     case json
     case files
     case image
+    /// 单个词（英文单词或很短的中文词）
+    case word
+    /// 颜色值：#RRGGBB、rgb()、hsl()
+    case color
+    /// 数字（十进制、0x 十六进制、0b 二进制、0o 八进制）
+    case number
+    /// 日期时间，比如 2026-09-28 14:30、2026年9月28日
+    case dateTime
+    /// 选中的文件都是图片
+    case imageFile
+
+    var title: String {
+        switch self {
+        case .text: return "文本"
+        case .chineseText: return "中文"
+        case .foreignText: return "外文"
+        case .url: return "链接"
+        case .email: return "邮箱"
+        case .math: return "算式"
+        case .timestamp: return "时间戳"
+        case .json: return "JSON"
+        case .files: return "文件"
+        case .image: return "图片"
+        case .word: return "单个词"
+        case .color: return "颜色"
+        case .number: return "数字"
+        case .dateTime: return "日期时间"
+        case .imageFile: return "图片文件"
+        }
+    }
 }
 
 /// 分类后的内容，插件和分发规则都基于它工作。
@@ -52,11 +82,11 @@ struct ClassifiedContent: Equatable {
         case .image:
             return "图片"
         case .text:
-            if kinds.contains(.url) { return "链接" }
-            if kinds.contains(.email) { return "邮箱" }
-            if kinds.contains(.math) { return "算式" }
-            if kinds.contains(.timestamp) { return "时间戳" }
-            if kinds.contains(.json) { return "JSON" }
+            let specific: [ContentKind] = [.url, .email, .math, .timestamp, .json, .color, .dateTime, .number, .files]
+            if let kind = specific.first(where: { kinds.contains($0) }) {
+                return kind == .files ? "路径" : kind.title
+            }
+            if kinds.contains(.word), let text { return text }
             return "\(text?.count ?? 0) 字"
         }
     }

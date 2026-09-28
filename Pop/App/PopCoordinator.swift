@@ -10,28 +10,40 @@ final class PopCoordinator: MouseTriggerDelegate {
     private let registry: PluginRegistry
     private let overlay: OverlayController
     private let downloads: TranslationDownloadRequest
+    private let clipboard: ClipboardService
     private let reader = SelectionReader()
+
+    private enum Panel {
+        case chooser
+        case clipboard
+    }
 
     private struct Session {
         let id = UUID()
         /// 唤起点（AppKit 屏幕坐标）
         let anchor: CGPoint
         let pid: pid_t?
+        /// 唤起时前台 App 的名字（收集箱记录来源用）
+        let sourceAppName: String?
         /// 鼠标键是否还按着：按着时用「划一下再松开」选择，松开后改为点击选择
         var buttonHeld: Bool
         var content: ClassifiedContent?
         var ring: RingViewModel?
+        /// 当前显示的列表面板
+        var panel: Panel?
     }
 
     private var session: Session?
     private var pointerTimer: Timer?
     private var lastPointer: CGPoint?
 
-    init(settingsStore: SettingsStore, registry: PluginRegistry, overlay: OverlayController, downloads: TranslationDownloadRequest) {
+    init(settingsStore: SettingsStore, registry: PluginRegistry, overlay: OverlayController,
+         downloads: TranslationDownloadRequest, clipboard: ClipboardService) {
         self.settingsStore = settingsStore
         self.registry = registry
         self.overlay = overlay
         self.downloads = downloads
+        self.clipboard = clipboard
         overlay.onDismiss = { [weak self] in
             self?.endSession()
         }
@@ -46,6 +58,10 @@ final class PopCoordinator: MouseTriggerDelegate {
     // MARK: - 唤起入口
 
     func mouseTriggerShouldBegin() -> Bool {
+        // 在卡片上点右键：交给卡片自己处理（比如剪贴板历史的右键菜单）
+        if overlay.mode == .card, overlay.contains(NSEvent.mouseLocation) {
+            return false
+        }
         if overlay.isVisible || session != nil {
             endSession()
         }
@@ -91,6 +107,20 @@ final class PopCoordinator: MouseTriggerDelegate {
         begin(at: NSEvent.mouseLocation, buttonHeld: false)
     }
 
+    /// 剪贴板历史快捷键：不读取选中内容，直接打开历史面板；再按一次关闭
+    func showClipboardHistoryFromHotKey() {
+        if overlay.isVisible || session != nil {
+            let wasShowingHistory = session?.panel == .clipboard
+            endSession()
+            if wasShowingHistory { return }
+        }
+        guard !isPaused else { return }
+        let app = NSWorkspace.shared.frontmostApplication
+        session = Session(anchor: NSEvent.mouseLocation, pid: app?.processIdentifier, sourceAppName: app?.localizedName,
+                          buttonHeld: false, content: .empty)
+        presentClipboardHistory()
+    }
+
     func endSession() {
         stopPointerTracking()
         session = nil
@@ -103,8 +133,9 @@ final class PopCoordinator: MouseTriggerDelegate {
 
     private func begin(at anchor: CGPoint, buttonHeld: Bool) {
         endSession()
-        let pid = NSWorkspace.shared.frontmostApplication?.processIdentifier
-        let newSession = Session(anchor: anchor, pid: pid, buttonHeld: buttonHeld)
+        let app = NSWorkspace.shared.frontmostApplication
+        let pid = app?.processIdentifier
+        let newSession = Session(anchor: anchor, pid: pid, sourceAppName: app?.localizedName, buttonHeld: buttonHeld)
         session = newSession
         let sessionID = newSession.id
 
@@ -147,6 +178,7 @@ final class PopCoordinator: MouseTriggerDelegate {
         let ring = RingViewModel(layout: settings.ring, catalog: registry.catalog,
                                  installed: Set(settings.installedPlugins), content: content)
         session?.ring = ring
+        session?.panel = nil
         overlay.showRing(ring, center: current.anchor)
         lastPointer = nil
         startPointerTracking()
@@ -158,9 +190,13 @@ final class PopCoordinator: MouseTriggerDelegate {
         let content = current.content ?? .empty
         guard plugin.info.canHandle(content) else { return }
         stopPointerTracking()
-        let context = PluginContext(settings: settingsStore.settings, openSettings: { [weak self] in
-            self?.openSettings(nil)
-        })
+        if plugin.info.hidesOverlay {
+            // 截图、取色要看清屏幕：先收起浮窗，结果出来后再显示在原来的位置
+            overlay.hide()
+        }
+        let context = PluginContext(settings: settingsStore.settings,
+                                    openSettings: { [weak self] in self?.openSettings(nil) },
+                                    sourceAppName: current.sourceAppName)
         let sessionID = current.id
         Task { [weak self] in
             let outcome = await plugin.run(content, context: context)
@@ -171,6 +207,7 @@ final class PopCoordinator: MouseTriggerDelegate {
 
     private func present(_ outcome: PluginOutcome) {
         guard let current = session else { return }
+        session?.panel = nil
         switch outcome {
         case .done(let toast):
             session = nil
@@ -181,7 +218,7 @@ final class PopCoordinator: MouseTriggerDelegate {
             }
         case .card(let card):
             overlay.showCard(ResultCardView(card: card,
-                                            onCopy: { [weak self] text in self?.copy(text) },
+                                            onAction: { [weak self] action in self?.perform(action) },
                                             onMore: moreAction(for: current),
                                             onClose: { [weak self] in self?.endSession() }),
                              anchor: current.anchor)
@@ -189,18 +226,93 @@ final class PopCoordinator: MouseTriggerDelegate {
             let target = translationTarget(content: current.content, language: language)
             let model = TranslationModel(text: text, sourceLanguage: language, targetLanguage: target)
             overlay.showCard(TranslationCardView(model: model,
-                                                 onCopy: { [weak self] text in self?.copy(text) },
+                                                 canReplace: Self.isTextSelection(current.content) && current.content?.text == text,
+                                                 onAction: { [weak self] action in self?.perform(action) },
                                                  onMore: moreAction(for: current),
                                                  onDownload: { [weak self] in self?.downloadLanguagePack(source: language, target: target) },
                                                  onClose: { [weak self] in self?.endSession() }),
                              anchor: current.anchor)
+        case .replace(let text):
+            replaceSelection(with: text)
+        case .showAllPlugins:
+            presentChooser()
+        case .showClipboardHistory:
+            presentClipboardHistory()
         case .failure(let message):
             overlay.showCard(ResultCardView(card: ResultCard(title: "没能完成", body: message),
-                                            onCopy: { _ in },
+                                            onAction: { [weak self] action in self?.perform(action) },
                                             onMore: moreAction(for: current),
                                             onClose: { [weak self] in self?.endSession() }),
                              anchor: current.anchor)
         }
+    }
+
+    /// 结果卡片上的按钮
+    private func perform(_ action: CardAction) {
+        switch action {
+        case .copy(let text):
+            copy(text)
+        case .replace(let text):
+            replaceSelection(with: text)
+        case .open(let url):
+            endSession()
+            NSWorkspace.shared.open(url)
+        case .reveal(let url):
+            endSession()
+            NSWorkspace.shared.activateFileViewerSelecting([url])
+        case .copyImage(let png):
+            PasteboardWriter.copy(png: png)
+            finish(toast: "已复制图片")
+        case .translate(let text):
+            present(.translate(text: text, language: ContentClassifier.dominantLanguage(text)))
+        }
+    }
+
+    /// 「全部功能」：列出所有能处理当前内容的已安装功能
+    private func presentChooser() {
+        guard let current = session else { return }
+        stopPointerTracking()
+        let content = current.content ?? .empty
+        let settings = settingsStore.settings
+        let plugins = registry.catalog.filter { info in
+            info.id != BuiltinPluginID.allPlugins && settings.isInstalled(info.id) && info.canHandle(content)
+        }
+        let model = PluginChooserModel(plugins: plugins)
+        model.onRun = { [weak self] info in
+            self?.run(info.id)
+        }
+        session?.panel = .chooser
+        overlay.showCard(PluginChooserView(model: model, onClose: { [weak self] in self?.endSession() }),
+                         anchor: current.anchor,
+                         keyHandler: { event in model.handleKey(event) })
+    }
+
+    private func presentClipboardHistory() {
+        guard let current = session else { return }
+        stopPointerTracking()
+        let model = ClipboardHistoryModel(service: clipboard)
+        model.onPaste = { [weak self] item in
+            self?.pasteFromHistory(item)
+        }
+        model.onOpenSettings = { [weak self] in
+            self?.endSession()
+            self?.openSettings(.clipboard)
+        }
+        session?.panel = .clipboard
+        overlay.showCard(ClipboardHistoryView(model: model, onClose: { [weak self] in self?.endSession() }),
+                         anchor: current.anchor,
+                         keyHandler: { event in model.handleKey(event) })
+    }
+
+    private func pasteFromHistory(_ item: ClipboardItem) {
+        // 先收起浮窗，键盘焦点回到原来的 App，再粘贴
+        endSession()
+        clipboard.paste(item)
+    }
+
+    private func replaceSelection(with text: String) {
+        endSession()
+        Paster.replaceSelection(with: text)
     }
 
     /// 结果卡片上的「更多功能」：切回圆盘，对同一份内容换个功能处理。
@@ -213,6 +325,13 @@ final class PopCoordinator: MouseTriggerDelegate {
         }
     }
 
+    private static func isTextSelection(_ content: ClassifiedContent?) -> Bool {
+        if case .text = content?.selection {
+            return true
+        }
+        return false
+    }
+
     private func translationTarget(content: ClassifiedContent?, language: String?) -> String {
         let settings = settingsStore.settings.translation
         let isChinese = content?.kinds.contains(.chineseText) == true || language?.hasPrefix("zh") == true
@@ -220,13 +339,16 @@ final class PopCoordinator: MouseTriggerDelegate {
     }
 
     private func copy(_ text: String) {
-        let pasteboard = NSPasteboard.general
-        pasteboard.clearContents()
-        pasteboard.setString(text, forType: .string)
+        PasteboardWriter.copy(text)
+        finish(toast: "已复制")
+    }
+
+    /// 结束这次唤起，在原来的位置显示一句提示
+    private func finish(toast: String) {
         let anchor = session?.anchor ?? NSEvent.mouseLocation
         stopPointerTracking()
         session = nil
-        overlay.showToast("已复制", anchor: anchor)
+        overlay.showToast(toast, anchor: anchor)
     }
 
     private func downloadLanguagePack(source: String?, target: String) {

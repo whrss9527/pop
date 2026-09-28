@@ -10,7 +10,15 @@ struct SyncEnvelope: Codable, Equatable {
     var settings: AppSettings
 }
 
-/// 决定本地和云端谁的设置更新（最后修改者优先）。
+/// 上传到 iCloud 的用户插件列表（和设置分开存，插件多了也不影响设置的同步）。
+struct PluginSyncEnvelope: Codable, Equatable {
+    var version = 1
+    var device: String
+    var modifiedAt: Date
+    var plugins: [PluginManifest]
+}
+
+/// 决定本地和云端谁更新（最后修改者优先）。
 enum SyncResolver {
     enum Action: Equatable {
         /// 云端更新，采用云端
@@ -20,23 +28,28 @@ enum SyncResolver {
         case none
     }
 
-    static func resolve(local: AppSettings, remote: AppSettings?) -> Action {
-        guard let remote else {
+    static func resolve(localModifiedAt: Date, remoteModifiedAt: Date?, sameContent: Bool) -> Action {
+        guard let remoteModifiedAt else {
             // 云端还没有数据：本地改过才上传，全新安装的默认设置不去覆盖别人。
-            return local.modifiedAt > .distantPast ? .pushLocal : .none
+            return localModifiedAt > .distantPast ? .pushLocal : .none
         }
-        if remote.modifiedAt > local.modifiedAt {
-            return remote.hasSameContent(as: local) ? .none : .applyRemote
+        if remoteModifiedAt > localModifiedAt {
+            return sameContent ? .none : .applyRemote
         }
-        if local.modifiedAt > remote.modifiedAt {
+        if localModifiedAt > remoteModifiedAt {
             return .pushLocal
         }
         return .none
     }
+
+    static func resolve(local: AppSettings, remote: AppSettings?) -> Action {
+        resolve(localModifiedAt: local.modifiedAt, remoteModifiedAt: remote?.modifiedAt,
+                sameContent: remote?.hasSameContent(as: local) ?? false)
+    }
 }
 
-/// 通过 iCloud 键值存储（NSUbiquitousKeyValueStore）在多台 Mac 之间同步设置。
-/// 设置很小（几 KB），键值存储最合适：不用建 CloudKit 表结构，系统负责推送和离线合并。
+/// 通过 iCloud 键值存储（NSUbiquitousKeyValueStore）在多台 Mac 之间同步设置和用户插件。
+/// 数据很小（几 KB），键值存储最合适：不用建 CloudKit 表结构，系统负责推送和离线合并。
 @MainActor
 final class CloudSync: ObservableObject {
     @Published private(set) var isEnabled: Bool
@@ -48,25 +61,34 @@ final class CloudSync: ObservableObject {
     let isAvailableInBuild: Bool
 
     private let settingsStore: SettingsStore
+    private let pluginStore: PluginStore
     private var store: NSUbiquitousKeyValueStore?
     private var cancellables = Set<AnyCancellable>()
-    private var pushWorkItem: DispatchWorkItem?
+    private var settingsPush: DispatchWorkItem?
+    private var pluginsPush: DispatchWorkItem?
     private var externalChangeObserver: NSObjectProtocol?
 
     private static let settingsKey = "pop.settings.v1"
+    private static let pluginsKey = "pop.plugins.v1"
     private static let enabledKey = "pop.icloudSyncEnabled"
     private static let lastSyncKey = "pop.icloudLastSync"
     static let entitlement = "com.apple.developer.ubiquity-kvstore-identifier"
 
-    init(settingsStore: SettingsStore) {
+    init(settingsStore: SettingsStore, pluginStore: PluginStore) {
         self.settingsStore = settingsStore
+        self.pluginStore = pluginStore
         isAvailableInBuild = Self.hasEntitlement(Self.entitlement)
         isEnabled = UserDefaults.standard.object(forKey: Self.enabledKey) as? Bool ?? true
         lastSyncDate = UserDefaults.standard.object(forKey: Self.lastSyncKey) as? Date
 
         settingsStore.localChanges
             .sink { [weak self] _ in
-                self?.schedulePush()
+                self?.scheduleSettingsPush()
+            }
+            .store(in: &cancellables)
+        pluginStore.localChanges
+            .sink { [weak self] _ in
+                self?.schedulePluginsPush()
             }
             .store(in: &cancellables)
     }
@@ -84,7 +106,7 @@ final class CloudSync: ObservableObject {
         if self.store == nil {
             self.store = store
             externalChangeObserver = NotificationCenter.default.addObserver(forName: NSUbiquitousKeyValueStore.didChangeExternallyNotification,
-                                                   object: store, queue: .main) { [weak self] notification in
+                                                                            object: store, queue: .main) { [weak self] notification in
                 let reason = notification.userInfo?[NSUbiquitousKeyValueStoreChangeReasonKey] as? Int
                 MainActor.assumeIsolated {
                     self?.handleExternalChange(reason: reason)
@@ -107,7 +129,8 @@ final class CloudSync: ObservableObject {
         if enabled {
             start()
         } else {
-            pushWorkItem?.cancel()
+            settingsPush?.cancel()
+            pluginsPush?.cancel()
             statusText = "未开启"
         }
     }
@@ -133,9 +156,14 @@ final class CloudSync: ObservableObject {
         }
     }
 
-    /// 比较本地和云端，决定采用哪一边。
+    /// 比较本地和云端，决定采用哪一边。设置和插件各自独立判断。
     private func reconcile() {
         guard let store, isEnabled else { return }
+        reconcileSettings(store)
+        reconcilePlugins(store)
+    }
+
+    private func reconcileSettings(_ store: NSUbiquitousKeyValueStore) {
         let remote = store.data(forKey: Self.settingsKey).flatMap { try? JSONDecoder().decode(SyncEnvelope.self, from: $0) }
         if let remote {
             lastRemoteDevice = remote.device
@@ -147,32 +175,71 @@ final class CloudSync: ObservableObject {
                 markSynced()
             }
         case .pushLocal:
-            push()
+            pushSettings()
         case .none:
             markSynced()
         }
     }
 
-    private func schedulePush() {
+    private func reconcilePlugins(_ store: NSUbiquitousKeyValueStore) {
+        let remote = store.data(forKey: Self.pluginsKey).flatMap { try? JSONDecoder().decode(PluginSyncEnvelope.self, from: $0) }
+        let action = SyncResolver.resolve(localModifiedAt: pluginStore.modifiedAt,
+                                          remoteModifiedAt: remote?.modifiedAt,
+                                          sameContent: remote?.plugins == pluginStore.manifests)
+        switch action {
+        case .applyRemote:
+            if let remote {
+                pluginStore.applyRemote(remote.plugins, modifiedAt: remote.modifiedAt)
+                markSynced()
+            }
+        case .pushLocal:
+            pushPlugins()
+        case .none:
+            break
+        }
+    }
+
+    /// 拖动滑块、连续编辑之类的修改合并成一次上传
+    private func scheduleSettingsPush() {
         guard isEnabled, isAvailableInBuild else { return }
-        pushWorkItem?.cancel()
-        // 拖动滑块之类的连续修改合并成一次上传
+        settingsPush?.cancel()
         let item = DispatchWorkItem { [weak self] in
             MainActor.assumeIsolated {
-                self?.push()
+                self?.pushSettings()
             }
         }
-        pushWorkItem = item
+        settingsPush = item
         DispatchQueue.main.asyncAfter(deadline: .now() + 1.5, execute: item)
     }
 
-    private func push() {
+    private func schedulePluginsPush() {
+        guard isEnabled, isAvailableInBuild else { return }
+        pluginsPush?.cancel()
+        let item = DispatchWorkItem { [weak self] in
+            MainActor.assumeIsolated {
+                self?.pushPlugins()
+            }
+        }
+        pluginsPush = item
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.5, execute: item)
+    }
+
+    private func pushSettings() {
         guard let store, isEnabled else { return }
         let envelope = SyncEnvelope(device: Self.deviceName, settings: settingsStore.settings)
         guard let data = try? JSONEncoder().encode(envelope) else { return }
         store.set(data, forKey: Self.settingsKey)
         _ = store.synchronize()
         lastRemoteDevice = envelope.device
+        markSynced()
+    }
+
+    private func pushPlugins() {
+        guard let store, isEnabled else { return }
+        let envelope = PluginSyncEnvelope(device: Self.deviceName, modifiedAt: pluginStore.modifiedAt, plugins: pluginStore.manifests)
+        guard let data = try? JSONEncoder().encode(envelope) else { return }
+        store.set(data, forKey: Self.pluginsKey)
+        _ = store.synchronize()
         markSynced()
     }
 

@@ -70,8 +70,11 @@ final class OverlayController {
 
     private let panel = OverlayPanel()
     private var cardAnchor: CGPoint = .zero
+    /// 卡片模式下的按键处理（列表的上下选择、回车等），返回 true 表示已处理
+    private var cardKeyHandler: ((NSEvent) -> Bool)?
     private var globalClickMonitor: Any?
     private var localClickMonitor: Any?
+    private var keyMonitor: Any?
     private var resignObserver: NSObjectProtocol?
     private var toastTimer: Timer?
 
@@ -107,7 +110,8 @@ final class OverlayController {
         ringCenter = CGPoint(x: frame.midX, y: frame.midY)
     }
 
-    func showCard<Content: View>(_ content: Content, anchor: CGPoint) {
+    /// keyHandler 在输入框之前拿到按键，列表类的卡片（剪贴板历史、全部功能）用它处理上下选择和回车。
+    func showCard<Content: View>(_ content: Content, anchor: CGPoint, keyHandler: ((NSEvent) -> Bool)? = nil) {
         cardAnchor = anchor
         let hosted = content
             .fixedSize()
@@ -119,6 +123,12 @@ final class OverlayController {
         let initial = CGSize(width: 404, height: 160)
         let frame = ScreenGeometry.cardFrame(anchor: anchor, size: initial, within: Self.visibleFrame(containing: anchor))
         present(hosted, frame: frame, mode: .card)
+        cardKeyHandler = keyHandler
+    }
+
+    /// 屏幕上的点（AppKit 坐标）是否落在浮窗上
+    func contains(_ point: CGPoint) -> Bool {
+        mode != .hidden && panel.frame.contains(point)
     }
 
     func showToast(_ message: String, anchor: CGPoint) {
@@ -136,6 +146,7 @@ final class OverlayController {
     func hide() {
         toastTimer?.invalidate()
         toastTimer = nil
+        cardKeyHandler = nil
         removeMonitors()
         mode = .hidden
         ringCenter = nil
@@ -149,6 +160,7 @@ final class OverlayController {
         toastTimer?.invalidate()
         toastTimer = nil
         ringCenter = nil
+        cardKeyHandler = nil
         let hosting = NSHostingView(rootView: content)
         hosting.sizingOptions = []
         panel.contentView = hosting
@@ -216,6 +228,18 @@ final class OverlayController {
             }
             return handled ? nil : event
         }
+        // 卡片里的输入框会先拿到按键：Esc 会被当成「补全」，上下键会移动光标，所以在这里先拦下来
+        keyMonitor = NSEvent.addLocalMonitorForEvents(matching: [.keyDown]) { [weak self] event in
+            let handled = MainActor.assumeIsolated { () -> Bool in
+                guard let self, self.mode == .card, event.window === self.panel else { return false }
+                if event.keyCode == 53 { // Esc
+                    self.dismissByUser()
+                    return true
+                }
+                return self.cardKeyHandler?(event) ?? false
+            }
+            return handled ? nil : event
+        }
     }
 
     private func removeMonitors() {
@@ -225,8 +249,12 @@ final class OverlayController {
         if let localClickMonitor {
             NSEvent.removeMonitor(localClickMonitor)
         }
+        if let keyMonitor {
+            NSEvent.removeMonitor(keyMonitor)
+        }
         globalClickMonitor = nil
         localClickMonitor = nil
+        keyMonitor = nil
     }
 
     static func visibleFrame(containing point: CGPoint) -> CGRect {

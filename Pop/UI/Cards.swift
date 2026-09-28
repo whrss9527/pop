@@ -4,11 +4,11 @@ import Translation
 /// 卡片的通用外框：标题栏 + 关闭按钮 + 内容。
 struct CardContainer<Content: View>: View {
     let title: String
-    var subtitle: String?
+    var subtitle: String? = nil
+    var width: CGFloat = 380
     let onClose: () -> Void
     @ViewBuilder let content: Content
 
-    static var width: CGFloat { 380 }
     static var shadowPadding: CGFloat { 12 }
 
     var body: some View {
@@ -34,7 +34,7 @@ struct CardContainer<Content: View>: View {
             content
         }
         .padding(14)
-        .frame(width: Self.width, alignment: .leading)
+        .frame(width: width, alignment: .leading)
         .background(RoundedRectangle(cornerRadius: 14, style: .continuous).fill(.regularMaterial))
         .overlay(RoundedRectangle(cornerRadius: 14, style: .continuous).strokeBorder(Color.primary.opacity(0.1), lineWidth: 1))
         .shadow(color: .black.opacity(0.25), radius: 10, y: 4)
@@ -69,13 +69,28 @@ struct AdaptiveText: View {
 
 struct ResultCardView: View {
     let card: ResultCard
-    var onCopy: (String) -> Void
+    var onAction: (CardAction) -> Void
     var onMore: (() -> Void)?
     var onClose: () -> Void
 
     var body: some View {
         CardContainer(title: card.title, onClose: onClose) {
-            AdaptiveText(text: card.body, monospaced: card.monospaced)
+            if let hex = card.swatchHex, let color = ColorValue.parse(hex) {
+                ColorSwatch(color: color)
+            }
+            if let data = card.image, let image = NSImage(data: data) {
+                Image(nsImage: image)
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: 200, height: 200)
+                    .frame(maxWidth: .infinity)
+            }
+            if !card.body.isEmpty {
+                AdaptiveText(text: card.body, monospaced: card.monospaced)
+            }
+            if !card.rows.isEmpty {
+                ResultRowsView(rows: card.rows, replaceable: card.rowsReplaceable, onAction: onAction)
+            }
             if let detail = card.detail {
                 Text(detail)
                     .font(.caption)
@@ -84,8 +99,16 @@ struct ResultCardView: View {
             }
             HStack(spacing: 8) {
                 if let copyText = card.copyText {
-                    Button("复制") { onCopy(copyText) }
+                    Button("复制") { onAction(.copy(copyText)) }
                         .keyboardShortcut("c", modifiers: .command)
+                }
+                if let replaceText = card.replaceText {
+                    Button("替换原文") { onAction(.replace(replaceText)) }
+                        .keyboardShortcut(.return, modifiers: .command)
+                        .help("把结果粘贴回原来的 App，替换选中的文字（⌘↩）")
+                }
+                ForEach(card.buttons) { button in
+                    Button(button.title) { onAction(button.action) }
                 }
                 if let onMore {
                     Button("更多功能", action: onMore)
@@ -94,6 +117,59 @@ struct ResultCardView: View {
             }
             .controlSize(.small)
         }
+    }
+}
+
+/// 多行结果（编码转换、进制转换、哈希……），每行可以单独复制或替换原文。
+struct ResultRowsView: View {
+    let rows: [ResultCard.Row]
+    let replaceable: Bool
+    let onAction: (CardAction) -> Void
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 5) {
+            ForEach(Array(rows.enumerated()), id: \.offset) { _, row in
+                HStack(alignment: .firstTextBaseline, spacing: 8) {
+                    Text(row.label)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .lineLimit(1)
+                        .frame(width: 76, alignment: .leading)
+                    Text(row.value)
+                        .font(.system(size: 12, design: .monospaced))
+                        .textSelection(.enabled)
+                        .lineLimit(4)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                    Button {
+                        onAction(.copy(row.value))
+                    } label: {
+                        Image(systemName: "doc.on.doc")
+                    }
+                    .buttonStyle(.borderless)
+                    .help("复制")
+                    if replaceable {
+                        Button {
+                            onAction(.replace(row.value))
+                        } label: {
+                            Image(systemName: "arrow.uturn.backward")
+                        }
+                        .buttonStyle(.borderless)
+                        .help("粘贴回原来的 App（替换选中的文字）")
+                    }
+                }
+            }
+        }
+    }
+}
+
+struct ColorSwatch: View {
+    let color: ColorValue
+
+    var body: some View {
+        RoundedRectangle(cornerRadius: 8, style: .continuous)
+            .fill(Color(.sRGB, red: color.red / 255, green: color.green / 255, blue: color.blue / 255, opacity: color.alpha))
+            .overlay(RoundedRectangle(cornerRadius: 8, style: .continuous).strokeBorder(Color.primary.opacity(0.15), lineWidth: 1))
+            .frame(height: 40)
     }
 }
 
@@ -172,7 +248,9 @@ final class TranslationModel: ObservableObject {
 
 struct TranslationCardView: View {
     @ObservedObject var model: TranslationModel
-    var onCopy: (String) -> Void
+    /// 原文是在可以编辑的地方选中的文字时，才能「替换原文」
+    var canReplace: Bool
+    var onAction: (CardAction) -> Void
     var onMore: (() -> Void)?
     var onDownload: () -> Void
     var onClose: () -> Void
@@ -187,8 +265,13 @@ struct TranslationCardView: View {
             result
             HStack(spacing: 8) {
                 if let translated = model.translatedText {
-                    Button("复制译文") { onCopy(translated) }
+                    Button("复制译文") { onAction(.copy(translated)) }
                         .keyboardShortcut("c", modifiers: .command)
+                    if canReplace {
+                        Button("替换原文") { onAction(.replace(translated)) }
+                            .keyboardShortcut(.return, modifiers: .command)
+                            .help("用译文替换选中的文字（⌘↩）")
+                    }
                 }
                 if let onMore {
                     Button("更多功能", action: onMore)

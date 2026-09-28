@@ -11,6 +11,7 @@ final class StatusItemController: NSObject, NSMenuDelegate {
 
     var stateProvider: () -> State = { State() }
     var onOpenSettings: () -> Void = {}
+    var onShowClipboard: () -> Void = {}
     var onCheckForUpdates: () -> Void = {}
     var onTogglePause: () -> Void = {}
     var onGrantPermission: () -> Void = {}
@@ -55,6 +56,7 @@ final class StatusItemController: NSObject, NSMenuDelegate {
             addItem(to: menu, title: "授予辅助功能权限…", action: #selector(grantPermission))
             menu.addItem(.separator())
         }
+        addItem(to: menu, title: "剪贴板历史…", action: #selector(showClipboard))
         addItem(to: menu, title: state.isPaused ? "恢复 Pop" : "暂停 Pop", action: #selector(togglePause))
         menu.addItem(.separator())
         addItem(to: menu, title: "设置…", action: #selector(openSettings), key: ",")
@@ -70,6 +72,14 @@ final class StatusItemController: NSObject, NSMenuDelegate {
     }
 
     @objc private func openSettings() { onOpenSettings() }
+    @objc private func showClipboard() {
+        // 等菜单收起、焦点回到原来的 App 再弹出面板
+        DispatchQueue.main.async { [weak self] in
+            MainActor.assumeIsolated {
+                self?.onShowClipboard()
+            }
+        }
+    }
     @objc private func checkForUpdates() { onCheckForUpdates() }
     @objc private func togglePause() { onTogglePause() }
     @objc private func grantPermission() { onGrantPermission() }

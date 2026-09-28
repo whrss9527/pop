@@ -6,12 +6,14 @@ import SwiftUI
 @MainActor
 final class AppController {
     let settingsStore: SettingsStore
+    let pluginStore: PluginStore
     let registry: PluginRegistry
     let permissions: PermissionMonitor
     let overlay: OverlayController
     let downloads: TranslationDownloadRequest
     let updates: UpdateManager
     let cloudSync: CloudSync
+    let clipboard: ClipboardService
     let trigger: MouseTrigger
     let hotKeys: HotKeyManager
     let coordinator: PopCoordinator
@@ -22,33 +24,42 @@ final class AppController {
 
     init() {
         settingsStore = SettingsStore()
+        pluginStore = PluginStore()
         registry = PluginRegistry()
         permissions = PermissionMonitor()
         overlay = OverlayController()
         downloads = TranslationDownloadRequest()
         updates = UpdateManager()
-        cloudSync = CloudSync(settingsStore: settingsStore)
+        cloudSync = CloudSync(settingsStore: settingsStore, pluginStore: pluginStore)
+        clipboard = ClipboardService()
         trigger = MouseTrigger()
         hotKeys = HotKeyManager()
-        coordinator = PopCoordinator(settingsStore: settingsStore, registry: registry, overlay: overlay, downloads: downloads)
+        coordinator = PopCoordinator(settingsStore: settingsStore, registry: registry, overlay: overlay,
+                                     downloads: downloads, clipboard: clipboard)
         statusItem = StatusItemController()
 
-        let catalog = registry.catalog
         let store = settingsStore
+        let plugins = pluginStore
+        let pluginRegistry = registry
         let permissionMonitor = permissions
         let sync = cloudSync
         let updateManager = updates
         let downloadRequest = downloads
+        let clipboardService = clipboard
         settingsWindow = SettingsWindowController { navigation in
             AnyView(
-                SettingsRootView(navigation: navigation, catalog: catalog)
+                SettingsRootView(navigation: navigation)
                     .environmentObject(store)
+                    .environmentObject(plugins)
+                    .environmentObject(pluginRegistry)
                     .environmentObject(permissionMonitor)
                     .environmentObject(sync)
                     .environmentObject(updateManager)
                     .environmentObject(downloadRequest)
+                    .environmentObject(clipboardService)
             )
         }
+        registry.setUserManifests(pluginStore.manifests)
     }
 
     func start() {
@@ -59,9 +70,6 @@ final class AppController {
             self?.settingsWindow.show(tab: tab)
         }
         trigger.delegate = coordinator
-        hotKeys.onPress = { [weak self] in
-            self?.coordinator.activateFromHotKey()
-        }
 
         statusItem.stateProvider = { [weak self] in
             guard let self else { return StatusItemController.State() }
@@ -71,6 +79,9 @@ final class AppController {
         }
         statusItem.onOpenSettings = { [weak self] in
             self?.settingsWindow.show()
+        }
+        statusItem.onShowClipboard = { [weak self] in
+            self?.coordinator.showClipboardHistoryFromHotKey()
         }
         statusItem.onCheckForUpdates = { [weak self] in
             self?.updates.checkForUpdates()
@@ -106,6 +117,15 @@ final class AppController {
             }
             .store(in: &cancellables)
 
+        // 插件文件夹有变化（设置里编辑、手动修改、iCloud 同步）时刷新功能列表
+        pluginStore.$manifests
+            .receive(on: RunLoop.main)
+            .sink { [weak self] manifests in
+                self?.registry.setUserManifests(manifests)
+            }
+            .store(in: &cancellables)
+
+        pluginStore.startWatching()
         permissions.start()
         updates.start()
         cloudSync.start()
@@ -127,7 +147,7 @@ final class AppController {
 
     func stop() {
         trigger.stop()
-        hotKeys.unregister()
+        hotKeys.unregisterAll()
     }
 
     func showSettings() {
@@ -138,7 +158,14 @@ final class AppController {
         trigger.configuration = MouseTrigger.Configuration(mode: settings.trigger.mode,
                                                            holdDuration: settings.trigger.holdDuration,
                                                            modifier: settings.trigger.modifier)
-        hotKeys.register(settings.trigger.hotKey)
+        hotKeys.register(.ring, preset: settings.trigger.hotKey) { [weak self] in
+            self?.coordinator.activateFromHotKey()
+        }
+        let clipboardHotKey: HotKeyPreset = settings.clipboard.enabled ? settings.clipboard.hotKey : .none
+        hotKeys.register(.clipboard, preset: clipboardHotKey) { [weak self] in
+            self?.coordinator.showClipboardHistoryFromHotKey()
+        }
+        clipboard.apply(settings.clipboard)
     }
 
     private func permissionChanged(_ trusted: Bool) {
