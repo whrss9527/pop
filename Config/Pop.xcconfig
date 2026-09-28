@@ -1,0 +1,19 @@
+// Pop App target 配置。需要按人修改的值请在 Config/Local.xcconfig 里覆盖。
+
+// Bundle ID：iCloud 同步和辅助功能授权都绑定它，正式发布后不要再改。
+POP_BUNDLE_ID = io.github.whrss9527.pop
+PRODUCT_BUNDLE_IDENTIFIER = $(POP_BUNDLE_ID)
+
+// 默认启用 iCloud（键值存储）能力，需要付费开发者账号。
+// 没有付费账号时在 Local.xcconfig 里改成 Pop/Resources/Pop-NoCloud.entitlements。
+POP_ENTITLEMENTS = Pop/Resources/Pop.entitlements
+CODE_SIGN_ENTITLEMENTS = $(POP_ENTITLEMENTS)
+
+// 公证（notarization）要求开启 Hardened Runtime。
+ENABLE_HARDENED_RUNTIME = YES
+
+// Sparkle 更新签名公钥：运行 Sparkle 的 generate_keys 生成后填在这里并提交（公钥不是秘密）。
+// 为空时 App 内的自动更新保持关闭，不会弹出配置错误。
+SPARKLE_PUBLIC_ED_KEY =
+
+#include? "Local.xcconfig"

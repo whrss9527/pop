@@ -1,0 +1,17 @@
+# Xcode 工程由 XcodeGen 生成（project.yml），不入库
+*.xcodeproj/
+*.xcworkspace/
+xcuserdata/
+DerivedData/
+.build/
+build/
+*.xcarchive
+
+# 本地签名配置（Team ID 等），模板见 Config/Local.xcconfig.example
+Config/Local.xcconfig
+
+# Sparkle 私钥导出文件，千万不要提交
+*.sparkle-private-key
+sparkle_private_key*
+
+.DS_Store

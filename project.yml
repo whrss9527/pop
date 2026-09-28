@@ -1,0 +1,69 @@
+name: Pop
+
+options:
+  deploymentTarget:
+    macOS: "15.0"
+  developmentLanguage: zh-Hans
+  createIntermediateGroups: true
+  groupSortPosition: top
+
+configFiles:
+  Debug: Config/Project.xcconfig
+  Release: Config/Project.xcconfig
+
+settings:
+  base:
+    SWIFT_VERSION: "5.0"
+    MARKETING_VERSION: "0.1.0"
+    CURRENT_PROJECT_VERSION: "1"
+    CODE_SIGN_STYLE: Automatic
+    DEAD_CODE_STRIPPING: YES
+
+packages:
+  Sparkle:
+    url: https://github.com/sparkle-project/Sparkle
+    from: 2.10.0
+
+targets:
+  Pop:
+    type: application
+    platform: macOS
+    configFiles:
+      Debug: Config/Pop.xcconfig
+      Release: Config/Pop.xcconfig
+    sources:
+      - path: Pop
+    dependencies:
+      - package: Sparkle
+    settings:
+      base:
+        INFOPLIST_FILE: Pop/Resources/Info.plist
+        GENERATE_INFOPLIST_FILE: NO
+
+  PopTests:
+    type: bundle.unit-test
+    platform: macOS
+    sources:
+      - path: PopTests
+    dependencies:
+      - target: Pop
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: io.github.whrss9527.pop.tests
+        GENERATE_INFOPLIST_FILE: YES
+
+schemes:
+  Pop:
+    build:
+      targets:
+        Pop: all
+        PopTests: [test]
+    run:
+      config: Debug
+    test:
+      config: Debug
+      gatherCoverageData: false
+      targets:
+        - PopTests
+    archive:
+      config: Release

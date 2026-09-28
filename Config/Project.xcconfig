@@ -1,0 +1,3 @@
+// 工程级配置，对所有 target 生效。
+// 个人签名信息（DEVELOPMENT_TEAM 等）写在 Config/Local.xcconfig 里，该文件不入库。
+#include? "Local.xcconfig"

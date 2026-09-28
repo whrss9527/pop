@@ -1,0 +1,12 @@
+// 复制为 Config/Local.xcconfig（已被 .gitignore 忽略）后按需修改。
+
+// 你的 Apple Developer Team ID（Xcode → Settings → Accounts 里可以看到）。
+// 用固定证书签名，辅助功能授权才不会在每次重新编译后失效。
+DEVELOPMENT_TEAM = ABCDE12345
+
+// 正式发布前换成你自己的 Bundle ID。
+// POP_BUNDLE_ID = com.yourname.pop
+
+// 没有付费开发者账号时：去掉 iCloud 能力，改用本地签名（iCloud 同步会显示为不可用）。
+// POP_ENTITLEMENTS = Pop/Resources/Pop-NoCloud.entitlements
+// CODE_SIGN_IDENTITY = -
