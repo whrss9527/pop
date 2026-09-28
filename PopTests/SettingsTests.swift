@@ -79,6 +79,22 @@ final class SettingsCodingTests: XCTestCase {
         XCTAssertFalse(roundTripped.isInstalled(BuiltinPluginID.speak))
     }
 
+    /// 没改过圆盘布局的老用户换成新的默认布局；改过的保持不变。
+    func testLegacyDefaultRingIsUpgraded() throws {
+        let legacySlots = RingLayout.legacyDefault.slots.map { $0.map { "\"\($0)\"" } ?? "null" }.joined(separator: ", ")
+        let upgraded = try decode(#"{"ring": {"slots": ["# + legacySlots + "]}}")
+        XCTAssertEqual(upgraded.ring, RingLayout.default)
+
+        let custom = try decode(#"{"ring": {"slots": ["search", null, "translate", null]}}"#)
+        XCTAssertEqual(custom.ring.slots, [BuiltinPluginID.search, nil, BuiltinPluginID.translate, nil])
+
+        // 新版本保存的设置里即使恰好是旧布局，也是用户自己选的，不再改动
+        var current = AppSettings()
+        current.ring = .legacyDefault
+        let roundTripped = try JSONDecoder().decode(AppSettings.self, from: JSONEncoder().encode(current))
+        XCTAssertEqual(roundTripped.ring, RingLayout.legacyDefault)
+    }
+
     func testClipboardSettingsDecoding() throws {
         let settings = try decode(#"{"clipboard": {"enabled": false, "retentionDays": -3, "maxItems": 1, "hotKey": "fromTheFuture"}}"#)
         XCTAssertFalse(settings.clipboard.enabled)

@@ -121,8 +121,9 @@ enum Paster {
             // 目标 App 收到 ⌘V 后才去读剪贴板，等一会儿再还原
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
                 MainActor.assumeIsolated {
-                    snapshot.restore(to: pasteboard)
-                    PasteboardGuard.shared.end(changeCount: pasteboard.changeCount)
+                    let general = NSPasteboard.general
+                    snapshot.restore(to: general)
+                    PasteboardGuard.shared.end(changeCount: general.changeCount)
                 }
             }
         }

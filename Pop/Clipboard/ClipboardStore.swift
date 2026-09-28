@@ -173,7 +173,7 @@ final class ClipboardStore: @unchecked Sendable {
 
     func delete(id: Int64) {
         queue.sync {
-            removeRows(selecting: "SELECT id, image_name FROM items WHERE id = ?", [.int(id)])
+            _ = removeRows(selecting: "SELECT id, image_name FROM items WHERE id = ?", [.int(id)])
         }
     }
 

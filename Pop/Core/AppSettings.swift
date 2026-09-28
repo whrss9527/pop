@@ -144,6 +144,18 @@ struct RingLayout: Codable, Equatable {
         BuiltinPluginID.colorPicker,
     ])
 
+    /// 0.1 版的默认布局。老用户没改过布局的话，升级后换成新的默认布局，新功能才会出现在圆盘上。
+    static let legacyDefault = RingLayout(slots: [
+        BuiltinPluginID.translate,
+        BuiltinPluginID.search,
+        BuiltinPluginID.openURL,
+        BuiltinPluginID.calculate,
+        BuiltinPluginID.copyPlain,
+        BuiltinPluginID.formatJSON,
+        BuiltinPluginID.timestamp,
+        BuiltinPluginID.copyPath,
+    ])
+
     init(slots: [String?]) {
         self.slots = slots
     }
@@ -446,6 +458,9 @@ struct AppSettings: Codable, Equatable {
         clipboard = c.lenient(.clipboard, default: d.clipboard)
         knownBuiltinPlugins = c.lenient(.knownBuiltinPlugins, default: BuiltinPluginID.legacy)
         modifiedAt = c.lenient(.modifiedAt, default: d.modifiedAt)
+        if !knownBuiltinPlugins.contains(BuiltinPluginID.allPlugins), ring == .legacyDefault {
+            ring = .default
+        }
         adoptNewBuiltinPlugins()
     }
 

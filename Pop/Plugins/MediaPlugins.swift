@@ -110,16 +110,29 @@ extension ColorValue {
 
 @MainActor
 enum ScreenColorSampler {
-    /// 显示系统的取色放大镜，按 Esc 取消时返回 nil。
-    static func pick() async -> NSColor? {
-        await withCheckedContinuation { continuation in
-            let sampler = NSColorSampler()
+    enum Outcome {
+        case cancelled
+        /// 取到了颜色；nil 表示无法转换成 sRGB
+        case picked(ColorValue?)
+    }
+
+    /// 显示系统的取色放大镜，按 Esc 取消。
+    static func pick() async -> Outcome {
+        let sampler = NSColorSampler()
+        let result = await withCheckedContinuation { (continuation: CheckedContinuation<Outcome, Never>) in
             sampler.show { color in
-                // 在回调里引用 sampler，保证取色结束前它不会被释放
-                _ = sampler
-                continuation.resume(returning: color)
+                let outcome: Outcome
+                if let color {
+                    outcome = .picked(ColorValue(color))
+                } else {
+                    outcome = .cancelled
+                }
+                continuation.resume(returning: outcome)
             }
         }
+        // 取色结束前 sampler 不能被释放
+        withExtendedLifetime(sampler) {}
+        return result
     }
 }
 
@@ -128,8 +141,8 @@ struct ColorPickerPlugin: PopPlugin {
                           summary: "吸取屏幕上任意位置的颜色，自动复制 HEX 值", accepts: [], hidesOverlay: true)
 
     @MainActor func run(_ content: ClassifiedContent, context: PluginContext) async -> PluginOutcome {
-        guard let picked = await ScreenColorSampler.pick() else { return .done(toast: nil) }
-        guard let color = ColorValue(picked) else { return .failure("无法读取这个颜色") }
+        guard case .picked(let picked) = await ScreenColorSampler.pick() else { return .done(toast: nil) }
+        guard let color = picked else { return .failure("无法读取这个颜色") }
         PasteboardWriter.copy(color.hexString)
         return .card(ResultCard(title: "屏幕取色", detail: "已复制 \(color.hexString)",
                                 rows: color.rows, rowsReplaceable: true, swatchHex: color.hexString))

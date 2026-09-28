@@ -3,10 +3,10 @@
 Pop 是一个 macOS 菜单栏效率工具：在任意 App 里**长按鼠标右键**，Pop 读取你选中的内容：
 
 - 选中的是外文：直接弹出翻译卡片（系统离线翻译，不联网、不收费）；
-- 选中的是算式：直接算出结果；
+- 选中的是算式、颜色值、图片：直接算出结果、转换颜色写法、识别图片里的文字；
 - 其他情况（或者什么都没选中）：弹出**圆形功能菜单**，按住右键往某个方向一划、松开就执行那一格的功能。
 
-装哪些功能、每个功能放在圆盘的哪一格、什么内容直接执行哪个功能，都可以在设置里调整。设置可以通过 **iCloud 同步**到你的其他 Mac，新版本可以在 App 里**一键更新**。
+装哪些功能、每个功能放在圆盘的哪一格、什么内容直接执行哪个功能，都可以在设置里调整。除了 20 多个内置功能，还可以用网址模板、Shell、JavaScript 或快捷指令**写自己的插件**。Pop 还带了一个**剪贴板历史**（只存在本机，按设置的时间自动清理）。设置和插件可以通过 **iCloud 同步**到你的其他 Mac，新版本可以在 App 里**一键更新**。
 
 ## 功能
 
@@ -14,12 +14,26 @@ Pop 是一个 macOS 菜单栏效率工具：在任意 App 里**长按鼠标右�
 | --- | --- |
 | 唤起方式 | 长按右键（默认，短按仍是系统右键菜单）、修饰键 + 右键、鼠标中键、全局快捷键 |
 | 读取选中内容 | 辅助功能接口 → 点 App 菜单里的「拷贝」→ 模拟 ⌘C，三层兜底；会备份并还原剪贴板，模拟按键时临时静音提示音 |
-| 内容识别 | 中文 / 外文、链接、邮箱、JSON、算式、Unix 时间戳、文件、图片 |
+| 内容识别 | 中文 / 外文、单个词、链接、邮箱、JSON、算式、数字（含 0x/0b/0o）、颜色值（#RGB、rgb()、hsl()）、日期时间、Unix 时间戳、本机路径、文件、图片 |
 | 圆盘菜单 | 4–12 格可选；按住划选、松开执行，或松开后点击；数字键 1–9/0 直选，方向键 + 回车，Esc 关闭；靠近屏幕边缘自动内移 |
-| 内置功能 | 翻译、搜索、打开链接、计算、纯文本复制、JSON 格式化、时间戳转换、复制文件路径、在访达中显示、打开设置 |
-| 直达规则 | 按内容类型决定跳过圆盘直接执行哪个功能（默认：外文 → 翻译，算式 → 计算） |
-| iCloud 同步 | 圆盘布局、已安装的功能、直达规则、唤起方式、翻译设置；存在你自己的 iCloud 键值存储里 |
+| 内置功能 | 见下表，每个都可以单独关闭 |
+| 自定义插件 | 网址模板 / Shell 脚本 / JavaScript / 快捷指令，一个插件一个 JSON 文件，设置里可以新建、试运行、导入导出 |
+| 剪贴板历史 | 文字、图片、文件都能记；搜索、固定、⌘1–9 快速粘贴；本机 SQLite 存储，按保存天数和条数上限自动清理 |
+| 结果卡片 | 复制、**替换原文**（粘贴回原来的 App）、逐行复制，二维码图片、颜色色块 |
+| 直达规则 | 按内容类型决定跳过圆盘直接执行哪个功能（默认：外文 → 翻译，算式 → 计算，颜色 → 颜色转换，图片 → 识别文字） |
+| iCloud 同步 | 圆盘布局、已安装的功能、自定义插件、直达规则、唤起方式、翻译和剪贴板设置；存在你自己的 iCloud 键值存储里 |
 | 检查更新 | Sparkle 2，从 GitHub Releases 检查；EdDSA 签名校验；后台发现新版本时菜单栏图标变成下载箭头，不打断你 |
+
+### 内置功能
+
+| 分类 | 功能 |
+| --- | --- |
+| 文字 | 翻译（可替换原文）、词典（系统「词典」）、朗读、搜索、纯文本复制、字数统计、收集箱（追加到「文稿/Pop 收集箱.md」） |
+| 转换 | 大小写（驼峰、下划线、短横线……）、编码（Base64、URL、Unicode、HTML 实体）、数字（进制、千分位、人民币大写）、颜色（HEX / RGB / HSL / SwiftUI）、时间（时间戳 ↔ 日期）、JSON 格式化 / 压缩、计算 |
+| 开发 | 哈希（MD5、SHA-1、SHA-256、SHA-512，文字或文件）、二维码（生成或识别）、随机生成（UUID、密码、数字） |
+| 屏幕与图片 | 识别图片里的文字（离线 OCR）、截图识字、屏幕取色 |
+| 文件 | 复制路径、在访达中显示、在终端打开 |
+| 其他 | 剪贴板历史、全部功能（可以搜索，支持拼音首字母）、打开设置 |
 
 ## 工作原理（关键点）
 
@@ -34,7 +48,46 @@ Pop 是一个 macOS 菜单栏效率工具：在任意 App 里**长按鼠标右�
 
 补发的事件带有标记，回到拦截器时直接放行。因为按下事件没有交给目标 App，右键也不会改变 App 里的选区。
 
-**浮窗为什么不抢焦点？** 圆盘和卡片是 `nonactivatingPanel`：原来的 App 一直在前台，选区不会丢，模拟的 ⌘C 也不会发到 Pop 自己身上。
+**浮窗为什么不抢焦点？** 圆盘和卡片是 `nonactivatingPanel`：原来的 App 一直在前台，选区不会丢，模拟的 ⌘C 也不会发到 Pop 自己身上。「替换原文」也靠这一点：先收起浮窗，键盘焦点自然回到原来的 App，再写剪贴板、模拟 ⌘V，粘贴完把剪贴板恢复原样。
+
+## 自定义插件
+
+在「设置 → 功能 → 我的插件」里从模板新建，或者直接往插件文件夹（`~/Library/Application Support/Pop/Plugins`）里放 JSON 文件，Pop 会自动载入。一个插件长这样：
+
+```json
+{
+  "id": "user-github",
+  "name": "GitHub 搜索",
+  "symbol": "magnifyingglass",
+  "summary": "在 GitHub 上搜索选中的文字",
+  "match": { "kinds": ["text"], "pattern": null },
+  "action": { "type": "url", "template": "https://github.com/search?q={text}" },
+  "output": "none"
+}
+```
+
+| 字段 | 说明 |
+| --- | --- |
+| `id` | 插件 ID，也是文件名；只能用字母、数字、`.`、`-`、`_`，不能和内置功能重名。手写文件时可以省略，用文件名代替 |
+| `name` / `symbol` / `summary` | 圆盘和列表里显示的名称、[SF Symbol](https://developer.apple.com/sf-symbols/) 图标名和说明 |
+| `match.kinds` | 能处理的内容类型：`text`、`foreignText`、`chineseText`、`word`、`url`、`email`、`json`、`number`、`color`、`dateTime`、`timestamp`、`math`、`files`、`imageFile`、`image`；为空表示随时可用 |
+| `match.pattern` | 可选的正则，选中的文字（或文件路径）要能匹配它 |
+| `action.type` | `url`：打开网址，`{text}` 换成编码后的文字、`{raw}` 换成原文；`shell`：用 zsh 运行 `script`，文字从标准输入传入，也可以读 `$POP_TEXT`、`$POP_FILES`；`javascript`：在 JavaScriptCore 里运行 `script`，定义 `function run(input, files)` 返回结果；`shortcut`：把文字交给名为 `shortcut` 的快捷指令 |
+| `action.timeout` | 脚本最长运行时间（秒），超时会被结束 |
+| `output` | 脚本结果怎么用：`card` 结果卡片、`copy` 复制、`replace` 替换选中的文字、`toast` 轻提示、`none` 不显示 |
+
+所有字段都宽松解析，缺了或者写错都会用默认值，新旧版本之间交换插件不会整体失败。插件和圆盘布局一样可以通过 iCloud 同步，也可以直接把 JSON 文件发给别人导入。
+
+## 数据存在哪里
+
+| 数据 | 位置 | 同步 |
+| --- | --- | --- |
+| 设置（圆盘、规则、唤起方式……） | `UserDefaults`（`io.github.whrss9527.pop`） | iCloud 键值存储 |
+| 自定义插件 | `~/Library/Application Support/Pop/Plugins/*.json`，每个插件一个文件 | iCloud 键值存储 |
+| 剪贴板历史 | `~/Library/Application Support/Pop/Clipboard/history.sqlite`（WAL 模式），图片单独存成 PNG 放在旁边的 `Images` 文件夹 | 不同步，只在本机 |
+| 收集箱 | `~/Documents/Pop 收集箱.md` | 跟随你的「文稿」文件夹 |
+
+剪贴板历史按内容去重（同样的内容再复制一次只会挪到最前面）；超过保存天数、超出条数上限的记录每小时清理一次，固定的记录不会被清理。密码管理器用 `org.nspasteboard.ConcealedType` 等类型标记的敏感内容不会被记录，也可以在设置里排除指定的 App。
 
 ## 开发
 
@@ -65,7 +118,7 @@ CODE_SIGN_IDENTITY = -
 
 ```bash
 make build   # 编译
-make test    # 跑单元测试（纯逻辑：内容识别、计算器、圆盘几何、设置编解码、同步冲突判断、插件）
+make test    # 跑单元测试（内容识别、各种转换、计算器、圆盘几何、设置编解码与迁移、同步冲突判断、插件与脚本运行、剪贴板数据库）
 make clean
 ```
 
@@ -121,11 +174,12 @@ scripts/release.sh 0.2.0     # 或 make release VERSION=0.2.0
 ```
 Pop/
 ├── App/        启动入口、模块组装（AppController）、一次唤起的完整流程（PopCoordinator）
-├── Core/       纯逻辑：设置模型与持久化、内容识别、计算器、圆盘/屏幕几何
-├── Plugins/    插件协议、分发规则（Router）、内置功能
-├── System/     事件拦截（MouseTrigger）、全局快捷键、读取选中内容、权限
-├── UI/         浮动面板、圆盘、结果/翻译卡片、菜单栏图标
-├── Settings/   设置窗口各页面（含拖拽式圆盘编辑器）
+├── Core/       纯逻辑：设置模型与持久化、内容识别、各种文字转换、计算器、圆盘/屏幕几何
+├── Plugins/    插件协议、分发规则（Router）、内置功能、自定义插件（manifest、运行器、插件文件夹）
+├── Clipboard/  剪贴板历史：SQLite 存储、剪贴板监听、历史面板
+├── System/     事件拦截（MouseTrigger）、全局快捷键、读取选中内容、粘贴回原 App、权限
+├── UI/         浮动面板、圆盘、结果/翻译卡片、「全部功能」列表、菜单栏图标
+├── Settings/   设置窗口各页面（含拖拽式圆盘编辑器、插件编辑器）
 ├── Sync/       iCloud 同步
 ├── Update/     Sparkle 自动更新
 └── Resources/  Info.plist、entitlements
@@ -136,24 +190,30 @@ scripts/        发布脚本
 
 ## 扩展功能
 
-新增一个功能只需要实现 `PopPlugin` 协议（`Pop/Plugins/Plugin.swift`），声明它能处理的内容类型，再加到 `BuiltinPlugins.make()` 里：
+大多数需求用上面的[自定义插件](#自定义插件)就能满足，不用改代码。要做内置功能的话，实现 `PopPlugin` 协议（`Pop/Plugins/Plugin.swift`），声明它能处理的内容类型，在 `BuiltinPluginID` 里加一个 ID，再加到 `BuiltinPlugins.make()` 里（老用户升级后会自动装上新的内置功能）：
 
 ```swift
 struct UppercasePlugin: PopPlugin {
     let info = PluginInfo(id: "uppercase", name: "转大写", symbol: "textformat.size.larger",
-                          summary: "把选中的文字转成大写", accepts: [.text])
+                          summary: "把选中的文字转成大写", accepts: [.text], pattern: "[a-z]")
 
     @MainActor func run(_ content: ClassifiedContent, context: PluginContext) async -> PluginOutcome {
         guard let text = content.text else { return .failure("没有文字") }
-        return .card(ResultCard(title: "转大写", body: text.uppercased(), copyText: text.uppercased()))
+        let upper = text.uppercased()
+        return .card(ResultCard(title: "转大写", body: upper, copyText: upper, replaceText: upper))
     }
 }
 ```
 
-之后计划支持的方向：脚本插件（manifest + Shell / AppleScript / JavaScript）、网页插件、截图 OCR、选中文字后自动弹出小工具条。
+`PluginOutcome` 可以是结果卡片（`ResultCard` 支持多行结果、图片、颜色色块和自定义按钮）、交给翻译卡片、直接替换原文、轻提示，或者打开剪贴板历史、「全部功能」列表。
+
+之后计划支持的方向：带界面的网页插件、选中文字后自动弹出小工具条、更多翻译引擎。
 
 ## 已知限制
 
 - 需要辅助功能权限，并且因为 App Store 沙盒不允许使用辅助功能，只能通过官网 / GitHub 分发；
 - 少数 App 既不支持辅助功能读取选区，菜单里也找不到「拷贝」，这时会模拟 ⌘C；非 QWERTY 键盘布局下模拟按键可能不准；
+- 「替换原文」和剪贴板历史的粘贴是模拟 ⌘V 实现的，选中的地方不能编辑时不会有效果；
+- 截图识字需要「屏幕录制」权限，没授权时截到的可能只有桌面背景；
+- 剪贴板没有变化通知，Pop 每 0.5 秒检查一次，极短时间内连续复制多次只会记下最后一次；
 - 系统离线翻译的质量对长段落不如在线大模型，翻译引擎做成了可替换的，后续可以接入其他服务。
