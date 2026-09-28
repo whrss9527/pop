@@ -8,6 +8,10 @@ on:
       version:
         description: "版本号，例如 0.1.0（会创建 v0.1.0 标签）"
         required: true
+      overwrite:
+        description: "版本已存在时覆盖：用原标签的代码重新构建，替换安装包并更新标题和说明"
+        type: boolean
+        default: false
 
 permissions:
   contents: write
@@ -18,25 +22,37 @@ jobs:
     timeout-minutes: 40
     env:
       VERSION: ${{ inputs.version }}
+      OVERWRITE: ${{ inputs.overwrite }}
     steps:
-      - uses: actions/checkout@v5
-        with:
-          fetch-depth: 0
-
+      # 注意：shell 变量后面紧跟中文或全角符号时一定要写成 ${VAR}，否则 bash 可能把多字节字符的一部分当成变量名。
       - name: Check version
+        id: check
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           V="${VERSION#v}"
           if [[ ! "$V" =~ ^[0-9]+\.[0-9]+\.[0-9]+([-.][0-9A-Za-z.]+)?$ ]]; then
-            echo "版本号格式不对：$VERSION（应该像 0.1.0）"
+            echo "版本号格式不对：${VERSION}（应该像 0.1.0）"
             exit 1
           fi
           if gh release view "v$V" --repo "$GITHUB_REPOSITORY" > /dev/null 2>&1; then
-            echo "v$V 已经发布过了，换一个版本号"
-            exit 1
+            if [ "$OVERWRITE" != "true" ]; then
+              echo "v$V 已经发布过了：换一个版本号，或者勾选 overwrite 覆盖"
+              exit 1
+            fi
+            # 覆盖时仍然用原标签对应的代码构建，保证安装包和标签一致
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+            echo "ref=v$V" >> "$GITHUB_OUTPUT"
+          else
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+            echo "ref=$GITHUB_SHA" >> "$GITHUB_OUTPUT"
           fi
           echo "VERSION=$V" >> "$GITHUB_ENV"
+
+      - uses: actions/checkout@v5
+        with:
+          ref: ${{ steps.check.outputs.ref }}
+          fetch-depth: 0
 
       - name: Select newest stable Xcode
         run: |
@@ -105,10 +121,16 @@ jobs:
 
           SHA-256：`__SHA256__`
           EOF
-          perl -pi -e "s/__VERSION__/$VERSION/g; s/__SHA256__/$SHA256/g" notes.md
-          gh release create "v$VERSION" "Pop-$VERSION.zip" \
-            --repo "$GITHUB_REPOSITORY" \
-            --target "$GITHUB_SHA" \
-            --title "Pop $VERSION（测试版）" \
-            --notes-file notes.md \
-            --prerelease
+          perl -pi -e "s/__VERSION__/${VERSION}/g; s/__SHA256__/${SHA256}/g" notes.md
+          TITLE="Pop ${VERSION}（测试版）"
+          if [ "${{ steps.check.outputs.exists }}" = "true" ]; then
+            gh release upload "v${VERSION}" "Pop-${VERSION}.zip" --repo "$GITHUB_REPOSITORY" --clobber
+            gh release edit "v${VERSION}" --repo "$GITHUB_REPOSITORY" --title "$TITLE" --notes-file notes.md --prerelease
+          else
+            gh release create "v${VERSION}" "Pop-${VERSION}.zip" \
+              --repo "$GITHUB_REPOSITORY" \
+              --target "$(git rev-parse HEAD)" \
+              --title "$TITLE" \
+              --notes-file notes.md \
+              --prerelease
+          fi
