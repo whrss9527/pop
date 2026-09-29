@@ -6,7 +6,8 @@ import AppKit
 /// 指向一格、滑到另一格、选中后弹出结果卡片、提示、「全部功能」列表、再展开一次圆盘并取消；
 /// 再按真实的手势流程走一遍：按住右键唤起、拖到上面一格、再拖到「剪贴板」、松开执行
 /// （直接调用鼠标拦截的回调，拖动位置和真实使用时一样由拦截送来，不看系统的指针位置）；
-/// 最后是单位换算的卡片、贴图、AI 卡片、窗口布局卡片、翻译卡片、常用短语、截图标注窗口和设置窗口里新加的几页。
+/// 最后是单位换算的卡片、贴图、AI 卡片、窗口布局卡片、翻译卡片、常用短语、文本对比、图片配色、暂存架、打开方式、
+/// Markdown 预览、截图标注窗口和设置窗口里新加的几页。
 /// 配合 POP_ANIMATION_SCALE 放慢动画，截图脚本就能拍到动画的中间帧；POP_APPEARANCE=dark 时用深色外观。
 /// 每一步开始时往 POP_DEMO_LOG 指定的文件里写一行「步骤名 时间戳」；region 行是截图区域在屏幕上的位置
 /// （点，AppKit 坐标：x y 宽 高）和屏幕大小，脚本按拍照时最新的那一行裁图。
@@ -25,7 +26,8 @@ enum OverlayDemo {
         let visible = screen.visibleFrame
         // 唤起点放在屏幕中间偏左上，右下方留出卡片和列表的位置
         let center = CGPoint(x: (visible.midX - 150).rounded(), y: (visible.midY + 150).rounded())
-        logRegion(CGRect(x: center.x - 190, y: center.y - 480, width: 680, height: 680), screen: screen)
+        // 宽一些，放得下文本对比那样的宽卡片
+        logRegion(CGRect(x: center.x - 190, y: center.y - 480, width: 760, height: 680), screen: screen)
 
         let installed = Set(settings.installedPlugins)
         let text = ContentClassifier.classify(.text("Liquid glass"))
@@ -151,6 +153,56 @@ enum OverlayDemo {
             ])
             overlay.showCard(SnippetPickerView(model: snippets, onClose: {}), anchor: center)
 
+            // 文本对比卡片
+            await pause(1.4 * unit)
+            step("diff")
+            let diff = TextDiff.compare("长按右键唤起圆盘\n松开就执行\n支持 40 多个功能",
+                                        "长按右键弹出圆盘\n松开就执行\n支持 50 多个功能\n还可以写自己的插件")
+            overlay.showCard(ResultCardView(card: ResultCard(title: "文本对比",
+                                                             detail: "剪贴板 → 选中的文字：删去 \(diff.removedCount) 行，"
+                                                                 + "新增 \(diff.addedCount) 行",
+                                                             copyText: diff.unifiedText, diff: diff),
+                                            onAction: { _ in }, onMore: {}, onClose: {}),
+                             anchor: center)
+
+            // 图片配色卡片（用标注演示的那张示例图）
+            await pause(1.4 * unit)
+            step("palette")
+            if let sample = sampleScreenshot() {
+                let swatches = ColorPalette.extract(from: sample.image)
+                let card = ResultCard(title: "图片配色", detail: "按面积从大到小；点色块复制色值",
+                                      rows: swatches.map { ResultCard.Row(label: "占 \(Int((($0.share) * 100).rounded()))%", value: $0.hex) },
+                                      palette: swatches.map(\.hex))
+                overlay.showCard(ResultCardView(card: card, onAction: { _ in }, onMore: {}, onClose: {}), anchor: center)
+            }
+
+            // 暂存架：放上几个示例文件
+            await pause(1.4 * unit)
+            overlay.hide()
+            let files = sampleFiles()
+            FileShelf.shared.add(files)
+            FileShelf.shared.show(near: CGPoint(x: center.x + 20, y: center.y - 20))
+            step("shelf")
+
+            // 打开方式卡片（示例文字文件能用哪些 App 打开）
+            await pause(1.4 * unit)
+            FileShelf.shared.hide()
+            FileShelf.shared.clear()
+            if let note = files.first(where: { $0.pathExtension == "txt" }) {
+                let request = OpenWithRequest(targets: [note], apps: OpenWith.applications(for: note))
+                overlay.showCard(OpenWithCardView(request: request, onChoose: { _ in }, onClose: {}), anchor: center)
+            }
+            step("openWith")
+
+            // Markdown 预览卡片（深色外观下文字也要看得清）
+            await pause(1.4 * unit)
+            let markdown = "## 发布清单\n\n- 更新 **CHANGELOG**\n- 改 `MARKETING_VERSION`\n\n> 合并到 main 后自动发版"
+            overlay.showCard(ResultCardView(card: ResultCard(title: "Markdown 预览", markdown: markdown,
+                                                             buttons: [CardButton(title: "复制为富文本", action: .copyRichText(markdown))]),
+                                            onAction: { _ in }, onMore: {}, onClose: {}),
+                             anchor: center)
+            step("markdown")
+
             // 截图标注窗口：拿一张画好的示例图，标上方框、箭头、文字、马赛克和序号；截图区域换成标注窗口
             await pause(1.4 * unit)
             overlay.hide()
@@ -168,7 +220,7 @@ enum OverlayDemo {
 
             // 设置窗口里新加的几页：截图区域换成设置窗口
             await pause(0.6 * unit)
-            for tab in [SettingsTab.ai, .hotKeys] {
+            for tab in [SettingsTab.plugins, .ai, .hotKeys] {
                 coordinator.openSettings(tab)
                 await pause(0.6 * unit)
                 if let window = NSApp.windows.first(where: { $0.isVisible && $0.title == "Pop 设置" }) {
@@ -182,16 +234,17 @@ enum OverlayDemo {
         }
     }
 
-    /// 标注演示用的「截图」：一张账户设置卡片，480×300 点、2 倍像素
+    /// 标注演示用的「截图」：一张账户设置卡片，480×300 点，像素按屏幕倍率（和真的截图一样）
     private static func sampleScreenshot() -> ScreenCapture.Capture? {
-        let width = 960
-        let height = 600
+        let scale = max(NSScreen.main?.backingScaleFactor ?? 2, 1)
+        let width = Int(480 * scale)
+        let height = Int(300 * scale)
         guard let context = CGContext(data: nil, width: width, height: height, bitsPerComponent: 8, bytesPerRow: 0,
                                       space: CGColorSpace(name: CGColorSpace.sRGB) ?? CGColorSpaceCreateDeviceRGB(),
                                       bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue) else { return nil }
         // 换成「点、左上角为原点」的坐标
         context.translateBy(x: 0, y: CGFloat(height))
-        context.scaleBy(x: 2, y: -2)
+        context.scaleBy(x: scale, y: -scale)
         NSGraphicsContext.saveGraphicsState()
         NSGraphicsContext.current = NSGraphicsContext(cgContext: context, flipped: true)
         context.setFillColor(NSColor(srgbRed: 0.93, green: 0.94, blue: 0.96, alpha: 1).cgColor)
@@ -219,7 +272,29 @@ enum OverlayDemo {
         return ScreenCapture.Capture(image: image, png: png)
     }
 
-    /// 在示例图上标几笔：给手机号打码、序号、框出按钮、箭头指过去再写一句话
+    /// 暂存架演示用的几个文件：一个 PDF、一张图、一个文字文件（放在临时文件夹里）
+    private static func sampleFiles() -> [URL] {
+        let folder = FileManager.default.temporaryDirectory.appending(path: "pop-demo")
+        try? FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+        var files: [URL] = []
+        if let capture = sampleScreenshot() {
+            let image = folder.appending(path: "界面截图.png")
+            if (try? capture.png.write(to: image)) != nil {
+                let pdf = folder.appending(path: "季度报告.pdf")
+                if (try? PDFTools.combine([image], into: pdf)) != nil {
+                    files.append(pdf)
+                }
+                files.append(image)
+            }
+        }
+        let note = folder.appending(path: "会议记录.txt")
+        if (try? Data("周一例会：确认发布时间。\n".utf8).write(to: note)) != nil {
+            files.append(note)
+        }
+        return files
+    }
+
+    /// 在示例图上标几笔：给手机号打码、序号、框出按钮、箭头指过去再写一句话，再加上渐变背景
     private static func annotateSample(_ model: AnnotationModel) {
         func stroke(_ tool: AnnotationTool, from start: CGPoint, to end: CGPoint) {
             model.tool = tool
@@ -237,6 +312,7 @@ enum OverlayDemo {
         model.textDraft = "改完点这里"
         model.commitText()
         model.tool = .arrow
+        model.background = .sky
     }
 
     /// 截图区域（点，AppKit 坐标）和屏幕大小，截图脚本按它裁图

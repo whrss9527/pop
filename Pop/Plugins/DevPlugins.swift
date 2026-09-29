@@ -13,10 +13,55 @@ struct LinkInspectPlugin: PopPlugin {
         if let clean {
             buttons.append(CardButton(title: "复制干净的链接", action: .copy(clean)))
         }
-        return .card(ResultCard(title: "链接解析", body: clean ?? "",
-                                detail: clean == nil ? "这个链接里没有跟踪参数" : "上面是去掉跟踪参数后的链接，可以直接替换原文",
+        var detail = clean == nil ? "这个链接里没有跟踪参数" : "上面是去掉跟踪参数后的链接，可以直接替换原文"
+        if LinkExpander.isShortLink(url) {
+            // 只有点了才访问短链接服务
+            buttons.insert(CardButton(title: "展开短链接", action: .expandLink(url)), at: 0)
+            detail += "；这是短链接，点「展开短链接」会访问一次它的服务器，看最后跳到哪里"
+        }
+        return .card(ResultCard(title: "链接解析", body: clean ?? "", detail: detail,
                                 monospaced: true, replaceText: clean, rows: LinkInspector.rows(for: url), rowLineLimit: 2,
                                 buttons: buttons))
+    }
+}
+
+// MARK: - 代码截图
+
+struct CodeImagePlugin: PopPlugin {
+    let info = PluginInfo(id: BuiltinPluginID.codeImage, name: "代码截图", symbol: "chevron.left.forwardslash.chevron.right",
+                          summary: "把选中的代码画成一张图片（深色编辑器、语法着色、渐变背景），可以复制、存储或贴到屏幕上",
+                          accepts: [.text], maxLength: 20_000)
+
+    @MainActor func run(_ content: ClassifiedContent, context: PluginContext) async -> PluginOutcome {
+        guard let text = content.text, let png = CodeImage.render(text) else { return .failure("没能画出这段代码") }
+        return .card(ResultCard(title: "代码截图", detail: "按住拖动预览图也能拖到别的 App 里", image: png, buttons: [
+            CardButton(title: "复制图片", action: .copyImage(png)),
+            CardButton(title: "存储", action: .saveImage(png, name: ImageFiles.timestampedName("Pop 代码"))),
+            CardButton(title: "贴到屏幕", action: .pinImage(png)),
+        ]))
+    }
+}
+
+// MARK: - Cron
+
+struct CronPlugin: PopPlugin {
+    let info = PluginInfo(id: BuiltinPluginID.cron, name: "Cron 表达式", symbol: "clock.arrow.circlepath",
+                          summary: "把 cron 表达式（比如 */15 9-17 * * 1-5）说成中文，列出接下来几次运行的时间",
+                          accepts: [.text], maxLength: 120, check: .cron)
+
+    @MainActor func run(_ content: ClassifiedContent, context: PluginContext) async -> PluginOutcome {
+        guard let text = content.text, let cron = CronExpression(text) else { return .failure("不是有效的 cron 表达式") }
+        let calendar = Calendar.current
+        let runs = cron.nextRuns(after: Date(), count: 5, calendar: calendar)
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "zh_CN")
+        formatter.dateFormat = "yyyy-MM-dd HH:mm EEE"
+        let rows = runs.enumerated().map { index, date in
+            ResultCard.Row(label: "第 \(index + 1) 次", value: formatter.string(from: date))
+        }
+        return .card(ResultCard(title: "Cron 表达式", body: cron.summary,
+                                detail: runs.isEmpty ? "五年内都不会运行" : "接下来几次（本机时区 \(calendar.timeZone.identifier)）",
+                                copyText: cron.summary, rows: rows))
     }
 }
 
@@ -48,6 +93,20 @@ struct MarkdownCopyPlugin: PopPlugin {
         }
         MarkdownRichText.copy(rich)
         return .done(toast: "已复制为富文本")
+    }
+}
+
+struct MarkdownPreviewPlugin: PopPlugin {
+    let info = PluginInfo(id: BuiltinPluginID.markdownPreview, name: "Markdown 预览", symbol: "doc.text.magnifyingglass",
+                          summary: "把选中的 Markdown 显示成排好版的样子（标题、列表、粗体、代码……），可以复制为富文本",
+                          accepts: [.text], pattern: MarkdownRichText.pattern)
+
+    @MainActor func run(_ content: ClassifiedContent, context: PluginContext) async -> PluginOutcome {
+        guard let text = content.text, MarkdownRichText.render(text) != nil else {
+            return .failure("没能解析这段 Markdown")
+        }
+        return .card(ResultCard(title: "Markdown 预览", markdown: text,
+                                buttons: [CardButton(title: "复制为富文本", action: .copyRichText(text))]))
     }
 }
 
@@ -106,6 +165,19 @@ enum MarkdownRichText {
                 text.removeLast()
             }
             result.append(NSAttributedString(string: text, attributes: attributes))
+        }
+        return result
+    }
+
+    /// 显示用：没有指定颜色的文字用系统的文字颜色，深色外观下也看得清（复制出去的不加）
+    static func renderForDisplay(_ markdown: String) -> NSAttributedString? {
+        guard let rendered = render(markdown) else { return nil }
+        let result = NSMutableAttributedString(attributedString: rendered)
+        let range = NSRange(location: 0, length: result.length)
+        result.enumerateAttribute(.foregroundColor, in: range, options: []) { value, subrange, _ in
+            if value == nil {
+                result.addAttribute(.foregroundColor, value: NSColor.labelColor, range: subrange)
+            }
         }
         return result
     }

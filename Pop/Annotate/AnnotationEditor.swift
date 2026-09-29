@@ -35,8 +35,14 @@ final class AnnotationWindowController: NSObject, NSWindowDelegate {
         window.isReleasedWhenClosed = false
         window.delegate = self
         window.level = .floating
-        window.contentView = NSHostingView(rootView: AnnotationEditorView(model: model, canvasSize: canvas,
-                                                                          onFinish: { [weak self] action in self?.finish(action) }))
+        let hosting = NSHostingView(rootView: AnnotationEditorView(model: model, canvasSize: canvas,
+                                                                   onFinish: { [weak self] action in self?.finish(action) }))
+        window.contentView = hosting
+        // 截图比工具栏窄时，窗口按工具栏的宽度来，按钮上的字不会被挤掉
+        let fitting = hosting.fittingSize
+        if fitting.width > contentSize.width {
+            window.setContentSize(CGSize(width: ceil(fitting.width), height: contentSize.height))
+        }
         window.setFrameOrigin(CGPoint(x: visible.midX - window.frame.width / 2, y: visible.midY - window.frame.height / 2))
     }
 
@@ -68,7 +74,7 @@ final class AnnotationWindowController: NSObject, NSWindowDelegate {
             PinBoard.shared.onToast?(saved ? "已存到「下载」" : "存储失败", center)
         case .pin:
             if let image = NSImage(data: png) {
-                image.size = model.size
+                image.size = model.outputSize
                 PinBoard.shared.pin(image: image, around: CGPoint(x: window.frame.midX, y: window.frame.midY))
             }
         case .cancel:
@@ -91,15 +97,33 @@ struct AnnotationEditorView: View {
     /// 这一次拖动已经开始画了
     @State private var drawing = false
 
-    private var scale: CGFloat { canvasSize.width / max(model.size.width, 1) }
+    /// 加背景时截图四周留的宽度（点）
+    private var padding: CGFloat { model.background == nil ? 0 : model.backgroundPadding }
+
+    /// 截图显示时的缩放：没有背景时铺满画布，有背景时给四周的背景留出位置
+    private var scale: CGFloat {
+        min(canvasSize.width / max(model.size.width + padding * 2, 1),
+            canvasSize.height / max(model.size.height + padding * 2, 1))
+    }
 
     var body: some View {
         VStack(spacing: 0) {
             toolbar
             Divider()
-            canvas
-                .frame(width: canvasSize.width, height: canvasSize.height)
-                .frame(maxWidth: .infinity)
+            ZStack {
+                if let background = model.background {
+                    LinearGradient(colors: background.colors, startPoint: .topLeading, endPoint: .bottomTrailing)
+                        .frame(width: (model.size.width + padding * 2) * scale, height: (model.size.height + padding * 2) * scale)
+                }
+                canvas
+                    .frame(width: model.size.width * scale, height: model.size.height * scale)
+                    .clipShape(RoundedRectangle(cornerRadius: model.background == nil ? 0 : AnnotationModel.backgroundCornerRadius * scale,
+                                                style: .continuous))
+                    .shadow(color: .black.opacity(model.background == nil ? 0 : 0.35), radius: 12 * scale, y: 6 * scale)
+            }
+            .frame(width: canvasSize.width, height: canvasSize.height)
+            .frame(maxWidth: .infinity)
+            .animation(Motion.content, value: model.background)
         }
         .background(Color(nsColor: .windowBackgroundColor))
         .background(keyboardShortcuts)
@@ -137,6 +161,17 @@ struct AnnotationEditorView: View {
             .pickerStyle(.segmented)
             .labelsHidden()
             .fixedSize()
+            Menu {
+                Button("不加背景") { model.background = nil }
+                Divider()
+                ForEach(AnnotationBackground.allCases) { background in
+                    Button(background.title) { model.background = background }
+                }
+            } label: {
+                Text(model.background?.title ?? "背景")
+            }
+            .fixedSize()
+            .help("给截图加渐变背景、圆角和阴影")
             Spacer(minLength: 4)
             Button {
                 model.undo()
@@ -145,12 +180,16 @@ struct AnnotationEditorView: View {
             }
             .help("撤销（⌘Z）")
             .disabled(!model.canUndo && model.textAnchor == nil)
+            .fixedSize()
             Button("贴到屏幕") { onFinish(.pin) }
+                .fixedSize()
             Button("存储") { onFinish(.save) }
                 .help("存到「下载」（⌘S）")
+                .fixedSize()
             Button("复制") { onFinish(.copy) }
                 .buttonStyle(.borderedProminent)
                 .help("复制标注后的图片（⌘C 或回车）")
+                .fixedSize()
         }
         .controlSize(.small)
         .padding(.horizontal, 12)
@@ -182,7 +221,7 @@ struct AnnotationEditorView: View {
                     .textFieldStyle(.plain)
                     .font(.system(size: AnnotationModel.fontSize(for: model.lineWidth) * scale, weight: .semibold))
                     .foregroundStyle(model.color.color)
-                    .frame(width: max(canvasSize.width - anchor.x * scale - 8, 60), alignment: .leading)
+                    .frame(width: max((model.size.width - anchor.x) * scale - 8, 60), alignment: .leading)
                     .offset(x: anchor.x * scale, y: anchor.y * scale)
                     .focused($textFocused)
                     .onSubmit { model.commitText() }

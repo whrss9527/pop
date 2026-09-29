@@ -92,6 +92,7 @@ struct GeneralSettingsView: View {
                         Text(preset.title).tag(preset)
                     }
                 }
+                Toggle("拖着文件左右晃几下，打开暂存架", isOn: store.binding(\.trigger.shakeToOpenShelf))
             } header: {
                 Text("唤起方式")
             } footer: {

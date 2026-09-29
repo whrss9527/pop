@@ -116,6 +116,68 @@ struct TextStatsPlugin: PopPlugin {
     }
 }
 
+struct NumberStatsPlugin: PopPlugin {
+    let info = PluginInfo(id: BuiltinPluginID.numberStats, name: "数字统计", symbol: "sum",
+                          summary: "选中一列或一串数字，算出合计、平均、中位数、最大、最小", accepts: [.text],
+                          maxLength: 100_000, check: .numberList)
+
+    @MainActor func run(_ content: ClassifiedContent, context: PluginContext) async -> PluginOutcome {
+        guard let text = content.text, let summary = await runInBackground({ NumberStats.parse(text) }) else {
+            return .failure("需要至少两个数：一列（每行一个，前面可以有文字），或者一行用逗号、空格隔开")
+        }
+        return .card(ResultCard(title: "数字统计", detail: "共 \(summary.count) 个数", rows: summary.rows))
+    }
+}
+
+struct SpellCheckPlugin: PopPlugin {
+    let info = PluginInfo(id: BuiltinPluginID.spellCheck, name: "拼写检查", symbol: "text.badge.checkmark",
+                          summary: "找出外文里拼错的词，给出改法，可以直接换成改好的文字（系统自带的拼写检查，离线）",
+                          accepts: [.foreignText], maxLength: 20_000)
+
+    @MainActor func run(_ content: ClassifiedContent, context: PluginContext) async -> PluginOutcome {
+        guard let text = content.text else { return .failure("没有文字") }
+        let issues = SpellCheck.issues(in: text, language: SpellCheck.supportedLanguage(content.language))
+        guard !issues.isEmpty else { return .done(toast: "没有发现拼写错误") }
+        let rows = issues.map { issue in
+            ResultCard.Row(label: issue.word,
+                           value: issue.suggestions.isEmpty ? "（没有建议）" : issue.suggestions.joined(separator: " / "))
+        }
+        let corrected = SpellCheck.corrected(text, issues: issues)
+        let changed = corrected != text
+        return .card(ResultCard(title: "拼写检查", body: changed ? corrected : "",
+                                detail: changed ? "发现 \(issues.count) 处拼写问题；上面是按第一个建议改好的文字"
+                                    : "发现 \(issues.count) 处可能拼错的词，没有找到改法",
+                                copyText: changed ? corrected : nil, replaceText: changed ? corrected : nil, rows: rows))
+    }
+}
+
+struct TextDiffPlugin: PopPlugin {
+    let info = PluginInfo(id: BuiltinPluginID.textDiff, name: "文本对比", symbol: "arrow.left.arrow.right.square",
+                          summary: "把选中的文字和剪贴板里的文字对比，标出删去和新增的地方", accepts: [.text],
+                          maxLength: Self.maxLength)
+    static let maxLength = 300_000
+    /// 剪贴板里的文字（测试时换掉）
+    var clipboardText: @MainActor () -> String? = { NSPasteboard.general.string(forType: .string) }
+
+    @MainActor func run(_ content: ClassifiedContent, context: PluginContext) async -> PluginOutcome {
+        guard let text = content.text else { return .failure("没有文字") }
+        // 选中的文字去掉了首尾的空白，剪贴板里的也一样处理，免得只差一个换行
+        let copied = clipboardText()?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        guard !copied.isEmpty else {
+            return .failure("剪贴板里没有文字。先复制一段文字，再选中另一段，用「文本对比」看两段有什么不同。")
+        }
+        guard copied.count <= Self.maxLength else { return .failure("剪贴板里的文字太长了") }
+        let result = await runInBackground { TextDiff.compare(copied, text) }
+        if result.isIdentical {
+            return .done(toast: "两段文字完全相同")
+        }
+        return .card(ResultCard(title: "文本对比",
+                                detail: "剪贴板 → 选中的文字：删去 \(result.removedCount) 行，新增 \(result.addedCount) 行。"
+                                    + "红色是只在剪贴板里有的，绿色是只在选中的文字里有的。",
+                                copyText: result.unifiedText, diff: result))
+    }
+}
+
 struct HashPlugin: PopPlugin {
     let info = PluginInfo(id: BuiltinPluginID.hash, name: "哈希", symbol: "number.square",
                           summary: "计算文字或文件的 MD5、SHA-1、SHA-256、SHA-512", accepts: [.text, .files])
@@ -175,7 +237,24 @@ struct ColorConvertPlugin: PopPlugin {
         guard let text = content.text, let color = ColorValue.parse(text) else {
             return .failure("不是有效的颜色值")
         }
-        return .card(ResultCard(title: "颜色转换", rows: color.rows, rowsReplaceable: true, swatchHex: color.hexString))
+        return .card(ResultCard(title: "颜色转换", detail: ColorContrast.summary(for: color), rows: color.rows,
+                                rowsReplaceable: true, swatchHex: color.hexString))
+    }
+}
+
+struct ContrastPlugin: PopPlugin {
+    let info = PluginInfo(id: BuiltinPluginID.contrast, name: "对比度", symbol: "circle.lefthalf.filled",
+                          summary: "选中两个颜色（比如「#333333 #FFFFFF」），算出文字和背景的对比度，看是否达到 WCAG 的 AA、AAA",
+                          accepts: [.text], maxLength: 200, check: .colorPair)
+
+    @MainActor func run(_ content: ClassifiedContent, context: PluginContext) async -> PluginOutcome {
+        guard let text = content.text, let pair = ColorContrast.pair(in: text) else {
+            return .failure("需要两个颜色值，比如「#333333 #FFFFFF」")
+        }
+        return .card(ResultCard(title: "对比度",
+                                detail: "前一个当文字颜色，后一个当背景；大号文字指 18pt 以上，或 14pt 以上的粗体",
+                                rows: ColorContrast.rows(pair.foreground, pair.background),
+                                palette: [pair.foreground.hexString, pair.background.hexString]))
     }
 }
 

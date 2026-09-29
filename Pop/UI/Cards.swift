@@ -1,4 +1,5 @@
 import SwiftUI
+import UniformTypeIdentifiers
 import Translation
 
 /// 卡片的通用外框：标题栏 + 关闭按钮 + 内容。
@@ -73,19 +74,32 @@ struct ResultCardView: View {
     var onClose: () -> Void
 
     var body: some View {
-        CardContainer(title: card.title, onClose: onClose) {
+        // 文本对比的每一行比较长，卡片放宽一些
+        CardContainer(title: card.title, width: card.diff == nil ? 380 : 520, onClose: onClose) {
             if let hex = card.swatchHex, let color = ColorValue.parse(hex) {
                 ColorSwatch(color: color)
             }
+            if !card.palette.isEmpty {
+                PaletteStrip(hexes: card.palette) { onAction(.copy($0)) }
+            }
             if let data = card.image, let image = NSImage(data: data) {
+                // 按住拖动可以把图片拖到聊天、邮件、文稿里
                 Image(nsImage: image)
                     .resizable()
                     .scaledToFit()
-                    .frame(width: 200, height: 200)
-                    .frame(maxWidth: .infinity)
+                    .frame(maxWidth: .infinity, maxHeight: 220)
+                    .onDrag {
+                        NSItemProvider(item: data as NSData, typeIdentifier: UTType.png.identifier)
+                    }
             }
             if !card.body.isEmpty {
                 AdaptiveText(text: card.body, monospaced: card.monospaced)
+            }
+            if let diff = card.diff {
+                TextDiffView(result: diff)
+            }
+            if let markdown = card.markdown, let rich = MarkdownRichText.renderForDisplay(markdown) {
+                RichTextPreview(text: rich, width: 348)
             }
             if !card.rows.isEmpty {
                 ResultRowsView(rows: card.rows, replaceable: card.rowsReplaceable, lineLimit: card.rowLineLimit,
@@ -162,14 +176,94 @@ struct ResultRowsView: View {
     }
 }
 
+/// 排好版的富文本（只读，可以选中复制），太长时在固定高度里滚动
+struct RichTextPreview: View {
+    let text: NSAttributedString
+    let width: CGFloat
+
+    private var height: CGFloat {
+        let bounds = text.boundingRect(with: CGSize(width: width - 10, height: .greatestFiniteMagnitude),
+                                       options: [.usesLineFragmentOrigin, .usesFontLeading])
+        return min(max(ceil(bounds.height) + 12, 40), 320)
+    }
+
+    var body: some View {
+        RichTextView(text: text)
+            .frame(width: width, height: height)
+    }
+}
+
+private struct RichTextView: NSViewRepresentable {
+    let text: NSAttributedString
+
+    func makeNSView(context: Context) -> NSScrollView {
+        let scroll = NSTextView.scrollableTextView()
+        scroll.drawsBackground = false
+        scroll.autohidesScrollers = true
+        if let textView = scroll.documentView as? NSTextView {
+            textView.isEditable = false
+            textView.isSelectable = true
+            textView.drawsBackground = false
+            textView.textContainerInset = NSSize(width: 0, height: 4)
+            textView.textStorage?.setAttributedString(text)
+        }
+        return scroll
+    }
+
+    func updateNSView(_ scroll: NSScrollView, context: Context) {
+        guard let textView = scroll.documentView as? NSTextView, textView.attributedString() != text else { return }
+        textView.textStorage?.setAttributedString(text)
+    }
+}
+
+/// 一排色块，下面写着色值，点一下复制
+struct PaletteStrip: View {
+    let hexes: [String]
+    let onCopy: (String) -> Void
+
+    var body: some View {
+        HStack(spacing: 6) {
+            ForEach(Array(hexes.enumerated()), id: \.offset) { _, hex in
+                if let color = ColorValue.parse(hex) {
+                    Button {
+                        onCopy(hex)
+                    } label: {
+                        VStack(spacing: 4) {
+                            RoundedRectangle(cornerRadius: 8, style: .continuous)
+                                .fill(color.swiftUIColor)
+                                .overlay(RoundedRectangle(cornerRadius: 8, style: .continuous)
+                                    .strokeBorder(Color.primary.opacity(0.15), lineWidth: 1))
+                                .frame(height: 44)
+                            Text(hex)
+                                .font(.system(size: 10, design: .monospaced))
+                                .foregroundStyle(.secondary)
+                                .lineLimit(1)
+                                .minimumScaleFactor(0.8)
+                        }
+                        .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
+                    .help("复制 \(hex)")
+                }
+            }
+        }
+    }
+}
+
 struct ColorSwatch: View {
     let color: ColorValue
 
     var body: some View {
         RoundedRectangle(cornerRadius: 8, style: .continuous)
-            .fill(Color(.sRGB, red: color.red / 255, green: color.green / 255, blue: color.blue / 255, opacity: color.alpha))
+            .fill(color.swiftUIColor)
             .overlay(RoundedRectangle(cornerRadius: 8, style: .continuous).strokeBorder(Color.primary.opacity(0.15), lineWidth: 1))
             .frame(height: 40)
+    }
+}
+
+extension ColorValue {
+    var swiftUIColor: Color {
+        Color(.sRGB, red: red / 255, green: green / 255, blue: blue / 255, opacity: alpha)
     }
 }
 

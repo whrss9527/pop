@@ -120,3 +120,107 @@ struct TableConvertPlugin: PopPlugin {
                                 rows: rows, rowsReplaceable: true, rowLineLimit: 3))
     }
 }
+
+// MARK: - PDF
+
+struct PDFPlugin: PopPlugin {
+    let info = PluginInfo(id: BuiltinPluginID.pdf, name: "PDF", symbol: "doc.richtext",
+                          summary: "把选中的图片和 PDF 按文件名顺序合成一个 PDF；只选了一个 PDF 时可以把每页存成图片或者复制里面的文字",
+                          accepts: [.files], pattern: #"(?im)\.(pdf|png|jpe?g|heic|heif|tiff?|gif|bmp|webp)$"#)
+    /// 完成后在访达里选中结果（测试时换掉）
+    var reveal: @MainActor ([URL]) -> Void = { NSWorkspace.shared.activateFileViewerSelecting($0) }
+
+    @MainActor func run(_ content: ClassifiedContent, context: PluginContext) async -> PluginOutcome {
+        let files = PDFTools.sorted(content.files.filter { PDFTools.isPDF($0) || PDFTools.isImage($0) })
+        guard let first = files.first else { return .failure("选中的文件里没有 PDF 或图片") }
+        if files.count == 1, PDFTools.isPDF(first) {
+            return await summary(of: first)
+        }
+        // 合成的 PDF 放在第一个文件旁边
+        let base = first.deletingPathExtension().lastPathComponent
+        let destination = FileNames.available(in: first.deletingLastPathComponent(),
+                                              base: files.count == 1 ? base : "\(base) 等 \(files.count) 个文件",
+                                              extension: "pdf")
+        let result = await runInBackground { () -> Result<Int, PDFTools.Failure> in
+            do {
+                return .success(try PDFTools.combine(files, into: destination))
+            } catch let failure as PDFTools.Failure {
+                return .failure(failure)
+            } catch {
+                return .failure(PDFTools.Failure(message: error.localizedDescription))
+            }
+        }
+        switch result {
+        case .success(let pages):
+            reveal([destination])
+            return .done(toast: "已合成 \(pages) 页的 PDF")
+        case .failure(let failure):
+            try? FileManager.default.removeItem(at: destination)
+            return .failure(failure.message)
+        }
+    }
+
+    /// 一个 PDF：列出页数，可以把每页存成图片、复制全部文字
+    @MainActor private func summary(of pdf: URL) async -> PluginOutcome {
+        let result = await runInBackground { () -> Result<(pages: Int, text: String), PDFTools.Failure> in
+            do {
+                let document = try PDFTools.open(pdf)
+                return .success((document.pageCount, document.string?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""))
+            } catch let failure as PDFTools.Failure {
+                return .failure(failure)
+            } catch {
+                return .failure(PDFTools.Failure(message: error.localizedDescription))
+            }
+        }
+        switch result {
+        case .failure(let failure):
+            return .failure(failure.message)
+        case .success(let summary):
+            var buttons = [CardButton(title: "每页存成图片", action: .exportPDFPages(pdf))]
+            let detail: String
+            if summary.text.isEmpty {
+                detail = "\(summary.pages) 页，没有文字层（扫描件可以先存成图片，再用「识别文字」）"
+            } else {
+                detail = "\(summary.pages) 页，\(summary.text.count) 个字"
+                buttons.append(CardButton(title: "复制全部文字", action: .copy(summary.text)))
+            }
+            return .card(ResultCard(title: "PDF", body: pdf.lastPathComponent, detail: detail, buttons: buttons))
+        }
+    }
+}
+
+// MARK: - 暂存架
+
+struct ShelfPlugin: PopPlugin {
+    let info = PluginInfo(id: BuiltinPluginID.shelf, name: "暂存架", symbol: "tray.full",
+                          summary: "把选中的文件放到暂存架上，之后再一起拖到别的地方；没选中文件时打开暂存架",
+                          accepts: [], optionalContent: true)
+
+    @MainActor func run(_ content: ClassifiedContent, context: PluginContext) async -> PluginOutcome {
+        let shelf = FileShelf.shared
+        shelf.add(content.files)
+        shelf.show(near: context.anchor ?? NSEvent.mouseLocation)
+        return .done(toast: nil)
+    }
+}
+
+// MARK: - 文件信息
+
+struct FileInfoPlugin: PopPlugin {
+    let info = PluginInfo(id: BuiltinPluginID.fileInfo, name: "文件信息", symbol: "info.circle",
+                          summary: "文件的类型、大小（文件夹算上里面所有文件）、创建和修改时间，图片尺寸、PDF 页数、音视频时长",
+                          accepts: [.files])
+
+    @MainActor func run(_ content: ClassifiedContent, context: PluginContext) async -> PluginOutcome {
+        let files = content.files
+        guard let first = files.first else { return .failure("没有选中文件") }
+        if files.count == 1 {
+            // 不在主线程上算：文件夹可能很大
+            let rows = await FileInfo.rows(for: first)
+            guard !rows.isEmpty else { return .failure("读不到「\(first.lastPathComponent)」的信息") }
+            return .card(ResultCard(title: "文件信息", body: first.lastPathComponent, rows: rows))
+        }
+        let rows = await runInBackground { FileInfo.summary(for: files) }
+        return .card(ResultCard(title: "文件信息", body: "\(files.count) 项", rows: rows))
+    }
+}

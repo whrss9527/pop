@@ -306,6 +306,9 @@ final class PopCoordinator: MouseTriggerDelegate {
         let content = current.content ?? .empty
         guard plugin.info.canHandle(content) else { return }
         stopPointerTracking()
+        if pluginID != BuiltinPluginID.allPlugins {
+            PluginUsage.shared.record(pluginID)
+        }
         if plugin.info.hidesOverlay {
             // 截图、取色要看清屏幕：立刻收起浮窗（不播放收起动画），结果出来后再显示在原来的位置
             overlay.hide(animated: false)
@@ -364,6 +367,8 @@ final class PopCoordinator: MouseTriggerDelegate {
             presentWindowLayouts()
         case .showSnippets:
             presentSnippets()
+        case .chooseApp(let request):
+            presentOpenWith(request)
         case .failure(let message):
             overlay.showCard(ResultCardView(card: ResultCard(title: "没能完成", body: message),
                                             onAction: { [weak self] action in self?.perform(action) },
@@ -408,6 +413,73 @@ final class PopCoordinator: MouseTriggerDelegate {
             present(.translate(text: text, language: ContentClassifier.dominantLanguage(text)))
         case .convertImages(let files, let operation):
             convertImages(files, operation)
+        case .exportPDFPages(let pdf):
+            exportPDFPages(pdf)
+        case .keepAwake(let minutes):
+            let started = KeepAwake.shared.start(minutes: minutes)
+            finish(toast: started ? (minutes.map { "保持唤醒 \(KeepAwake.title(minutes: $0))" } ?? "一直保持唤醒") : "没能保持唤醒")
+        case .stopKeepAwake:
+            KeepAwake.shared.stop()
+            finish(toast: "已停止保持唤醒")
+        case .copyRichText(let markdown):
+            guard let rich = MarkdownRichText.render(markdown) else {
+                present(.failure("没能转换这段 Markdown"))
+                return
+            }
+            MarkdownRichText.copy(rich)
+            finish(toast: "已复制为富文本")
+        case .expandLink(let url):
+            expandLink(url)
+        case .startTimer(let seconds):
+            CountdownTimer.shared.start(seconds: seconds)
+            finish(toast: "开始计时 \(CountdownTimer.title(seconds: seconds))")
+        case .cancelTimer:
+            CountdownTimer.shared.cancel()
+            finish(toast: "已取消计时")
+        }
+    }
+
+    /// 跟着短链接跳转，卡片换成展开后的结果
+    private func expandLink(_ url: URL) {
+        guard let current = session else { return }
+        let sessionID = current.id
+        Task { [weak self] in
+            let outcome: PluginOutcome
+            do {
+                let expansion = try await LinkExpander.expand(url)
+                outcome = .card(LinkExpander.card(for: expansion))
+            } catch {
+                outcome = .failure("展开失败：\(LinkExpander.describe(error))")
+            }
+            guard let self, self.session?.id == sessionID else { return }
+            self.present(outcome)
+        }
+    }
+
+    /// 在后台把 PDF 的每一页存成图片，完成后在访达里选中放图片的文件夹
+    private func exportPDFPages(_ pdf: URL) {
+        let anchor = session?.anchor ?? NSEvent.mouseLocation
+        endSession()
+        let folder = FileNames.available(in: pdf.deletingLastPathComponent(),
+                                         base: pdf.deletingPathExtension().lastPathComponent + " 的页面")
+        Task { [weak self] in
+            let result = await runInBackground { () -> Result<[URL], PDFTools.Failure> in
+                do {
+                    return .success(try PDFTools.exportPages(of: pdf, to: folder))
+                } catch let failure as PDFTools.Failure {
+                    return .failure(failure)
+                } catch {
+                    return .failure(PDFTools.Failure(message: error.localizedDescription))
+                }
+            }
+            guard let self else { return }
+            switch result {
+            case .success(let pages):
+                NSWorkspace.shared.activateFileViewerSelecting([folder])
+                self.showToast("已存成 \(pages.count) 张图片", at: anchor)
+            case .failure(let failure):
+                self.showToast(failure.message, at: anchor)
+            }
         }
     }
 
@@ -462,6 +534,26 @@ final class PopCoordinator: MouseTriggerDelegate {
         overlay.showCard(SnippetPickerView(model: model, onClose: { [weak self] in self?.endSession() }),
                          anchor: current.anchor,
                          keyHandler: { event in model.handleKey(event) })
+    }
+
+    /// 打开方式：选一个 App 打开文件或链接
+    private func presentOpenWith(_ request: OpenWithRequest) {
+        guard let current = session else { return }
+        stopPointerTracking()
+        let choose: (URL) -> Void = { [weak self] app in
+            self?.endSession()
+            NSWorkspace.shared.open(request.targets, withApplicationAt: app, configuration: NSWorkspace.OpenConfiguration(),
+                                    completionHandler: nil)
+        }
+        overlay.showCard(OpenWithCardView(request: request, onChoose: choose, onClose: { [weak self] in self?.endSession() }),
+                         anchor: current.anchor,
+                         keyHandler: { event in
+                             guard let index = OpenWithCardView.index(for: event), request.apps.indices.contains(index) else {
+                                 return false
+                             }
+                             choose(request.apps[index])
+                             return true
+                         })
     }
 
     /// 窗口布局：选一个位置，把唤起时前台 App 的窗口放过去
@@ -522,7 +614,10 @@ final class PopCoordinator: MouseTriggerDelegate {
         let plugins = registry.catalog.filter { info in
             info.id != BuiltinPluginID.allPlugins && settings.isInstalled(info.id) && info.canHandle(content)
         }
-        let model = PluginChooserModel(plugins: plugins)
+        // 最近用过的排在前面，⌘1–5 就能直接选到
+        let ordered = PluginUsage.ordered(plugins, recent: PluginUsage.shared.recent())
+        let model = PluginChooserModel(plugins: ordered.plugins,
+                                       recent: Set(ordered.plugins.prefix(ordered.recentCount).map(\.id)))
         model.onRun = { [weak self] info in
             self?.run(info.id)
         }
@@ -552,6 +647,12 @@ final class PopCoordinator: MouseTriggerDelegate {
         model.onRecognize = { [weak self] item in
             self?.recognizeFromHistory(item)
         }
+        model.onAnnotate = { [weak self] item in
+            self?.annotateFromHistory(item)
+        }
+        model.onSaveSnippet = { [weak self] item in
+            self?.saveSnippet(from: item)
+        }
         session?.panel = .clipboard
         overlay.showCard(ClipboardHistoryView(model: model, onClose: { [weak self] in self?.endSession() }),
                          anchor: current.anchor,
@@ -572,6 +673,29 @@ final class PopCoordinator: MouseTriggerDelegate {
         case .files:
             break
         }
+    }
+
+    /// 在标注窗口里打开剪贴板历史里的一张图片
+    private func annotateFromHistory(_ item: ClipboardItem) {
+        let anchor = session?.anchor ?? NSEvent.mouseLocation
+        guard let url = clipboard.store.imageURL(for: item), let data = try? Data(contentsOf: url),
+              let image = TextRecognizer.cgImage(from: data) else {
+            present(.failure("无法读取这张图片"))
+            return
+        }
+        endSession()
+        AnnotationWindowController.present(ScreenCapture.Capture(image: image, png: data), near: anchor)
+    }
+
+    /// 把剪贴板历史里的一段文字存成常用短语（已经有同样的就不重复存）
+    private func saveSnippet(from item: ClipboardItem) {
+        let text = item.text
+        guard !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return }
+        settingsStore.update { settings in
+            guard !settings.snippets.contains(where: { $0.text == text }) else { return }
+            settings.snippets.append(Snippet(title: "", text: text))
+        }
+        finish(toast: "已存为常用短语")
     }
 
     /// 识别剪贴板历史里某张图片上的文字

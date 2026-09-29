@@ -57,6 +57,28 @@ enum BuiltinPluginID {
     static let snippets = "snippets"
     static let annotate = "annotate"
 
+    static let textDiff = "textDiff"
+    static let pdf = "pdf"
+    static let scanCode = "scanCode"
+    static let keepAwake = "keepAwake"
+    static let palette = "palette"
+
+    static let openWith = "openWith"
+    static let shelf = "shelf"
+
+    static let numberStats = "numberStats"
+    static let spellCheck = "spellCheck"
+
+    static let ruler = "ruler"
+
+    static let cron = "cron"
+    static let contrast = "contrast"
+    static let markdownPreview = "markdownPreview"
+
+    static let timer = "timer"
+    static let fileInfo = "fileInfo"
+    static let codeImage = "codeImage"
+
     /// 0.1 版就有的功能。旧版本的设置里没有记录「见过哪些内置功能」，按这个列表补齐。
     static let legacy = [translate, search, openURL, calculate, copyPlain, formatJSON, timestamp, copyPath, revealInFinder, settings]
 
@@ -69,6 +91,12 @@ enum BuiltinPluginID {
         linkInspect, jwtDecode, markdownCopy,
         tableConvert, zip, unzip,
         snippets, annotate,
+        textDiff, pdf, scanCode, keepAwake, palette,
+        openWith, shelf,
+        numberStats, spellCheck,
+        ruler,
+        cron, contrast, markdownPreview,
+        timer, fileInfo, codeImage,
     ]
 
     /// 默认不装的内置功能（需要的话在「设置 → 功能」里打开）
@@ -152,6 +180,8 @@ struct TriggerSettings: Codable, Equatable {
     var excludedBundleIDs: [String] = []
     /// 长按右键唤起的圆盘，在圆心松开后保持打开、改用点击选择；默认松开右键就关闭圆盘
     var keepsRingOpen: Bool = false
+    /// 拖着文件左右晃几下，打开暂存架
+    var shakeToOpenShelf: Bool = true
 
     static let holdDurationRange: ClosedRange<Double> = 0.15...0.8
 
@@ -166,6 +196,7 @@ struct TriggerSettings: Codable, Equatable {
         hotKey = c.lenient(.hotKey, default: d.hotKey)
         excludedBundleIDs = c.lenient(.excludedBundleIDs, default: d.excludedBundleIDs)
         keepsRingOpen = c.lenient(.keepsRingOpen, default: d.keepsRingOpen)
+        shakeToOpenShelf = c.lenient(.shakeToOpenShelf, default: d.shakeToOpenShelf)
     }
 
     /// 这次唤起松开鼠标键时是否关闭圆盘：只有长按右键、并且没打开「保持圆盘打开」时。

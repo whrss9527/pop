@@ -16,10 +16,13 @@ final class PluginChooserModel: ObservableObject {
     @Published private(set) var results: [PluginInfo]
     @Published var selection = 0
     var onRun: (PluginInfo) -> Void = { _ in }
+    /// 最近用过的功能（排在列表前面，行上带一个小钟）
+    let recent: Set<String>
 
-    init(plugins: [PluginInfo]) {
+    init(plugins: [PluginInfo], recent: Set<String> = []) {
         entries = plugins.map { Entry(info: $0, keys: SearchText.keys(for: $0.name) + [$0.summary.lowercased()]) }
         results = plugins
+        self.recent = recent
     }
 
     private func refilter() {
@@ -75,7 +78,7 @@ struct PluginChooserView: View {
                 ScrollView {
                     LazyVStack(spacing: 2) {
                         ForEach(Array(model.results.enumerated()), id: \.element.id) { index, info in
-                            PluginChooserRow(info: info, index: index)
+                            PluginChooserRow(info: info, index: index, isRecent: model.recent.contains(info.id))
                                 .selectionHighlight(index == model.selection, in: selectionSpace)
                                 .id(info.id)
                                 .onTapGesture {
@@ -107,6 +110,7 @@ struct PluginChooserView: View {
 struct PluginChooserRow: View {
     let info: PluginInfo
     let index: Int
+    var isRecent = false
 
     var body: some View {
         HStack(spacing: 10) {
@@ -121,6 +125,12 @@ struct PluginChooserRow: View {
                     .lineLimit(1)
             }
             Spacer(minLength: 4)
+            if isRecent {
+                Image(systemName: "clock")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .help("最近用过")
+            }
             if info.source == .user {
                 Text("插件")
                     .font(.caption2)

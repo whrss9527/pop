@@ -415,16 +415,46 @@ enum QRCode {
         return NSBitmapImageRep(cgImage: cgImage).representation(using: .png, properties: [:])
     }
 
+    /// 识别图片里的二维码和条形码（Vision 认不出来时再用 Core Image 找一遍二维码），同样的内容只留一个
     static func decode(_ image: CGImage) -> [String] {
-        let detector = CIDetector(ofType: CIDetectorTypeQRCode, context: nil, options: [CIDetectorAccuracy: CIDetectorAccuracyHigh])
-        let features = detector?.features(in: CIImage(cgImage: image)) ?? []
-        return features.compactMap { ($0 as? CIQRCodeFeature)?.messageString }
+        let request = VNDetectBarcodesRequest()
+        let handler = VNImageRequestHandler(cgImage: image, options: [:])
+        var messages: [String] = []
+        if (try? handler.perform([request])) != nil {
+            messages = (request.results ?? []).compactMap(\.payloadStringValue)
+        }
+        if messages.isEmpty {
+            let detector = CIDetector(ofType: CIDetectorTypeQRCode, context: nil, options: [CIDetectorAccuracy: CIDetectorAccuracyHigh])
+            let features = detector?.features(in: CIImage(cgImage: image)) ?? []
+            messages = features.compactMap { ($0 as? CIQRCodeFeature)?.messageString }
+        }
+        var seen = Set<String>()
+        return messages.filter { !$0.isEmpty && seen.insert($0).inserted }
+    }
+
+    /// 识别结果的卡片：Wi-Fi 二维码列出网络名和密码，链接可以直接打开
+    static func card(for messages: [String]) -> ResultCard {
+        let text = messages.joined(separator: "\n")
+        if messages.count == 1, let network = WiFiCode.parse(text) {
+            var rows = [ResultCard.Row(label: "网络名称", value: network.ssid)]
+            if let password = network.password {
+                rows.append(ResultCard.Row(label: "密码", value: password))
+            }
+            rows.append(ResultCard.Row(label: "加密方式", value: network.security ?? "无（开放网络）"))
+            return ResultCard(title: "Wi-Fi 二维码", detail: network.hidden ? "这是一个隐藏的网络" : nil, rows: rows)
+        }
+        var buttons: [CardButton] = []
+        if messages.count == 1, let url = URL(string: text), let scheme = url.scheme?.lowercased(), ["http", "https"].contains(scheme) {
+            buttons.append(CardButton(title: "打开链接", action: .open(url)))
+        }
+        return ResultCard(title: "扫码结果", body: text, detail: messages.count > 1 ? "找到 \(messages.count) 个码" : nil,
+                          copyText: text, buttons: buttons)
     }
 }
 
 struct QRCodePlugin: PopPlugin {
     let info = PluginInfo(id: BuiltinPluginID.qrCode, name: "二维码", symbol: "qrcode",
-                          summary: "把文字或链接生成二维码；选中图片时识别里面的二维码", accepts: [.text, .image, .imageFile])
+                          summary: "把文字或链接生成二维码；选中图片时识别里面的二维码和条形码", accepts: [.text, .image, .imageFile])
 
     @MainActor func run(_ content: ClassifiedContent, context: PluginContext) async -> PluginOutcome {
         if content.kinds.contains(.image) || content.kinds.contains(.imageFile) {
@@ -447,13 +477,55 @@ struct QRCodePlugin: PopPlugin {
         }
         guard let image else { return .failure("无法读取图片") }
         let messages = QRCode.decode(image)
-        guard !messages.isEmpty else { return .failure("图片里没有找到二维码") }
-        let text = messages.joined(separator: "\n")
-        var buttons: [CardButton] = []
-        if messages.count == 1, let url = URL(string: text), let scheme = url.scheme?.lowercased(), ["http", "https"].contains(scheme) {
-            buttons.append(CardButton(title: "打开链接", action: .open(url)))
+        guard !messages.isEmpty else { return .failure("图片里没有找到二维码或条形码") }
+        return .card(QRCode.card(for: messages))
+    }
+}
+
+struct ScanCodePlugin: PopPlugin {
+    let info = PluginInfo(id: BuiltinPluginID.scanCode, name: "扫码", symbol: "qrcode.viewfinder",
+                          summary: "框选屏幕上的二维码或条形码，识别里面的内容；链接可以直接打开，Wi-Fi 二维码列出密码",
+                          accepts: [], hidesOverlay: true)
+
+    @MainActor func run(_ content: ClassifiedContent, context: PluginContext) async -> PluginOutcome {
+        switch await ScreenCapture.selectRegion() {
+        case .cancelled:
+            return .done(toast: nil)
+        case .failed(let message):
+            return .failure(message)
+        case .captured(let capture):
+            let image = capture.image
+            let messages = await runInBackground { QRCode.decode(image) }
+            guard !messages.isEmpty else {
+                return .failure("没有识别到二维码或条形码。框选时把整个码都框进去；如果框到的只有桌面背景，"
+                                + "请在「系统设置 → 隐私与安全性 → 录屏与系统录音」里允许 Pop。")
+            }
+            return .card(QRCode.card(for: messages))
         }
-        return .card(ResultCard(title: "二维码内容", body: text, copyText: text, buttons: buttons))
+    }
+}
+
+// MARK: - 图片配色
+
+struct PalettePlugin: PopPlugin {
+    let info = PluginInfo(id: BuiltinPluginID.palette, name: "图片配色", symbol: "paintpalette",
+                          summary: "找出图片里的主要颜色，按面积从大到小列出色值，点一下复制", accepts: [.image, .imageFile])
+
+    @MainActor func run(_ content: ClassifiedContent, context: PluginContext) async -> PluginOutcome {
+        let image: CGImage?
+        if case .image(let data) = content.selection {
+            image = TextRecognizer.cgImage(from: data)
+        } else {
+            image = content.files.first.flatMap(TextRecognizer.cgImage(contentsOf:))
+        }
+        guard let image else { return .failure("无法读取图片") }
+        let swatches = await runInBackground { ColorPalette.extract(from: image) }
+        guard !swatches.isEmpty else { return .failure("图片是全透明的，取不出颜色") }
+        let rows = swatches.map { swatch in
+            ResultCard.Row(label: "占 \(max(Int((swatch.share * 100).rounded()), 1))%", value: swatch.hex)
+        }
+        return .card(ResultCard(title: "图片配色", detail: "按面积从大到小；点色块复制色值", rows: rows,
+                                palette: swatches.map(\.hex)))
     }
 }
 

@@ -24,6 +24,8 @@ struct PluginInfo: Identifiable, Hashable {
     var hidesOverlay = false
     /// 不需要选中内容，但选中了会用上（比如贴图：选中了图片就贴图片，没选中就先截图）
     var optionalContent = false
+    /// 正则写不出来的内容检查
+    var check: ContentCheck? = nil
 
     func canHandle(_ content: ClassifiedContent) -> Bool {
         guard accepts.isEmpty || !accepts.isDisjoint(with: content.kinds) else { return false }
@@ -32,7 +34,7 @@ struct PluginInfo: Identifiable, Hashable {
 
     private func matchesConstraints(_ content: ClassifiedContent) -> Bool {
         let pattern = self.pattern ?? ""
-        guard minLength != nil || maxLength != nil || !pattern.isEmpty else { return true }
+        guard minLength != nil || maxLength != nil || !pattern.isEmpty || check != nil else { return true }
         let subject = content.text ?? content.files.map { $0.path(percentEncoded: false) }.joined(separator: "\n")
         guard !subject.isEmpty else { return false }
         if let minLength, subject.count < minLength { return false }
@@ -40,9 +42,31 @@ struct PluginInfo: Identifiable, Hashable {
         if !pattern.isEmpty {
             guard let regex = try? NSRegularExpression(pattern: pattern) else { return false }
             let range = NSRange(subject.startIndex..., in: subject)
-            return regex.firstMatch(in: subject, options: [], range: range) != nil
+            guard regex.firstMatch(in: subject, options: [], range: range) != nil else { return false }
         }
+        if let check, !check.matches(subject) { return false }
         return true
+    }
+}
+
+/// 正则写不出来的内容检查，决定圆盘里要不要显示这个功能
+enum ContentCheck: Hashable {
+    /// 至少两个数：一列（每行一个）或者一行用逗号、空格隔开
+    case numberList
+    /// 5 段式的 cron 表达式
+    case cron
+    /// 两个颜色（文字和背景）
+    case colorPair
+
+    func matches(_ subject: String) -> Bool {
+        switch self {
+        case .numberList:
+            return NumberStats.parse(subject) != nil
+        case .cron:
+            return CronExpression(subject) != nil
+        case .colorPair:
+            return ColorContrast.isColorPair(subject)
+        }
     }
 }
 
@@ -65,6 +89,18 @@ enum CardAction: Equatable {
     case translate(String)
     /// 转换图片文件，结果存在原图旁边
     case convertImages([URL], ImageConverter.Operation)
+    /// PDF 的每一页存成图片，放在旁边的文件夹里
+    case exportPDFPages(URL)
+    /// 保持唤醒一段时间（分钟）；nil 表示一直保持
+    case keepAwake(minutes: Int?)
+    case stopKeepAwake
+    /// 把这段 Markdown 转成富文本复制
+    case copyRichText(String)
+    /// 跟着短链接的跳转，看最后到哪个网址
+    case expandLink(URL)
+    /// 开始倒计时（秒）
+    case startTimer(seconds: TimeInterval)
+    case cancelTimer
 }
 
 struct CardButton: Equatable, Identifiable {
@@ -101,6 +137,12 @@ struct ResultCard: Equatable {
     var image: Data? = nil
     /// 颜色样本（#RRGGBB 或 #RRGGBBAA）
     var swatchHex: String? = nil
+    /// 一排颜色（#RRGGBB），点一下复制色值
+    var palette: [String] = []
+    /// 两段文字的差异（文本对比）
+    var diff: TextDiff.Result? = nil
+    /// 按排版显示的 Markdown
+    var markdown: String? = nil
     var buttons: [CardButton] = []
 }
 
@@ -123,6 +165,8 @@ enum PluginOutcome: Equatable {
     case showWindowLayouts
     /// 打开常用短语列表
     case showSnippets
+    /// 选一个 App 打开文件或链接
+    case chooseApp(OpenWithRequest)
     case failure(String)
 }
 

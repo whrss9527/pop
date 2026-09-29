@@ -80,7 +80,8 @@ final class RouterTests: XCTestCase {
             BuiltinPluginID.random, BuiltinPluginID.screenshotOCR, BuiltinPluginID.colorPicker,
             BuiltinPluginID.clipboardHistory, BuiltinPluginID.allPlugins, BuiltinPluginID.settings,
             BuiltinPluginID.screenshotTranslate, BuiltinPluginID.pin, BuiltinPluginID.windowLayout,
-            BuiltinPluginID.snippets, BuiltinPluginID.annotate,
+            BuiltinPluginID.snippets, BuiltinPluginID.annotate, BuiltinPluginID.scanCode, BuiltinPluginID.keepAwake,
+            BuiltinPluginID.shelf, BuiltinPluginID.ruler, BuiltinPluginID.timer,
         ])
     }
 

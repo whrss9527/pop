@@ -19,6 +19,8 @@ final class AppController {
     let coordinator: PopCoordinator
     let statusItem: StatusItemController
     let settingsWindow: SettingsWindowController
+    /// 拖着文件晃几下打开暂存架
+    let shakeDetector = DragShakeDetector()
 
     private var cancellables = Set<AnyCancellable>()
 
@@ -83,10 +85,29 @@ final class AppController {
             return StatusItemController.State(isPaused: self.coordinator.isPaused,
                                               isTrusted: self.permissions.isTrusted,
                                               pendingUpdateVersion: self.updater.release?.version,
-                                              pinCount: PinBoard.shared.count)
+                                              pinCount: PinBoard.shared.count,
+                                              keepAwakeStatus: KeepAwake.shared.statusText(),
+                                              shelfCount: FileShelf.shared.files.count,
+                                              timerStatus: CountdownTimer.shared.statusText())
         }
         statusItem.onCloseAllPins = {
             PinBoard.shared.closeAll()
+        }
+        statusItem.onStopKeepAwake = {
+            KeepAwake.shared.stop()
+        }
+        statusItem.onShowShelf = {
+            FileShelf.shared.show(near: NSEvent.mouseLocation)
+        }
+        statusItem.onCancelTimer = {
+            CountdownTimer.shared.cancel()
+        }
+        CountdownTimer.shared.onFinish = { [weak self] message in
+            self?.coordinator.showToast(message, at: NSEvent.mouseLocation)
+        }
+        shakeDetector.onShake = { [weak self] point in
+            guard let self, !self.coordinator.isPaused else { return }
+            FileShelf.shared.show(near: point)
         }
         statusItem.onOpenSettings = { [weak self] in
             self?.settingsWindow.show()
@@ -207,6 +228,11 @@ final class AppController {
             self?.coordinator.runFromHotKey(pluginID: pluginID)
         }
         clipboard.apply(settings.clipboard)
+        if settings.trigger.shakeToOpenShelf {
+            shakeDetector.start()
+        } else {
+            shakeDetector.stop()
+        }
     }
 
     private func permissionChanged(_ trusted: Bool) {
