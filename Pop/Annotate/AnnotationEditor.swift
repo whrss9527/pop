@@ -11,13 +11,16 @@ final class AnnotationWindowController: NSObject, NSWindowDelegate {
     private let model: AnnotationModel
 
     /// 在屏幕中间打开一张截图（太大时缩小显示，合成时仍是原图大小）
-    static func present(_ capture: ScreenCapture.Capture, near point: CGPoint) {
+    @discardableResult
+    static func present(_ capture: ScreenCapture.Capture, near point: CGPoint) -> AnnotationModel {
         let screen = NSScreen.screens.first { NSMouseInRect(point, $0.frame, false) } ?? NSScreen.main
         let scale = max(screen?.backingScaleFactor ?? 2, 1)
         let size = CGSize(width: CGFloat(capture.image.width) / scale, height: CGFloat(capture.image.height) / scale)
-        let controller = AnnotationWindowController(model: AnnotationModel(image: capture.image, pointSize: size), screen: screen)
+        let model = AnnotationModel(image: capture.image, pointSize: size)
+        let controller = AnnotationWindowController(model: model, screen: screen)
         open.append(controller)
         controller.show()
+        return model
     }
 
     private init(model: AnnotationModel, screen: NSScreen?) {
@@ -166,7 +169,7 @@ struct AnnotationEditorView: View {
                 Image(decorative: pixelated, scale: 1)
                     .resizable()
                     .interpolation(.none)
-                    .mask(mosaicMask)
+                    .mask { mosaicMask }
             }
             Canvas { context, _ in
                 context.scaleBy(x: scale, y: scale)

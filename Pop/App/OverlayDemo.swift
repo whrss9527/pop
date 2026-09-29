@@ -6,7 +6,7 @@ import AppKit
 /// 指向一格、滑到另一格、选中后弹出结果卡片、提示、「全部功能」列表、再展开一次圆盘并取消；
 /// 再按真实的手势流程走一遍：按住右键唤起、拖到上面一格、再拖到「剪贴板」、松开执行
 /// （直接调用鼠标拦截的回调，拖动位置和真实使用时一样由拦截送来，不看系统的指针位置）；
-/// 最后是单位换算的卡片、贴图、AI 卡片、窗口布局卡片、翻译卡片和设置窗口里新加的几页。
+/// 最后是单位换算的卡片、贴图、AI 卡片、窗口布局卡片、翻译卡片、常用短语、截图标注窗口和设置窗口里新加的几页。
 /// 配合 POP_ANIMATION_SCALE 放慢动画，截图脚本就能拍到动画的中间帧；POP_APPEARANCE=dark 时用深色外观。
 /// 每一步开始时往 POP_DEMO_LOG 指定的文件里写一行「步骤名 时间戳」；region 行是截图区域在屏幕上的位置
 /// （点，AppKit 坐标：x y 宽 高）和屏幕大小，脚本按拍照时最新的那一行裁图。
@@ -142,9 +142,32 @@ enum OverlayDemo {
                                                  onDownload: {}, onClose: {}),
                              anchor: center)
 
-            // 设置窗口里新加的几页：截图区域换成设置窗口
+            // 常用短语列表
+            await pause(1.4 * unit)
+            step("snippets")
+            let snippets = SnippetPickerModel(snippets: settings.snippets + [
+                Snippet(title: "回复模板", text: "感谢反馈！我们会在 {date} 前回复你。"),
+                Snippet(title: "会议链接", text: "https://meet.example.com/pop-weekly"),
+            ])
+            overlay.showCard(SnippetPickerView(model: snippets, onClose: {}), anchor: center)
+
+            // 截图标注窗口：拿一张画好的示例图，标上方框、箭头、文字、马赛克和序号；截图区域换成标注窗口
             await pause(1.4 * unit)
             overlay.hide()
+            if let capture = sampleScreenshot() {
+                let annotation = AnnotationWindowController.present(capture, near: center)
+                annotateSample(annotation)
+                await pause(0.3 * unit)
+                if let window = NSApp.windows.first(where: { $0.isVisible && $0.title == "截图标注" }) {
+                    logRegion(window.frame, screen: screen)
+                }
+            }
+            step("annotate")
+            await pause(1.4 * unit)
+            NSApp.windows.first { $0.isVisible && $0.title == "截图标注" }?.close()
+
+            // 设置窗口里新加的几页：截图区域换成设置窗口
+            await pause(0.6 * unit)
             for tab in [SettingsTab.ai, .hotKeys] {
                 coordinator.openSettings(tab)
                 await pause(0.6 * unit)
@@ -157,6 +180,63 @@ enum OverlayDemo {
 
             step("end")
         }
+    }
+
+    /// 标注演示用的「截图」：一张账户设置卡片，480×300 点、2 倍像素
+    private static func sampleScreenshot() -> ScreenCapture.Capture? {
+        let width = 960
+        let height = 600
+        guard let context = CGContext(data: nil, width: width, height: height, bitsPerComponent: 8, bytesPerRow: 0,
+                                      space: CGColorSpace(name: CGColorSpace.sRGB) ?? CGColorSpaceCreateDeviceRGB(),
+                                      bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue) else { return nil }
+        // 换成「点、左上角为原点」的坐标
+        context.translateBy(x: 0, y: CGFloat(height))
+        context.scaleBy(x: 2, y: -2)
+        NSGraphicsContext.saveGraphicsState()
+        NSGraphicsContext.current = NSGraphicsContext(cgContext: context, flipped: true)
+        context.setFillColor(NSColor(srgbRed: 0.93, green: 0.94, blue: 0.96, alpha: 1).cgColor)
+        context.fill(CGRect(x: 0, y: 0, width: 480, height: 300))
+        context.setFillColor(NSColor.white.cgColor)
+        context.addPath(CGPath(roundedRect: CGRect(x: 40, y: 36, width: 400, height: 228), cornerWidth: 14, cornerHeight: 14,
+                               transform: nil))
+        context.fillPath()
+        func text(_ string: String, at point: CGPoint, size: CGFloat, weight: NSFont.Weight = .regular, color: NSColor) {
+            NSAttributedString(string: string, attributes: [.font: NSFont.systemFont(ofSize: size, weight: weight),
+                                                            .foregroundColor: color]).draw(at: point)
+        }
+        text("账户设置", at: CGPoint(x: 64, y: 58), size: 20, weight: .semibold, color: .black)
+        text("邮箱：pop@example.com", at: CGPoint(x: 64, y: 102), size: 13, color: .darkGray)
+        text("手机：138 0000 0000", at: CGPoint(x: 64, y: 128), size: 13, color: .darkGray)
+        text("登录设备：3 台", at: CGPoint(x: 64, y: 154), size: 13, color: .darkGray)
+        context.setFillColor(NSColor(srgbRed: 0, green: 0.48, blue: 1, alpha: 1).cgColor)
+        context.addPath(CGPath(roundedRect: CGRect(x: 300, y: 204, width: 116, height: 36), cornerWidth: 8, cornerHeight: 8,
+                               transform: nil))
+        context.fillPath()
+        text("保存更改", at: CGPoint(x: 330, y: 213), size: 14, weight: .medium, color: .white)
+        NSGraphicsContext.restoreGraphicsState()
+        guard let image = context.makeImage(),
+              let png = NSBitmapImageRep(cgImage: image).representation(using: .png, properties: [:]) else { return nil }
+        return ScreenCapture.Capture(image: image, png: png)
+    }
+
+    /// 在示例图上标几笔：给手机号打码、序号、框出按钮、箭头指过去再写一句话
+    private static func annotateSample(_ model: AnnotationModel) {
+        func stroke(_ tool: AnnotationTool, from start: CGPoint, to end: CGPoint) {
+            model.tool = tool
+            model.begin(at: start)
+            model.drag(to: end)
+            model.end()
+        }
+        stroke(.mosaic, from: CGPoint(x: 100, y: 124), to: CGPoint(x: 200, y: 148))
+        model.tool = .counter
+        model.begin(at: CGPoint(x: 222, y: 136))
+        stroke(.rectangle, from: CGPoint(x: 293, y: 197), to: CGPoint(x: 423, y: 247))
+        stroke(.arrow, from: CGPoint(x: 176, y: 238), to: CGPoint(x: 286, y: 224))
+        model.tool = .text
+        model.begin(at: CGPoint(x: 72, y: 228))
+        model.textDraft = "改完点这里"
+        model.commitText()
+        model.tool = .arrow
     }
 
     /// 截图区域（点，AppKit 坐标）和屏幕大小，截图脚本按它裁图
