@@ -140,6 +140,11 @@ final class TextTransformsTests: XCTestCase {
         XCTAssertEqual(value(rows, "Unix 秒"), "1727510400")
         XCTAssertEqual(value(rows, "星期"), "星期六")
         XCTAssertEqual(value(rows, "距今")?.contains("3"), true)
+        // 常用城市的当地时间（9 月纽约是夏令时 UTC-4）
+        XCTAssertEqual(value(rows, "北京"), "2024-09-28 16:00")
+        XCTAssertEqual(value(rows, "纽约"), "2024-09-28 04:00")
+        let shanghai = try XCTUnwrap(TimeZone(identifier: "Asia/Shanghai"))
+        XCTAssertNil(value(DateParser.rows(for: date, timeZone: shanghai, now: date), "北京"))
     }
 
     func testRandom() {
