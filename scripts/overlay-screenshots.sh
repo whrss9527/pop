@@ -2,6 +2,7 @@
 # 给浮窗拍一组截图：用演示模式启动 Pop（POP_DEMO=1，动画放慢 POP_ANIMATION_SCALE 倍），
 # 按 Pop 写出的步骤时间在固定的时刻截屏，裁出浮窗那一块，存成 JPEG。
 # 圆盘展开、指向、滑动、选中、结果卡片、提示、列表、取消、贴图都会拍到，包括动画的中间帧。
+# 之后用深色外观再拍一组停下来之后的样子（文件名以 dark- 开头），POP_SKIP_DARK=1 时不拍。
 #
 # 用法：scripts/overlay-screenshots.sh <Pop.app> <输出目录> [动画放慢倍数，默认 6]
 set -euo pipefail
@@ -12,7 +13,6 @@ SCALE="${3:-6}"
 mkdir -p "$OUT"
 OUT="$(cd "$OUT" && pwd)"
 WORK="$(mktemp -d -t pop-screenshots)"
-LOG="$WORK/demo.log"
 
 pkill -x Pop 2>/dev/null || true
 for _ in $(seq 1 20); do
@@ -29,12 +29,21 @@ for key in reduceMotion reduceTransparency; do
   defaults write com.apple.universalaccess "$key" -bool false 2>/dev/null || echo "改不了 ${key}"
 done
 
-open -n --env POP_DEMO=1 --env "POP_ANIMATION_SCALE=${SCALE}" --env "POP_DEMO_LOG=${LOG}" "$APP"
-
-python3 - "$LOG" "$WORK" "$OUT" "$SCALE" <<'PY'
+# 跑一遍演示并截图。参数：外观（light / dark）、动画放慢倍数、截图文件名前缀
+run_demo() {
+  local appearance="$1" scale="$2" prefix="$3"
+  local log="$WORK/demo-${appearance}.log"
+  pkill -x Pop 2>/dev/null || true
+  for _ in $(seq 1 20); do
+    pgrep -x Pop > /dev/null || break
+    sleep 0.5
+  done
+  open -n --env POP_DEMO=1 --env "POP_ANIMATION_SCALE=${scale}" --env "POP_DEMO_LOG=${log}" \
+    --env "POP_APPEARANCE=${appearance}" "$APP"
+  python3 - "$log" "$WORK" "$OUT" "$scale" "$appearance" "$prefix" <<'PY'
 import os, subprocess, sys, time
 
-log_path, work, out, scale = sys.argv[1], sys.argv[2], sys.argv[3], float(sys.argv[4])
+log_path, work, out, scale, appearance, prefix = sys.argv[1], sys.argv[2], sys.argv[3], float(sys.argv[4]), sys.argv[5], sys.argv[6]
 
 # 每一步开始后第几秒截图（按放慢 6 倍设计，别的倍数按比例换算）
 plan = [
@@ -57,6 +66,11 @@ plan = [
     ("ai", [0.6, 3.0]),
     ("layout", [3.0]),
 ]
+if appearance == "dark":
+    # 深色外观只拍停下来之后的样子
+    plan = [("loaded", [2.6]), ("slide", [3.0]), ("commit", [5.0]), ("toast", [1.2]), ("chooser", [4.0]),
+            ("drag-clipboard", [2.4]), ("release", [3.5]), ("unit", [3.0]), ("pin", [3.0]), ("ai", [3.0]),
+            ("layout", [3.0])]
 factor = scale / 6.0
 
 def markers():
@@ -93,7 +107,7 @@ for name, offsets in plan:
             time.sleep(delay)
         index += 1
         taken = time.time() - start
-        path = os.path.join(work, f"{index:02d}-{name}-{taken:.2f}s.png")
+        path = os.path.join(work, f"{prefix}{index:02d}-{name}-{taken:.2f}s.png")
         subprocess.run(["screencapture", "-x", "-t", "png", path], check=False)
         shots.append(path)
 wait_for("end")
@@ -121,8 +135,15 @@ for path in shots:
     name = os.path.basename(path)[:-4] + ".jpg"
     subprocess.run(["sips", "-Z", "640", "-s", "format", "jpeg", "-s", "formatOptions", "72", cropped,
                     "--out", os.path.join(out, name)], capture_output=True, check=True)
-print(f"截图 {len(shots)} 张，存在 {out}")
+print(f"{appearance}：截图 {len(shots)} 张，存在 {out}")
 PY
+}
+
+run_demo light "$SCALE" ""
+# 深色外观再拍一组（动画放慢得少一些，只拍停下来之后的样子）；POP_SKIP_DARK=1 时跳过
+if [ "${POP_SKIP_DARK:-0}" != "1" ]; then
+  run_demo dark 2 "dark-"
+fi
 
 ls "$OUT"
 pkill -x Pop 2>/dev/null || true

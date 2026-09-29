@@ -16,6 +16,6 @@
 ## 看浮窗的效果
 
 - 浮窗的动画参数都在 `Pop/UI/Motion.swift`，玻璃效果在 `Pop/UI/Glass.swift`（macOS 26 上是 Liquid Glass，更早的系统用窗口后面的模糊）。
-- CI 用演示模式（`POP_DEMO=1`，`POP_ANIMATION_SCALE` 把动画放慢）把圆盘、结果卡片、提示、列表走一遍，按时截图，推到 `ci-screenshots/macos-15` 和 `ci-screenshots/macos-26` 两个分支（每次覆盖）。改了浮窗之后 `git fetch origin ci-screenshots/macos-26` 就能看到动画的中间帧。
+- CI 用演示模式（`POP_DEMO=1`，`POP_ANIMATION_SCALE` 把动画放慢）把圆盘、结果卡片、提示、列表、贴图走一遍，按时截图，再用深色外观（`POP_APPEARANCE=dark`）拍一组 `dark-` 开头的，推到 `ci-screenshots/macos-15` 和 `ci-screenshots/macos-26` 两个分支（每次覆盖）。改了浮窗之后 `git fetch origin ci-screenshots/macos-26` 就能看到动画的中间帧。
 - GitHub 的 macOS runner 默认打开了「减弱动态效果」和「降低透明度」（玻璃会变成不透明、动画只剩淡入淡出），截图脚本会先把这两项关掉；runner 的桌面是纯黑的，所以截图里的玻璃看起来是灰色的，真机上会透出后面的内容。
 - 本机也能跑：`scripts/overlay-screenshots.sh build/app/.../Pop.app 截图目录 6`。

@@ -7,7 +7,7 @@ import AppKit
 /// 再按真实的手势流程走一遍：按住右键唤起、拖到上面一格、再拖到「剪贴板」、松开执行
 /// （直接调用鼠标拦截的回调，拖动位置和真实使用时一样由拦截送来，不看系统的指针位置）；
 /// 最后是单位换算的卡片、贴图、AI 卡片和窗口布局卡片。
-/// 配合 POP_ANIMATION_SCALE 放慢动画，截图脚本就能拍到动画的中间帧。
+/// 配合 POP_ANIMATION_SCALE 放慢动画，截图脚本就能拍到动画的中间帧；POP_APPEARANCE=dark 时用深色外观。
 /// 每一步开始时往 POP_DEMO_LOG 指定的文件里写一行「步骤名 时间戳」；第一行是演示区域在屏幕上的位置
 /// （点，AppKit 坐标：x y 宽 高）和屏幕大小，脚本按它裁图。
 @MainActor
@@ -17,6 +17,10 @@ enum OverlayDemo {
     }
 
     static func run(overlay: OverlayController, coordinator: PopCoordinator, catalog: [PluginInfo], settings: AppSettings) {
+        // POP_APPEARANCE=dark：用深色外观再走一遍，看看深色下的效果
+        if ProcessInfo.processInfo.environment["POP_APPEARANCE"] == "dark" {
+            NSApp.appearance = NSAppearance(named: .darkAqua)
+        }
         guard let screen = NSScreen.main else { return }
         let visible = screen.visibleFrame
         // 唤起点放在屏幕中间偏左上，右下方留出卡片和列表的位置

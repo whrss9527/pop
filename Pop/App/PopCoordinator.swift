@@ -518,10 +518,56 @@ final class PopCoordinator: MouseTriggerDelegate {
             self?.endSession()
             self?.openSettings(.clipboard)
         }
+        model.onTranslate = { [weak self] text in
+            self?.present(.translate(text: text, language: ContentClassifier.dominantLanguage(text)))
+        }
+        model.onPin = { [weak self] item in
+            self?.pinFromHistory(item)
+        }
+        model.onRecognize = { [weak self] item in
+            self?.recognizeFromHistory(item)
+        }
         session?.panel = .clipboard
         overlay.showCard(ClipboardHistoryView(model: model, onClose: { [weak self] in self?.endSession() }),
                          anchor: current.anchor,
                          keyHandler: { event in model.handleKey(event) })
+    }
+
+    /// 剪贴板历史里的文字或图片贴到屏幕上
+    private func pinFromHistory(_ item: ClipboardItem) {
+        let anchor = session?.anchor ?? NSEvent.mouseLocation
+        endSession()
+        switch item.kind {
+        case .text:
+            PinBoard.shared.pin(text: item.text, around: anchor)
+        case .image:
+            if let url = clipboard.store.imageURL(for: item), let data = try? Data(contentsOf: url) {
+                PinBoard.shared.pin(imageData: data, around: anchor)
+            }
+        case .files:
+            break
+        }
+    }
+
+    /// 识别剪贴板历史里某张图片上的文字
+    private func recognizeFromHistory(_ item: ClipboardItem) {
+        guard let url = clipboard.store.imageURL(for: item), let image = TextRecognizer.cgImage(contentsOf: url) else {
+            present(.failure("无法读取这张图片"))
+            return
+        }
+        let sessionID = session?.id
+        Task { [weak self] in
+            let result = await TextRecognizer.recognize(image)
+            guard let self, self.session?.id == sessionID else { return }
+            switch result {
+            case .success(let text) where !text.isEmpty:
+                self.present(.card(TextRecognizer.card(title: "识别文字", text: text)))
+            case .success:
+                self.present(.failure("图片里没有识别到文字"))
+            case .failure(let error):
+                self.present(.failure(error.message))
+            }
+        }
     }
 
     private func pasteFromHistory(_ item: ClipboardItem) {

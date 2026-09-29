@@ -14,6 +14,10 @@ final class ClipboardHistoryModel: ObservableObject {
     let service: ClipboardService
     var onPaste: (ClipboardItem) -> Void = { _ in }
     var onOpenSettings: () -> Void = {}
+    /// 右键菜单里的「翻译」「贴到屏幕」「识别文字」，由协调器处理
+    var onTranslate: (String) -> Void = { _ in }
+    var onPin: (ClipboardItem) -> Void = { _ in }
+    var onRecognize: (ClipboardItem) -> Void = { _ in }
 
     private var cancellable: AnyCancellable?
 
@@ -147,8 +151,18 @@ struct ClipboardHistoryView: View {
                             .contextMenu {
                                 Button("粘贴") { model.paste(item) }
                                 Button("只复制") { model.service.copy(item) }
-                                Button(item.pinned ? "取消固定" : "固定") { model.togglePin(item) }
                                 Divider()
+                                if item.kind == .text {
+                                    Button("翻译") { model.onTranslate(item.text) }
+                                }
+                                if item.kind == .image {
+                                    Button("识别文字") { model.onRecognize(item) }
+                                }
+                                if item.kind != .files {
+                                    Button("贴到屏幕") { model.onPin(item) }
+                                }
+                                Divider()
+                                Button(item.pinned ? "取消固定" : "固定") { model.togglePin(item) }
                                 Button("删除") { model.delete(item) }
                             }
                     }
