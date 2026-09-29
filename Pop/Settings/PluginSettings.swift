@@ -246,7 +246,7 @@ struct PluginEditorView: View {
     /// 编辑器里可以勾选的内容类型
     private static let selectableKinds: [ContentKind] = [
         .text, .foreignText, .chineseText, .word, .url, .email, .json, .number,
-        .color, .dateTime, .timestamp, .math, .files, .imageFile, .image,
+        .color, .dateTime, .timestamp, .math, .measurement, .files, .imageFile, .image,
     ]
 
     init(draft: PluginDraft, onSave: @escaping (PluginManifest) -> String?, onCancel: @escaping () -> Void) {

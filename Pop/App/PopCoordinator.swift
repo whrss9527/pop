@@ -174,6 +174,19 @@ final class PopCoordinator: MouseTriggerDelegate {
         }
     }
 
+    /// 在 point 处显示一句提示（贴图上的复制、存储等）
+    func showToast(_ message: String, at point: CGPoint) {
+        endSession()
+        overlay.showToast(message, anchor: point)
+    }
+
+    /// 在 point 处显示识别出的文字（贴图上的「识别文字」），可以接着复制、翻译
+    func showRecognizedText(_ text: String, at point: CGPoint) {
+        endSession()
+        session = Session(anchor: point, pid: nil, sourceAppName: nil, buttonHeld: false, content: .empty)
+        present(.card(TextRecognizer.card(title: "识别文字", text: text)))
+    }
+
     // MARK: - 流程
 
     private func begin(at anchor: CGPoint, buttonHeld: Bool, closesOnRelease: Bool = false) {
@@ -265,7 +278,8 @@ final class PopCoordinator: MouseTriggerDelegate {
         }
         let context = PluginContext(settings: settingsStore.settings,
                                     openSettings: { [weak self] in self?.openSettings(nil) },
-                                    sourceAppName: current.sourceAppName)
+                                    sourceAppName: current.sourceAppName,
+                                    anchor: current.anchor)
         let sessionID = current.id
         Task { [weak self] in
             let outcome = await plugin.run(content, context: context)
@@ -292,7 +306,7 @@ final class PopCoordinator: MouseTriggerDelegate {
                                             onClose: { [weak self] in self?.endSession() }),
                              anchor: current.anchor)
         case .translate(let text, let language):
-            let target = translationTarget(content: current.content, language: language)
+            let target = translationTarget(text: text, content: current.content, language: language)
             let model = TranslationModel(text: text, sourceLanguage: language, targetLanguage: target)
             overlay.showCard(TranslationCardView(model: model,
                                                  canReplace: Self.isTextSelection(current.content) && current.content?.text == text,
@@ -332,6 +346,21 @@ final class PopCoordinator: MouseTriggerDelegate {
         case .copyImage(let png):
             PasteboardWriter.copy(png: png)
             finish(toast: "已复制图片")
+        case .saveImage(let png, let name):
+            do {
+                _ = try ImageFiles.saveToDownloads(png, name: name)
+                finish(toast: "已存到「下载」")
+            } catch {
+                present(.failure("存储失败：\(error.localizedDescription)"))
+            }
+        case .pinImage(let png):
+            let anchor = session?.anchor ?? NSEvent.mouseLocation
+            endSession()
+            PinBoard.shared.pin(imageData: png, around: anchor)
+        case .pinText(let text):
+            let anchor = session?.anchor ?? NSEvent.mouseLocation
+            endSession()
+            PinBoard.shared.pin(text: text, around: anchor)
         case .translate(let text):
             present(.translate(text: text, language: ContentClassifier.dominantLanguage(text)))
         }
@@ -401,9 +430,18 @@ final class PopCoordinator: MouseTriggerDelegate {
         return false
     }
 
-    private func translationTarget(content: ClassifiedContent?, language: String?) -> String {
+    /// 中文译成「中文译为」的语言，其他译成「外文译为」的语言。
+    /// 优先看这段文字识别出的语种：截图翻译的文字和唤起时选中的内容不是同一段。
+    private func translationTarget(text: String, content: ClassifiedContent?, language: String?) -> String {
         let settings = settingsStore.settings.translation
-        let isChinese = content?.kinds.contains(.chineseText) == true || language?.hasPrefix("zh") == true
+        let isChinese: Bool
+        if let language {
+            isChinese = language.hasPrefix("zh")
+        } else if content?.text == text {
+            isChinese = content?.kinds.contains(.chineseText) == true
+        } else {
+            isChinese = ScriptProfile(text).isChinese
+        }
         return isChinese ? settings.chineseTarget : settings.foreignTarget
     }
 

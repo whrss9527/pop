@@ -72,4 +72,32 @@ final class GeometryTests: XCTestCase {
         // 下面放不下：放到指针上方
         XCTAssertEqual(ScreenGeometry.cardFrame(anchor: CGPoint(x: 100, y: 100), size: size, within: bounds).minY, 114)
     }
+
+    func testPinFrames() {
+        let screen = CGRect(x: 0, y: 0, width: 1440, height: 900)
+        XCTAssertEqual(ScreenGeometry.fitted(CGSize(width: 2000, height: 1000), within: CGSize(width: 1000, height: 1000)),
+                       CGSize(width: 1000, height: 500))
+        XCTAssertEqual(ScreenGeometry.fitted(CGSize(width: 200, height: 100), within: CGSize(width: 1000, height: 1000)),
+                       CGSize(width: 200, height: 100))
+        XCTAssertEqual(ScreenGeometry.pinFrame(size: CGSize(width: 200, height: 100), centeredAt: CGPoint(x: 500, y: 500),
+                                               within: screen),
+                       CGRect(x: 400, y: 450, width: 200, height: 100))
+        // 刚框选的截图：右下角对着松开鼠标的位置，正好盖住原来的区域
+        XCTAssertEqual(ScreenGeometry.pinFrame(size: CGSize(width: 300, height: 200), bottomRightAt: CGPoint(x: 800, y: 300),
+                                               within: screen),
+                       CGRect(x: 500, y: 300, width: 300, height: 200))
+        // 靠近屏幕边缘时往里挪
+        XCTAssertEqual(ScreenGeometry.pinFrame(size: CGSize(width: 200, height: 100), centeredAt: CGPoint(x: 10, y: 10),
+                                               within: screen).origin,
+                       .zero)
+    }
+
+    /// 缩放时指针下面的那一点不动
+    func testResizeKeepsThePointUnderThePointer() {
+        let frame = CGRect(x: 100, y: 100, width: 200, height: 100)
+        XCTAssertEqual(ScreenGeometry.resized(frame, to: CGSize(width: 400, height: 200), keeping: CGPoint(x: 150, y: 125)),
+                       CGRect(x: 50, y: 75, width: 400, height: 200))
+        XCTAssertEqual(ScreenGeometry.resized(frame, to: CGSize(width: 100, height: 50), keeping: CGPoint(x: 200, y: 150)),
+                       CGRect(x: 150, y: 125, width: 100, height: 50))
+    }
 }

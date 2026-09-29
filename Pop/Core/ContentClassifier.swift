@@ -27,7 +27,7 @@ enum ContentClassifier {
     private static func classifyText(_ text: String) -> ClassifiedContent {
         var content = ClassifiedContent(selection: .text(text), kinds: [.text], text: text, language: nil, url: nil, files: [])
 
-        // 结构化文本（链接、JSON、颜色、时间、数字、算式、路径）不再算作自然语言，避免被「外文直接翻译」误触发。
+        // 结构化文本（链接、JSON、颜色、时间、带单位的数值、数字、算式、路径）不再算作自然语言，避免被「外文直接翻译」误触发。
         if let url = detectLink(text) {
             content.url = url
             content.kinds.insert(url.scheme?.lowercased() == "mailto" ? .email : .url)
@@ -45,6 +45,8 @@ enum ContentClassifier {
             }
         } else if DateParser.parse(text) != nil {
             content.kinds.insert(.dateTime)
+        } else if UnitConverter.parse(text) != nil {
+            content.kinds.insert(.measurement)
         } else if NumberConverter.parse(text) != nil {
             content.kinds.insert(.number)
         } else if looksLikeMath(text) {

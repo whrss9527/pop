@@ -4,8 +4,9 @@ import AppKit
 ///
 /// 环境变量 POP_DEMO=1 启动时不弹设置窗口，而是按固定的时间表依次展示：圆盘展开、读到内容、
 /// 指向一格、滑到另一格、选中后弹出结果卡片、提示、「全部功能」列表、再展开一次圆盘并取消；
-/// 最后按真实的手势流程走一遍：按住右键唤起、拖到上面一格、再拖到「剪贴板」、松开执行
-/// （直接调用鼠标拦截的回调，拖动位置和真实使用时一样由拦截送来，不看系统的指针位置）。
+/// 再按真实的手势流程走一遍：按住右键唤起、拖到上面一格、再拖到「剪贴板」、松开执行
+/// （直接调用鼠标拦截的回调，拖动位置和真实使用时一样由拦截送来，不看系统的指针位置）；
+/// 最后是单位换算的卡片和贴图。
 /// 配合 POP_ANIMATION_SCALE 放慢动画，截图脚本就能拍到动画的中间帧。
 /// 每一步开始时往 POP_DEMO_LOG 指定的文件里写一行「步骤名 时间戳」；第一行是演示区域在屏幕上的位置
 /// （点，AppKit 坐标：x y 宽 高）和屏幕大小，脚本按它裁图。
@@ -95,7 +96,30 @@ enum OverlayDemo {
             step("release")
             coordinator.mouseTriggerDidRelease(at: quartz(target))
 
+            // 单位换算的结果卡片
             await pause(1.4 * unit)
+            step("unit")
+            coordinator.endSession()
+            let measurement = ContentClassifier.classify(.text("5 km"))
+            let converted = await UnitConvertPlugin().run(measurement, context: PluginContext(settings: settings, openSettings: {}))
+            if case .card(let unitCard) = converted {
+                overlay.showCard(ResultCardView(card: unitCard, onAction: { _ in }, onMore: {}, onClose: {}), anchor: center)
+            }
+
+            // 贴图：一段文字和一张图片贴在屏幕上，然后全部关掉
+            await pause(1.4 * unit)
+            step("pin")
+            overlay.hide()
+            PinBoard.shared.pin(text: "5 km ≈ 3.11 英里\n贴在屏幕上的文字，可以拖动、缩放", around: CGPoint(x: center.x + 40, y: center.y + 60))
+            if let image = QRCode.generate("https://github.com/whrss9527/pop", scale: 6) {
+                PinBoard.shared.pin(imageData: image, around: CGPoint(x: center.x + 260, y: center.y - 250))
+            }
+
+            await pause(1.4 * unit)
+            step("unpin")
+            PinBoard.shared.closeAll()
+
+            await pause(1.0 * unit)
             step("end")
         }
     }

@@ -40,6 +40,18 @@ final class SettingsCodingTests: XCTestCase {
         XCTAssertEqual(settings.rules.map(\.condition), DirectRule.defaults.map(\.condition))
     }
 
+    /// 更新的版本加的规则条件：这一条跳过，其他规则照常读出来，不会整个回到默认值。
+    func testUnknownRuleConditionIsSkipped() throws {
+        let settings = try decode(#"{"rules": [{"condition": "fromTheFuture", "enabled": true}, {"condition": "math", "pluginID": "calculate", "enabled": false}, {"condition": "url", "pluginID": "openURL", "enabled": true}]}"#)
+        XCTAssertEqual(settings.rules.first { $0.condition == .math }?.enabled, false)
+        XCTAssertEqual(settings.rules.first { $0.condition == .url }?.enabled, true)
+        XCTAssertEqual(settings.rules.count, RuleCondition.allCases.count)
+        // 0.4 版的规则里没有「带单位的数值」：按默认顺序插在算式后面，默认打开
+        let measurement = settings.rules.first { $0.condition == .measurement }
+        XCTAssertEqual(measurement?.pluginID, BuiltinPluginID.unitConvert)
+        XCTAssertEqual(measurement?.enabled, true)
+    }
+
     /// 0.1 版保存的规则：新条件按默认顺序插进去（单个词要排在外文前面才有意义），已有规则保持原样。
     func testLegacyRulesGainNewConditionsInOrder() throws {
         let settings = try decode(#"""

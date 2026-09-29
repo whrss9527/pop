@@ -71,12 +71,22 @@ final class AppController {
             self?.settingsWindow.show(tab: tab)
         }
         trigger.delegate = coordinator
+        PinBoard.shared.onToast = { [weak self] message, point in
+            self?.coordinator.showToast(message, at: point)
+        }
+        PinBoard.shared.onRecognizedText = { [weak self] text, point in
+            self?.coordinator.showRecognizedText(text, at: point)
+        }
 
         statusItem.stateProvider = { [weak self] in
             guard let self else { return StatusItemController.State() }
             return StatusItemController.State(isPaused: self.coordinator.isPaused,
                                               isTrusted: self.permissions.isTrusted,
-                                              pendingUpdateVersion: self.updater.release?.version)
+                                              pendingUpdateVersion: self.updater.release?.version,
+                                              pinCount: PinBoard.shared.count)
+        }
+        statusItem.onCloseAllPins = {
+            PinBoard.shared.closeAll()
         }
         statusItem.onOpenSettings = { [weak self] in
             self?.settingsWindow.show()

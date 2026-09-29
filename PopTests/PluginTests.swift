@@ -19,6 +19,8 @@ final class RouterTests: XCTestCase {
         XCTAssertEqual(decide("https://example.com"), .ring)
         XCTAssertEqual(decide("12345"), .ring)
         XCTAssertEqual(Router.decide(.empty, settings: AppSettings(), catalog: catalog), .ring)
+        // 带单位的数值直接换算
+        XCTAssertEqual(decide("5 km"), .direct(pluginID: BuiltinPluginID.unitConvert))
     }
 
     func testImageGoesToOCR() {
@@ -77,6 +79,7 @@ final class RouterTests: XCTestCase {
         XCTAssertEqual(Set(catalog.filter { $0.canHandle(.empty) }.map(\.id)), [
             BuiltinPluginID.random, BuiltinPluginID.screenshotOCR, BuiltinPluginID.colorPicker,
             BuiltinPluginID.clipboardHistory, BuiltinPluginID.allPlugins, BuiltinPluginID.settings,
+            BuiltinPluginID.screenshotTranslate, BuiltinPluginID.pin,
         ])
     }
 
@@ -173,6 +176,19 @@ final class BuiltinPluginTests: XCTestCase {
         let colorCard = await card(ColorConvertPlugin(), "#FF8800")
         XCTAssertEqual(colorCard?.swatchHex, "#FF8800")
         XCTAssertEqual(value(colorCard, "RGB"), "rgb(255, 136, 0)")
+    }
+
+    @MainActor
+    func testUnitConversionAndCleanup() async {
+        let unitCard = await card(UnitConvertPlugin(), "5 km")
+        XCTAssertEqual(value(unitCard, "英里"), "3.10686 mi")
+        XCTAssertEqual(unitCard?.detail, "长度：5 km")
+        XCTAssertEqual(unitCard?.rowsReplaceable, true)
+
+        let cleanupCard = await card(TextCleanupPlugin(), "用React写\n组件")
+        XCTAssertEqual(value(cleanupCard, "合并换行"), "用React写组件")
+        XCTAssertEqual(value(cleanupCard, "中英文空格"), "用 React 写\n组件")
+        XCTAssertEqual(cleanupCard?.rowLineLimit, 2)
     }
 
     @MainActor

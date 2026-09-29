@@ -7,6 +7,8 @@ final class StatusItemController: NSObject, NSMenuDelegate {
         var isPaused = false
         var isTrusted = true
         var pendingUpdateVersion: String?
+        /// 屏幕上贴着几张贴图
+        var pinCount = 0
     }
 
     var stateProvider: () -> State = { State() }
@@ -16,6 +18,7 @@ final class StatusItemController: NSObject, NSMenuDelegate {
     var onInstallUpdate: () -> Void = {}
     var onTogglePause: () -> Void = {}
     var onGrantPermission: () -> Void = {}
+    var onCloseAllPins: () -> Void = {}
 
     private let statusItem: NSStatusItem
 
@@ -58,6 +61,9 @@ final class StatusItemController: NSObject, NSMenuDelegate {
             menu.addItem(.separator())
         }
         addItem(to: menu, title: "剪贴板历史…", action: #selector(showClipboard))
+        if state.pinCount > 0 {
+            addItem(to: menu, title: "关闭全部贴图（\(state.pinCount)）", action: #selector(closeAllPins))
+        }
         addItem(to: menu, title: state.isPaused ? "恢复 Pop" : "暂停 Pop", action: #selector(togglePause))
         menu.addItem(.separator())
         addItem(to: menu, title: "设置…", action: #selector(openSettings), key: ",")
@@ -85,4 +91,5 @@ final class StatusItemController: NSObject, NSMenuDelegate {
     @objc private func installUpdate() { onInstallUpdate() }
     @objc private func togglePause() { onTogglePause() }
     @objc private func grantPermission() { onGrantPermission() }
+    @objc private func closeAllPins() { onCloseAllPins() }
 }

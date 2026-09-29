@@ -35,6 +35,8 @@ enum ContentKind: String, Codable, CaseIterable {
     case dateTime
     /// 选中的文件都是图片
     case imageFile
+    /// 带单位的数值，比如 5 km、100°F、2 斤、1 TB
+    case measurement
 
     var title: String {
         switch self {
@@ -53,6 +55,7 @@ enum ContentKind: String, Codable, CaseIterable {
         case .number: return "数字"
         case .dateTime: return "日期时间"
         case .imageFile: return "图片文件"
+        case .measurement: return "带单位的数值"
         }
     }
 }
@@ -82,7 +85,10 @@ struct ClassifiedContent: Equatable {
         case .image:
             return "图片"
         case .text:
-            let specific: [ContentKind] = [.url, .email, .math, .timestamp, .json, .color, .dateTime, .number, .files]
+            if kinds.contains(.measurement), let text, text.count <= 12 {
+                return text
+            }
+            let specific: [ContentKind] = [.url, .email, .math, .timestamp, .json, .color, .dateTime, .measurement, .number, .files]
             if let kind = specific.first(where: { kinds.contains($0) }) {
                 return kind == .files ? "路径" : kind.title
             }
