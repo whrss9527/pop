@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # 给浮窗拍一组截图：用演示模式启动 Pop（POP_DEMO=1，动画放慢 POP_ANIMATION_SCALE 倍），
 # 按 Pop 写出的步骤时间在固定的时刻截屏，裁出浮窗那一块，存成 JPEG。
-# 圆盘展开、指向、滑动、选中、结果卡片、提示、列表、取消、贴图、常用短语、文本对比、图片配色、截图标注都会拍到，
-# 包括动画的中间帧。
+# 圆盘展开、指向、滑动、选中、结果卡片、提示、列表、取消、贴图、常用短语、文本对比、图片配色、暂存架、打开方式、
+# 截图标注都会拍到，包括动画的中间帧。
 # 之后用深色外观再拍一组停下来之后的样子（文件名以 dark- 开头），POP_SKIP_DARK=1 时不拍。
 #
 # 用法：scripts/overlay-screenshots.sh <Pop.app> <输出目录> [动画放慢倍数，默认 6]
@@ -70,6 +70,8 @@ plan = [
     ("snippets", [0.6, 3.0]),
     ("diff", [3.0]),
     ("palette", [3.0]),
+    ("shelf", [3.0]),
+    ("openWith", [3.0]),
     ("annotate", [1.5]),
     ("settings-ai", [0.5]),
     ("settings-hotKeys", [0.5]),
@@ -79,7 +81,7 @@ if appearance == "dark":
     plan = [("loaded", [2.6]), ("slide", [3.0]), ("commit", [5.0]), ("toast", [1.2]), ("chooser", [4.0]),
             ("drag-clipboard", [2.4]), ("release", [3.5]), ("unit", [3.0]), ("pin", [3.0]), ("ai", [3.0]),
             ("layout", [3.0]), ("translate", [3.0]), ("snippets", [3.0]), ("diff", [3.0]), ("palette", [3.0]),
-            ("annotate", [1.5]),
+            ("shelf", [3.0]), ("openWith", [3.0]), ("annotate", [1.5]),
             ("settings-ai", [0.5]), ("settings-hotKeys", [0.5])]
 factor = scale / 6.0
 

@@ -364,6 +364,8 @@ final class PopCoordinator: MouseTriggerDelegate {
             presentWindowLayouts()
         case .showSnippets:
             presentSnippets()
+        case .chooseApp(let request):
+            presentOpenWith(request)
         case .failure(let message):
             overlay.showCard(ResultCardView(card: ResultCard(title: "没能完成", body: message),
                                             onAction: { [weak self] action in self?.perform(action) },
@@ -497,6 +499,26 @@ final class PopCoordinator: MouseTriggerDelegate {
         overlay.showCard(SnippetPickerView(model: model, onClose: { [weak self] in self?.endSession() }),
                          anchor: current.anchor,
                          keyHandler: { event in model.handleKey(event) })
+    }
+
+    /// 打开方式：选一个 App 打开文件或链接
+    private func presentOpenWith(_ request: OpenWithRequest) {
+        guard let current = session else { return }
+        stopPointerTracking()
+        let choose: (URL) -> Void = { [weak self] app in
+            self?.endSession()
+            NSWorkspace.shared.open(request.targets, withApplicationAt: app, configuration: NSWorkspace.OpenConfiguration(),
+                                    completionHandler: nil)
+        }
+        overlay.showCard(OpenWithCardView(request: request, onChoose: choose, onClose: { [weak self] in self?.endSession() }),
+                         anchor: current.anchor,
+                         keyHandler: { event in
+                             guard let index = OpenWithCardView.index(for: event), request.apps.indices.contains(index) else {
+                                 return false
+                             }
+                             choose(request.apps[index])
+                             return true
+                         })
     }
 
     /// 窗口布局：选一个位置，把唤起时前台 App 的窗口放过去

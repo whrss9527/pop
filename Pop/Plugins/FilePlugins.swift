@@ -188,3 +188,18 @@ struct PDFPlugin: PopPlugin {
         }
     }
 }
+
+// MARK: - 暂存架
+
+struct ShelfPlugin: PopPlugin {
+    let info = PluginInfo(id: BuiltinPluginID.shelf, name: "暂存架", symbol: "tray.full",
+                          summary: "把选中的文件放到暂存架上，之后再一起拖到别的地方；没选中文件时打开暂存架",
+                          accepts: [], optionalContent: true)
+
+    @MainActor func run(_ content: ClassifiedContent, context: PluginContext) async -> PluginOutcome {
+        let shelf = FileShelf.shared
+        shelf.add(content.files)
+        shelf.show(near: context.anchor ?? NSEvent.mouseLocation)
+        return .done(toast: nil)
+    }
+}

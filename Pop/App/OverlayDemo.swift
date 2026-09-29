@@ -6,8 +6,8 @@ import AppKit
 /// 指向一格、滑到另一格、选中后弹出结果卡片、提示、「全部功能」列表、再展开一次圆盘并取消；
 /// 再按真实的手势流程走一遍：按住右键唤起、拖到上面一格、再拖到「剪贴板」、松开执行
 /// （直接调用鼠标拦截的回调，拖动位置和真实使用时一样由拦截送来，不看系统的指针位置）；
-/// 最后是单位换算的卡片、贴图、AI 卡片、窗口布局卡片、翻译卡片、常用短语、文本对比、图片配色、截图标注窗口
-/// 和设置窗口里新加的几页。
+/// 最后是单位换算的卡片、贴图、AI 卡片、窗口布局卡片、翻译卡片、常用短语、文本对比、图片配色、暂存架、打开方式、
+/// 截图标注窗口和设置窗口里新加的几页。
 /// 配合 POP_ANIMATION_SCALE 放慢动画，截图脚本就能拍到动画的中间帧；POP_APPEARANCE=dark 时用深色外观。
 /// 每一步开始时往 POP_DEMO_LOG 指定的文件里写一行「步骤名 时间戳」；region 行是截图区域在屏幕上的位置
 /// （点，AppKit 坐标：x y 宽 高）和屏幕大小，脚本按拍照时最新的那一行裁图。
@@ -175,6 +175,24 @@ enum OverlayDemo {
                 overlay.showCard(ResultCardView(card: card, onAction: { _ in }, onMore: {}, onClose: {}), anchor: center)
             }
 
+            // 暂存架：放上几个示例文件
+            await pause(1.4 * unit)
+            overlay.hide()
+            let files = sampleFiles()
+            FileShelf.shared.add(files)
+            FileShelf.shared.show(near: CGPoint(x: center.x + 20, y: center.y - 20))
+            step("shelf")
+
+            // 打开方式卡片（示例文字文件能用哪些 App 打开）
+            await pause(1.4 * unit)
+            FileShelf.shared.hide()
+            FileShelf.shared.clear()
+            if let note = files.first(where: { $0.pathExtension == "txt" }) {
+                let request = OpenWithRequest(targets: [note], apps: OpenWith.applications(for: note))
+                overlay.showCard(OpenWithCardView(request: request, onChoose: { _ in }, onClose: {}), anchor: center)
+            }
+            step("openWith")
+
             // 截图标注窗口：拿一张画好的示例图，标上方框、箭头、文字、马赛克和序号；截图区域换成标注窗口
             await pause(1.4 * unit)
             overlay.hide()
@@ -242,6 +260,28 @@ enum OverlayDemo {
         guard let image = context.makeImage(),
               let png = NSBitmapImageRep(cgImage: image).representation(using: .png, properties: [:]) else { return nil }
         return ScreenCapture.Capture(image: image, png: png)
+    }
+
+    /// 暂存架演示用的几个文件：一个 PDF、一张图、一个文字文件（放在临时文件夹里）
+    private static func sampleFiles() -> [URL] {
+        let folder = FileManager.default.temporaryDirectory.appending(path: "pop-demo")
+        try? FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+        var files: [URL] = []
+        if let capture = sampleScreenshot() {
+            let image = folder.appending(path: "界面截图.png")
+            if (try? capture.png.write(to: image)) != nil {
+                let pdf = folder.appending(path: "季度报告.pdf")
+                if (try? PDFTools.combine([image], into: pdf)) != nil {
+                    files.append(pdf)
+                }
+                files.append(image)
+            }
+        }
+        let note = folder.appending(path: "会议记录.txt")
+        if (try? Data("周一例会：确认发布时间。\n".utf8).write(to: note)) != nil {
+            files.append(note)
+        }
+        return files
     }
 
     /// 在示例图上标几笔：给手机号打码、序号、框出按钮、箭头指过去再写一句话

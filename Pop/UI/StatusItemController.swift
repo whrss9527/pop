@@ -11,6 +11,8 @@ final class StatusItemController: NSObject, NSMenuDelegate {
         var pinCount = 0
         /// 保持唤醒的状态说明；没有保持唤醒时为 nil
         var keepAwakeStatus: String?
+        /// 暂存架上有几个文件
+        var shelfCount = 0
     }
 
     var stateProvider: () -> State = { State() }
@@ -22,6 +24,7 @@ final class StatusItemController: NSObject, NSMenuDelegate {
     var onGrantPermission: () -> Void = {}
     var onCloseAllPins: () -> Void = {}
     var onStopKeepAwake: () -> Void = {}
+    var onShowShelf: () -> Void = {}
 
     private let statusItem: NSStatusItem
 
@@ -64,6 +67,7 @@ final class StatusItemController: NSObject, NSMenuDelegate {
             menu.addItem(.separator())
         }
         addItem(to: menu, title: "剪贴板历史…", action: #selector(showClipboard))
+        addItem(to: menu, title: state.shelfCount > 0 ? "暂存架（\(state.shelfCount)）" : "暂存架", action: #selector(showShelf))
         if state.pinCount > 0 {
             addItem(to: menu, title: "关闭全部贴图（\(state.pinCount)）", action: #selector(closeAllPins))
         }
@@ -102,4 +106,5 @@ final class StatusItemController: NSObject, NSMenuDelegate {
     @objc private func grantPermission() { onGrantPermission() }
     @objc private func closeAllPins() { onCloseAllPins() }
     @objc private func stopKeepAwake() { onStopKeepAwake() }
+    @objc private func showShelf() { onShowShelf() }
 }

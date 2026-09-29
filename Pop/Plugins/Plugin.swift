@@ -132,6 +132,8 @@ enum PluginOutcome: Equatable {
     case showWindowLayouts
     /// 打开常用短语列表
     case showSnippets
+    /// 选一个 App 打开文件或链接
+    case chooseApp(OpenWithRequest)
     case failure(String)
 }
 
