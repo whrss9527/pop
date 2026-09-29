@@ -293,11 +293,7 @@ struct CharInfoPlugin: PopPlugin {
 
     @MainActor func run(_ content: ClassifiedContent, context: PluginContext) async -> PluginOutcome {
         guard let text = content.text else { return .failure("没有文字") }
-        // 用原始的选中内容（包括首尾的空白），替换原文时才不会少东西
-        var raw = text
-        if case .text(let selected) = content.selection { raw = selected }
-        let source = raw
-        return .card(await runInBackground { CharacterInspector.card(for: source) })
+        return .card(await runInBackground { CharacterInspector.card(for: text) })
     }
 }
 
@@ -310,10 +306,6 @@ struct RegexTestPlugin: PopPlugin {
 
     @MainActor func run(_ content: ClassifiedContent, context: PluginContext) async -> PluginOutcome {
         guard let text = content.text else { return .failure("没有文字") }
-        // 用原始的选中内容，替换原文时首尾的空白不会丢
-        if case .text(let selected) = content.selection {
-            return .regexTester(text: selected)
-        }
         return .regexTester(text: text)
     }
 }

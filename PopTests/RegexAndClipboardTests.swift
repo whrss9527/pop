@@ -55,8 +55,8 @@ final class RegexTesterTests: XCTestCase {
     @MainActor
     func testPluginOpensTheTester() async {
         let context = PluginContext(settings: AppSettings(), openSettings: {})
-        let outcome = await RegexTestPlugin().run(ContentClassifier.classify(.text(" a1 b2 ")), context: context)
-        XCTAssertEqual(outcome, .regexTester(text: " a1 b2 "))
+        let outcome = await RegexTestPlugin().run(ContentClassifier.classify(.text(" a1 b2 \n")), context: context)
+        XCTAssertEqual(outcome, .regexTester(text: "a1 b2"))
     }
 }
 
