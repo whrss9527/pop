@@ -124,7 +124,8 @@ enum AnnotationTool: String, CaseIterable, Identifiable {
         case .rectangle: return "rectangle"
         case .ellipse: return "circle"
         case .pen: return "scribble"
-        case .text: return "textformat"
+        // textformat 在中文系统上显示成「格式」两个字，这里用带光标的字符
+        case .text: return "character.cursor.ibeam"
         case .mosaic: return "checkerboard.rectangle"
         case .counter: return "1.circle"
         }

@@ -206,16 +206,17 @@ enum OverlayDemo {
         }
     }
 
-    /// 标注演示用的「截图」：一张账户设置卡片，480×300 点、2 倍像素
+    /// 标注演示用的「截图」：一张账户设置卡片，480×300 点，像素按屏幕倍率（和真的截图一样）
     private static func sampleScreenshot() -> ScreenCapture.Capture? {
-        let width = 960
-        let height = 600
+        let scale = max(NSScreen.main?.backingScaleFactor ?? 2, 1)
+        let width = Int(480 * scale)
+        let height = Int(300 * scale)
         guard let context = CGContext(data: nil, width: width, height: height, bitsPerComponent: 8, bytesPerRow: 0,
                                       space: CGColorSpace(name: CGColorSpace.sRGB) ?? CGColorSpaceCreateDeviceRGB(),
                                       bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue) else { return nil }
         // 换成「点、左上角为原点」的坐标
         context.translateBy(x: 0, y: CGFloat(height))
-        context.scaleBy(x: 2, y: -2)
+        context.scaleBy(x: scale, y: -scale)
         NSGraphicsContext.saveGraphicsState()
         NSGraphicsContext.current = NSGraphicsContext(cgContext: context, flipped: true)
         context.setFillColor(NSColor(srgbRed: 0.93, green: 0.94, blue: 0.96, alpha: 1).cgColor)
