@@ -36,16 +36,18 @@ final class TextDiffTests: XCTestCase {
     }
 
     func testFoldingLongUnchangedStretches() {
-        let before = (1...10).map(String.init) + ["x"] + (11...20).map(String.init)
-        let after = (1...10).map(String.init) + ["y"] + (11...20).map(String.init)
-        let rows = TextDiff.compare(before.joined(separator: "\n"), after.joined(separator: "\n")).rows()
+        let head: [String] = (1...10).map { "\($0)" }
+        let tail: [String] = (11...20).map { "\($0)" }
+        let before: [String] = head + ["x"] + tail
+        let after: [String] = head + ["y"] + tail
+        let rows: [TextDiff.Row] = TextDiff.compare(before.joined(separator: "\n"), after.joined(separator: "\n")).rows()
         XCTAssertEqual(rows.count, 8)
-        XCTAssertEqual(rows.first, .skipped(8))
-        XCTAssertEqual(rows.last, .skipped(8))
+        XCTAssertEqual(rows.first, TextDiff.Row.skipped(8))
+        XCTAssertEqual(rows.last, TextDiff.Row.skipped(8))
         // 只隔着一两行相同的不折叠
-        let short = TextDiff.compare("a\nb\nc\nd", "a\nb\nc\ne").rows()
+        let short: [TextDiff.Row] = TextDiff.compare("a\nb\nc\nd", "a\nb\nc\ne").rows()
         XCTAssertEqual(short.count, 5)
-        XCTAssertFalse(short.contains(.skipped(1)))
+        XCTAssertFalse(short.contains(TextDiff.Row.skipped(1)))
     }
 
     @MainActor
