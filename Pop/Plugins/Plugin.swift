@@ -24,6 +24,8 @@ struct PluginInfo: Identifiable, Hashable {
     var hidesOverlay = false
     /// 不需要选中内容，但选中了会用上（比如贴图：选中了图片就贴图片，没选中就先截图）
     var optionalContent = false
+    /// 正则写不出来的内容检查
+    var check: ContentCheck? = nil
 
     func canHandle(_ content: ClassifiedContent) -> Bool {
         guard accepts.isEmpty || !accepts.isDisjoint(with: content.kinds) else { return false }
@@ -32,7 +34,7 @@ struct PluginInfo: Identifiable, Hashable {
 
     private func matchesConstraints(_ content: ClassifiedContent) -> Bool {
         let pattern = self.pattern ?? ""
-        guard minLength != nil || maxLength != nil || !pattern.isEmpty else { return true }
+        guard minLength != nil || maxLength != nil || !pattern.isEmpty || check != nil else { return true }
         let subject = content.text ?? content.files.map { $0.path(percentEncoded: false) }.joined(separator: "\n")
         guard !subject.isEmpty else { return false }
         if let minLength, subject.count < minLength { return false }
@@ -40,9 +42,23 @@ struct PluginInfo: Identifiable, Hashable {
         if !pattern.isEmpty {
             guard let regex = try? NSRegularExpression(pattern: pattern) else { return false }
             let range = NSRange(subject.startIndex..., in: subject)
-            return regex.firstMatch(in: subject, options: [], range: range) != nil
+            guard regex.firstMatch(in: subject, options: [], range: range) != nil else { return false }
         }
+        if let check, !check.matches(subject) { return false }
         return true
+    }
+}
+
+/// 正则写不出来的内容检查，决定圆盘里要不要显示这个功能
+enum ContentCheck: Hashable {
+    /// 至少两个数：一列（每行一个）或者一行用逗号、空格隔开
+    case numberList
+
+    func matches(_ subject: String) -> Bool {
+        switch self {
+        case .numberList:
+            return NumberStats.parse(subject) != nil
+        }
     }
 }
 

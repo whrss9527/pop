@@ -116,6 +116,41 @@ struct TextStatsPlugin: PopPlugin {
     }
 }
 
+struct NumberStatsPlugin: PopPlugin {
+    let info = PluginInfo(id: BuiltinPluginID.numberStats, name: "数字统计", symbol: "sum",
+                          summary: "选中一列或一串数字，算出合计、平均、中位数、最大、最小", accepts: [.text],
+                          maxLength: 100_000, check: .numberList)
+
+    @MainActor func run(_ content: ClassifiedContent, context: PluginContext) async -> PluginOutcome {
+        guard let text = content.text, let summary = await runInBackground({ NumberStats.parse(text) }) else {
+            return .failure("需要至少两个数：一列（每行一个，前面可以有文字），或者一行用逗号、空格隔开")
+        }
+        return .card(ResultCard(title: "数字统计", detail: "共 \(summary.count) 个数", rows: summary.rows))
+    }
+}
+
+struct SpellCheckPlugin: PopPlugin {
+    let info = PluginInfo(id: BuiltinPluginID.spellCheck, name: "拼写检查", symbol: "text.badge.checkmark",
+                          summary: "找出外文里拼错的词，给出改法，可以直接换成改好的文字（系统自带的拼写检查，离线）",
+                          accepts: [.foreignText], maxLength: 20_000)
+
+    @MainActor func run(_ content: ClassifiedContent, context: PluginContext) async -> PluginOutcome {
+        guard let text = content.text else { return .failure("没有文字") }
+        let issues = SpellCheck.issues(in: text, language: SpellCheck.supportedLanguage(content.language))
+        guard !issues.isEmpty else { return .done(toast: "没有发现拼写错误") }
+        let rows = issues.map { issue in
+            ResultCard.Row(label: issue.word,
+                           value: issue.suggestions.isEmpty ? "（没有建议）" : issue.suggestions.joined(separator: " / "))
+        }
+        let corrected = SpellCheck.corrected(text, issues: issues)
+        let changed = corrected != text
+        return .card(ResultCard(title: "拼写检查", body: changed ? corrected : "",
+                                detail: changed ? "发现 \(issues.count) 处拼写问题；上面是按第一个建议改好的文字"
+                                    : "发现 \(issues.count) 处可能拼错的词，没有找到改法",
+                                copyText: changed ? corrected : nil, replaceText: changed ? corrected : nil, rows: rows))
+    }
+}
+
 struct TextDiffPlugin: PopPlugin {
     let info = PluginInfo(id: BuiltinPluginID.textDiff, name: "文本对比", symbol: "arrow.left.arrow.right.square",
                           summary: "把选中的文字和剪贴板里的文字对比，标出删去和新增的地方", accepts: [.text],

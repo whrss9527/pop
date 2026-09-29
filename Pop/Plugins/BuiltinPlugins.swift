@@ -12,9 +12,11 @@ enum BuiltinPlugins {
             OpenLinkPlugin(),
             LinkInspectPlugin(),
             CalculatorPlugin(),
+            NumberStatsPlugin(),
             UnitConvertPlugin(),
             CopyPlainTextPlugin(),
             TextCleanupPlugin(),
+            SpellCheckPlugin(),
         ]
         let ai: [any PopPlugin] = AIPlugin.all.map { $0 as any PopPlugin }
         let others: [any PopPlugin] = [
@@ -89,10 +91,10 @@ enum BuiltinCategory: CaseIterable, Identifiable {
     private static let members: [BuiltinCategory: [String]] = [
         .text: [BuiltinPluginID.translate, BuiltinPluginID.screenshotTranslate, BuiltinPluginID.search,
                 BuiltinPluginID.dictionary, BuiltinPluginID.speak, BuiltinPluginID.openURL, BuiltinPluginID.copyPlain,
-                BuiltinPluginID.textCleanup, BuiltinPluginID.textStats, BuiltinPluginID.textDiff, BuiltinPluginID.snippets,
-                BuiltinPluginID.quickNote],
+                BuiltinPluginID.textCleanup, BuiltinPluginID.spellCheck, BuiltinPluginID.textStats, BuiltinPluginID.textDiff,
+                BuiltinPluginID.snippets, BuiltinPluginID.quickNote],
         .ai: [BuiltinPluginID.aiAssistant, BuiltinPluginID.aiPolish, BuiltinPluginID.aiSummarize, BuiltinPluginID.aiExplain],
-        .convert: [BuiltinPluginID.calculate, BuiltinPluginID.unitConvert, BuiltinPluginID.changeCase,
+        .convert: [BuiltinPluginID.calculate, BuiltinPluginID.numberStats, BuiltinPluginID.unitConvert, BuiltinPluginID.changeCase,
                    BuiltinPluginID.encodeDecode, BuiltinPluginID.formatJSON, BuiltinPluginID.tableConvert,
                    BuiltinPluginID.markdownCopy, BuiltinPluginID.timestamp, BuiltinPluginID.numberConvert,
                    BuiltinPluginID.colorConvert],
