@@ -1,4 +1,5 @@
 import SwiftUI
+import UniformTypeIdentifiers
 import Translation
 
 /// 卡片的通用外框：标题栏 + 关闭按钮 + 内容。
@@ -82,11 +83,14 @@ struct ResultCardView: View {
                 PaletteStrip(hexes: card.palette) { onAction(.copy($0)) }
             }
             if let data = card.image, let image = NSImage(data: data) {
+                // 按住拖动可以把图片拖到聊天、邮件、文稿里
                 Image(nsImage: image)
                     .resizable()
                     .scaledToFit()
-                    .frame(width: 200, height: 200)
-                    .frame(maxWidth: .infinity)
+                    .frame(maxWidth: .infinity, maxHeight: 220)
+                    .onDrag {
+                        NSItemProvider(item: data as NSData, typeIdentifier: UTType.png.identifier)
+                    }
             }
             if !card.body.isEmpty {
                 AdaptiveText(text: card.body, monospaced: card.monospaced)

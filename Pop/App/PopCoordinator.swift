@@ -647,6 +647,12 @@ final class PopCoordinator: MouseTriggerDelegate {
         model.onRecognize = { [weak self] item in
             self?.recognizeFromHistory(item)
         }
+        model.onAnnotate = { [weak self] item in
+            self?.annotateFromHistory(item)
+        }
+        model.onSaveSnippet = { [weak self] item in
+            self?.saveSnippet(from: item)
+        }
         session?.panel = .clipboard
         overlay.showCard(ClipboardHistoryView(model: model, onClose: { [weak self] in self?.endSession() }),
                          anchor: current.anchor,
@@ -667,6 +673,29 @@ final class PopCoordinator: MouseTriggerDelegate {
         case .files:
             break
         }
+    }
+
+    /// 在标注窗口里打开剪贴板历史里的一张图片
+    private func annotateFromHistory(_ item: ClipboardItem) {
+        let anchor = session?.anchor ?? NSEvent.mouseLocation
+        guard let url = clipboard.store.imageURL(for: item), let data = try? Data(contentsOf: url),
+              let image = TextRecognizer.cgImage(from: data) else {
+            present(.failure("无法读取这张图片"))
+            return
+        }
+        endSession()
+        AnnotationWindowController.present(ScreenCapture.Capture(image: image, png: data), near: anchor)
+    }
+
+    /// 把剪贴板历史里的一段文字存成常用短语（已经有同样的就不重复存）
+    private func saveSnippet(from item: ClipboardItem) {
+        let text = item.text
+        guard !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return }
+        settingsStore.update { settings in
+            guard !settings.snippets.contains(where: { $0.text == text }) else { return }
+            settings.snippets.append(Snippet(title: "", text: text))
+        }
+        finish(toast: "已存为常用短语")
     }
 
     /// 识别剪贴板历史里某张图片上的文字

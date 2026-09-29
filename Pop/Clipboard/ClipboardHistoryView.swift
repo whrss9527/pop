@@ -18,6 +18,8 @@ final class ClipboardHistoryModel: ObservableObject {
     var onTranslate: (String) -> Void = { _ in }
     var onPin: (ClipboardItem) -> Void = { _ in }
     var onRecognize: (ClipboardItem) -> Void = { _ in }
+    var onAnnotate: (ClipboardItem) -> Void = { _ in }
+    var onSaveSnippet: (ClipboardItem) -> Void = { _ in }
 
     private var cancellable: AnyCancellable?
 
@@ -154,9 +156,11 @@ struct ClipboardHistoryView: View {
                                 Divider()
                                 if item.kind == .text {
                                     Button("翻译") { model.onTranslate(item.text) }
+                                    Button("存为常用短语") { model.onSaveSnippet(item) }
                                 }
                                 if item.kind == .image {
                                     Button("识别文字") { model.onRecognize(item) }
+                                    Button("标注…") { model.onAnnotate(item) }
                                 }
                                 if item.kind != .files {
                                     Button("贴到屏幕") { model.onPin(item) }

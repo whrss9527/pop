@@ -92,3 +92,31 @@ final class FileInfoTests: XCTestCase {
         XCTAssertEqual(summary[1].value, "3 个")
     }
 }
+
+final class CodeImageTests: XCTestCase {
+    func testNormalizing() {
+        // 去掉共同缩进和首尾空行，Tab 换成 4 个空格
+        XCTAssertEqual(CodeImage.normalized("\n    if x {\n        y()\n    }\n\n"), "if x {\n    y()\n}")
+        XCTAssertEqual(CodeImage.normalized("\tlet a = 1"), "let a = 1")
+        let long = String(repeating: "x", count: 300)
+        XCTAssertEqual(CodeImage.normalized(long).count, CodeImage.maxColumns)
+    }
+
+    func testHighlighting() {
+        let code = #"let url = "https://a.b" // note"#
+        let tokens = CodeImage.tokens(in: code).map { ((code as NSString).substring(with: $0.range), $0.kind) }
+        XCTAssertEqual(tokens.map { $0.0 }, ["let", #""https://a.b""#, "// note"])
+        XCTAssertEqual(tokens.map { $0.1 }, [.keyword, .string, .comment])
+        let python = CodeImage.tokens(in: "return None if x else 0x1F  # done").map(\.kind)
+        XCTAssertEqual(python, [.keyword, .keyword, .keyword, .keyword, .number, .comment])
+    }
+
+    func testRendering() throws {
+        let png = try XCTUnwrap(CodeImage.render("func hello() {\n    print(\"hi\")\n}"))
+        let image = try XCTUnwrap(NSBitmapImageRep(data: png))
+        // 至少 240 点宽的窗口，加上两边 48 点的背景，2 倍像素
+        XCTAssertGreaterThanOrEqual(image.pixelsWide, (240 + 96) * 2)
+        XCTAssertGreaterThan(image.pixelsHigh, 96 * 2)
+        XCTAssertNil(CodeImage.render("   \n  "))
+    }
+}
