@@ -57,6 +57,12 @@ enum ContentCheck: Hashable {
     case cron
     /// 两个颜色（文字和背景）
     case colorPair
+    /// 里面有链接、邮箱、电话号码、IP 地址可以提取
+    case extractable
+    /// 字不多（逐个看字符），或者有看不见的字符
+    case characters
+    /// 至少两项的一列（或者一行用逗号隔开的）值
+    case lineList
 
     func matches(_ subject: String) -> Bool {
         switch self {
@@ -66,6 +72,12 @@ enum ContentCheck: Hashable {
             return CronExpression(subject) != nil
         case .colorPair:
             return ColorContrast.isColorPair(subject)
+        case .extractable:
+            return InfoExtractor.isWorthExtracting(subject)
+        case .characters:
+            return CharacterInspector.isApplicable(subject)
+        case .lineList:
+            return LineTools.isApplicable(subject)
         }
     }
 }
@@ -143,7 +155,16 @@ struct ResultCard: Equatable {
     var diff: TextDiff.Result? = nil
     /// 按排版显示的 Markdown
     var markdown: String? = nil
+    /// 可以切换的几段文字（比如同一份 JSON 生成的几种语言的代码），显示成分段选择器，「复制」复制当前这一段
+    var tabs: [Tab] = []
     var buttons: [CardButton] = []
+
+    struct Tab: Equatable, Identifiable {
+        var title: String
+        var text: String
+
+        var id: String { title }
+    }
 }
 
 enum PluginOutcome: Equatable {
@@ -177,6 +198,8 @@ struct PluginContext {
     var sourceAppName: String? = nil
     /// 唤起的位置（AppKit 屏幕坐标），贴图之类的功能在这附近显示
     var anchor: CGPoint? = nil
+    /// 带格式地重新拷贝一次选中的内容（「转成 Markdown」用）
+    var readRichSelection: (() async -> RichSelection?)? = nil
 }
 
 /// 所有功能都实现这个协议。内置功能是写死的 Swift 代码，用户插件由 manifest 描述（见 ManifestPlugin）。

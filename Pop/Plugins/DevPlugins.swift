@@ -246,3 +246,57 @@ enum MarkdownRichText {
         }
     }
 }
+
+// MARK: - 转成 Markdown
+
+struct ToMarkdownPlugin: PopPlugin {
+    let info = PluginInfo(id: BuiltinPluginID.toMarkdown, name: "转成 Markdown", symbol: "doc.plaintext",
+                          summary: "把网页、文档里选中的带格式文字转成 Markdown：标题、列表、链接、粗体、代码、表格",
+                          accepts: [.text], hidesOverlay: true)
+
+    @MainActor func run(_ content: ClassifiedContent, context: PluginContext) async -> PluginOutcome {
+        // 读选中内容时拿到的只是纯文字，这里带着格式重新拷贝一次（先收起浮窗，⌘C 才会发给原来的 App）
+        guard let selection = await context.readRichSelection?() else {
+            return .failure("没能拷贝选中的内容，确认文字还选着再试一次")
+        }
+        guard let markdown = await runInBackground({ HTMLToMarkdown.convert(selection) }) else {
+            return .failure("选中的内容没有带格式（标题、列表、链接这些），不用转换")
+        }
+        return .card(ResultCard(title: "转成 Markdown", body: markdown, monospaced: true, copyText: markdown,
+                                buttons: [CardButton(title: "贴到屏幕", action: .pinText(markdown))]))
+    }
+}
+
+// MARK: - JSON 转代码
+
+struct JSONTypesPlugin: PopPlugin {
+    let info = PluginInfo(id: BuiltinPluginID.jsonTypes, name: "JSON 转代码", symbol: "curlybraces.square",
+                          summary: "根据选中的 JSON 生成 TypeScript、Swift、Go、Kotlin 的类型定义",
+                          accepts: [.json], maxLength: JSONTypes.maxLength)
+
+    @MainActor func run(_ content: ClassifiedContent, context: PluginContext) async -> PluginOutcome {
+        guard let text = content.text, let output = await runInBackground({ JSONTypes.generate(text) }) else {
+            return .failure("JSON 里没有对象，不用生成类型定义")
+        }
+        let tabs = output.code.map { ResultCard.Tab(title: $0.language.rawValue, text: $0.text) }
+        return .card(ResultCard(title: "JSON 转代码", detail: "\(output.typeCount) 个类型；字段是否可选、能否为空按示例推断",
+                                tabs: tabs))
+    }
+}
+
+// MARK: - 字符信息
+
+struct CharInfoPlugin: PopPlugin {
+    let info = PluginInfo(id: BuiltinPluginID.charInfo, name: "字符信息", symbol: "character.magnify",
+                          summary: "查看每个字符的 Unicode 码点、名称和编码；找出并去掉零宽空格这类看不见的字符",
+                          accepts: [.text], maxLength: 100_000, check: .characters)
+
+    @MainActor func run(_ content: ClassifiedContent, context: PluginContext) async -> PluginOutcome {
+        guard let text = content.text else { return .failure("没有文字") }
+        // 用原始的选中内容（包括首尾的空白），替换原文时才不会少东西
+        var raw = text
+        if case .text(let selected) = content.selection { raw = selected }
+        let source = raw
+        return .card(await runInBackground { CharacterInspector.card(for: source) })
+    }
+}

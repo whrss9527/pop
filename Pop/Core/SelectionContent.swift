@@ -8,6 +8,16 @@ enum SelectionContent: Equatable {
     case none
 }
 
+/// 带格式的选中内容（重新拷贝一次得到），给「转成 Markdown」用。
+struct RichSelection: Equatable {
+    var html: String?
+    var rtf: Data?
+    var rtfd: Data?
+    var text: String?
+
+    var isEmpty: Bool { html == nil && rtf == nil && rtfd == nil && text == nil }
+}
+
 /// 识别出的内容特征。一段内容可以同时具备多个特征（比如链接同时也是文本）。
 enum ContentKind: String, Codable, CaseIterable {
     /// 任意文本

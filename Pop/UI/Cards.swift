@@ -72,10 +72,16 @@ struct ResultCardView: View {
     var onAction: (CardAction) -> Void
     var onMore: (() -> Void)?
     var onClose: () -> Void
+    /// 上次选的分段（比如 JSON 转代码时选的语言），下次默认还是它
+    @AppStorage("pop.lastCardTab") private var lastTab = ""
+
+    private var currentTab: ResultCard.Tab? {
+        card.tabs.first { $0.title == lastTab } ?? card.tabs.first
+    }
 
     var body: some View {
-        // 文本对比的每一行比较长，卡片放宽一些
-        CardContainer(title: card.title, width: card.diff == nil ? 380 : 520, onClose: onClose) {
+        // 文本对比、代码每一行比较长，卡片放宽一些
+        CardContainer(title: card.title, width: card.diff == nil && card.tabs.isEmpty ? 380 : 520, onClose: onClose) {
             if let hex = card.swatchHex, let color = ColorValue.parse(hex) {
                 ColorSwatch(color: color)
             }
@@ -101,6 +107,14 @@ struct ResultCardView: View {
             if let markdown = card.markdown, let rich = MarkdownRichText.renderForDisplay(markdown) {
                 RichTextPreview(text: rich, width: 348)
             }
+            if let tab = currentTab {
+                Picker("", selection: Binding(get: { tab.title }, set: { lastTab = $0 })) {
+                    ForEach(card.tabs) { Text($0.title).tag($0.title) }
+                }
+                .pickerStyle(.segmented)
+                .labelsHidden()
+                AdaptiveText(text: tab.text, monospaced: true)
+            }
             if !card.rows.isEmpty {
                 ResultRowsView(rows: card.rows, replaceable: card.rowsReplaceable, lineLimit: card.rowLineLimit,
                                onAction: onAction)
@@ -114,6 +128,9 @@ struct ResultCardView: View {
             FlowLayout(spacing: 8) {
                 if let copyText = card.copyText {
                     Button("复制") { onAction(.copy(copyText)) }
+                        .keyboardShortcut("c", modifiers: .command)
+                } else if let tab = currentTab {
+                    Button("复制 \(tab.title)") { onAction(.copy(tab.text)) }
                         .keyboardShortcut("c", modifiers: .command)
                 }
                 if let replaceText = card.replaceText {
