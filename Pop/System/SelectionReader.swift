@@ -20,8 +20,11 @@ final class SelectionReader: @unchecked Sendable {
         AXUIElementSetMessagingTimeout(AXUIElementCreateSystemWide(), 0.25)
     }
 
+    /// 演示模式（CI 截图）不去读别的 App：不碰剪贴板，也不会弹出授权提示
+    private static let skipsReading = ProcessInfo.processInfo.environment["POP_DEMO"] == "1"
+
     func read(pid: pid_t?) async -> SelectionContent {
-        guard let pid, pid != ProcessInfo.processInfo.processIdentifier else { return .none }
+        guard !Self.skipsReading, let pid, pid != ProcessInfo.processInfo.processIdentifier else { return .none }
         return await withCheckedContinuation { continuation in
             queue.async {
                 continuation.resume(returning: self.readSync(pid: pid))

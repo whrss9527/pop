@@ -152,7 +152,8 @@ final class AppController {
 
         // CI 截图用的界面演示：不检查更新、不弹设置窗口和授权提示，免得挡住浮窗
         if OverlayDemo.isEnabled {
-            OverlayDemo.run(overlay: overlay, catalog: registry.catalog, settings: settingsStore.settings)
+            OverlayDemo.run(overlay: overlay, coordinator: coordinator, catalog: registry.catalog,
+                            settings: settingsStore.settings)
             return
         }
         updater.startAutomaticChecks()

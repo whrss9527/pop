@@ -1,4 +1,5 @@
 import AppKit
+import os
 
 /// 一次唤起的完整流程：读取选中内容 → 分类 → 命中直达规则就直接执行，否则弹出圆盘 → 执行插件 → 展示结果。
 @MainActor
@@ -31,6 +32,10 @@ final class PopCoordinator: MouseTriggerDelegate {
         var closesOnRelease = false
         /// 内容还在读取时就在这一格上松开了：读到后执行它
         var pendingSlot: Int?
+        /// 按住鼠标键拖动时，事件拦截送来的最新指针位置（AppKit 屏幕坐标）
+        var dragPoint: CGPoint?
+        /// 这次按住期间收到的拖动事件数（写进日志，排查手势问题用）
+        var dragCount = 0
         var content: ClassifiedContent?
         var ring: RingViewModel?
         /// 当前显示的列表面板
@@ -39,6 +44,8 @@ final class PopCoordinator: MouseTriggerDelegate {
 
     private var session: Session?
     private var pointerTimer: Timer?
+    /// 手势日志：「控制台」里按子系统 io.github.whrss9527.pop、类别 gesture 过滤
+    private static let log = Logger(subsystem: Bundle.main.bundleIdentifier ?? "Pop", category: "gesture")
     private var lastPointer: CGPoint?
 
     init(settingsStore: SettingsStore, registry: PluginRegistry, overlay: OverlayController,
@@ -78,19 +85,25 @@ final class PopCoordinator: MouseTriggerDelegate {
     }
 
     func mouseTriggerDidActivate(at location: CGPoint) {
-        let anchor = ScreenGeometry.appKitPoint(fromQuartz: location, primaryScreenHeight: OverlayController.primaryScreenHeight)
+        let anchor = Self.appKitPoint(location)
+        Self.log.notice("唤起：按下点 \(Int(anchor.x), privacy: .public), \(Int(anchor.y), privacy: .public)")
         begin(at: anchor, buttonHeld: true, closesOnRelease: settingsStore.settings.trigger.closesRingOnRelease)
     }
 
     func mouseTriggerDidDrag(to location: CGPoint) {
-        updatePointer()
+        guard session?.buttonHeld == true else { return }
+        session?.dragPoint = Self.appKitPoint(location)
+        session?.dragCount += 1
+        updateHeldHover()
     }
 
     func mouseTriggerDidRelease(at location: CGPoint) {
         guard let current = session else { return }
-        // 按松开时的位置最后算一次指向哪一格
-        lastPointer = nil
-        updatePointer()
+        if current.buttonHeld {
+            // 按松开的位置最后算一次指向哪一格
+            session?.dragPoint = Self.appKitPoint(location)
+            updateHeldHover()
+        }
         session?.buttonHeld = false
         lastPointer = nil
         // 圆盘还没出来（内容还在读）或者已经换成了结果卡片：等内容读到后再决定（见 route）
@@ -99,6 +112,10 @@ final class PopCoordinator: MouseTriggerDelegate {
                                               selectable: ring.selectablePlugin(at: ring.hovered)?.id,
                                               isLoading: ring.isLoading,
                                               closesOnRelease: current.closesOnRelease)
+        let dragCount = session?.dragCount ?? 0
+        let offset = session?.dragPoint.map { "\(Int($0.x - current.anchor.x)), \(Int($0.y - current.anchor.y))" } ?? "没有拖动"
+        let hovered = ring.hovered.map { "\($0)" } ?? "无"
+        Self.log.notice("松开：拖动事件 \(dragCount, privacy: .public) 个，偏移 \(offset, privacy: .public)，指向第 \(hovered, privacy: .public) 格，\(String(describing: action), privacy: .public)")
         switch action {
         case .run(let pluginID):
             if let slot = ring.hovered {
@@ -232,6 +249,8 @@ final class PopCoordinator: MouseTriggerDelegate {
         overlay.showRing(ring, center: current.anchor)
         lastPointer = nil
         startPointerTracking()
+        // 圆盘出来之前可能已经拖动过了
+        updateHeldHover()
         updatePointer()
     }
 
@@ -426,22 +445,30 @@ final class PopCoordinator: MouseTriggerDelegate {
         lastPointer = nil
     }
 
+    /// 按住鼠标键时指向哪一格：看拖动位置相对按下点的方向（marking menu），圆盘因为靠近屏幕边缘被挪开也不受影响。
+    /// 位置只用事件拦截送来的：拖动事件被 Pop 吞掉了，系统报告的指针位置（NSEvent.mouseLocation）不会跟着更新。
+    private func updateHeldHover() {
+        guard let current = session, current.buttonHeld, let ring = current.ring, overlay.mode == .ring,
+              let point = current.dragPoint else { return }
+        ring.updateHover(offset: CGVector(dx: point.x - current.anchor.x, dy: point.y - current.anchor.y))
+    }
+
+    /// 松开鼠标键之后（点击模式）：看指针在圆盘上的位置。按住时由 updateHeldHover 处理。
     private func updatePointer() {
-        guard let current = session, let ring = current.ring, overlay.mode == .ring else { return }
+        guard let current = session, !current.buttonHeld, let ring = current.ring, overlay.mode == .ring else { return }
         let mouse = NSEvent.mouseLocation
         // 指针没动就不覆盖键盘选择
         guard mouse != lastPointer else { return }
         lastPointer = mouse
-        if current.buttonHeld {
-            // 按住拖动：看相对按下点的方向（marking menu），圆盘因为靠近屏幕边缘被挪开也不受影响
-            ring.updateHover(offset: CGVector(dx: mouse.x - current.anchor.x, dy: mouse.y - current.anchor.y))
-        } else {
-            // 点击模式：看指针在圆盘上的位置
-            let center = overlay.ringCenter ?? current.anchor
-            let offset = CGVector(dx: mouse.x - center.x, dy: mouse.y - center.y)
-            let inside = (offset.dx * offset.dx + offset.dy * offset.dy).squareRoot() <= ring.geometry.outerRadius
-            ring.updateHover(offset: inside ? offset : nil)
-        }
+        let center = overlay.ringCenter ?? current.anchor
+        let offset = CGVector(dx: mouse.x - center.x, dy: mouse.y - center.y)
+        let inside = (offset.dx * offset.dx + offset.dy * offset.dy).squareRoot() <= ring.geometry.outerRadius
+        ring.updateHover(offset: inside ? offset : nil)
+    }
+
+    /// 事件拦截给的 Quartz 坐标（主屏左上角为原点）换成 AppKit 屏幕坐标
+    private static func appKitPoint(_ location: CGPoint) -> CGPoint {
+        ScreenGeometry.appKitPoint(fromQuartz: location, primaryScreenHeight: OverlayController.primaryScreenHeight)
     }
 
     private func handleRingClick() {

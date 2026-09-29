@@ -97,8 +97,8 @@ final class RingViewModel: ObservableObject {
     }
 }
 
-/// 圆盘：玻璃圆盘从指针处弹开，格子从圆心依次飞出；指向哪一格，高亮就沿着圆环滑过去；
-/// 选中时那一格按一下、圆盘放大淡出，取消时整个圆盘缩回圆心。
+/// 圆盘：玻璃圆盘从指针处弹开，格子从圆心依次飞出；指向哪一格，高亮就沿着圆环滑过去。
+/// 收起时（选中或取消）圆盘微微放大、格子往外飘着淡出，选中的那一格再按一下。动画的方向始终是从里往外。
 struct RingMenuView: View {
     @ObservedObject var model: RingViewModel
     @ObservedObject var presentation: OverlayPresentation
@@ -149,7 +149,7 @@ struct RingMenuView: View {
         let reach = slotReach(phase)
         return RingSlotLabel(slot: slot, isHovered: model.hovered == slot.id, committed: model.committed,
                              isLoading: model.isLoading)
-            .scaleEffect(phase == .shown || reduceMotion ? 1 : 0.55)
+            .scaleEffect(reduceMotion || phase != .entering ? 1 : 0.55)
             .opacity(phase == .shown ? 1 : 0)
             .offset(x: offset.dx * reach, y: -offset.dy * reach)
             .animation(phase == .shown ? Motion.ringOpen.delay(reduceMotion ? 0 : Double(slot.id) * Motion.slotStagger)
@@ -163,10 +163,11 @@ struct RingMenuView: View {
             Circle()
                 .fill(Color.primary.opacity(0.06))
                 .overlay(Circle().strokeBorder(Color.primary.opacity(0.12), lineWidth: 1))
-            if model.hovered != nil {
+            if let hovered = model.hovered {
                 // 圆心边上的小点指着当前的格子，跟着高亮一起转
+                let enabled = model.slots.indices.contains(hovered) && model.slots[hovered].enabled
                 PolarDot(angle: model.highlightAngle, distance: diameter / 2 - 6, radius: 2.5)
-                    .fill(Color.accentColor)
+                    .fill(enabled ? Color.accentColor : Color.primary.opacity(0.4))
                     .id(model.highlightID)
                     .transition(.opacity)
             }
@@ -188,33 +189,34 @@ struct RingMenuView: View {
             .animation(Motion.content, value: model.isLoading)
         }
         .frame(width: diameter, height: diameter)
-        .scaleEffect(phase == .shown || reduceMotion ? 1 : 0.5)
+        .scaleEffect(reduceMotion || phase != .entering ? 1 : 0.5)
         .opacity(phase == .shown ? 1 : 0)
         .animation(phase == .shown ? Motion.ringOpen.delay(Motion.seconds(0.04)) : Motion.exit, value: phase)
     }
 
-    /// 圆盘的缩放：从小弹开；选中后微微放大着淡出，取消时缩回去
+    /// 圆盘的缩放：从小弹开，收起时微微放大着淡出
     private func discScale(_ phase: OverlayPresentation.Phase) -> CGFloat {
         guard !reduceMotion else { return 1 }
         switch phase {
         case .entering: return 0.3
         case .shown: return 1
-        case .leaving: return model.committed == nil ? 0.6 : 1.05
+        case .leaving: return 1.05
         }
     }
 
-    /// 格子离圆心的远近（1 表示在自己的位置上）：展开前都挤在圆心，取消时往回收
+    /// 格子离圆心的远近（1 表示在自己的位置上）：展开前都挤在圆心，收起时再往外飘一点
     private func slotReach(_ phase: OverlayPresentation.Phase) -> CGFloat {
         guard !reduceMotion else { return 1 }
         switch phase {
         case .entering: return 0.12
         case .shown: return 1
-        case .leaving: return model.committed == nil ? 0.5 : 1
+        case .leaving: return 1.1
         }
     }
 }
 
 /// 指向的格子下面衬一块圆形高亮，外圈一段弧线；两者都沿着圆环滑到下一格。
+/// 这一格现在用不了（比如没选中文字时的「翻译」）时换成灰色，仍然看得出指着哪里。
 private struct RingHighlight: View {
     let angle: Double
     let geometry: RingGeometry
@@ -224,16 +226,16 @@ private struct RingHighlight: View {
     var body: some View {
         let radius = geometry.highlightRadius
         let arcSpan = min(360.0 / Double(max(geometry.slotCount, 1)) * 0.62, 42)
+        let tint = enabled ? Color.accentColor : Color.primary
         ZStack {
             PolarDot(angle: angle, distance: geometry.labelRadius, radius: radius)
-                .fill(Color.accentColor.opacity(committed ? 0.34 : 0.2))
+                .fill(tint.opacity(enabled ? (committed ? 0.34 : 0.2) : 0.1))
             PolarDot(angle: angle, distance: geometry.labelRadius, radius: radius)
-                .stroke(Color.accentColor.opacity(0.4), lineWidth: 1)
+                .stroke(tint.opacity(enabled ? 0.4 : 0.22), lineWidth: 1)
             RingArc(angle: angle, radius: geometry.outerRadius - 5, span: arcSpan)
-                .stroke(Color.accentColor, style: StrokeStyle(lineWidth: 3, lineCap: .round))
-                .shadow(color: Color.accentColor.opacity(0.7), radius: 5)
+                .stroke(tint.opacity(enabled ? 1 : 0.35), style: StrokeStyle(lineWidth: 3, lineCap: .round))
+                .shadow(color: enabled ? Color.accentColor.opacity(0.7) : .clear, radius: 5)
         }
-        .opacity(enabled ? 1 : 0.35)
         .frame(width: geometry.diameter, height: geometry.diameter)
         .allowsHitTesting(false)
     }
