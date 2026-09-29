@@ -107,6 +107,10 @@ enum CardAction: Equatable {
     case translate(String)
     /// 转换图片文件，结果存在原图旁边
     case convertImages([URL], ImageConverter.Operation)
+    /// 几张图片拼成一张，存在第一张旁边
+    case stitchImages([URL], ImageStitcher.Direction)
+    /// 转换视频，结果存在原视频旁边
+    case convertVideos([URL], VideoConverter.Operation)
     /// PDF 的每一页存成图片，放在旁边的文件夹里
     case exportPDFPages(URL)
     /// 保持唤醒一段时间（分钟）；nil 表示一直保持

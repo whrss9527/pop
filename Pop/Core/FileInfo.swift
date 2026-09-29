@@ -4,7 +4,7 @@ import PDFKit
 import UniformTypeIdentifiers
 
 /// 文件的基本信息：类型、大小（文件夹算上里面所有文件）、创建和修改时间，
-/// 另外图片列出尺寸、PDF 列出页数、音视频列出时长和画面大小。
+/// 另外图片列出尺寸和拍摄信息、PDF 列出页数、音视频列出时长和画面大小。
 enum FileInfo {
     /// 文件夹最多数这么多个文件，太多就只给个大概
     static let folderLimit = 200_000
@@ -106,7 +106,7 @@ enum FileInfo {
 
     private static func details(for url: URL, type: UTType) async -> [ResultCard.Row] {
         if type.conforms(to: .image) {
-            return ImageInfo.rows(for: url).filter { $0.label == "尺寸" }
+            return ImageInfo.rows(for: url).filter { $0.label == "尺寸" } + (PhotoMetadata.read(url)?.rows ?? [])
         }
         if type.conforms(to: .pdf), let document = PDFDocument(url: url) {
             return [ResultCard.Row(label: "页数", value: "\(document.pageCount) 页")]

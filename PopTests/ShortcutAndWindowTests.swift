@@ -195,7 +195,10 @@ final class ImageConverterTests: XCTestCase {
         let outcome = await ImageConvertPlugin().run(ContentClassifier.classify(.files([original])),
                                                      context: PluginContext(settings: AppSettings(), openSettings: {}))
         guard case .card(let card) = outcome else { return XCTFail("应该返回结果卡片") }
-        XCTAssertEqual(card.buttons.map(\.title), ImageConverter.Operation.allCases.map(\.title))
+        // 截图里没有位置和拍摄信息，不给去掉的按钮
+        XCTAssertEqual(card.buttons.map(\.title), ImageConverter.Operation.allCases.filter {
+            $0 != .removeLocation && $0 != .removeMetadata
+        }.map(\.title))
         XCTAssertEqual(card.buttons.first?.action, .convertImages([original], .png))
     }
 }

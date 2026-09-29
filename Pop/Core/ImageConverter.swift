@@ -2,7 +2,7 @@ import Foundation
 import ImageIO
 import UniformTypeIdentifiers
 
-/// 图片转换：换格式、缩小尺寸、压缩体积。结果存在原图旁边，不覆盖原图。
+/// 图片转换：换格式、缩小尺寸、压缩体积、去掉照片里的位置和拍摄信息。结果存在原图旁边，不覆盖原图。
 enum ImageConverter {
     enum Operation: String, CaseIterable, Identifiable {
         case png
@@ -13,6 +13,8 @@ enum ImageConverter {
         case rotateLeft
         case rotateRight
         case flipHorizontal
+        case removeLocation
+        case removeMetadata
 
         var id: String { rawValue }
 
@@ -26,6 +28,8 @@ enum ImageConverter {
             case .rotateLeft: return "向左转"
             case .rotateRight: return "向右转"
             case .flipHorizontal: return "左右翻转"
+            case .removeLocation: return "去掉位置信息"
+            case .removeMetadata: return "去掉拍摄信息"
             }
         }
     }
@@ -38,6 +42,9 @@ enum ImageConverter {
     static func convert(_ url: URL, _ operation: Operation) throws -> URL {
         guard let source = CGImageSourceCreateWithURL(url as CFURL, nil), CGImageSourceGetCount(source) > 0 else {
             throw Failure(message: "读不了「\(url.lastPathComponent)」")
+        }
+        if operation == .removeLocation || operation == .removeMetadata {
+            return try removingMetadata(url, source: source, operation: operation)
         }
         let sourceType = (CGImageSourceGetType(source) as String?).flatMap { UTType($0) } ?? .png
         let type: UTType
@@ -66,6 +73,8 @@ enum ImageConverter {
             type = sourceType
             properties[kCGImageDestinationLossyCompressionQuality] = 0.95
             image = uprightImage(source).flatMap { transformed($0, operation) }
+        case .removeLocation, .removeMetadata:
+            return url
         }
         guard let image else { throw Failure(message: "读不了「\(url.lastPathComponent)」") }
         let output = outputURL(for: url, operation: operation, type: type)
@@ -93,8 +102,60 @@ enum ImageConverter {
         return CGImageSourceCreateThumbnailAtIndex(source, 0, options as CFDictionary)
     }
 
+    /// 另存一份去掉位置（或者全部拍摄信息）的照片：尽量原样拷贝画面数据不重新压缩，照片的方向保留；
+    /// 存好后再读一遍，确认真的去掉了
+    private static func removingMetadata(_ url: URL, source: CGImageSource, operation: Operation) throws -> URL {
+        let removeAll = operation == .removeMetadata
+        let properties = CGImageSourceCopyPropertiesAtIndex(source, 0, nil) as? [CFString: Any] ?? [:]
+        let sourceIdentifier = (CGImageSourceGetType(source) as String?) ?? UTType.jpeg.identifier
+        let writable = (CGImageDestinationCopyTypeIdentifiers() as? [String] ?? []).contains(sourceIdentifier)
+        // RAW 这类存不回原格式的，存成 JPEG
+        let type = writable ? (UTType(sourceIdentifier) ?? .jpeg) : .jpeg
+        let output = outputURL(for: url, operation: operation, type: type)
+
+        func cleaned() -> Bool {
+            guard let metadata = PhotoMetadata.read(output) else { return false }
+            return removeAll ? metadata.isEmpty : !metadata.hasLocation
+        }
+
+        if writable, let destination = CGImageDestinationCreateWithURL(output as CFURL, type.identifier as CFString, 1, nil) {
+            var options: [CFString: Any] = [kCGImageMetadataShouldExcludeGPS: true]
+            if removeAll {
+                options[kCGImageDestinationMetadata] = CGImageMetadataCreateMutable()
+                options[kCGImageDestinationMergeMetadata] = false
+                if let orientation = properties[kCGImagePropertyOrientation] {
+                    options[kCGImageDestinationOrientation] = orientation
+                }
+            }
+            if CGImageDestinationCopyImageSource(destination, source, options as CFDictionary, nil), cleaned() {
+                return output
+            }
+            try? FileManager.default.removeItem(at: output)
+        }
+
+        // 这种格式不能原样拷贝：重新存一份
+        guard let destination = CGImageDestinationCreateWithURL(output as CFURL, type.identifier as CFString, 1, nil) else {
+            throw Failure(message: "这台 Mac 不支持存成 \(type.preferredFilenameExtension?.uppercased() ?? "这种格式")")
+        }
+        if removeAll {
+            // 画面按方向摆正后重新画一份，不带任何拍摄信息
+            guard let image = uprightImage(source) else { throw Failure(message: "读不了「\(url.lastPathComponent)」") }
+            CGImageDestinationAddImage(destination, image, [kCGImageDestinationLossyCompressionQuality: 0.95] as CFDictionary)
+        } else {
+            let changes: [CFString: Any] = [kCGImagePropertyGPSDictionary: kCFNull as Any,
+                                            kCGImageMetadataShouldExcludeGPS: true,
+                                            kCGImageDestinationLossyCompressionQuality: 0.95]
+            CGImageDestinationAddImageFromSource(destination, source, 0, changes as CFDictionary)
+        }
+        guard CGImageDestinationFinalize(destination), cleaned() else {
+            try? FileManager.default.removeItem(at: output)
+            throw Failure(message: removeAll ? "没能去掉「\(url.lastPathComponent)」的拍摄信息" : "没能去掉「\(url.lastPathComponent)」的位置信息")
+        }
+        return output
+    }
+
     /// 按原图方向（照片的 EXIF 方向）摆正后的原尺寸图片
-    private static func uprightImage(_ source: CGImageSource) -> CGImage? {
+    static func uprightImage(_ source: CGImageSource) -> CGImage? {
         guard let properties = CGImageSourceCopyPropertiesAtIndex(source, 0, nil) as? [CFString: Any],
               let width = properties[kCGImagePropertyPixelWidth] as? Int,
               let height = properties[kCGImagePropertyPixelHeight] as? Int else { return nil }
@@ -146,6 +207,8 @@ enum ImageConverter {
         case .rotateLeft: name += " 向左转"
         case .rotateRight: name += " 向右转"
         case .flipHorizontal: name += " 翻转"
+        case .removeLocation: name += " 无位置"
+        case .removeMetadata: name += " 无拍摄信息"
         case .png, .jpeg, .heic: break
         }
         var candidate = folder.appending(path: "\(name).\(ext)")

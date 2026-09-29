@@ -423,6 +423,10 @@ final class PopCoordinator: MouseTriggerDelegate {
             present(.translate(text: text, language: ContentClassifier.dominantLanguage(text)))
         case .convertImages(let files, let operation):
             convertImages(files, operation)
+        case .stitchImages(let files, let direction):
+            stitchImages(files, direction)
+        case .convertVideos(let files, let operation):
+            convertVideos(files, operation)
         case .exportPDFPages(let pdf):
             exportPDFPages(pdf)
         case .keepAwake(let minutes):
@@ -523,6 +527,71 @@ final class PopCoordinator: MouseTriggerDelegate {
                 message = outputs.count == 1 ? "已存到原图旁边" : "已转换 \(outputs.count) 张"
             }
             self.showToast(message, at: anchor)
+        }
+    }
+
+    /// 在后台拼接图片，完成后在访达里选中新文件
+    private func stitchImages(_ files: [URL], _ direction: ImageStitcher.Direction) {
+        let anchor = session?.anchor ?? NSEvent.mouseLocation
+        endSession()
+        Task { [weak self] in
+            let result = await runInBackground { () -> Result<URL, ImageStitcher.Failure> in
+                do {
+                    return .success(try ImageStitcher.stitch(files, direction: direction))
+                } catch let failure as ImageStitcher.Failure {
+                    return .failure(failure)
+                } catch {
+                    return .failure(ImageStitcher.Failure(message: error.localizedDescription))
+                }
+            }
+            guard let self else { return }
+            switch result {
+            case .success(let output):
+                NSWorkspace.shared.activateFileViewerSelecting([output])
+                self.showToast("已拼成一张，存在第一张旁边", at: anchor)
+            case .failure(let failure):
+                self.showToast(failure.message, at: anchor)
+            }
+        }
+    }
+
+    /// 转换视频要一会儿：先提示正在转换，好了在访达里选中新文件
+    private func convertVideos(_ files: [URL], _ operation: VideoConverter.Operation) {
+        let anchor = session?.anchor ?? NSEvent.mouseLocation
+        showToast(operation.progress, at: anchor)
+        Task { [weak self] in
+            var outputs: [URL] = []
+            var notes: [String] = []
+            var failures: [String] = []
+            for file in files {
+                do {
+                    let result = try await VideoConverter.convert(file, operation)
+                    outputs.append(result.url)
+                    if let note = result.note {
+                        notes.append(note)
+                    }
+                } catch let failure as VideoConverter.Failure {
+                    failures.append(failure.message)
+                } catch {
+                    failures.append(error.localizedDescription)
+                }
+            }
+            guard let self else { return }
+            if !outputs.isEmpty {
+                NSWorkspace.shared.activateFileViewerSelecting(outputs)
+            }
+            let message: String
+            if let failure = failures.first {
+                message = outputs.isEmpty ? failure : "转换了 \(outputs.count) 个，\(failures.count) 个失败：\(failure)"
+            } else if outputs.count > 1 {
+                message = "已转换 \(outputs.count) 个视频"
+            } else {
+                message = ([operation.done] + notes).joined(separator: "；")
+            }
+            // 转换要一会儿：这期间又唤起了 Pop 的话不去打断，结果在访达里已经选中了
+            if self.session == nil {
+                self.showToast(message, at: NSEvent.mouseLocation)
+            }
         }
     }
 
