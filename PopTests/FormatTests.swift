@@ -116,7 +116,7 @@ final class YAMLAndJSONTests: XCTestCase {
             echo "# done"
         """
         XCTAssertEqual(OrderedJSON.compact(try YAMLConverter.parse(workflow)),
-                       #"{"steps":[{"name":"build","run":"make"},{"name":"test","run":"make test\necho \"# done\"\n"}]}"#)
+                       ##"{"steps":[{"name":"build","run":"make"},{"name":"test","run":"make test\necho \"# done\"\n"}]}"##)
 
         // 保留结尾空行、去掉结尾换行、嵌套列表、跨行的 [ ]、顶层列表
         XCTAssertEqual(OrderedJSON.compact(try YAMLConverter.parse("keep: |+\n  text\n\nstrip: |-\n  a\n  b\n")),
