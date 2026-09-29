@@ -327,6 +327,13 @@ final class PinWindow: NSPanel {
         }
     }
 
+    /// 在标注窗口里打开这张贴图
+    @objc private func annotate() {
+        guard case .image(let image) = model.content,
+              let cgImage = image.cgImage(forProposedRect: nil, context: nil, hints: nil), let png = model.png else { return }
+        AnnotationWindowController.present(ScreenCapture.Capture(image: cgImage, png: png), near: midPoint)
+    }
+
     // MARK: - 键盘
 
     override func keyDown(with event: NSEvent) {
@@ -375,6 +382,7 @@ final class PinWindow: NSPanel {
         if model.isImage {
             addItem(to: menu, "存到「下载」", #selector(saveImage), key: "s")
             addItem(to: menu, "识别文字", #selector(recognizeText))
+            addItem(to: menu, "标注…", #selector(annotate))
         }
         menu.addItem(.separator())
         addItem(to: menu, "恢复大小", #selector(resetScale), key: "0")
