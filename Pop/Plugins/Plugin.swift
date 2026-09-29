@@ -113,6 +113,8 @@ enum CardAction: Equatable {
     case convertVideos([URL], VideoConverter.Operation)
     /// PDF 的每一页存成图片，放在旁边的文件夹里
     case exportPDFPages(URL)
+    /// 压缩 PDF，另存在旁边
+    case compressPDF(URL)
     /// 保持唤醒一段时间（分钟）；nil 表示一直保持
     case keepAwake(minutes: Int?)
     case stopKeepAwake
@@ -202,6 +204,8 @@ enum PluginOutcome: Equatable {
     case regexTester(text: String)
     /// 打开「加到提醒事项」卡片
     case reminder(text: String)
+    /// 打开批量重命名卡片
+    case rename([URL])
     case failure(String)
 }
 

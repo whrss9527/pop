@@ -95,6 +95,11 @@ enum FileInfo {
         return "\(readable)（\(exact) 字节）"
     }
 
+    /// 1.2 MB（只要好读的写法）
+    static func shortSize(_ bytes: Int64) -> String {
+        ByteCountFormatter.string(fromByteCount: bytes, countStyle: .file)
+    }
+
     /// 3725 秒 → 1:02:05
     static func duration(_ seconds: Double) -> String {
         let total = Int(seconds.rounded())

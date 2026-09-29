@@ -51,3 +51,16 @@ struct VideoConvertPlugin: PopPlugin {
                                 }))
     }
 }
+
+// MARK: - 批量重命名
+
+struct BatchRenamePlugin: PopPlugin {
+    let info = PluginInfo(id: BuiltinPluginID.batchRename, name: "批量重命名", symbol: "rectangle.and.pencil.and.ellipsis",
+                          summary: "给选中的文件统一改名：编号、替换文字、加前后缀、按照片的拍摄时间、改大小写，先看预览再改，改完可以撤销",
+                          accepts: [.files])
+
+    @MainActor func run(_ content: ClassifiedContent, context: PluginContext) async -> PluginOutcome {
+        guard !content.files.isEmpty else { return .failure("没有选中文件") }
+        return .rename(content.files)
+    }
+}

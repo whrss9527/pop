@@ -1,7 +1,7 @@
 import AppKit
 import PDFKit
 
-/// PDF 的合成、拆成图片、取文字。
+/// PDF 的合成、拆成图片、取文字、压缩。
 enum PDFTools {
     struct Failure: Error, Equatable {
         let message: String
@@ -96,6 +96,31 @@ enum PDFTools {
         thumbnail.draw(in: canvas)
         NSGraphicsContext.restoreGraphicsState()
         return rep.representation(using: .png, properties: [:])
+    }
+
+    struct Compression: Equatable {
+        var url: URL
+        var before: Int64
+        var after: Int64
+
+        /// 至少小了一成才算压缩了
+        var worthwhile: Bool { after < before - before / 10 }
+    }
+
+    /// 压缩 PDF：里面的图片存成 JPEG、按屏幕显示的清晰度缩小，另存成「原名 压缩.pdf」
+    static func compress(_ pdf: URL) throws -> Compression {
+        let document = try open(pdf)
+        let output = FileNames.available(in: pdf.deletingLastPathComponent(),
+                                         base: pdf.deletingPathExtension().lastPathComponent + " 压缩", extension: "pdf")
+        let options: [PDFDocumentWriteOption: Any] = [.saveImagesAsJPEGOption: true, .optimizeImagesForScreenOption: true]
+        guard document.write(to: output, withOptions: options) else {
+            try? FileManager.default.removeItem(at: output)
+            throw Failure(message: "写不进「\(output.lastPathComponent)」")
+        }
+        func size(_ url: URL) -> Int64 {
+            Int64((try? url.resourceValues(forKeys: [.fileSizeKey]))?.fileSize ?? 0)
+        }
+        return Compression(url: output, before: size(pdf), after: size(output))
     }
 
     /// PDF 里的全部文字（扫描件没有文字层时为空）

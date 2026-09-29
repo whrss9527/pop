@@ -204,7 +204,36 @@ final class PDFToolsTests: XCTestCase {
         let summary = await plugin.run(ContentClassifier.classify(.files(revealed.urls)), context: context)
         guard case .card(let card) = summary else { return XCTFail("应该返回结果卡片") }
         XCTAssertEqual(card.buttons.first?.action, .exportPDFPages(revealed.urls[0]))
+        XCTAssertEqual(card.buttons.last?.action, .compressPDF(revealed.urls[0]))
         XCTAssertTrue(card.detail?.hasPrefix("2 页") == true, card.detail ?? "")
+    }
+
+    func testCompressShrinksImages() throws {
+        // 一页上放一张 2 倍像素的杂色图（CoreGraphics 按无损压缩存），压缩后小很多，页数不变
+        let width = 1200
+        let height = 900
+        let bitmap = try XCTUnwrap(CGContext(data: nil, width: width, height: height, bitsPerComponent: 8, bytesPerRow: width * 4,
+                                             space: CGColorSpaceCreateDeviceRGB(),
+                                             bitmapInfo: CGImageAlphaInfo.noneSkipLast.rawValue))
+        let bytes = try XCTUnwrap(bitmap.data?.assumingMemoryBound(to: UInt8.self))
+        var seed: UInt32 = 7
+        for index in 0..<(width * height * 4) {
+            seed = seed &* 1_664_525 &+ 1_013_904_223
+            bytes[index] = UInt8(truncatingIfNeeded: seed >> 24)
+        }
+        let image = try XCTUnwrap(bitmap.makeImage())
+        let pdf = folder.appending(path: "扫描件.pdf")
+        var box = CGRect(x: 0, y: 0, width: width / 2, height: height / 2)
+        let context = try XCTUnwrap(CGContext(pdf as CFURL, mediaBox: &box, nil))
+        context.beginPDFPage(nil)
+        context.draw(image, in: box)
+        context.endPDFPage()
+        context.closePDF()
+
+        let compression = try PDFTools.compress(pdf)
+        XCTAssertEqual(compression.url.lastPathComponent, "扫描件 压缩.pdf")
+        XCTAssertEqual(PDFDocument(url: compression.url)?.pageCount, 1)
+        XCTAssertTrue(compression.worthwhile, "\(compression.before) → \(compression.after)")
     }
 }
 

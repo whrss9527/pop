@@ -1,5 +1,6 @@
 import Foundation
 import ImageIO
+import UniformTypeIdentifiers
 
 /// 照片的拍摄信息（EXIF、GPS）：相机、镜头、光圈快门、拍摄时间和拍摄地点
 struct PhotoMetadata: Equatable {
@@ -55,6 +56,20 @@ struct PhotoMetadata: Equatable {
                 self.altitude = Self.number(gps[kCGImagePropertyGPSAltitudeRef]) == 1 ? -altitude : altitude
             }
         }
+    }
+
+    /// 照片的拍摄时间：照片里记的是拍摄地的钟点，按 UTC 读进来，再按 UTC 写出来就是原来的钟点
+    static func captureDate(of url: URL) -> Date? {
+        guard UTType(filenameExtension: url.pathExtension)?.conforms(to: .image) == true,
+              let source = CGImageSourceCreateWithURL(url as CFURL, nil), CGImageSourceGetCount(source) > 0,
+              let properties = CGImageSourceCopyPropertiesAtIndex(source, 0, nil) as? [CFString: Any],
+              let exif = properties[kCGImagePropertyExifDictionary] as? [CFString: Any],
+              let raw = exif[kCGImagePropertyExifDateTimeOriginal] as? String else { return nil }
+        let parser = DateFormatter()
+        parser.locale = Locale(identifier: "en_US_POSIX")
+        parser.timeZone = TimeZone(secondsFromGMT: 0)
+        parser.dateFormat = "yyyy:MM:dd HH:mm:ss"
+        return parser.date(from: raw.trimmingCharacters(in: .whitespacesAndNewlines.union(CharacterSet(charactersIn: "\0"))))
     }
 
     /// 结果卡片里的几行

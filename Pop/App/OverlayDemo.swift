@@ -287,6 +287,13 @@ enum OverlayDemo {
             }
             step("photo")
 
+            // 批量重命名：几个示例文件按编号改名的预览
+            await pause(1.4 * unit)
+            let renaming = RenameModel(files: sampleFiles())
+            renaming.rule.name = "发布素材"
+            overlay.showCard(RenameCardView(model: renaming, onReveal: { _ in }, onClose: {}), anchor: center)
+            step("rename")
+
             // 截图标注窗口：拿一张画好的示例图，标上方框、箭头、文字、马赛克和序号；截图区域换成标注窗口
             await pause(1.4 * unit)
             overlay.hide()
