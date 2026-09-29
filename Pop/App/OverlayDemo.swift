@@ -6,10 +6,10 @@ import AppKit
 /// 指向一格、滑到另一格、选中后弹出结果卡片、提示、「全部功能」列表、再展开一次圆盘并取消；
 /// 再按真实的手势流程走一遍：按住右键唤起、拖到上面一格、再拖到「剪贴板」、松开执行
 /// （直接调用鼠标拦截的回调，拖动位置和真实使用时一样由拦截送来，不看系统的指针位置）；
-/// 最后是单位换算的卡片、贴图、AI 卡片和窗口布局卡片。
+/// 最后是单位换算的卡片、贴图、AI 卡片、窗口布局卡片和设置窗口里新加的几页。
 /// 配合 POP_ANIMATION_SCALE 放慢动画，截图脚本就能拍到动画的中间帧；POP_APPEARANCE=dark 时用深色外观。
-/// 每一步开始时往 POP_DEMO_LOG 指定的文件里写一行「步骤名 时间戳」；第一行是演示区域在屏幕上的位置
-/// （点，AppKit 坐标：x y 宽 高）和屏幕大小，脚本按它裁图。
+/// 每一步开始时往 POP_DEMO_LOG 指定的文件里写一行「步骤名 时间戳」；region 行是截图区域在屏幕上的位置
+/// （点，AppKit 坐标：x y 宽 高）和屏幕大小，脚本按拍照时最新的那一行裁图。
 @MainActor
 enum OverlayDemo {
     static var isEnabled: Bool {
@@ -25,9 +25,7 @@ enum OverlayDemo {
         let visible = screen.visibleFrame
         // 唤起点放在屏幕中间偏左上，右下方留出卡片和列表的位置
         let center = CGPoint(x: (visible.midX - 150).rounded(), y: (visible.midY + 150).rounded())
-        let region = CGRect(x: center.x - 190, y: center.y - 480, width: 680, height: 680)
-        log("region \(Int(region.minX)) \(Int(region.minY)) \(Int(region.width)) \(Int(region.height)) "
-            + "\(Int(screen.frame.width)) \(Int(screen.frame.height))")
+        logRegion(CGRect(x: center.x - 190, y: center.y - 480, width: 680, height: 680), screen: screen)
 
         let installed = Set(settings.installedPlugins)
         let text = ContentClassifier.classify(.text("Liquid glass"))
@@ -136,9 +134,27 @@ enum OverlayDemo {
             step("layout")
             overlay.showCard(WindowLayoutCardView(hasMultipleDisplays: false, onChoose: { _ in }, onClose: {}), anchor: center)
 
+            // 设置窗口里新加的几页：截图区域换成设置窗口
             await pause(1.4 * unit)
+            overlay.hide()
+            for tab in [SettingsTab.ai, .hotKeys] {
+                coordinator.openSettings(tab)
+                await pause(0.6 * unit)
+                if let window = NSApp.windows.first(where: { $0.isVisible && $0.title == "Pop 设置" }) {
+                    logRegion(window.frame, screen: screen)
+                }
+                step("settings-\(tab.rawValue)")
+                await pause(0.8 * unit)
+            }
+
             step("end")
         }
+    }
+
+    /// 截图区域（点，AppKit 坐标）和屏幕大小，截图脚本按它裁图
+    private static func logRegion(_ region: CGRect, screen: NSScreen) {
+        log("region \(Int(region.minX)) \(Int(region.minY)) \(Int(region.width)) \(Int(region.height)) "
+            + "\(Int(screen.frame.width)) \(Int(screen.frame.height))")
     }
 
     /// 圆盘上第 slot 格方向、离圆心 95 点的位置（AppKit 坐标）

@@ -65,12 +65,14 @@ plan = [
     ("unpin", [0.4]),
     ("ai", [0.6, 3.0]),
     ("layout", [3.0]),
+    ("settings-ai", [0.5]),
+    ("settings-hotKeys", [0.5]),
 ]
 if appearance == "dark":
     # 深色外观只拍停下来之后的样子
     plan = [("loaded", [2.6]), ("slide", [3.0]), ("commit", [5.0]), ("toast", [1.2]), ("chooser", [4.0]),
             ("drag-clipboard", [2.4]), ("release", [3.5]), ("unit", [3.0]), ("pin", [3.0]), ("ai", [3.0]),
-            ("layout", [3.0])]
+            ("layout", [3.0]), ("settings-ai", [0.5]), ("settings-hotKeys", [0.5])]
 factor = scale / 6.0
 
 def markers():
@@ -109,14 +111,14 @@ for name, offsets in plan:
         taken = time.time() - start
         path = os.path.join(work, f"{prefix}{index:02d}-{name}-{taken:.2f}s.png")
         subprocess.run(["screencapture", "-x", "-t", "png", path], check=False)
-        shots.append(path)
+        # 按拍照时最新的截图区域裁图（设置窗口那几张的区域不一样）
+        shots.append((path, markers()[1]))
 wait_for("end")
-_, region = markers()
-if not region:
-    raise SystemExit("演示没有写出截图区域")
 
-x, y, w, h, screen_w, screen_h = region
-for path in shots:
+for path, region in shots:
+    if not region:
+        raise SystemExit("演示没有写出截图区域")
+    x, y, w, h, screen_w, screen_h = region
     if not os.path.exists(path):
         print(f"没有截到 {os.path.basename(path)}")
         continue
