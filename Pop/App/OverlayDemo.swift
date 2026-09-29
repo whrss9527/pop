@@ -253,6 +253,19 @@ enum OverlayDemo {
             }
             step("history")
 
+            // 加到提醒事项：从一句话里认出时间和事情
+            await pause(1.4 * unit)
+            let draft = ReminderDraft(text: "明天下午3点和设计组过一遍新版本的截图")
+            overlay.showCard(ReminderCardView(draft: draft, onAdd: { _ in }, onClose: {}), anchor: center)
+            step("reminder")
+
+            // 识别表格：macOS 26 上按行列认出格子，更早的系统按普通文字识别
+            await pause(1.4 * unit)
+            if let table = sampleTableImage(), case .card(let tableCard) = await TableOCRPlugin.recognize(table) {
+                overlay.showCard(ResultCardView(card: tableCard, onAction: { _ in }, onMore: {}, onClose: {}), anchor: center)
+            }
+            step("table")
+
             // 截图标注窗口：拿一张画好的示例图，标上方框、箭头、文字、马赛克和序号；截图区域换成标注窗口
             await pause(1.4 * unit)
             overlay.hide()
