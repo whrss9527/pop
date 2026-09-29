@@ -85,19 +85,33 @@ enum DuplicateFinder {
                 progress(state)
             }
         }
-        groups.sort { $0.wasted != $1.wasted ? $0.wasted > $1.wasted : $0.files[0].lastPathComponent < $1.files[0].lastPathComponent }
+        groups.sort { lhs, rhs in
+            if lhs.wasted != rhs.wasted {
+                return lhs.wasted > rhs.wasted
+            }
+            return lhs.files[0].lastPathComponent < rhs.files[0].lastPathComponent
+        }
         return Result(groups: groups, scanned: listing.files.count, truncated: listing.truncated)
     }
 
     /// 最早创建的在前面，一样早的按路径排
     static func ordered(_ urls: [URL]) -> [URL] {
-        func created(_ url: URL) -> Date {
-            (try? url.resourceValues(forKeys: [.creationDateKey]).creationDate) ?? .distantFuture
+        struct Entry {
+            var url: URL
+            var created: Date
+            var path: String
         }
-        return urls.map { ($0, created($0)) }.sorted { lhs, rhs in
-            lhs.1 != rhs.1 ? lhs.1 < rhs.1
-                : lhs.0.path(percentEncoded: false).localizedStandardCompare(rhs.0.path(percentEncoded: false)) == .orderedAscending
-        }.map { $0.0 }
+        let entries = urls.map { url -> Entry in
+            let date = (try? url.resourceValues(forKeys: [.creationDateKey]).creationDate) ?? .distantFuture
+            return Entry(url: url, created: date, path: url.path(percentEncoded: false))
+        }
+        let sorted = entries.sorted { lhs, rhs in
+            if lhs.created != rhs.created {
+                return lhs.created < rhs.created
+            }
+            return lhs.path.localizedStandardCompare(rhs.path) == .orderedAscending
+        }
+        return sorted.map { $0.url }
     }
 
     /// 文件内容的 SHA-256（limit 不为空时只算开头这么多字节）
