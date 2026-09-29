@@ -414,6 +414,13 @@ struct TranslationCardView: View {
                     Button("贴到屏幕") { onAction(.pinText(translated)) }
                         .help("把译文贴在屏幕最前面，边看原文边对照")
                     Button("朗读") { Speaker.shared.speak(translated, language: model.targetCode) }
+                    if VocabularyStore.isWordLike(model.text) {
+                        Button("加入生词本") {
+                            onAction(.addToVocabulary(word: model.text, translation: translated, source: model.sourceCode,
+                                                      target: model.targetCode))
+                        }
+                        .help("把这个词和译文存到生词本，之后可以复习")
+                    }
                 }
                 if let onMore {
                     Button("更多功能", action: onMore)

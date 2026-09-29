@@ -65,6 +65,14 @@ enum ContentCheck: Hashable {
     case lineList
     /// 说到了时间（明天、周五、下午 3 点……）
     case dateMention
+    /// JSON，或者读得出来的 YAML
+    case yamlOrJSON
+    /// XML（包括 SVG、plist）
+    case xml
+    /// 一条 SQL 语句
+    case sql
+    /// Base64 写的图片
+    case base64Image
 
     func matches(_ subject: String) -> Bool {
         switch self {
@@ -82,6 +90,14 @@ enum ContentCheck: Hashable {
             return LineTools.isApplicable(subject)
         case .dateMention:
             return NaturalDate.parse(subject) != nil
+        case .yamlOrJSON:
+            return JSONFormatter.isJSON(subject) || YAMLConverter.looksLikeYAML(subject)
+        case .xml:
+            return XMLFormatter.isXML(subject)
+        case .sql:
+            return SQLFormatter.looksLikeSQL(subject)
+        case .base64Image:
+            return Base64Image.looksLikeImage(subject)
         }
     }
 }
@@ -105,6 +121,8 @@ enum CardAction: Equatable {
     case pinText(String)
     /// 用翻译卡片翻译这段文字
     case translate(String)
+    /// 把单词和译文加进生词本
+    case addToVocabulary(word: String, translation: String, source: String?, target: String?)
     /// 转换图片文件，结果存在原图旁边
     case convertImages([URL], ImageConverter.Operation)
     /// 几张图片拼成一张，存在第一张旁边
@@ -206,6 +224,8 @@ enum PluginOutcome: Equatable {
     case reminder(text: String)
     /// 打开批量重命名卡片
     case rename([URL])
+    /// 打开生词本
+    case showVocabulary
     case failure(String)
 }
 

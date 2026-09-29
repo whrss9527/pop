@@ -18,7 +18,21 @@ struct DictionaryPlugin: PopPlugin {
             return .card(ResultCard(title: "词典", body: "系统词典里没有找到「\(text)」。可以在「词典」App 的设置里启用更多词典。",
                                     buttons: buttons))
         }
+        if VocabularyStore.isWordLike(text) {
+            buttons.append(CardButton(title: "加入生词本", action: .addToVocabulary(word: text, translation: Self.brief(definition, word: text),
+                                                                                source: content.language, target: nil)))
+        }
         return .card(ResultCard(title: text, body: Self.format(definition), copyText: definition, buttons: buttons))
+    }
+
+    /// 存进生词本的简短释义：去掉开头重复的词，最多 120 个字
+    static func brief(_ definition: String, word: String) -> String {
+        var text = definition.components(separatedBy: .whitespacesAndNewlines).filter { !$0.isEmpty }.joined(separator: " ")
+        if text.lowercased().hasPrefix(word.lowercased()) {
+            text = String(text.dropFirst(word.count))
+        }
+        text = text.trimmingCharacters(in: .whitespacesAndNewlines.union(CharacterSet(charactersIn: "|")))
+        return text.count > 120 ? String(text.prefix(120)) + "…" : text
     }
 
     /// 系统返回的释义挤在一行里，在义项编号和分隔符前断行，读起来轻松一些。
