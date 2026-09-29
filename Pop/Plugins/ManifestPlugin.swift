@@ -18,7 +18,7 @@ struct ManifestPlugin: PopPlugin, Equatable {
     }
 
     @MainActor func run(_ content: ClassifiedContent, context: PluginContext) async -> PluginOutcome {
-        await ManifestRunner.run(manifest, content: content)
+        await ManifestRunner.run(manifest, content: content, ai: context.settings.ai)
     }
 }
 
@@ -30,7 +30,7 @@ struct PluginRunError: Error, Equatable {
     }
 }
 
-/// 执行用户插件：网址模板、Shell 脚本、JavaScript、快捷指令。
+/// 执行用户插件：网址模板、Shell 脚本、JavaScript、快捷指令、AI 指令。
 enum ManifestRunner {
     /// 交给插件的输入
     struct Input: Equatable {
@@ -57,7 +57,7 @@ enum ManifestRunner {
     static let maxEnvironmentLength = 64_000
 
     @MainActor
-    static func run(_ manifest: PluginManifest, content: ClassifiedContent) async -> PluginOutcome {
+    static func run(_ manifest: PluginManifest, content: ClassifiedContent, ai: AISettings = AISettings()) async -> PluginOutcome {
         let input = Input(content)
         if manifest.action.type == .url {
             guard let url = expandURL(manifest.action.template, input: input) else {
@@ -66,7 +66,12 @@ enum ManifestRunner {
             NSWorkspace.shared.open(url)
             return .done(toast: nil)
         }
-        switch await execute(manifest.action, input: input) {
+        if manifest.action.type == .ai, manifest.output == .card {
+            // 结果卡片一边生成一边显示
+            return .ai(AIRequestSpec(text: input.text, prompt: AIPrompt.expand(manifest.action.prompt, text: input.text),
+                                     label: manifest.name))
+        }
+        switch await execute(manifest.action, input: input, ai: ai) {
         case .success(let output):
             return present(output, manifest: manifest, canReplace: content.text != nil)
         case .failure(let error):
@@ -75,7 +80,7 @@ enum ManifestRunner {
     }
 
     /// 运行插件并返回输出（去掉末尾换行）。网址插件只返回展开后的网址，不会打开，设置里的「试运行」也用它。
-    static func execute(_ action: PluginManifest.Action, input: Input) async -> Result<String, PluginRunError> {
+    static func execute(_ action: PluginManifest.Action, input: Input, ai: AISettings? = nil) async -> Result<String, PluginRunError> {
         switch action.type {
         case .url:
             guard let url = expandURL(action.template, input: input) else {
@@ -93,6 +98,18 @@ enum ManifestRunner {
             return await JavaScriptRunner.run(action.script, input: input, timeout: action.timeout).map(trimTrailingNewlines)
         case .shortcut:
             return await runShortcut(action.shortcut, input: input, timeout: action.timeout)
+        case .ai:
+            guard let ai, ai.isConfigured else {
+                return .failure(PluginRunError(AIClient.describe(AIClient.Failure.notConfigured)))
+            }
+            let configuration = AIClient.Configuration(baseURL: ai.baseURL, apiKey: AIKeyStore.read() ?? "", model: ai.model)
+            let messages: [AIClient.Message] = [.system(AIPrompt.system), .user(AIPrompt.expand(action.prompt, text: input.text))]
+            do {
+                let output = try await AIClient.complete(configuration, messages: messages)
+                return .success(trimTrailingNewlines(output))
+            } catch {
+                return .failure(PluginRunError(AIClient.describe(error)))
+            }
         }
     }
 

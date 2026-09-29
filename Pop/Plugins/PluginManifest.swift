@@ -72,6 +72,8 @@ struct PluginManifest: Codable, Equatable, Identifiable {
             case javascript
             /// 运行快捷指令
             case shortcut
+            /// 把选中的文字和指令发给 AI
+            case ai
 
             var id: String { rawValue }
 
@@ -81,6 +83,7 @@ struct PluginManifest: Codable, Equatable, Identifiable {
                 case .shell: return "Shell 脚本"
                 case .javascript: return "JavaScript"
                 case .shortcut: return "快捷指令"
+                case .ai: return "AI 指令"
                 }
             }
         }
@@ -92,22 +95,26 @@ struct PluginManifest: Codable, Equatable, Identifiable {
         var script = ""
         /// shortcut：快捷指令名称
         var shortcut = ""
+        /// ai：给 AI 的指令，{text} 换成选中的文字
+        var prompt = ""
         /// 最长运行时间（秒）
         var timeout: Double = Action.defaultTimeout
 
         static let defaultTimeout: Double = 15
         static let timeoutRange: ClosedRange<Double> = 1...300
 
-        init(type: Kind = .url, template: String = "", script: String = "", shortcut: String = "", timeout: Double = Action.defaultTimeout) {
+        init(type: Kind = .url, template: String = "", script: String = "", shortcut: String = "", prompt: String = "",
+             timeout: Double = Action.defaultTimeout) {
             self.type = type
             self.template = template
             self.script = script
             self.shortcut = shortcut
+            self.prompt = prompt
             self.timeout = timeout
         }
 
         private enum CodingKeys: String, CodingKey {
-            case type, template, script, shortcut, timeout
+            case type, template, script, shortcut, prompt, timeout
         }
 
         init(from decoder: Decoder) throws {
@@ -116,6 +123,7 @@ struct PluginManifest: Codable, Equatable, Identifiable {
             template = c.lenient(.template, default: "")
             script = c.lenient(.script, default: "")
             shortcut = c.lenient(.shortcut, default: "")
+            prompt = c.lenient(.prompt, default: "")
             timeout = Self.clampTimeout(c.lenient(.timeout, default: Self.defaultTimeout))
         }
 
@@ -132,6 +140,8 @@ struct PluginManifest: Codable, Equatable, Identifiable {
             case .shortcut:
                 try c.encode(shortcut, forKey: .shortcut)
                 try c.encode(timeout, forKey: .timeout)
+            case .ai:
+                try c.encode(prompt, forKey: .prompt)
             }
         }
 
@@ -236,6 +246,8 @@ struct PluginManifest: Codable, Equatable, Identifiable {
             copy.action = Action(type: action.type, script: action.script, timeout: copy.action.timeout)
         case .shortcut:
             copy.action = Action(type: .shortcut, shortcut: action.shortcut.trimmingCharacters(in: .whitespacesAndNewlines), timeout: copy.action.timeout)
+        case .ai:
+            copy.action = Action(type: .ai, prompt: action.prompt.trimmingCharacters(in: .whitespacesAndNewlines))
         }
         return copy
     }
@@ -258,6 +270,8 @@ struct PluginManifest: Codable, Equatable, Identifiable {
             if action.script.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty { return "请填写脚本" }
         case .shortcut:
             if action.shortcut.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty { return "请填写快捷指令名称" }
+        case .ai:
+            if action.prompt.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty { return "请填写给 AI 的指令" }
         }
         return nil
     }
@@ -330,6 +344,16 @@ extension PluginManifest {
                                               summary: "列出选中 JSON 对象的所有键",
                                               match: Match(kinds: [.json]),
                                               action: Action(type: .javascript, script: "function run(input) {\n  return Object.keys(JSON.parse(input)).join('\\n')\n}"),
+                                              output: .card)),
+            Template(id: "ai-formal", title: "AI：改写成正式的语气",
+                     manifest: PluginManifest(name: "正式一点", symbol: "text.quote",
+                                              summary: "让 AI 把选中的文字改写得正式、礼貌",
+                                              action: Action(type: .ai, prompt: "把下面的文字改写得更正式、礼貌，保持原来的语言和意思，只输出改写后的文字：\n\n{text}"),
+                                              output: .card)),
+            Template(id: "ai-reply", title: "AI：帮我回复",
+                     manifest: PluginManifest(name: "帮我回复", symbol: "arrowshape.turn.up.left",
+                                              summary: "让 AI 替选中的消息拟一段回复",
+                                              action: Action(type: .ai, prompt: "下面是别人发给我的消息，帮我拟一段得体、简洁的回复，用消息原来的语言：\n\n{text}"),
                                               output: .card)),
             Template(id: "shortcut", title: "快捷指令",
                      manifest: PluginManifest(name: "运行快捷指令", symbol: "square.stack.3d.up",

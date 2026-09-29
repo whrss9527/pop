@@ -321,6 +321,8 @@ final class PopCoordinator: MouseTriggerDelegate {
             presentChooser()
         case .showClipboardHistory:
             presentClipboardHistory()
+        case .ai(let spec):
+            presentAI(spec)
         case .failure(let message):
             overlay.showCard(ResultCardView(card: ResultCard(title: "没能完成", body: message),
                                             onAction: { [weak self] action in self?.perform(action) },
@@ -363,6 +365,29 @@ final class PopCoordinator: MouseTriggerDelegate {
             PinBoard.shared.pin(text: text, around: anchor)
         case .translate(let text):
             present(.translate(text: text, language: ContentClassifier.dominantLanguage(text)))
+        }
+    }
+
+    /// AI 卡片：马上执行指定的指令，或者等用户选指令、提问
+    private func presentAI(_ spec: AIRequestSpec) {
+        guard let current = session else { return }
+        let model = AIChatModel(source: spec.text, settings: settingsStore.settings)
+        let canReplace = Self.isTextSelection(current.content) && current.content?.text == spec.text
+        overlay.showCard(AICardView(model: model, canReplace: canReplace,
+                                    focusQuestion: spec.action == nil && spec.prompt == nil,
+                                    onAction: { [weak self] action in self?.perform(action) },
+                                    onMore: moreAction(for: current),
+                                    onOpenSettings: { [weak self] in
+                                        self?.endSession()
+                                        self?.openSettings(.ai)
+                                    },
+                                    onClose: { [weak self] in self?.endSession() }),
+                         anchor: current.anchor,
+                         keyHandler: { event in model.handleKey(event) })
+        if let prompt = spec.prompt {
+            model.run(prompt: prompt, label: spec.label ?? "AI")
+        } else if let action = spec.action {
+            model.run(action)
         }
     }
 

@@ -38,6 +38,11 @@ enum BuiltinPluginID {
     static let removeBackground = "removeBackground"
     static let airDrop = "airDrop"
 
+    static let aiAssistant = "aiAssistant"
+    static let aiPolish = "aiPolish"
+    static let aiSummarize = "aiSummarize"
+    static let aiExplain = "aiExplain"
+
     /// 0.1 版就有的功能。旧版本的设置里没有记录「见过哪些内置功能」，按这个列表补齐。
     static let legacy = [translate, search, openURL, calculate, copyPlain, formatJSON, timestamp, copyPath, revealInFinder, settings]
 
@@ -45,7 +50,16 @@ enum BuiltinPluginID {
         dictionary, speak, changeCase, encodeDecode, textStats, hash, numberConvert, colorConvert, random, qrCode,
         ocr, screenshotOCR, colorPicker, openInTerminal, quickNote, clipboardHistory, allPlugins,
         unitConvert, textCleanup, screenshotTranslate, pin, removeBackground, airDrop,
+        aiAssistant, aiPolish, aiSummarize, aiExplain,
     ]
+
+    /// 默认不装的内置功能（需要的话在「设置 → 功能」里打开）
+    static let optIn: Set<String> = [aiPolish, aiSummarize, aiExplain]
+
+    /// 全新安装时默认装上的内置功能
+    static var installedByDefault: [String] {
+        all.filter { !optIn.contains($0) }
+    }
 }
 
 enum TriggerMode: String, Codable, CaseIterable, Identifiable {
@@ -449,16 +463,37 @@ struct ClipboardSettings: Codable, Equatable {
     }
 }
 
+/// AI 功能的设置。接口地址和模型会随设置同步，API Key 只存在这台 Mac 的钥匙串里（见 AIKeyStore）。
+struct AISettings: Codable, Equatable {
+    /// 兼容 OpenAI Chat Completions 的接口地址，到 /v1 为止
+    var baseURL = ""
+    var model = ""
+
+    init() {}
+
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        baseURL = c.lenient(.baseURL, default: "")
+        model = c.lenient(.model, default: "")
+    }
+
+    var isConfigured: Bool {
+        !baseURL.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+            && !model.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+    }
+}
+
 /// 所有需要持久化（并通过 iCloud 同步）的设置。
 struct AppSettings: Codable, Equatable {
     var trigger = TriggerSettings()
     var ring = RingLayout.default
     /// 已安装（启用）的插件
-    var installedPlugins: [String] = BuiltinPluginID.all
+    var installedPlugins: [String] = BuiltinPluginID.installedByDefault
     var rules: [DirectRule] = DirectRule.defaults
     var translation = TranslationSettings()
     var searchEngine: SearchEngine = .google
     var clipboard = ClipboardSettings()
+    var ai = AISettings()
     /// 已经「见过」的内置功能。新版本新增的内置功能不在这里面，读取旧设置时会自动装上。
     var knownBuiltinPlugins: [String] = BuiltinPluginID.all
     /// 用户最后一次修改的时间，iCloud 同步时用它判断哪边更新。
@@ -477,6 +512,7 @@ struct AppSettings: Codable, Equatable {
         translation = c.lenient(.translation, default: d.translation)
         searchEngine = c.lenient(.searchEngine, default: d.searchEngine)
         clipboard = c.lenient(.clipboard, default: d.clipboard)
+        ai = c.lenient(.ai, default: d.ai)
         knownBuiltinPlugins = c.lenient(.knownBuiltinPlugins, default: BuiltinPluginID.legacy)
         modifiedAt = c.lenient(.modifiedAt, default: d.modifiedAt)
         if !knownBuiltinPlugins.contains(BuiltinPluginID.allPlugins), ring == .legacyDefault {
@@ -485,10 +521,10 @@ struct AppSettings: Codable, Equatable {
         adoptNewBuiltinPlugins()
     }
 
-    /// 新版本新增的内置功能默认装上（用户之后卸载了就不会再自动装回来）。
+    /// 新版本新增的内置功能默认装上（用户之后卸载了就不会再自动装回来；默认不装的功能除外）。
     mutating func adoptNewBuiltinPlugins() {
         for id in BuiltinPluginID.all where !knownBuiltinPlugins.contains(id) {
-            if !installedPlugins.contains(id) {
+            if !installedPlugins.contains(id), !BuiltinPluginID.optIn.contains(id) {
                 installedPlugins.append(id)
             }
             knownBuiltinPlugins.append(id)

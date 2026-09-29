@@ -113,6 +113,8 @@ enum PluginOutcome: Equatable {
     case showAllPlugins
     /// 打开剪贴板历史
     case showClipboardHistory
+    /// 打开 AI 卡片
+    case ai(AIRequestSpec)
     case failure(String)
 }
 
