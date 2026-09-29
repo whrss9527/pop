@@ -51,6 +51,8 @@ enum ContentClassifier {
             content.kinds.insert(.number)
         } else if looksLikeMath(text) {
             content.kinds.insert(.math)
+        } else if ColorContrast.isColorPair(text) {
+            // 两个颜色（文字和背景）：只当普通文字，不算外文（免得被「外文直接翻译」接走）
         } else if looksLikeToken(text) {
             // 令牌、哈希、密钥这类串只当普通文字，不算外文（免得被「外文直接翻译」接走）
         } else {

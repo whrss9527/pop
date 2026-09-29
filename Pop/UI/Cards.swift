@@ -94,6 +94,9 @@ struct ResultCardView: View {
             if let diff = card.diff {
                 TextDiffView(result: diff)
             }
+            if let markdown = card.markdown, let rich = MarkdownRichText.renderForDisplay(markdown) {
+                RichTextPreview(text: rich, width: 348)
+            }
             if !card.rows.isEmpty {
                 ResultRowsView(rows: card.rows, replaceable: card.rowsReplaceable, lineLimit: card.rowLineLimit,
                                onAction: onAction)
@@ -166,6 +169,46 @@ struct ResultRowsView: View {
                 }
             }
         }
+    }
+}
+
+/// 排好版的富文本（只读，可以选中复制），太长时在固定高度里滚动
+struct RichTextPreview: View {
+    let text: NSAttributedString
+    let width: CGFloat
+
+    private var height: CGFloat {
+        let bounds = text.boundingRect(with: CGSize(width: width - 10, height: .greatestFiniteMagnitude),
+                                       options: [.usesLineFragmentOrigin, .usesFontLeading])
+        return min(max(ceil(bounds.height) + 12, 40), 320)
+    }
+
+    var body: some View {
+        RichTextView(text: text)
+            .frame(width: width, height: height)
+    }
+}
+
+private struct RichTextView: NSViewRepresentable {
+    let text: NSAttributedString
+
+    func makeNSView(context: Context) -> NSScrollView {
+        let scroll = NSTextView.scrollableTextView()
+        scroll.drawsBackground = false
+        scroll.autohidesScrollers = true
+        if let textView = scroll.documentView as? NSTextView {
+            textView.isEditable = false
+            textView.isSelectable = true
+            textView.drawsBackground = false
+            textView.textContainerInset = NSSize(width: 0, height: 4)
+            textView.textStorage?.setAttributedString(text)
+        }
+        return scroll
+    }
+
+    func updateNSView(_ scroll: NSScrollView, context: Context) {
+        guard let textView = scroll.documentView as? NSTextView, textView.attributedString() != text else { return }
+        textView.textStorage?.setAttributedString(text)
     }
 }
 

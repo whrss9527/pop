@@ -7,7 +7,7 @@ import AppKit
 /// 再按真实的手势流程走一遍：按住右键唤起、拖到上面一格、再拖到「剪贴板」、松开执行
 /// （直接调用鼠标拦截的回调，拖动位置和真实使用时一样由拦截送来，不看系统的指针位置）；
 /// 最后是单位换算的卡片、贴图、AI 卡片、窗口布局卡片、翻译卡片、常用短语、文本对比、图片配色、暂存架、打开方式、
-/// 截图标注窗口和设置窗口里新加的几页。
+/// Markdown 预览、截图标注窗口和设置窗口里新加的几页。
 /// 配合 POP_ANIMATION_SCALE 放慢动画，截图脚本就能拍到动画的中间帧；POP_APPEARANCE=dark 时用深色外观。
 /// 每一步开始时往 POP_DEMO_LOG 指定的文件里写一行「步骤名 时间戳」；region 行是截图区域在屏幕上的位置
 /// （点，AppKit 坐标：x y 宽 高）和屏幕大小，脚本按拍照时最新的那一行裁图。
@@ -193,6 +193,15 @@ enum OverlayDemo {
                 overlay.showCard(OpenWithCardView(request: request, onChoose: { _ in }, onClose: {}), anchor: center)
             }
             step("openWith")
+
+            // Markdown 预览卡片（深色外观下文字也要看得清）
+            await pause(1.4 * unit)
+            let markdown = "## 发布清单\n\n- 更新 **CHANGELOG**\n- 改 `MARKETING_VERSION`\n\n> 合并到 main 后自动发版"
+            overlay.showCard(ResultCardView(card: ResultCard(title: "Markdown 预览", markdown: markdown,
+                                                             buttons: [CardButton(title: "复制为富文本", action: .copyRichText(markdown))]),
+                                            onAction: { _ in }, onMore: {}, onClose: {}),
+                             anchor: center)
+            step("markdown")
 
             // 截图标注窗口：拿一张画好的示例图，标上方框、箭头、文字、马赛克和序号；截图区域换成标注窗口
             await pause(1.4 * unit)

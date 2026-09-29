@@ -421,6 +421,32 @@ final class PopCoordinator: MouseTriggerDelegate {
         case .stopKeepAwake:
             KeepAwake.shared.stop()
             finish(toast: "已停止保持唤醒")
+        case .copyRichText(let markdown):
+            guard let rich = MarkdownRichText.render(markdown) else {
+                present(.failure("没能转换这段 Markdown"))
+                return
+            }
+            MarkdownRichText.copy(rich)
+            finish(toast: "已复制为富文本")
+        case .expandLink(let url):
+            expandLink(url)
+        }
+    }
+
+    /// 跟着短链接跳转，卡片换成展开后的结果
+    private func expandLink(_ url: URL) {
+        guard let current = session else { return }
+        let sessionID = current.id
+        Task { [weak self] in
+            let outcome: PluginOutcome
+            do {
+                let expansion = try await LinkExpander.expand(url)
+                outcome = .card(LinkExpander.card(for: expansion))
+            } catch {
+                outcome = .failure("展开失败：\(LinkExpander.describe(error))")
+            }
+            guard let self, self.session?.id == sessionID else { return }
+            self.present(outcome)
         }
     }
 

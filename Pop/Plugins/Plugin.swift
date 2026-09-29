@@ -53,11 +53,19 @@ struct PluginInfo: Identifiable, Hashable {
 enum ContentCheck: Hashable {
     /// 至少两个数：一列（每行一个）或者一行用逗号、空格隔开
     case numberList
+    /// 5 段式的 cron 表达式
+    case cron
+    /// 两个颜色（文字和背景）
+    case colorPair
 
     func matches(_ subject: String) -> Bool {
         switch self {
         case .numberList:
             return NumberStats.parse(subject) != nil
+        case .cron:
+            return CronExpression(subject) != nil
+        case .colorPair:
+            return ColorContrast.isColorPair(subject)
         }
     }
 }
@@ -86,6 +94,10 @@ enum CardAction: Equatable {
     /// 保持唤醒一段时间（分钟）；nil 表示一直保持
     case keepAwake(minutes: Int?)
     case stopKeepAwake
+    /// 把这段 Markdown 转成富文本复制
+    case copyRichText(String)
+    /// 跟着短链接的跳转，看最后到哪个网址
+    case expandLink(URL)
 }
 
 struct CardButton: Equatable, Identifiable {
@@ -126,6 +138,8 @@ struct ResultCard: Equatable {
     var palette: [String] = []
     /// 两段文字的差异（文本对比）
     var diff: TextDiff.Result? = nil
+    /// 按排版显示的 Markdown
+    var markdown: String? = nil
     var buttons: [CardButton] = []
 }
 
