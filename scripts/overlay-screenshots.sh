@@ -47,6 +47,10 @@ plan = [
     ("chooser", [0.6, 4.0]),
     ("ring2", [3.5]),
     ("cancel", [0.2, 0.5, 0.9]),
+    ("press", [0.8, 3.0]),
+    ("drag-up", [0.6, 2.4]),
+    ("drag-clipboard", [0.5, 2.4]),
+    ("release", [0.4, 1.2, 3.5]),
 ]
 factor = scale / 6.0
 

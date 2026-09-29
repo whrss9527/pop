@@ -97,8 +97,8 @@ final class RingViewModel: ObservableObject {
     }
 }
 
-/// 圆盘：玻璃圆盘从指针处弹开，格子从圆心依次飞出；指向哪一格，高亮就沿着圆环滑过去；
-/// 选中时那一格按一下、圆盘放大淡出，取消时整个圆盘缩回圆心。
+/// 圆盘：玻璃圆盘从指针处弹开，格子从圆心依次飞出；指向哪一格，高亮就沿着圆环滑过去。
+/// 收起时（选中或取消）圆盘微微放大、格子往外飘着淡出，选中的那一格再按一下。动画的方向始终是从里往外。
 struct RingMenuView: View {
     @ObservedObject var model: RingViewModel
     @ObservedObject var presentation: OverlayPresentation
@@ -149,7 +149,7 @@ struct RingMenuView: View {
         let reach = slotReach(phase)
         return RingSlotLabel(slot: slot, isHovered: model.hovered == slot.id, committed: model.committed,
                              isLoading: model.isLoading)
-            .scaleEffect(phase == .shown || reduceMotion ? 1 : 0.55)
+            .scaleEffect(reduceMotion || phase != .entering ? 1 : 0.55)
             .opacity(phase == .shown ? 1 : 0)
             .offset(x: offset.dx * reach, y: -offset.dy * reach)
             .animation(phase == .shown ? Motion.ringOpen.delay(reduceMotion ? 0 : Double(slot.id) * Motion.slotStagger)
@@ -188,28 +188,28 @@ struct RingMenuView: View {
             .animation(Motion.content, value: model.isLoading)
         }
         .frame(width: diameter, height: diameter)
-        .scaleEffect(phase == .shown || reduceMotion ? 1 : 0.5)
+        .scaleEffect(reduceMotion || phase != .entering ? 1 : 0.5)
         .opacity(phase == .shown ? 1 : 0)
         .animation(phase == .shown ? Motion.ringOpen.delay(Motion.seconds(0.04)) : Motion.exit, value: phase)
     }
 
-    /// 圆盘的缩放：从小弹开；选中后微微放大着淡出，取消时缩回去
+    /// 圆盘的缩放：从小弹开，收起时微微放大着淡出
     private func discScale(_ phase: OverlayPresentation.Phase) -> CGFloat {
         guard !reduceMotion else { return 1 }
         switch phase {
         case .entering: return 0.3
         case .shown: return 1
-        case .leaving: return model.committed == nil ? 0.6 : 1.05
+        case .leaving: return 1.05
         }
     }
 
-    /// 格子离圆心的远近（1 表示在自己的位置上）：展开前都挤在圆心，取消时往回收
+    /// 格子离圆心的远近（1 表示在自己的位置上）：展开前都挤在圆心，收起时再往外飘一点
     private func slotReach(_ phase: OverlayPresentation.Phase) -> CGFloat {
         guard !reduceMotion else { return 1 }
         switch phase {
         case .entering: return 0.12
         case .shown: return 1
-        case .leaving: return model.committed == nil ? 0.5 : 1
+        case .leaving: return 1.1
         }
     }
 }

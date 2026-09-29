@@ -31,6 +31,8 @@ final class PopCoordinator: MouseTriggerDelegate {
         var closesOnRelease = false
         /// 内容还在读取时就在这一格上松开了：读到后执行它
         var pendingSlot: Int?
+        /// 按住鼠标键拖动时，事件拦截送来的最新指针位置（AppKit 屏幕坐标）
+        var dragPoint: CGPoint?
         var content: ClassifiedContent?
         var ring: RingViewModel?
         /// 当前显示的列表面板
@@ -78,19 +80,23 @@ final class PopCoordinator: MouseTriggerDelegate {
     }
 
     func mouseTriggerDidActivate(at location: CGPoint) {
-        let anchor = ScreenGeometry.appKitPoint(fromQuartz: location, primaryScreenHeight: OverlayController.primaryScreenHeight)
-        begin(at: anchor, buttonHeld: true, closesOnRelease: settingsStore.settings.trigger.closesRingOnRelease)
+        begin(at: Self.appKitPoint(location), buttonHeld: true,
+              closesOnRelease: settingsStore.settings.trigger.closesRingOnRelease)
     }
 
     func mouseTriggerDidDrag(to location: CGPoint) {
-        updatePointer()
+        guard session?.buttonHeld == true else { return }
+        session?.dragPoint = Self.appKitPoint(location)
+        updateHeldHover()
     }
 
     func mouseTriggerDidRelease(at location: CGPoint) {
         guard let current = session else { return }
-        // 按松开时的位置最后算一次指向哪一格
-        lastPointer = nil
-        updatePointer()
+        if current.buttonHeld {
+            // 按松开的位置最后算一次指向哪一格
+            session?.dragPoint = Self.appKitPoint(location)
+            updateHeldHover()
+        }
         session?.buttonHeld = false
         lastPointer = nil
         // 圆盘还没出来（内容还在读）或者已经换成了结果卡片：等内容读到后再决定（见 route）
@@ -232,6 +238,8 @@ final class PopCoordinator: MouseTriggerDelegate {
         overlay.showRing(ring, center: current.anchor)
         lastPointer = nil
         startPointerTracking()
+        // 圆盘出来之前可能已经拖动过了
+        updateHeldHover()
         updatePointer()
     }
 
@@ -426,22 +434,30 @@ final class PopCoordinator: MouseTriggerDelegate {
         lastPointer = nil
     }
 
+    /// 按住鼠标键时指向哪一格：看拖动位置相对按下点的方向（marking menu），圆盘因为靠近屏幕边缘被挪开也不受影响。
+    /// 位置只用事件拦截送来的：拖动事件被 Pop 吞掉了，系统报告的指针位置（NSEvent.mouseLocation）不会跟着更新。
+    private func updateHeldHover() {
+        guard let current = session, current.buttonHeld, let ring = current.ring, overlay.mode == .ring,
+              let point = current.dragPoint else { return }
+        ring.updateHover(offset: CGVector(dx: point.x - current.anchor.x, dy: point.y - current.anchor.y))
+    }
+
+    /// 松开鼠标键之后（点击模式）：看指针在圆盘上的位置。按住时由 updateHeldHover 处理。
     private func updatePointer() {
-        guard let current = session, let ring = current.ring, overlay.mode == .ring else { return }
+        guard let current = session, !current.buttonHeld, let ring = current.ring, overlay.mode == .ring else { return }
         let mouse = NSEvent.mouseLocation
         // 指针没动就不覆盖键盘选择
         guard mouse != lastPointer else { return }
         lastPointer = mouse
-        if current.buttonHeld {
-            // 按住拖动：看相对按下点的方向（marking menu），圆盘因为靠近屏幕边缘被挪开也不受影响
-            ring.updateHover(offset: CGVector(dx: mouse.x - current.anchor.x, dy: mouse.y - current.anchor.y))
-        } else {
-            // 点击模式：看指针在圆盘上的位置
-            let center = overlay.ringCenter ?? current.anchor
-            let offset = CGVector(dx: mouse.x - center.x, dy: mouse.y - center.y)
-            let inside = (offset.dx * offset.dx + offset.dy * offset.dy).squareRoot() <= ring.geometry.outerRadius
-            ring.updateHover(offset: inside ? offset : nil)
-        }
+        let center = overlay.ringCenter ?? current.anchor
+        let offset = CGVector(dx: mouse.x - center.x, dy: mouse.y - center.y)
+        let inside = (offset.dx * offset.dx + offset.dy * offset.dy).squareRoot() <= ring.geometry.outerRadius
+        ring.updateHover(offset: inside ? offset : nil)
+    }
+
+    /// 事件拦截给的 Quartz 坐标（主屏左上角为原点）换成 AppKit 屏幕坐标
+    private static func appKitPoint(_ location: CGPoint) -> CGPoint {
+        ScreenGeometry.appKitPoint(fromQuartz: location, primaryScreenHeight: OverlayController.primaryScreenHeight)
     }
 
     private func handleRingClick() {

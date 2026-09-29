@@ -3,7 +3,9 @@ import AppKit
 /// 浮窗演示，给 CI 截图用。
 ///
 /// 环境变量 POP_DEMO=1 启动时不弹设置窗口，而是按固定的时间表依次展示：圆盘展开、读到内容、
-/// 指向一格、滑到另一格、选中后弹出结果卡片、提示、「全部功能」列表，最后再展开一次圆盘并取消。
+/// 指向一格、滑到另一格、选中后弹出结果卡片、提示、「全部功能」列表、再展开一次圆盘并取消；
+/// 最后按真实的手势流程走一遍：按住右键唤起、拖到上面一格、再拖到「剪贴板」、松开执行
+/// （直接调用鼠标拦截的回调，拖动位置和真实使用时一样由拦截送来，不看系统的指针位置）。
 /// 配合 POP_ANIMATION_SCALE 放慢动画，截图脚本就能拍到动画的中间帧。
 /// 每一步开始时往 POP_DEMO_LOG 指定的文件里写一行「步骤名 时间戳」；第一行是演示区域在屏幕上的位置
 /// （点，AppKit 坐标：x y 宽 高）和屏幕大小，脚本按它裁图。
@@ -13,7 +15,7 @@ enum OverlayDemo {
         ProcessInfo.processInfo.environment["POP_DEMO"] == "1"
     }
 
-    static func run(overlay: OverlayController, catalog: [PluginInfo], settings: AppSettings) {
+    static func run(overlay: OverlayController, coordinator: PopCoordinator, catalog: [PluginInfo], settings: AppSettings) {
         guard let screen = NSScreen.main else { return }
         let visible = screen.visibleFrame
         // 唤起点放在屏幕中间偏左上，右下方留出卡片和列表的位置
@@ -72,9 +74,41 @@ enum OverlayDemo {
             step("cancel")
             overlay.hide()
 
+            // 真实的手势：按住右键唤起（什么都没选中），拖到正上方的格子，再拖到左下方的「剪贴板」，松开
+            await pause(1.0 * unit)
+            step("press")
+            if coordinator.mouseTriggerShouldBegin() {
+                coordinator.mouseTriggerDidActivate(at: quartz(center))
+            }
+
+            await pause(1.2 * unit)
+            step("drag-up")
+            coordinator.mouseTriggerDidDrag(to: quartz(point(center, slot: 0, of: settings)))
+
             await pause(0.8 * unit)
+            step("drag-clipboard")
+            let clipboardSlot = settings.ring.slots.firstIndex(of: BuiltinPluginID.clipboardHistory) ?? 5
+            let target = point(center, slot: clipboardSlot, of: settings)
+            coordinator.mouseTriggerDidDrag(to: quartz(target))
+
+            await pause(0.8 * unit)
+            step("release")
+            coordinator.mouseTriggerDidRelease(at: quartz(target))
+
+            await pause(1.4 * unit)
             step("end")
         }
+    }
+
+    /// 圆盘上第 slot 格方向、离圆心 95 点的位置（AppKit 坐标）
+    private static func point(_ center: CGPoint, slot: Int, of settings: AppSettings) -> CGPoint {
+        let offset = RingGeometry(slotCount: max(settings.ring.slotCount, 1)).slotCenterOffset(slot, radius: 95)
+        return CGPoint(x: center.x + offset.dx, y: center.y + offset.dy)
+    }
+
+    /// AppKit 屏幕坐标换成鼠标拦截用的 Quartz 坐标（主屏左上角为原点）
+    private static func quartz(_ point: CGPoint) -> CGPoint {
+        CGPoint(x: point.x, y: OverlayController.primaryScreenHeight - point.y)
     }
 
     private static func pause(_ seconds: Double) async {
