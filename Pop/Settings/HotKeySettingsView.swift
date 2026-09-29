@@ -19,8 +19,8 @@ struct HotKeySettingsView: View {
                             .foregroundStyle(.secondary)
                         VStack(alignment: .leading, spacing: 2) {
                             Text(info.name)
-                            if let warning = warning(for: info.id, in: settings) {
-                                Text(warning)
+                            if let note = warning(for: info.id, in: settings) {
+                                Text(note)
                                     .font(.caption)
                                     .foregroundStyle(.orange)
                             }
