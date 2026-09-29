@@ -101,6 +101,9 @@ final class PopCoordinator: MouseTriggerDelegate {
                                               closesOnRelease: current.closesOnRelease)
         switch action {
         case .run(let pluginID):
+            if let slot = ring.hovered {
+                ring.commit(slot)
+            }
             run(pluginID)
         case .runWhenLoaded(let slot):
             // 高亮停在这一格上，内容读到后执行
@@ -193,6 +196,7 @@ final class PopCoordinator: MouseTriggerDelegate {
             session?.pendingSlot = nil
             ring.update(content: content)
             if let plugin = ring.selectablePlugin(at: slot) {
+                ring.commit(slot)
                 run(plugin.id)
                 return
             }
@@ -237,8 +241,8 @@ final class PopCoordinator: MouseTriggerDelegate {
         guard plugin.info.canHandle(content) else { return }
         stopPointerTracking()
         if plugin.info.hidesOverlay {
-            // 截图、取色要看清屏幕：先收起浮窗，结果出来后再显示在原来的位置
-            overlay.hide()
+            // 截图、取色要看清屏幕：立刻收起浮窗（不播放收起动画），结果出来后再显示在原来的位置
+            overlay.hide(animated: false)
         }
         let context = PluginContext(settings: settingsStore.settings,
                                     openSettings: { [weak self] in self?.openSettings(nil) },
@@ -444,7 +448,8 @@ final class PopCoordinator: MouseTriggerDelegate {
         lastPointer = nil
         updatePointer()
         guard let ring = session?.ring else { return }
-        if let plugin = ring.selectablePlugin(at: ring.hovered) {
+        if let slot = ring.hovered, let plugin = ring.selectablePlugin(at: slot) {
+            ring.commit(slot)
             run(plugin.id)
         } else if ring.hovered == nil {
             // 点在圆心：关闭
@@ -457,7 +462,8 @@ final class PopCoordinator: MouseTriggerDelegate {
         guard let ring = session?.ring else { return false }
         switch event.keyCode {
         case 36, 76: // Return / Enter
-            if let plugin = ring.selectablePlugin(at: ring.hovered) {
+            if let slot = ring.hovered, let plugin = ring.selectablePlugin(at: slot) {
+                ring.commit(slot)
                 run(plugin.id)
             }
             return true
@@ -473,6 +479,7 @@ final class PopCoordinator: MouseTriggerDelegate {
         if let characters = event.charactersIgnoringModifiers, characters.count == 1, let digit = Int(characters) {
             let index = digit == 0 ? 9 : digit - 1
             if let plugin = ring.selectablePlugin(at: index) {
+                ring.commit(index)
                 run(plugin.id)
             }
             return true

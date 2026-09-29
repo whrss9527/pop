@@ -148,8 +148,14 @@ final class AppController {
 
         pluginStore.startWatching()
         permissions.start()
-        updater.startAutomaticChecks()
         cloudSync.start()
+
+        // CI 截图用的界面演示：不检查更新、不弹设置窗口和授权提示，免得挡住浮窗
+        if OverlayDemo.isEnabled {
+            OverlayDemo.run(overlay: overlay, catalog: registry.catalog, settings: settingsStore.settings)
+            return
+        }
+        updater.startAutomaticChecks()
 
         // 第一次启动、或者还没授权时，主动打开设置窗口：Pop 没有程序坞图标，
         // 菜单栏图标也可能被刘海或其他图标挤掉，不弹窗的话用户会以为什么都没发生。

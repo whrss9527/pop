@@ -39,8 +39,24 @@ struct RingGeometry: Equatable {
     /// 第 index 格扇区在 SwiftUI 坐标系（y 轴向下，角度从 x 正方向顺时针）里的起止角度（度）。
     func sectorDegrees(_ index: Int) -> (start: Double, end: Double) {
         let step = 360.0 / Double(max(slotCount, 1))
-        let center = -90.0 + Double(index) * step
+        let center = slotCenterDegrees(index)
         return (center - step / 2, center + step / 2)
+    }
+
+    /// 第 index 格中心的角度（度，SwiftUI 坐标系）：0 号格在正上方，也就是 -90°。
+    func slotCenterDegrees(_ index: Int) -> Double {
+        -90.0 + Double(index) * 360.0 / Double(max(slotCount, 1))
+    }
+
+    /// 指向某一格时，衬在它下面的那块圆形高亮的半径：不碰到相邻的格子，也不超出圆环。
+    var highlightRadius: CGFloat {
+        let chord = 2 * labelRadius * sin(slotStep / 2)
+        return max(min(chord * 0.47, (outerRadius - innerRadius) / 2 - 4), 12)
+    }
+
+    /// 角度 angle 换成离 reference 最近的等价角度（加减 360 的整数倍），高亮滑动时总走近的那一边。
+    static func continuousAngle(_ angle: Double, near reference: Double) -> Double {
+        angle + 360 * ((reference - angle) / 360).rounded()
     }
 }
 

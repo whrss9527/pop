@@ -1,3 +1,4 @@
+import SwiftUI
 import XCTest
 @testable import Pop
 
@@ -46,5 +47,49 @@ final class RingInteractionTests: XCTestCase {
         ring.update(content: ContentClassifier.classify(.text("Good morning")))
         XCTAssertEqual(ring.selectablePlugin(at: 0)?.id, BuiltinPluginID.translate)
         XCTAssertNil(ring.selectablePlugin(at: 1))
+    }
+
+    /// 高亮在格子之间滑动时走近路：从最后一格到第一格是往前 45°，不是倒回去转一圈
+    func testHighlightTakesTheShortWayRound() {
+        let ring = RingGeometry(slotCount: 8)
+        XCTAssertEqual(ring.slotCenterDegrees(0), -90)
+        XCTAssertEqual(ring.slotCenterDegrees(2), 0)
+        XCTAssertEqual(ring.slotCenterDegrees(7), 225)
+        XCTAssertEqual(RingGeometry.continuousAngle(-90, near: 225), 270)
+        XCTAssertEqual(RingGeometry.continuousAngle(225, near: -90), -135)
+        XCTAssertEqual(RingGeometry.continuousAngle(0, near: 10), 0)
+        XCTAssertGreaterThan(ring.highlightRadius, 12)
+        XCTAssertLessThan(ring.highlightRadius, 2 * ring.labelRadius * sin(ring.slotStep / 2) / 2)
+    }
+
+    @MainActor
+    func testHoverSlidesAndCommitFreezesTheRing() {
+        let catalog = BuiltinPlugins.make().map(\.info)
+        let layout = RingLayout.default
+        let ring = RingViewModel(layout: layout, catalog: catalog, installed: Set(layout.slots.compactMap { $0 }),
+                                 content: ContentClassifier.classify(.text("Good morning")))
+        ring.setHovered(7)
+        XCTAssertEqual(ring.highlightAngle, -135)
+        let firstHighlight = ring.highlightID
+        ring.setHovered(0)
+        XCTAssertEqual(ring.highlightAngle, -90, "从最后一格滑到第一格走近路")
+        XCTAssertEqual(ring.highlightID, firstHighlight, "格子之间滑动时还是同一块高亮")
+        ring.setHovered(nil)
+        ring.setHovered(4)
+        XCTAssertEqual(ring.highlightID, firstHighlight + 1, "从圆心重新指向时换一块新的高亮，不从旧位置滑过来")
+        ring.commit(4)
+        XCTAssertEqual(ring.committed, 4)
+        ring.setHovered(5)
+        XCTAssertEqual(ring.hovered, 4, "选中后高亮不再跟着指针变")
+    }
+
+    /// 卡片从离指针最近的那个角长出来（AppKit 坐标，y 向上）
+    @MainActor
+    func testCardGrowsFromTheCornerNearestThePointer() {
+        let anchor = CGPoint(x: 500, y: 500)
+        XCTAssertEqual(OverlayController.growAnchor(frame: CGRect(x: 506, y: 300, width: 400, height: 194), from: anchor), .topLeading)
+        XCTAssertEqual(OverlayController.growAnchor(frame: CGRect(x: 90, y: 300, width: 404, height: 194), from: anchor), .topTrailing)
+        XCTAssertEqual(OverlayController.growAnchor(frame: CGRect(x: 506, y: 506, width: 400, height: 194), from: anchor), .bottomLeading)
+        XCTAssertEqual(OverlayController.growAnchor(frame: CGRect(x: 90, y: 506, width: 404, height: 194), from: anchor), .bottomTrailing)
     }
 }

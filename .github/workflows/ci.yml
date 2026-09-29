@@ -73,6 +73,9 @@ jobs:
     name: launch-smoke (${{ matrix.os }})
     runs-on: ${{ matrix.os }}
     timeout-minutes: 30
+    # 截图推到 ci-screenshots/<系统> 分支上
+    permissions:
+      contents: write
     strategy:
       fail-fast: false
       matrix:
@@ -98,6 +101,37 @@ jobs:
 
       - name: Launch smoke test
         run: scripts/launch-smoke.sh "$APP"
+
+      # 演示模式下把圆盘、结果卡片、提示、列表依次展示一遍（动画放慢 6 倍），按时截图，
+      # 看玻璃效果和动画的中间帧；同时也确认这些浮窗在真实的 macOS 上能正常显示。
+      - name: Overlay screenshots
+        run: scripts/overlay-screenshots.sh "$APP" build/screenshots 6
+
+      # 截图放到单独的 ci-screenshots/<系统> 分支（只有这一次的截图，每次覆盖），git 拉下来就能看
+      - name: Publish screenshots
+        if: always() && github.event_name == 'push'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          OS_NAME: ${{ matrix.os }}
+        run: |
+          dir="$PWD/build/screenshots"
+          if [ -z "$(ls -A "$dir" 2>/dev/null)" ]; then
+            echo "没有截图"
+            exit 0
+          fi
+          branch="ci-screenshots/${OS_NAME}"
+          work="$RUNNER_TEMP/screenshots-branch"
+          rm -rf "$work" && mkdir -p "$work"
+          cp "$dir"/*.jpg "$work"/
+          cd "$work"
+          printf 'CI 截图：%s 在 %s 上，%s\n' "$GITHUB_SHA" "$OS_NAME" "$(sw_vers -productVersion)" > README.md
+          git init -q
+          git checkout -q -b screenshots
+          git add -A
+          git -c user.name="github-actions[bot]" -c user.email="41898282+github-actions[bot]@users.noreply.github.com" \
+            commit -q -m "Screenshots of ${GITHUB_SHA::7} on ${OS_NAME}"
+          git push -q -f "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" "HEAD:refs/heads/${branch}"
+          echo "已推到 ${branch}"
 
       # 用本地 HTTP 服务器假装发布了 9.9.9，走一遍检查、下载、校验、替换、重新启动（本地签名的包）
       - name: End-to-end update test

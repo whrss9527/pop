@@ -9,7 +9,8 @@ struct CardContainer<Content: View>: View {
     let onClose: () -> Void
     @ViewBuilder let content: Content
 
-    static var shadowPadding: CGFloat { 12 }
+    /// 给玻璃的阴影和弹出时的缩放留的边距
+    static var shadowPadding: CGFloat { 18 }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
@@ -33,11 +34,9 @@ struct CardContainer<Content: View>: View {
             }
             content
         }
-        .padding(14)
+        .padding(16)
         .frame(width: width, alignment: .leading)
-        .background(RoundedRectangle(cornerRadius: 14, style: .continuous).fill(.regularMaterial))
-        .overlay(RoundedRectangle(cornerRadius: 14, style: .continuous).strokeBorder(Color.primary.opacity(0.1), lineWidth: 1))
-        .shadow(color: .black.opacity(0.25), radius: 10, y: 4)
+        .glassSurface(RoundedRectangle(cornerRadius: 20, style: .continuous))
         .padding(Self.shadowPadding)
     }
 }
@@ -263,6 +262,7 @@ struct TranslationCardView: View {
                 .lineLimit(3)
             Divider()
             result
+                .animation(Motion.content, value: model.phase)
             HStack(spacing: 8) {
                 if let translated = model.translatedText {
                     Button("复制译文") { onAction(.copy(translated)) }
@@ -298,6 +298,7 @@ struct TranslationCardView: View {
                 Text("翻译中…")
                     .foregroundStyle(.secondary)
             }
+            .transition(.opacity)
         case .needsDownload:
             VStack(alignment: .leading, spacing: 6) {
                 Text("需要先下载「\(model.pairDescription)」的离线语言包。")
@@ -305,12 +306,15 @@ struct TranslationCardView: View {
                 Button("去下载语言包…", action: onDownload)
                     .controlSize(.small)
             }
+            .transition(.opacity)
         case .done(let translated):
             AdaptiveText(text: translated)
+                .transition(.opacity)
         case .failed(let message):
             Text(message)
                 .font(.callout)
                 .foregroundStyle(.red)
+                .transition(.opacity)
         }
     }
 }

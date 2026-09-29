@@ -105,6 +105,7 @@ struct ClipboardHistoryView: View {
     @ObservedObject var model: ClipboardHistoryModel
     var onClose: () -> Void
     @FocusState private var searchFocused: Bool
+    @Namespace private var selectionSpace
 
     var body: some View {
         CardContainer(title: "剪贴板历史", subtitle: subtitle, width: 460, onClose: onClose) {
@@ -137,8 +138,8 @@ struct ClipboardHistoryView: View {
             ScrollView {
                 LazyVStack(spacing: 2) {
                     ForEach(Array(model.items.enumerated()), id: \.element.id) { index, item in
-                        ClipboardRow(item: item, index: index, isSelected: index == model.selection,
-                                     imageURL: model.service.store.imageURL(for: item))
+                        ClipboardRow(item: item, index: index, imageURL: model.service.store.imageURL(for: item))
+                            .selectionHighlight(index == model.selection, in: selectionSpace)
                             .id(item.id)
                             .onTapGesture {
                                 model.paste(item)
@@ -152,6 +153,7 @@ struct ClipboardHistoryView: View {
                             }
                     }
                 }
+                .animation(Motion.selection, value: model.selection)
             }
             .frame(height: 340)
             .overlay {
@@ -171,7 +173,6 @@ struct ClipboardHistoryView: View {
 struct ClipboardRow: View {
     let item: ClipboardItem
     let index: Int
-    let isSelected: Bool
     let imageURL: URL?
 
     var body: some View {
@@ -200,8 +201,6 @@ struct ClipboardRow: View {
         }
         .padding(.horizontal, 8)
         .padding(.vertical, 6)
-        .background(RoundedRectangle(cornerRadius: 6, style: .continuous)
-            .fill(isSelected ? Color.accentColor.opacity(0.22) : Color.clear))
         .contentShape(Rectangle())
     }
 

@@ -64,6 +64,7 @@ struct PluginChooserView: View {
     @ObservedObject var model: PluginChooserModel
     var onClose: () -> Void
     @FocusState private var searchFocused: Bool
+    @Namespace private var selectionSpace
 
     var body: some View {
         CardContainer(title: "全部功能", subtitle: "↑↓ 选择 · ⏎ 执行", onClose: onClose) {
@@ -74,13 +75,15 @@ struct PluginChooserView: View {
                 ScrollView {
                     LazyVStack(spacing: 2) {
                         ForEach(Array(model.results.enumerated()), id: \.element.id) { index, info in
-                            PluginChooserRow(info: info, index: index, isSelected: index == model.selection)
+                            PluginChooserRow(info: info, index: index)
+                                .selectionHighlight(index == model.selection, in: selectionSpace)
                                 .id(info.id)
                                 .onTapGesture {
                                     model.onRun(info)
                                 }
                         }
                     }
+                    .animation(Motion.selection, value: model.selection)
                 }
                 .frame(height: 300)
                 .overlay {
@@ -104,7 +107,6 @@ struct PluginChooserView: View {
 struct PluginChooserRow: View {
     let info: PluginInfo
     let index: Int
-    let isSelected: Bool
 
     var body: some View {
         HStack(spacing: 10) {
@@ -133,8 +135,6 @@ struct PluginChooserRow: View {
         .padding(.horizontal, 8)
         .padding(.vertical, 5)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(RoundedRectangle(cornerRadius: 6, style: .continuous)
-            .fill(isSelected ? Color.accentColor.opacity(0.22) : Color.clear))
         .contentShape(Rectangle())
     }
 }
