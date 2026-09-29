@@ -78,6 +78,7 @@ struct GeneralSettingsView: View {
                                 .frame(width: 64, alignment: .trailing)
                         }
                     }
+                    Toggle("松开右键后圆盘保持打开", isOn: store.binding(\.trigger.keepsRingOpen))
                 }
                 if store.settings.trigger.mode == .modifierRightClick {
                     Picker("修饰键", selection: store.binding(\.trigger.modifier)) {
@@ -94,7 +95,7 @@ struct GeneralSettingsView: View {
             } header: {
                 Text("唤起方式")
             } footer: {
-                Text("长按右键：短按仍然是系统右键菜单，按住超过设定时长才唤起 Pop。按住时往某个方向一划再松开，可以直接执行那一格的功能；在圆心松开则保持圆盘打开，改用点击选择。")
+                Text(triggerFooter)
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
@@ -136,6 +137,21 @@ struct GeneralSettingsView: View {
 }
 
 extension GeneralSettingsView {
+    private var triggerFooter: String {
+        let trigger = store.settings.trigger
+        switch trigger.mode {
+        case .longPressRight:
+            let release = trigger.keepsRingOpen
+                ? "在圆心松开时圆盘保持打开，可以再用鼠标点选，点圆心或按 Esc 关闭。"
+                : "在圆心松开就关闭圆盘；想松开后再用鼠标点选的话，打开「松开右键后圆盘保持打开」。"
+            return "长按右键：短按仍然是系统右键菜单，按住超过设定时长才唤起 Pop。圆盘出来后按住不放，往某个方向一划再松开，就执行那一格的功能；" + release
+        case .modifierRightClick, .middleClick:
+            return "按住时往某个方向一划再松开，可以直接执行那一格的功能；点一下的话圆盘保持打开，用鼠标点选，点圆心或按 Esc 关闭。"
+        case .disabled:
+            return "只用键盘快捷键唤起：圆盘出来后用鼠标点选，或者按数字键选择，Esc 关闭。"
+        }
+    }
+
     private var permissionReady: Bool {
         permissions.isTrusted && permissions.isTriggerRunning
     }
@@ -164,7 +180,10 @@ extension GeneralSettingsView {
         switch trigger.mode {
         case .longPressRight:
             let ms = Int((trigger.holdDuration * 1000).rounded())
-            return "选中文字后按住鼠标右键约 \(ms) 毫秒再松开：选中外文会直接翻译，其他情况弹出圆盘。普通点一下右键仍然是系统菜单。"
+            let ring = trigger.keepsRingOpen
+                ? "往要用的功能方向一划再松开，或者松开后再点选"
+                : "按住不放往要用的功能方向一划再松开即可，在圆心松开就关闭"
+            return "按住鼠标右键约 \(ms) 毫秒：选中了外文会直接翻译；其他情况弹出圆盘，\(ring)。普通点一下右键仍然是系统菜单。"
         case .modifierRightClick:
             return "按住 \(trigger.modifier.title) 再点鼠标右键唤起 Pop。"
         case .middleClick:

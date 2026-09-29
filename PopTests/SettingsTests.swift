@@ -11,6 +11,7 @@ final class SettingsCodingTests: XCTestCase {
         var settings = AppSettings()
         settings.searchEngine = .baidu
         settings.trigger.mode = .middleClick
+        settings.trigger.keepsRingOpen = true
         settings.ring.place(BuiltinPluginID.settings, at: 3)
         settings.modifiedAt = Date(timeIntervalSinceReferenceDate: 12345.678)
         let data = try JSONEncoder().encode(settings)
@@ -93,6 +94,24 @@ final class SettingsCodingTests: XCTestCase {
         current.ring = .legacyDefault
         let roundTripped = try JSONDecoder().decode(AppSettings.self, from: JSONEncoder().encode(current))
         XCTAssertEqual(roundTripped.ring, RingLayout.legacyDefault)
+    }
+
+    /// 「松开右键后圆盘保持打开」：旧数据里没有这一项时默认松开就关闭；只对长按右键生效
+    func testRingReleaseSetting() throws {
+        let defaults = try decode("{}").trigger
+        XCTAssertFalse(defaults.keepsRingOpen)
+        XCTAssertTrue(defaults.closesRingOnRelease)
+
+        let sticky = try decode(#"{"trigger": {"keepsRingOpen": true}}"#).trigger
+        XCTAssertTrue(sticky.keepsRingOpen)
+        XCTAssertFalse(sticky.closesRingOnRelease)
+        XCTAssertFalse(try decode(#"{"trigger": {"keepsRingOpen": "yes"}}"#).trigger.keepsRingOpen)
+
+        var middle = TriggerSettings()
+        middle.mode = .middleClick
+        XCTAssertFalse(middle.closesRingOnRelease)
+        middle.mode = .modifierRightClick
+        XCTAssertFalse(middle.closesRingOnRelease)
     }
 
     func testClipboardSettingsDecoding() throws {

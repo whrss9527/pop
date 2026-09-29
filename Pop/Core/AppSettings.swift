@@ -110,6 +110,8 @@ struct TriggerSettings: Codable, Equatable {
     var hotKey: HotKeyPreset = .none
     /// 不响应鼠标唤起的 App（Bundle ID），比如游戏、远程桌面
     var excludedBundleIDs: [String] = []
+    /// 长按右键唤起的圆盘，在圆心松开后保持打开、改用点击选择；默认松开右键就关闭圆盘
+    var keepsRingOpen: Bool = false
 
     static let holdDurationRange: ClosedRange<Double> = 0.15...0.8
 
@@ -123,6 +125,13 @@ struct TriggerSettings: Codable, Equatable {
         modifier = c.lenient(.modifier, default: d.modifier)
         hotKey = c.lenient(.hotKey, default: d.hotKey)
         excludedBundleIDs = c.lenient(.excludedBundleIDs, default: d.excludedBundleIDs)
+        keepsRingOpen = c.lenient(.keepsRingOpen, default: d.keepsRingOpen)
+    }
+
+    /// 这次唤起松开鼠标键时是否关闭圆盘：只有长按右键、并且没打开「保持圆盘打开」时。
+    /// 修饰键 + 右键、中键是点一下就唤起的，松开后圆盘保持打开。
+    var closesRingOnRelease: Bool {
+        mode == .longPressRight && !keepsRingOpen
     }
 }
 

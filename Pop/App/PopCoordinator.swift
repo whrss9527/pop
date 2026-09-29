@@ -27,6 +27,10 @@ final class PopCoordinator: MouseTriggerDelegate {
         let sourceAppName: String?
         /// 鼠标键是否还按着：按着时用「划一下再松开」选择，松开后改为点击选择
         var buttonHeld: Bool
+        /// 松开鼠标键时关闭圆盘（长按右键唤起、没打开「保持圆盘打开」时）
+        var closesOnRelease = false
+        /// 内容还在读取时就在这一格上松开了：读到后执行它
+        var pendingSlot: Int?
         var content: ClassifiedContent?
         var ring: RingViewModel?
         /// 当前显示的列表面板
@@ -75,7 +79,7 @@ final class PopCoordinator: MouseTriggerDelegate {
 
     func mouseTriggerDidActivate(at location: CGPoint) {
         let anchor = ScreenGeometry.appKitPoint(fromQuartz: location, primaryScreenHeight: OverlayController.primaryScreenHeight)
-        begin(at: anchor, buttonHeld: true)
+        begin(at: anchor, buttonHeld: true, closesOnRelease: settingsStore.settings.trigger.closesRingOnRelease)
     }
 
     func mouseTriggerDidDrag(to location: CGPoint) {
@@ -83,15 +87,36 @@ final class PopCoordinator: MouseTriggerDelegate {
     }
 
     func mouseTriggerDidRelease(at location: CGPoint) {
-        guard session != nil else { return }
+        guard let current = session else { return }
+        // 按松开时的位置最后算一次指向哪一格
+        lastPointer = nil
+        updatePointer()
         session?.buttonHeld = false
         lastPointer = nil
-        // 还在读取内容时松开：等圆盘出来后直接进入点击模式
-        guard overlay.mode == .ring, let ring = session?.ring else { return }
-        if let plugin = ring.selectablePlugin(at: ring.hovered) {
-            run(plugin.id)
-        } else {
-            // 在圆心附近或不可用的格子上松开：保持圆盘打开，改用点击选择
+        // 圆盘还没出来（内容还在读）或者已经换成了结果卡片：等内容读到后再决定（见 route）
+        guard overlay.mode == .ring, let ring = current.ring else { return }
+        let action = RingReleaseAction.decide(hovered: ring.pluginSlot(ring.hovered),
+                                              selectable: ring.selectablePlugin(at: ring.hovered)?.id,
+                                              isLoading: ring.isLoading,
+                                              closesOnRelease: current.closesOnRelease)
+        switch action {
+        case .run(let pluginID):
+            run(pluginID)
+        case .runWhenLoaded(let slot):
+            // 高亮停在这一格上，内容读到后执行
+            stopPointerTracking()
+            ring.setHovered(slot)
+            session?.pendingSlot = slot
+        case .close:
+            if ring.isLoading {
+                // 先收起圆盘；读到的内容命中直达规则（比如选中了外文）的话仍然直接出结果
+                stopPointerTracking()
+                overlay.hide()
+            } else {
+                endSession()
+            }
+        case .keepOpen:
+            // 保持圆盘打开，改用点击选择
             ring.setHovered(nil)
             updatePointer()
         }
@@ -131,20 +156,22 @@ final class PopCoordinator: MouseTriggerDelegate {
 
     // MARK: - 流程
 
-    private func begin(at anchor: CGPoint, buttonHeld: Bool) {
+    private func begin(at anchor: CGPoint, buttonHeld: Bool, closesOnRelease: Bool = false) {
         endSession()
         let app = NSWorkspace.shared.frontmostApplication
         let pid = app?.processIdentifier
-        let newSession = Session(anchor: anchor, pid: pid, sourceAppName: app?.localizedName, buttonHeld: buttonHeld)
+        let newSession = Session(anchor: anchor, pid: pid, sourceAppName: app?.localizedName, buttonHeld: buttonHeld,
+                                 closesOnRelease: closesOnRelease)
         session = newSession
         let sessionID = newSession.id
 
         // 读取比较慢（比如什么都没选中，要等剪贴板超时）时先亮出圆盘，给即时反馈；
-        // 内容很快读到的话就直接进入下一步，不会闪一下圆盘。
+        // 内容很快读到的话就直接进入下一步，不会闪一下圆盘。已经松开了右键、松开就关闭的话不用再亮出来。
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.08) { [weak self] in
             MainActor.assumeIsolated {
                 guard let self, let current = self.session, current.id == sessionID,
-                      current.content == nil, current.ring == nil else { return }
+                      current.content == nil, current.ring == nil,
+                      current.buttonHeld || !current.closesOnRelease else { return }
                 self.showRing(content: nil)
             }
         }
@@ -160,12 +187,31 @@ final class PopCoordinator: MouseTriggerDelegate {
     }
 
     private func route(_ content: ClassifiedContent) {
+        guard let current = session else { return }
+        // 读取期间就在某一格上松开了：那一格能处理读到的内容就直接执行
+        if let slot = current.pendingSlot, let ring = current.ring {
+            session?.pendingSlot = nil
+            ring.update(content: content)
+            if let plugin = ring.selectablePlugin(at: slot) {
+                run(plugin.id)
+                return
+            }
+        }
         switch Router.decide(content, settings: settingsStore.settings, catalog: registry.catalog) {
         case .direct(let pluginID):
             run(pluginID)
         case .ring:
-            if let ring = session?.ring {
+            if !current.buttonHeld && current.closesOnRelease {
+                // 右键已经松开了：不再弹出圆盘
+                endSession()
+            } else if let ring = current.ring {
                 ring.update(content: content)
+                if !current.buttonHeld {
+                    // 点击模式：高亮跟着指针
+                    lastPointer = nil
+                    startPointerTracking()
+                    updatePointer()
+                }
             } else {
                 showRing(content: content)
             }
@@ -438,5 +484,28 @@ final class PopCoordinator: MouseTriggerDelegate {
         let count = max(ring.slots.count, 1)
         let start = ring.hovered ?? (delta > 0 ? -1 : 0)
         return ((start + delta) % count + count) % count
+    }
+}
+
+/// 按住鼠标键唤起圆盘后松开时怎么办。纯逻辑，便于测试。
+enum RingReleaseAction: Equatable {
+    /// 执行指向的那一格
+    case run(String)
+    /// 内容还在读取时就指向了某一格：读到后执行这一格
+    case runWhenLoaded(Int)
+    /// 关闭圆盘
+    case close
+    /// 保持圆盘打开，改用点击选择
+    case keepOpen
+
+    /// hovered：指向的、放了插件的格子；selectable：那一格现在能执行的话是它的插件 ID
+    static func decide(hovered: Int?, selectable: String?, isLoading: Bool, closesOnRelease: Bool) -> RingReleaseAction {
+        if let selectable {
+            return .run(selectable)
+        }
+        if isLoading, let hovered {
+            return .runWhenLoaded(hovered)
+        }
+        return closesOnRelease ? .close : .keepOpen
     }
 }

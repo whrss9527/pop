@@ -55,6 +55,12 @@ final class RingViewModel: ObservableObject {
         guard !isLoading, let index, slots.indices.contains(index), slots[index].enabled else { return nil }
         return slots[index].info
     }
+
+    /// 放了插件的格子（不管能不能处理当前内容）；空格子返回 nil
+    func pluginSlot(_ index: Int?) -> Int? {
+        guard let index, slots.indices.contains(index), slots[index].info != nil else { return nil }
+        return index
+    }
 }
 
 struct RingMenuView: View {
