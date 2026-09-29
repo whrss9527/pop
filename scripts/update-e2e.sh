@@ -20,7 +20,7 @@ SERVER_PID=""
 START=""
 
 cleanup() {
-  pkill -x Pop 2>/dev/null || true
+  stop_pop
   if [ -n "$SERVER_PID" ]; then
     kill "$SERVER_PID" 2>/dev/null || true
   fi
@@ -36,8 +36,17 @@ pop_log() {
 }
 
 fail() {
-  echo "---- Pop 的日志 ----"
+  echo "---- Pop 的更新日志 ----"
   pop_log | grep -E "Pop 更新|Pop 已启动" | tail -30 || true
+  echo "---- Pop 进程 ----"
+  pgrep -lx Pop || echo "（Pop 没有在运行）"
+  echo "---- Pop 最近的系统日志 ----"
+  pop_log | tail -40 || true
+  for report in ~/Library/Logs/DiagnosticReports/Pop*; do
+    [ -f "$report" ] || continue
+    echo "---- 崩溃报告 $report ----"
+    head -c 6000 "$report"
+  done
   echo "❌ $1"
   exit 1
 }
@@ -68,13 +77,22 @@ make_release() {
 JSON
 }
 
-# 启动 Pop：它会马上检查这个假的发布列表，发现新版本就自动安装
-launch_pop() {
+stop_pop() {
   pkill -x Pop 2>/dev/null || true
+  for _ in $(seq 1 20); do
+    pgrep -x Pop > /dev/null || return 0
+    sleep 0.5
+  done
+  pkill -9 -x Pop 2>/dev/null || true
   sleep 1
+}
+
+# 启动 Pop：它会马上检查这个假的发布列表，发现新版本就自动安装。
+# 像用户双击一样用 open 启动，环境变量用 --env 传进去
+launch_pop() {
+  stop_pop
   START="$(date '+%Y-%m-%d %H:%M:%S')"
-  POP_UPDATE_URL="http://127.0.0.1:${PORT}/releases.json" POP_UPDATE_AUTO_INSTALL=1 \
-    "$APP/Contents/MacOS/Pop" > /dev/null 2>&1 &
+  open -n --env "POP_UPDATE_URL=http://127.0.0.1:${PORT}/releases.json" --env POP_UPDATE_AUTO_INSTALL=1 "$APP"
 }
 
 wait_for_log() {
