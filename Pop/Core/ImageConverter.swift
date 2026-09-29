@@ -124,6 +124,15 @@ enum ImageConverter {
             return keepingTheRest ? metadata == kept : !metadata.hasLocation
         }
 
+        // JPEG 去掉全部信息：直接删掉存信息的那几段，画面数据一个字节都不动
+        if removeAll, type == .jpeg, let data = try? Data(contentsOf: url),
+           let stripped = JPEGMetadata.stripped(data, orientation: properties[kCGImagePropertyOrientation] as? Int ?? 1) {
+            if (try? stripped.write(to: output, options: .withoutOverwriting)) != nil, cleaned(keepingTheRest: true) {
+                return output
+            }
+            try? FileManager.default.removeItem(at: output)
+        }
+
         // 原样拷贝画面数据，只改元数据
         var attempts: [[CFString: Any]] = []
         if removeAll {
@@ -239,5 +248,108 @@ enum ImageConverter {
             counter += 1
         }
         return candidate
+    }
+}
+
+/// 直接改 JPEG 文件里的段：去掉 EXIF、XMP、IPTC、注释和厂商自己的信息段，只留解码要用的（JFIF、颜色描述文件、Adobe）；
+/// 照片的方向写回一个只有方向的 EXIF 段。画面数据原样拷贝，主图后面附带的图片（MPF）一起去掉。
+enum JPEGMetadata {
+    static func stripped(_ data: Data, orientation: Int) -> Data? {
+        let bytes = [UInt8](data)
+        guard bytes.count > 4, bytes[0] == 0xFF, bytes[1] == 0xD8 else { return nil }
+        var output: [UInt8] = [0xFF, 0xD8]
+        var wroteOrientation = orientation == 1
+        var index = 2
+        while index + 3 < bytes.count {
+            guard bytes[index] == 0xFF else { return nil }
+            let marker = bytes[index + 1]
+            if marker == 0xFF {
+                // 填充字节
+                index += 1
+                continue
+            }
+            // 方向段放在 JFIF 段后面（没有 JFIF 就紧跟文件开头）
+            if marker != 0xE0, !wroteOrientation {
+                output += orientationSegment(orientation)
+                wroteOrientation = true
+            }
+            if marker == 0xDA {
+                guard let end = endOfImage(bytes, from: index) else { return nil }
+                output += bytes[index..<end]
+                return Data(output)
+            }
+            let length = Int(bytes[index + 2]) << 8 | Int(bytes[index + 3])
+            guard length >= 2, index + 2 + length <= bytes.count else { return nil }
+            let segment = bytes[index..<(index + 2 + length)]
+            if keeps(marker, segment) {
+                output += segment
+            }
+            index += 2 + length
+        }
+        return nil
+    }
+
+    /// JFIF、颜色描述文件（ICC）、Adobe 段和所有非 APP 段（量化表、霍夫曼表、帧信息……）留着
+    private static func keeps(_ marker: UInt8, _ segment: ArraySlice<UInt8>) -> Bool {
+        switch marker {
+        case 0xE0, 0xEE:
+            return true
+        case 0xE2:
+            let signature = Array("ICC_PROFILE".utf8)
+            let start = segment.startIndex + 4
+            return segment.count >= 4 + signature.count && Array(segment[start..<(start + signature.count)]) == signature
+        case 0xE1, 0xE3...0xED, 0xEF, 0xFE:
+            return false
+        default:
+            return true
+        }
+    }
+
+    /// 从第一段画面数据开始找到主图的结尾（EOI 之后）
+    private static func endOfImage(_ bytes: [UInt8], from start: Int) -> Int? {
+        var index = start
+        while index + 1 < bytes.count {
+            guard bytes[index] == 0xFF else { return nil }
+            let marker = bytes[index + 1]
+            if marker == 0xD9 {
+                return index + 2
+            }
+            if marker == 0xFF {
+                index += 1
+                continue
+            }
+            if (0xD0...0xD7).contains(marker) || marker == 0x01 {
+                index += 2
+                continue
+            }
+            guard index + 3 < bytes.count else { return nil }
+            index += 2 + (Int(bytes[index + 2]) << 8 | Int(bytes[index + 3]))
+            if marker == 0xDA {
+                // 画面数据里的 FF 后面只会跟 00 或者 RST，遇到别的就是下一个标记
+                while index + 1 < bytes.count,
+                      !(bytes[index] == 0xFF && bytes[index + 1] != 0x00 && !(0xD0...0xD7).contains(bytes[index + 1])) {
+                    index += 1
+                }
+            }
+        }
+        return nil
+    }
+
+    /// 只有一项「方向」的 EXIF 段（大端 TIFF）
+    static func orientationSegment(_ orientation: Int) -> [UInt8] {
+        var payload: [UInt8] = Array("Exif".utf8)
+        payload += [0x00, 0x00]
+        // TIFF 头：大端，第一个目录在第 8 个字节
+        payload += [0x4D, 0x4D, 0x00, 0x2A, 0x00, 0x00, 0x00, 0x08]
+        // 一项：0x0112 方向，SHORT，1 个值
+        payload += [0x00, 0x01]
+        payload += [0x01, 0x12, 0x00, 0x03, 0x00, 0x00, 0x00, 0x01]
+        payload += [0x00, UInt8(clamping: orientation), 0x00, 0x00]
+        // 没有下一个目录
+        payload += [0x00, 0x00, 0x00, 0x00]
+        let length = payload.count + 2
+        var segment: [UInt8] = [0xFF, 0xE1, UInt8(length >> 8), UInt8(length & 0xFF)]
+        segment += payload
+        return segment
     }
 }
