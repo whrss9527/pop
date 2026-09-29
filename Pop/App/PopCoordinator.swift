@@ -376,6 +376,8 @@ final class PopCoordinator: MouseTriggerDelegate {
             presentRegexTester(text)
         case .reminder(let text):
             presentReminder(text)
+        case .rename(let files):
+            presentRename(files)
         case .failure(let message):
             overlay.showCard(ResultCardView(card: ResultCard(title: "没能完成", body: message),
                                             onAction: { [weak self] action in self?.perform(action) },
@@ -423,8 +425,14 @@ final class PopCoordinator: MouseTriggerDelegate {
             present(.translate(text: text, language: ContentClassifier.dominantLanguage(text)))
         case .convertImages(let files, let operation):
             convertImages(files, operation)
+        case .stitchImages(let files, let direction):
+            stitchImages(files, direction)
+        case .convertVideos(let files, let operation):
+            convertVideos(files, operation)
         case .exportPDFPages(let pdf):
             exportPDFPages(pdf)
+        case .compressPDF(let pdf):
+            compressPDF(pdf)
         case .keepAwake(let minutes):
             let started = KeepAwake.shared.start(minutes: minutes)
             finish(toast: started ? (minutes.map { "保持唤醒 \(KeepAwake.title(minutes: $0))" } ?? "一直保持唤醒") : "没能保持唤醒")
@@ -493,6 +501,38 @@ final class PopCoordinator: MouseTriggerDelegate {
         }
     }
 
+    /// 在后台压缩 PDF；小了才留下，在访达里选中
+    private func compressPDF(_ pdf: URL) {
+        let anchor = session?.anchor ?? NSEvent.mouseLocation
+        showToast("正在压缩 PDF…", at: anchor)
+        Task { [weak self] in
+            let result = await runInBackground { () -> Result<PDFTools.Compression, PDFTools.Failure> in
+                do {
+                    return .success(try PDFTools.compress(pdf))
+                } catch let failure as PDFTools.Failure {
+                    return .failure(failure)
+                } catch {
+                    return .failure(PDFTools.Failure(message: error.localizedDescription))
+                }
+            }
+            guard let self else { return }
+            let message: String
+            switch result {
+            case .success(let compression) where compression.worthwhile:
+                NSWorkspace.shared.activateFileViewerSelecting([compression.url])
+                message = "已压缩：\(FileInfo.shortSize(compression.before)) → \(FileInfo.shortSize(compression.after))"
+            case .success(let compression):
+                try? FileManager.default.removeItem(at: compression.url)
+                message = "这个 PDF 已经很小了，压缩不了多少"
+            case .failure(let failure):
+                message = failure.message
+            }
+            if self.session == nil {
+                self.showToast(message, at: anchor)
+            }
+        }
+    }
+
     /// 在后台转换图片，完成后在访达里选中新文件
     private func convertImages(_ files: [URL], _ operation: ImageConverter.Operation) {
         let anchor = session?.anchor ?? NSEvent.mouseLocation
@@ -523,6 +563,71 @@ final class PopCoordinator: MouseTriggerDelegate {
                 message = outputs.count == 1 ? "已存到原图旁边" : "已转换 \(outputs.count) 张"
             }
             self.showToast(message, at: anchor)
+        }
+    }
+
+    /// 在后台拼接图片，完成后在访达里选中新文件
+    private func stitchImages(_ files: [URL], _ direction: ImageStitcher.Direction) {
+        let anchor = session?.anchor ?? NSEvent.mouseLocation
+        endSession()
+        Task { [weak self] in
+            let result = await runInBackground { () -> Result<URL, ImageStitcher.Failure> in
+                do {
+                    return .success(try ImageStitcher.stitch(files, direction: direction))
+                } catch let failure as ImageStitcher.Failure {
+                    return .failure(failure)
+                } catch {
+                    return .failure(ImageStitcher.Failure(message: error.localizedDescription))
+                }
+            }
+            guard let self else { return }
+            switch result {
+            case .success(let output):
+                NSWorkspace.shared.activateFileViewerSelecting([output])
+                self.showToast("已拼成一张，存在第一张旁边", at: anchor)
+            case .failure(let failure):
+                self.showToast(failure.message, at: anchor)
+            }
+        }
+    }
+
+    /// 转换视频要一会儿：先提示正在转换，好了在访达里选中新文件
+    private func convertVideos(_ files: [URL], _ operation: VideoConverter.Operation) {
+        let anchor = session?.anchor ?? NSEvent.mouseLocation
+        showToast(operation.progress, at: anchor)
+        Task { [weak self] in
+            var outputs: [URL] = []
+            var notes: [String] = []
+            var failures: [String] = []
+            for file in files {
+                do {
+                    let result = try await VideoConverter.convert(file, operation)
+                    outputs.append(result.url)
+                    if let note = result.note {
+                        notes.append(note)
+                    }
+                } catch let failure as VideoConverter.Failure {
+                    failures.append(failure.message)
+                } catch {
+                    failures.append(error.localizedDescription)
+                }
+            }
+            guard let self else { return }
+            if !outputs.isEmpty {
+                NSWorkspace.shared.activateFileViewerSelecting(outputs)
+            }
+            let message: String
+            if let failure = failures.first {
+                message = outputs.isEmpty ? failure : "转换了 \(outputs.count) 个，\(failures.count) 个失败：\(failure)"
+            } else if outputs.count > 1 {
+                message = "已转换 \(outputs.count) 个视频"
+            } else {
+                message = ([operation.done] + notes).joined(separator: "；")
+            }
+            // 转换要一会儿：这期间又唤起了 Pop 的话不去打断，结果在访达里已经选中了
+            if self.session == nil {
+                self.showToast(message, at: NSEvent.mouseLocation)
+            }
         }
     }
 
@@ -653,6 +758,20 @@ final class PopCoordinator: MouseTriggerDelegate {
             }
         }
         overlay.showCard(ReminderCardView(draft: draft, onAdd: add, onClose: { [weak self] in self?.endSession() }),
+                         anchor: current.anchor)
+    }
+
+    /// 批量重命名：按规则预览新名字，改完可以撤销
+    private func presentRename(_ files: [URL]) {
+        guard let current = session else { return }
+        stopPointerTracking()
+        let model = RenameModel(files: files)
+        overlay.showCard(RenameCardView(model: model,
+                                        onReveal: { [weak self] urls in
+                                            NSWorkspace.shared.activateFileViewerSelecting(urls)
+                                            self?.endSession()
+                                        },
+                                        onClose: { [weak self] in self?.endSession() }),
                          anchor: current.anchor)
     }
 

@@ -81,6 +81,8 @@ plan = [
     ("history-search", [3.0]),
     ("reminder", [3.0]),
     ("table", [3.0]),
+    ("photo", [3.0]),
+    ("rename", [3.0]),
     ("annotate", [1.5]),
     ("settings-plugins", [0.5]),
     ("settings-ai", [0.5]),
@@ -93,7 +95,7 @@ if appearance == "dark":
             ("layout", [3.0]), ("translate", [3.0]), ("snippets", [3.0]), ("diff", [3.0]), ("palette", [3.0]),
             ("shelf", [3.0]), ("openWith", [3.0]), ("markdown", [3.0]), ("extract", [3.0]), ("jsonTypes", [3.0]),
             ("toMarkdown", [3.0]), ("regex", [3.0]), ("history", [3.0]), ("history-search", [3.0]),
-            ("reminder", [3.0]), ("table", [3.0]), ("annotate", [1.5]),
+            ("reminder", [3.0]), ("table", [3.0]), ("photo", [3.0]), ("rename", [3.0]), ("annotate", [1.5]),
             ("settings-plugins", [0.5]), ("settings-ai", [0.5]), ("settings-hotKeys", [0.5])]
 factor = scale / 6.0
 

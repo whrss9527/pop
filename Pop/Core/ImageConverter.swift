@@ -2,7 +2,7 @@ import Foundation
 import ImageIO
 import UniformTypeIdentifiers
 
-/// 图片转换：换格式、缩小尺寸、压缩体积。结果存在原图旁边，不覆盖原图。
+/// 图片转换：换格式、缩小尺寸、压缩体积、去掉照片里的位置和拍摄信息。结果存在原图旁边，不覆盖原图。
 enum ImageConverter {
     enum Operation: String, CaseIterable, Identifiable {
         case png
@@ -13,6 +13,8 @@ enum ImageConverter {
         case rotateLeft
         case rotateRight
         case flipHorizontal
+        case removeLocation
+        case removeMetadata
 
         var id: String { rawValue }
 
@@ -26,6 +28,8 @@ enum ImageConverter {
             case .rotateLeft: return "向左转"
             case .rotateRight: return "向右转"
             case .flipHorizontal: return "左右翻转"
+            case .removeLocation: return "去掉位置信息"
+            case .removeMetadata: return "去掉拍摄信息"
             }
         }
     }
@@ -38,6 +42,9 @@ enum ImageConverter {
     static func convert(_ url: URL, _ operation: Operation) throws -> URL {
         guard let source = CGImageSourceCreateWithURL(url as CFURL, nil), CGImageSourceGetCount(source) > 0 else {
             throw Failure(message: "读不了「\(url.lastPathComponent)」")
+        }
+        if operation == .removeLocation || operation == .removeMetadata {
+            return try removingMetadata(url, source: source, operation: operation)
         }
         let sourceType = (CGImageSourceGetType(source) as String?).flatMap { UTType($0) } ?? .png
         let type: UTType
@@ -66,6 +73,8 @@ enum ImageConverter {
             type = sourceType
             properties[kCGImageDestinationLossyCompressionQuality] = 0.95
             image = uprightImage(source).flatMap { transformed($0, operation) }
+        case .removeLocation, .removeMetadata:
+            return url
         }
         guard let image else { throw Failure(message: "读不了「\(url.lastPathComponent)」") }
         let output = outputURL(for: url, operation: operation, type: type)
@@ -93,8 +102,90 @@ enum ImageConverter {
         return CGImageSourceCreateThumbnailAtIndex(source, 0, options as CFDictionary)
     }
 
+    /// 另存一份去掉位置（或者全部拍摄信息）的照片：尽量原样拷贝画面数据不重新压缩，照片的方向保留；
+    /// 存好后再读一遍，确认真的去掉了
+    private static func removingMetadata(_ url: URL, source: CGImageSource, operation: Operation) throws -> URL {
+        let removeAll = operation == .removeMetadata
+        let properties = CGImageSourceCopyPropertiesAtIndex(source, 0, nil) as? [CFString: Any] ?? [:]
+        let sourceIdentifier = (CGImageSourceGetType(source) as String?) ?? UTType.jpeg.identifier
+        let writable = (CGImageDestinationCopyTypeIdentifiers() as? [String] ?? []).contains(sourceIdentifier)
+        // RAW 这类存不回原格式的，存成 JPEG
+        let type = writable ? (UTType(sourceIdentifier) ?? .jpeg) : .jpeg
+        let output = outputURL(for: url, operation: operation, type: type)
+
+        // 只去掉位置时，相机、参数、拍摄时间都要原样留着
+        var kept = PhotoMetadata(properties: properties)
+        kept.latitude = nil
+        kept.longitude = nil
+        kept.altitude = nil
+        func cleaned(keepingTheRest: Bool) -> Bool {
+            guard let metadata = PhotoMetadata.read(output) else { return false }
+            if removeAll { return metadata.isEmpty }
+            return keepingTheRest ? metadata == kept : !metadata.hasLocation
+        }
+
+        // JPEG 去掉全部信息：直接删掉存信息的那几段，画面数据一个字节都不动
+        if removeAll, type == .jpeg, let data = try? Data(contentsOf: url),
+           let stripped = JPEGMetadata.stripped(data, orientation: properties[kCGImagePropertyOrientation] as? Int ?? 1) {
+            if (try? stripped.write(to: output, options: .withoutOverwriting)) != nil, cleaned(keepingTheRest: true) {
+                return output
+            }
+            try? FileManager.default.removeItem(at: output)
+        }
+
+        // 原样拷贝画面数据，只改元数据
+        var attempts: [[CFString: Any]] = []
+        if removeAll {
+            // 换成空的元数据，只把方向带上
+            var options: [CFString: Any] = [kCGImageMetadataShouldExcludeGPS: true,
+                                            kCGImageDestinationMetadata: CGImageMetadataCreateMutable(),
+                                            kCGImageDestinationMergeMetadata: false]
+            if let orientation = properties[kCGImagePropertyOrientation] {
+                options[kCGImageDestinationOrientation] = orientation
+            }
+            attempts.append(options)
+        } else {
+            // 不给元数据时原来的会被整个换掉：合并一份空的，或者原样再给一遍，都只是不写位置
+            attempts.append([kCGImageMetadataShouldExcludeGPS: true,
+                             kCGImageDestinationMetadata: CGImageMetadataCreateMutable(),
+                             kCGImageDestinationMergeMetadata: true])
+            if let metadata = CGImageSourceCopyMetadataAtIndex(source, 0, nil) {
+                attempts.append([kCGImageMetadataShouldExcludeGPS: true,
+                                 kCGImageDestinationMetadata: metadata,
+                                 kCGImageDestinationMergeMetadata: false])
+            }
+        }
+        for options in attempts where writable {
+            guard let destination = CGImageDestinationCreateWithURL(output as CFURL, type.identifier as CFString, 1, nil) else { break }
+            if CGImageDestinationCopyImageSource(destination, source, options as CFDictionary, nil), cleaned(keepingTheRest: true) {
+                return output
+            }
+            try? FileManager.default.removeItem(at: output)
+        }
+
+        // 这种格式不能原样拷贝：重新存一份
+        guard let destination = CGImageDestinationCreateWithURL(output as CFURL, type.identifier as CFString, 1, nil) else {
+            throw Failure(message: "这台 Mac 不支持存成 \(type.preferredFilenameExtension?.uppercased() ?? "这种格式")")
+        }
+        if removeAll {
+            // 画面按方向摆正后重新画一份，不带任何拍摄信息
+            guard let image = uprightImage(source) else { throw Failure(message: "读不了「\(url.lastPathComponent)」") }
+            CGImageDestinationAddImage(destination, image, [kCGImageDestinationLossyCompressionQuality: 0.95] as CFDictionary)
+        } else {
+            let changes: [CFString: Any] = [kCGImagePropertyGPSDictionary: kCFNull as Any,
+                                            kCGImageMetadataShouldExcludeGPS: true,
+                                            kCGImageDestinationLossyCompressionQuality: 0.95]
+            CGImageDestinationAddImageFromSource(destination, source, 0, changes as CFDictionary)
+        }
+        guard CGImageDestinationFinalize(destination), cleaned(keepingTheRest: false) else {
+            try? FileManager.default.removeItem(at: output)
+            throw Failure(message: removeAll ? "没能去掉「\(url.lastPathComponent)」的拍摄信息" : "没能去掉「\(url.lastPathComponent)」的位置信息")
+        }
+        return output
+    }
+
     /// 按原图方向（照片的 EXIF 方向）摆正后的原尺寸图片
-    private static func uprightImage(_ source: CGImageSource) -> CGImage? {
+    static func uprightImage(_ source: CGImageSource) -> CGImage? {
         guard let properties = CGImageSourceCopyPropertiesAtIndex(source, 0, nil) as? [CFString: Any],
               let width = properties[kCGImagePropertyPixelWidth] as? Int,
               let height = properties[kCGImagePropertyPixelHeight] as? Int else { return nil }
@@ -146,6 +237,8 @@ enum ImageConverter {
         case .rotateLeft: name += " 向左转"
         case .rotateRight: name += " 向右转"
         case .flipHorizontal: name += " 翻转"
+        case .removeLocation: name += " 无位置"
+        case .removeMetadata: name += " 无拍摄信息"
         case .png, .jpeg, .heic: break
         }
         var candidate = folder.appending(path: "\(name).\(ext)")
@@ -155,5 +248,108 @@ enum ImageConverter {
             counter += 1
         }
         return candidate
+    }
+}
+
+/// 直接改 JPEG 文件里的段：去掉 EXIF、XMP、IPTC、注释和厂商自己的信息段，只留解码要用的（JFIF、颜色描述文件、Adobe）；
+/// 照片的方向写回一个只有方向的 EXIF 段。画面数据原样拷贝，主图后面附带的图片（MPF）一起去掉。
+enum JPEGMetadata {
+    static func stripped(_ data: Data, orientation: Int) -> Data? {
+        let bytes = [UInt8](data)
+        guard bytes.count > 4, bytes[0] == 0xFF, bytes[1] == 0xD8 else { return nil }
+        var output: [UInt8] = [0xFF, 0xD8]
+        var wroteOrientation = orientation == 1
+        var index = 2
+        while index + 3 < bytes.count {
+            guard bytes[index] == 0xFF else { return nil }
+            let marker = bytes[index + 1]
+            if marker == 0xFF {
+                // 填充字节
+                index += 1
+                continue
+            }
+            // 方向段放在 JFIF 段后面（没有 JFIF 就紧跟文件开头）
+            if marker != 0xE0, !wroteOrientation {
+                output += orientationSegment(orientation)
+                wroteOrientation = true
+            }
+            if marker == 0xDA {
+                guard let end = endOfImage(bytes, from: index) else { return nil }
+                output += bytes[index..<end]
+                return Data(output)
+            }
+            let length = Int(bytes[index + 2]) << 8 | Int(bytes[index + 3])
+            guard length >= 2, index + 2 + length <= bytes.count else { return nil }
+            let segment = bytes[index..<(index + 2 + length)]
+            if keeps(marker, segment) {
+                output += segment
+            }
+            index += 2 + length
+        }
+        return nil
+    }
+
+    /// JFIF、颜色描述文件（ICC）、Adobe 段和所有非 APP 段（量化表、霍夫曼表、帧信息……）留着
+    private static func keeps(_ marker: UInt8, _ segment: ArraySlice<UInt8>) -> Bool {
+        switch marker {
+        case 0xE0, 0xEE:
+            return true
+        case 0xE2:
+            let signature = Array("ICC_PROFILE".utf8)
+            let start = segment.startIndex + 4
+            return segment.count >= 4 + signature.count && Array(segment[start..<(start + signature.count)]) == signature
+        case 0xE1, 0xE3...0xED, 0xEF, 0xFE:
+            return false
+        default:
+            return true
+        }
+    }
+
+    /// 从第一段画面数据开始找到主图的结尾（EOI 之后）
+    private static func endOfImage(_ bytes: [UInt8], from start: Int) -> Int? {
+        var index = start
+        while index + 1 < bytes.count {
+            guard bytes[index] == 0xFF else { return nil }
+            let marker = bytes[index + 1]
+            if marker == 0xD9 {
+                return index + 2
+            }
+            if marker == 0xFF {
+                index += 1
+                continue
+            }
+            if (0xD0...0xD7).contains(marker) || marker == 0x01 {
+                index += 2
+                continue
+            }
+            guard index + 3 < bytes.count else { return nil }
+            index += 2 + (Int(bytes[index + 2]) << 8 | Int(bytes[index + 3]))
+            if marker == 0xDA {
+                // 画面数据里的 FF 后面只会跟 00 或者 RST，遇到别的就是下一个标记
+                while index + 1 < bytes.count,
+                      !(bytes[index] == 0xFF && bytes[index + 1] != 0x00 && !(0xD0...0xD7).contains(bytes[index + 1])) {
+                    index += 1
+                }
+            }
+        }
+        return nil
+    }
+
+    /// 只有一项「方向」的 EXIF 段（大端 TIFF）
+    static func orientationSegment(_ orientation: Int) -> [UInt8] {
+        var payload: [UInt8] = Array("Exif".utf8)
+        payload += [0x00, 0x00]
+        // TIFF 头：大端，第一个目录在第 8 个字节
+        payload += [0x4D, 0x4D, 0x00, 0x2A, 0x00, 0x00, 0x00, 0x08]
+        // 一项：0x0112 方向，SHORT，1 个值
+        payload += [0x00, 0x01]
+        payload += [0x01, 0x12, 0x00, 0x03, 0x00, 0x00, 0x00, 0x01]
+        payload += [0x00, UInt8(clamping: orientation), 0x00, 0x00]
+        // 没有下一个目录
+        payload += [0x00, 0x00, 0x00, 0x00]
+        let length = payload.count + 2
+        var segment: [UInt8] = [0xFF, 0xE1, UInt8(length >> 8), UInt8(length & 0xFF)]
+        segment += payload
+        return segment
     }
 }

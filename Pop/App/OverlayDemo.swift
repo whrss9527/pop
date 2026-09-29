@@ -278,6 +278,22 @@ enum OverlayDemo {
             }
             step("table")
 
+            // 文件信息：一张带拍摄信息和位置的示例照片，可以在地图里看、另存去掉位置的一份
+            await pause(1.4 * unit)
+            if let photo = samplePhoto(),
+               case .card(let photoCard) = await FileInfoPlugin().run(ContentClassifier.classify(.files([photo])),
+                                                                      context: PluginContext(settings: AppSettings(), openSettings: {})) {
+                overlay.showCard(ResultCardView(card: photoCard, onAction: { _ in }, onMore: {}, onClose: {}), anchor: center)
+            }
+            step("photo")
+
+            // 批量重命名：几个示例文件按编号改名的预览
+            await pause(1.4 * unit)
+            let renaming = RenameModel(files: sampleFiles())
+            renaming.rule.name = "发布素材"
+            overlay.showCard(RenameCardView(model: renaming, onReveal: { _ in }, onClose: {}), anchor: center)
+            step("rename")
+
             // 截图标注窗口：拿一张画好的示例图，标上方框、箭头、文字、马赛克和序号；截图区域换成标注窗口
             await pause(1.4 * unit)
             overlay.hide()
