@@ -710,6 +710,9 @@ struct LanguagePackView: View {
 
 struct SyncSettingsView: View {
     @EnvironmentObject private var sync: CloudSync
+    @EnvironmentObject private var store: SettingsStore
+    @EnvironmentObject private var plugins: PluginStore
+    @State private var backupMessage: String?
 
     var body: some View {
         Form {
@@ -745,7 +748,72 @@ struct SyncSettingsView: View {
                         .foregroundStyle(.orange)
                 }
             }
+            Section {
+                HStack {
+                    Button("导出设置…", action: exportSettings)
+                    Button("导入设置…", action: importSettings)
+                    Spacer()
+                }
+                if let backupMessage {
+                    Text(backupMessage)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+            } header: {
+                Text("导出和导入")
+            } footer: {
+                Text("把设置和自己写的插件存成一个文件，在另一台 Mac 上导入；没有 iCloud 同步的版本也能这样搬过去。AI 的 API Key 只在本机钥匙串里，不会导出。")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
         }
         .formStyle(.grouped)
+    }
+
+    private func exportSettings() {
+        let version = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String
+        let backup = SettingsBackup(settings: store.settings, plugins: plugins.manifests, appVersion: version)
+        let panel = NSSavePanel()
+        panel.nameFieldStringValue = SettingsBackup.suggestedFileName()
+        panel.allowedContentTypes = [.json]
+        guard panel.runModal() == .OK, let url = panel.url else { return }
+        do {
+            try backup.encoded().write(to: url, options: .atomic)
+            backupMessage = "已导出到「\(url.lastPathComponent)」"
+        } catch {
+            backupMessage = "导出失败：\(error.localizedDescription)"
+        }
+    }
+
+    private func importSettings() {
+        let panel = NSOpenPanel()
+        panel.allowedContentTypes = [.json]
+        panel.allowsMultipleSelection = false
+        guard panel.runModal() == .OK, let url = panel.url else { return }
+        let backup: SettingsBackup
+        do {
+            backup = try SettingsBackup.decode(try Data(contentsOf: url))
+        } catch {
+            backupMessage = (error as? SettingsBackup.Failure)?.message ?? "读不了这个文件：\(error.localizedDescription)"
+            return
+        }
+        let alert = NSAlert()
+        alert.messageText = "导入「\(url.lastPathComponent)」？"
+        alert.informativeText = "会替换现在的\(backup.summary)。同名的插件会被覆盖，其他插件保留。"
+        alert.addButton(withTitle: "导入")
+        alert.addButton(withTitle: "取消")
+        guard alert.runModal() == .alertFirstButtonReturn else { return }
+        var failed: [String] = []
+        for manifest in backup.plugins {
+            do {
+                _ = try plugins.save(manifest)
+            } catch {
+                failed.append(manifest.name)
+            }
+        }
+        store.update { settings in
+            settings = backup.settings
+        }
+        backupMessage = failed.isEmpty ? "已导入" : "已导入，但这些插件没能保存：\(failed.joined(separator: "、"))"
     }
 }

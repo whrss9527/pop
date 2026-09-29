@@ -128,9 +128,20 @@ enum InfoExtractor {
             let values = items.filter { $0.kind == kind }.map(\.value)
             return values.isEmpty ? nil : (kind, values)
         }
-        let summary = groups.map { "\($0.1.count) 个\($0.0.title)" }.joined(separator: "，")
-        let buttons = groups.filter { $0.1.count > 1 }.map { group in
+        // 「1 个 IP 地址」：英文前面空一格
+        let summary = groups.map { group in
+            let title = group.0.title
+            return "\(group.1.count) 个" + (title.first?.isASCII == true ? " " : "") + title
+        }.joined(separator: "，")
+        var buttons = groups.filter { $0.1.count > 1 }.map { group in
             CardButton(title: "复制全部\(group.0.title)", action: .copy(group.1.joined(separator: "\n")))
+        }
+        // 链接不多时可以一起打开
+        let links = items.filter { $0.kind == .link }.compactMap { item -> URL? in
+            URL(string: item.value.contains("://") ? item.value : "https://" + item.value)
+        }
+        if (2...10).contains(links.count) {
+            buttons.append(CardButton(title: "打开全部链接", action: .openAll(links)))
         }
         let detail = items.count > limit ? "\(summary)（只列出前 \(limit) 项，复制全部时包括所有的）" : summary
         return ResultCard(title: "提取信息", detail: detail, rows: rows, rowLineLimit: 1, buttons: buttons)

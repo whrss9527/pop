@@ -10,6 +10,9 @@ enum ImageConverter {
         case heic
         case halfSize
         case compress
+        case rotateLeft
+        case rotateRight
+        case flipHorizontal
 
         var id: String { rawValue }
 
@@ -20,6 +23,9 @@ enum ImageConverter {
             case .heic: return "转成 HEIC"
             case .halfSize: return "缩小一半"
             case .compress: return "压缩"
+            case .rotateLeft: return "向左转"
+            case .rotateRight: return "向右转"
+            case .flipHorizontal: return "左右翻转"
             }
         }
     }
@@ -56,6 +62,10 @@ enum ImageConverter {
             type = .jpeg
             properties[kCGImageDestinationLossyCompressionQuality] = 0.7
             image = CGImageSourceCreateImageAtIndex(source, 0, nil)
+        case .rotateLeft, .rotateRight, .flipHorizontal:
+            type = sourceType
+            properties[kCGImageDestinationLossyCompressionQuality] = 0.95
+            image = uprightImage(source).flatMap { transformed($0, operation) }
         }
         guard let image else { throw Failure(message: "读不了「\(url.lastPathComponent)」") }
         let output = outputURL(for: url, operation: operation, type: type)
@@ -83,6 +93,46 @@ enum ImageConverter {
         return CGImageSourceCreateThumbnailAtIndex(source, 0, options as CFDictionary)
     }
 
+    /// 按原图方向（照片的 EXIF 方向）摆正后的原尺寸图片
+    private static func uprightImage(_ source: CGImageSource) -> CGImage? {
+        guard let properties = CGImageSourceCopyPropertiesAtIndex(source, 0, nil) as? [CFString: Any],
+              let width = properties[kCGImagePropertyPixelWidth] as? Int,
+              let height = properties[kCGImagePropertyPixelHeight] as? Int else { return nil }
+        let options: [CFString: Any] = [
+            kCGImageSourceCreateThumbnailFromImageAlways: true,
+            kCGImageSourceCreateThumbnailWithTransform: true,
+            kCGImageSourceThumbnailMaxPixelSize: max(width, height, 1),
+        ]
+        return CGImageSourceCreateThumbnailAtIndex(source, 0, options as CFDictionary)
+    }
+
+    /// 转 90° 或者左右翻转
+    static func transformed(_ image: CGImage, _ operation: Operation) -> CGImage? {
+        let width = image.width
+        let height = image.height
+        let turns = operation == .rotateLeft || operation == .rotateRight
+        let space = CGColorSpace(name: CGColorSpace.sRGB) ?? CGColorSpaceCreateDeviceRGB()
+        guard let context = CGContext(data: nil, width: turns ? height : width, height: turns ? width : height,
+                                      bitsPerComponent: 8, bytesPerRow: 0, space: space,
+                                      bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue) else { return nil }
+        switch operation {
+        case .rotateRight:
+            // 顺时针：原来的左边转到上面
+            context.translateBy(x: 0, y: CGFloat(width))
+            context.rotate(by: -.pi / 2)
+        case .rotateLeft:
+            context.translateBy(x: CGFloat(height), y: 0)
+            context.rotate(by: .pi / 2)
+        case .flipHorizontal:
+            context.translateBy(x: CGFloat(width), y: 0)
+            context.scaleBy(x: -1, y: 1)
+        default:
+            break
+        }
+        context.draw(image, in: CGRect(x: 0, y: 0, width: width, height: height))
+        return context.makeImage()
+    }
+
     /// 新文件名：「原名.png」；和原图同名同格式时加上说明（「原名 缩小.jpg」），已经有同名文件时再加编号
     static func outputURL(for url: URL, operation: Operation, type: UTType) -> URL {
         let folder = url.deletingLastPathComponent()
@@ -93,6 +143,9 @@ enum ImageConverter {
         switch operation {
         case .halfSize: name += " 缩小"
         case .compress: name += " 压缩"
+        case .rotateLeft: name += " 向左转"
+        case .rotateRight: name += " 向右转"
+        case .flipHorizontal: name += " 翻转"
         case .png, .jpeg, .heic: break
         }
         var candidate = folder.appending(path: "\(name).\(ext)")

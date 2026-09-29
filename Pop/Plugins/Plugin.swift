@@ -63,6 +63,8 @@ enum ContentCheck: Hashable {
     case characters
     /// 至少两项的一列（或者一行用逗号隔开的）值
     case lineList
+    /// 说到了时间（明天、周五、下午 3 点……）
+    case dateMention
 
     func matches(_ subject: String) -> Bool {
         switch self {
@@ -78,6 +80,8 @@ enum ContentCheck: Hashable {
             return CharacterInspector.isApplicable(subject)
         case .lineList:
             return LineTools.isApplicable(subject)
+        case .dateMention:
+            return NaturalDate.parse(subject) != nil
         }
     }
 }
@@ -88,6 +92,8 @@ enum CardAction: Equatable {
     /// 写回原来的 App，替换选中的内容
     case replace(String)
     case open(URL)
+    /// 用默认的 App 一个个打开（比如提取出来的几个链接）
+    case openAll([URL])
     case reveal(URL)
     /// 复制 PNG 图片
     case copyImage(Data)
@@ -188,6 +194,10 @@ enum PluginOutcome: Equatable {
     case showSnippets
     /// 选一个 App 打开文件或链接
     case chooseApp(OpenWithRequest)
+    /// 打开正则测试卡片
+    case regexTester(text: String)
+    /// 打开「加到提醒事项」卡片
+    case reminder(text: String)
     case failure(String)
 }
 

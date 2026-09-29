@@ -366,3 +366,14 @@ struct LineToolsPlugin: PopPlugin {
                                 rowsReplaceable: true, rowLineLimit: 2))
     }
 }
+
+struct ReminderPlugin: PopPlugin {
+    let info = PluginInfo(id: BuiltinPluginID.reminder, name: "加到提醒事项", symbol: "checklist",
+                          summary: "从选中的文字里认出时间（明天下午 3 点、周五、10 月 8 日、半小时后……），加到「提醒事项」或者「日历」",
+                          accepts: [.text], maxLength: 500, check: .dateMention)
+
+    @MainActor func run(_ content: ClassifiedContent, context: PluginContext) async -> PluginOutcome {
+        guard let text = content.text else { return .failure("没有文字") }
+        return .reminder(text: text)
+    }
+}

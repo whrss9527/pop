@@ -56,6 +56,14 @@ struct ClipboardSettingsView: View {
             }
 
             Section {
+                Toggle("复制链接时去掉跟踪参数", isOn: store.binding(\.clipboard.cleanLinks))
+            } footer: {
+                Text("复制的内容只是一个网址、而且带着 utm_source、fbclid、spm 这类跟踪参数时，自动换成去掉这些参数的网址，打开的还是同一个页面。不开剪贴板历史也能用。")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+
+            Section {
                 BundleIDListView(keyPath: \.clipboard.ignoredBundleIDs)
             } header: {
                 Text("不记录这些 App 里复制的内容")
