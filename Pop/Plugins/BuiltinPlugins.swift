@@ -46,6 +46,7 @@ enum BuiltinPlugins {
             UnzipPlugin(),
             OpenInTerminalPlugin(),
             ClipboardHistoryPlugin(),
+            SnippetsPlugin(),
             AllPluginsPlugin(),
             OpenSettingsPlugin(),
         ]
@@ -80,7 +81,7 @@ enum BuiltinCategory: CaseIterable, Identifiable {
     private static let members: [BuiltinCategory: [String]] = [
         .text: [BuiltinPluginID.translate, BuiltinPluginID.screenshotTranslate, BuiltinPluginID.search,
                 BuiltinPluginID.dictionary, BuiltinPluginID.speak, BuiltinPluginID.openURL, BuiltinPluginID.copyPlain,
-                BuiltinPluginID.textCleanup, BuiltinPluginID.textStats, BuiltinPluginID.quickNote],
+                BuiltinPluginID.textCleanup, BuiltinPluginID.textStats, BuiltinPluginID.snippets, BuiltinPluginID.quickNote],
         .ai: [BuiltinPluginID.aiAssistant, BuiltinPluginID.aiPolish, BuiltinPluginID.aiSummarize, BuiltinPluginID.aiExplain],
         .convert: [BuiltinPluginID.calculate, BuiltinPluginID.unitConvert, BuiltinPluginID.changeCase,
                    BuiltinPluginID.encodeDecode, BuiltinPluginID.formatJSON, BuiltinPluginID.tableConvert,
@@ -228,6 +229,16 @@ struct OpenSettingsPlugin: PopPlugin {
     @MainActor func run(_ content: ClassifiedContent, context: PluginContext) async -> PluginOutcome {
         context.openSettings()
         return .done(toast: nil)
+    }
+}
+
+struct SnippetsPlugin: PopPlugin {
+    let info = PluginInfo(id: BuiltinPluginID.snippets, name: "常用短语", symbol: "text.bubble",
+                          summary: "从存好的短语里选一条粘贴到当前 App，可以用 {date}、{clipboard}、{selection} 这样的占位符",
+                          accepts: [], optionalContent: true)
+
+    @MainActor func run(_ content: ClassifiedContent, context: PluginContext) async -> PluginOutcome {
+        .showSnippets
     }
 }
 

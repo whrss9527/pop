@@ -64,6 +64,7 @@ struct ClipboardSettingsView: View {
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
+            SnippetsSection()
         }
         .formStyle(.grouped)
         .onAppear {

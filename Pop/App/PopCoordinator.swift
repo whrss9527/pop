@@ -362,6 +362,8 @@ final class PopCoordinator: MouseTriggerDelegate {
             presentAI(spec)
         case .showWindowLayouts:
             presentWindowLayouts()
+        case .showSnippets:
+            presentSnippets()
         case .failure(let message):
             overlay.showCard(ResultCardView(card: ResultCard(title: "没能完成", body: message),
                                             onAction: { [weak self] action in self?.perform(action) },
@@ -440,6 +442,26 @@ final class PopCoordinator: MouseTriggerDelegate {
             }
             self.showToast(message, at: anchor)
         }
+    }
+
+    /// 常用短语：选一条，填好占位符后粘贴到原来的 App（粘贴完剪贴板恢复原样）
+    private func presentSnippets() {
+        guard let current = session else { return }
+        stopPointerTracking()
+        let model = SnippetPickerModel(snippets: settingsStore.settings.snippets)
+        let selection = current.content?.text
+        model.onPaste = { [weak self] snippet in
+            let text = SnippetExpander.expand(snippet.text, clipboard: NSPasteboard.general.string(forType: .string),
+                                              selection: selection)
+            self?.replaceSelection(with: text)
+        }
+        model.onOpenSettings = { [weak self] in
+            self?.endSession()
+            self?.openSettings(.clipboard)
+        }
+        overlay.showCard(SnippetPickerView(model: model, onClose: { [weak self] in self?.endSession() }),
+                         anchor: current.anchor,
+                         keyHandler: { event in model.handleKey(event) })
     }
 
     /// 窗口布局：选一个位置，把唤起时前台 App 的窗口放过去
