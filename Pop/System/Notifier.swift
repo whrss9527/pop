@@ -37,7 +37,7 @@ final class Notifier: NSObject, UNUserNotificationCenterDelegate, @unchecked Sen
             let request = UNNotificationRequest(identifier: "pop-update-\(version)", content: content, trigger: nil)
             UNUserNotificationCenter.current().add(request) { error in
                 if let error {
-                    NSLog("Pop：显示通知失败：%@", error.localizedDescription)
+                    UpdateLog.info("显示通知失败：\(error.localizedDescription)")
                 }
             }
         }

@@ -1,5 +1,6 @@
 import AppKit
 import Combine
+import os
 
 /// 一键更新：定期检查 GitHub Releases，有新版本时提醒；用户点「更新」后下载、校验、替换 Pop.app 并重新启动。
 /// 状态只在主线程上改，设置页和菜单栏直接观察它。
@@ -290,9 +291,17 @@ final class Updater: ObservableObject {
     }
 }
 
-/// 更新过程写进系统日志（「控制台」里搜 Pop 更新），CI 的端到端测试也靠它判断进度。
+/// 更新过程写进系统日志（「控制台」里搜「Pop 更新」），CI 的端到端测试也靠它判断进度。
+/// 用 Logger 并把内容标成公开：在 macOS 26 上 NSLog 的内容在系统日志里只显示成 <private>。
 enum UpdateLog {
+    private static let logger = Logger(subsystem: Bundle.main.bundleIdentifier ?? "Pop", category: "update")
+
     static func info(_ message: String) {
-        NSLog("Pop 更新：%@", message)
+        logger.notice("Pop 更新：\(message, privacy: .public)")
+    }
+
+    /// 每次启动记一行版本号，CI 的端到端测试靠它确认新版本已经跑起来了
+    static func launched(version: String) {
+        logger.notice("Pop 已启动，版本 \(version, privacy: .public)")
     }
 }

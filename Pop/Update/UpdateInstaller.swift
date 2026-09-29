@@ -337,7 +337,7 @@ enum UpdateInstaller {
         do {
             try process.run()
         } catch {
-            NSLog("Pop 更新：启动重新打开程序的辅助进程失败：%@", error.localizedDescription)
+            UpdateLog.info("启动重新打开程序的辅助进程失败：\(error.localizedDescription)")
         }
     }
 

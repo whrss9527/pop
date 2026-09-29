@@ -63,8 +63,7 @@ final class AppController {
     }
 
     func start() {
-        // CI 的端到端更新测试靠这一行确认新版本已经跑起来了
-        NSLog("Pop 已启动，版本 %@", UpdateChecker.currentVersion)
+        UpdateLog.launched(version: UpdateChecker.currentVersion)
         AlertVolume.restorePendingIfNeeded()
         MainMenu.install()
 
