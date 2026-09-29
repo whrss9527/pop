@@ -113,21 +113,42 @@ enum ImageConverter {
         let type = writable ? (UTType(sourceIdentifier) ?? .jpeg) : .jpeg
         let output = outputURL(for: url, operation: operation, type: type)
 
-        func cleaned() -> Bool {
+        // 只去掉位置时，相机、参数、拍摄时间都要原样留着
+        var kept = PhotoMetadata(properties: properties)
+        kept.latitude = nil
+        kept.longitude = nil
+        kept.altitude = nil
+        func cleaned(keepingTheRest: Bool) -> Bool {
             guard let metadata = PhotoMetadata.read(output) else { return false }
-            return removeAll ? metadata.isEmpty : !metadata.hasLocation
+            if removeAll { return metadata.isEmpty }
+            return keepingTheRest ? metadata == kept : !metadata.hasLocation
         }
 
-        if writable, let destination = CGImageDestinationCreateWithURL(output as CFURL, type.identifier as CFString, 1, nil) {
-            var options: [CFString: Any] = [kCGImageMetadataShouldExcludeGPS: true]
-            if removeAll {
-                options[kCGImageDestinationMetadata] = CGImageMetadataCreateMutable()
-                options[kCGImageDestinationMergeMetadata] = false
-                if let orientation = properties[kCGImagePropertyOrientation] {
-                    options[kCGImageDestinationOrientation] = orientation
-                }
+        // 原样拷贝画面数据，只改元数据
+        var attempts: [[CFString: Any]] = []
+        if removeAll {
+            // 换成空的元数据，只把方向带上
+            var options: [CFString: Any] = [kCGImageMetadataShouldExcludeGPS: true,
+                                            kCGImageDestinationMetadata: CGImageMetadataCreateMutable(),
+                                            kCGImageDestinationMergeMetadata: false]
+            if let orientation = properties[kCGImagePropertyOrientation] {
+                options[kCGImageDestinationOrientation] = orientation
             }
-            if CGImageDestinationCopyImageSource(destination, source, options as CFDictionary, nil), cleaned() {
+            attempts.append(options)
+        } else {
+            // 不给元数据时原来的会被整个换掉：合并一份空的，或者原样再给一遍，都只是不写位置
+            attempts.append([kCGImageMetadataShouldExcludeGPS: true,
+                             kCGImageDestinationMetadata: CGImageMetadataCreateMutable(),
+                             kCGImageDestinationMergeMetadata: true])
+            if let metadata = CGImageSourceCopyMetadataAtIndex(source, 0, nil) {
+                attempts.append([kCGImageMetadataShouldExcludeGPS: true,
+                                 kCGImageDestinationMetadata: metadata,
+                                 kCGImageDestinationMergeMetadata: false])
+            }
+        }
+        for options in attempts where writable {
+            guard let destination = CGImageDestinationCreateWithURL(output as CFURL, type.identifier as CFString, 1, nil) else { break }
+            if CGImageDestinationCopyImageSource(destination, source, options as CFDictionary, nil), cleaned(keepingTheRest: true) {
                 return output
             }
             try? FileManager.default.removeItem(at: output)
@@ -147,7 +168,7 @@ enum ImageConverter {
                                             kCGImageDestinationLossyCompressionQuality: 0.95]
             CGImageDestinationAddImageFromSource(destination, source, 0, changes as CFDictionary)
         }
-        guard CGImageDestinationFinalize(destination), cleaned() else {
+        guard CGImageDestinationFinalize(destination), cleaned(keepingTheRest: false) else {
             try? FileManager.default.removeItem(at: output)
             throw Failure(message: removeAll ? "没能去掉「\(url.lastPathComponent)」的拍摄信息" : "没能去掉「\(url.lastPathComponent)」的位置信息")
         }

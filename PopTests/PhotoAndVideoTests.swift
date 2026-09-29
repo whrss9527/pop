@@ -21,6 +21,28 @@ private enum Samples {
         return context?.makeImage()
     }
 
+    /// 一张杂色图：重新压缩过的话像素一定会变
+    static func noise(width: Int, height: Int) -> CGImage? {
+        guard let context = CGContext(data: nil, width: width, height: height, bitsPerComponent: 8, bytesPerRow: width * 4,
+                                      space: CGColorSpace(name: CGColorSpace.sRGB) ?? CGColorSpaceCreateDeviceRGB(),
+                                      bitmapInfo: CGImageAlphaInfo.noneSkipLast.rawValue),
+              let bytes = context.data?.assumingMemoryBound(to: UInt8.self) else { return nil }
+        var seed: UInt32 = 2026
+        for index in 0..<(width * height * 4) {
+            seed = seed &* 1_664_525 &+ 1_013_904_223
+            bytes[index] = UInt8(truncatingIfNeeded: seed >> 24)
+        }
+        return context.makeImage()
+    }
+
+    /// 解码出来的原始像素（不按方向摆正，也不做颜色转换）
+    static func pixels(of url: URL) -> [UInt8]? {
+        guard let source = CGImageSourceCreateWithURL(url as CFURL, nil),
+              let image = CGImageSourceCreateImageAtIndex(source, 0, nil),
+              let data = image.dataProvider?.data as Data? else { return nil }
+        return [UInt8](data)
+    }
+
     static func write(_ image: CGImage, to url: URL, type: UTType, properties: [CFString: Any] = [:]) -> Bool {
         guard let destination = CGImageDestinationCreateWithURL(url as CFURL, type.identifier as CFString, 1, nil) else { return false }
         CGImageDestinationAddImage(destination, image, properties as CFDictionary)
@@ -99,25 +121,30 @@ final class PhotoMetadataTests: XCTestCase {
         let folder = try Samples.folder()
         defer { try? FileManager.default.removeItem(at: folder) }
         let photo = folder.appending(path: "照片.jpg")
-        let image = try XCTUnwrap(Samples.image(width: 40, height: 30, red: 0.2, green: 0.5, blue: 0.8))
+        let image = try XCTUnwrap(Samples.noise(width: 40, height: 30))
         XCTAssertTrue(Samples.write(image, to: photo, type: .jpeg, properties: Samples.photoProperties))
         let original = try XCTUnwrap(PhotoMetadata.read(photo))
         XCTAssertEqual(original.camera, "Apple iPhone 15 Pro")
         XCTAssertTrue(original.hasLocation)
+        let pixels = try XCTUnwrap(Samples.pixels(of: photo))
 
         let withoutLocation = try ImageConverter.convert(photo, .removeLocation)
         XCTAssertEqual(withoutLocation.lastPathComponent, "照片 无位置.jpg")
         let kept = try XCTUnwrap(PhotoMetadata.read(withoutLocation))
         XCTAssertFalse(kept.hasLocation)
         XCTAssertEqual(kept.camera, original.camera)
+        XCTAssertEqual(kept.exposure, original.exposure)
         XCTAssertEqual(kept.taken, original.taken)
+        // 画面原样拷贝，没有重新压缩
+        XCTAssertTrue(Samples.pixels(of: withoutLocation) == pixels, "去掉位置时重新压缩了画面")
 
         let bare = try ImageConverter.convert(photo, .removeMetadata)
         XCTAssertEqual(bare.lastPathComponent, "照片 无拍摄信息.jpg")
         XCTAssertEqual(PhotoMetadata.read(bare)?.isEmpty, true)
-        // 照片的方向还在（或者画面已经摆正了）：摆正后都是竖着的 30 × 40
+        // 照片的方向还在：摆正后是竖着的 30 × 40，画面数据原样
         let source = try XCTUnwrap(CGImageSourceCreateWithURL(bare as CFURL, nil))
         XCTAssertEqual(ImageStitcher.uprightSize(source), CGSize(width: 30, height: 40))
+        XCTAssertTrue(Samples.pixels(of: bare) == pixels, "去掉拍摄信息时重新压缩了画面")
         // 原图不动
         XCTAssertTrue(try XCTUnwrap(PhotoMetadata.read(photo)).hasLocation)
     }
