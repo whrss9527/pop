@@ -313,10 +313,13 @@ final class PopCoordinator: MouseTriggerDelegate {
             // 截图、取色要看清屏幕：立刻收起浮窗（不播放收起动画），结果出来后再显示在原来的位置
             overlay.hide(animated: false)
         }
+        let pid = current.pid
+        let reader = self.reader
         let context = PluginContext(settings: settingsStore.settings,
                                     openSettings: { [weak self] in self?.openSettings(nil) },
                                     sourceAppName: current.sourceAppName,
-                                    anchor: current.anchor)
+                                    anchor: current.anchor,
+                                    readRichSelection: { await reader.readRich(pid: pid) })
         let sessionID = current.id
         Task { [weak self] in
             let outcome = await plugin.run(content, context: context)

@@ -3,8 +3,8 @@ import Foundation
 /// 文字整理：合并换行、去空行、去多余空格、中英文之间加空格、全角转半角、简繁转换、拼音、按行排序去重。
 /// 纯逻辑，方便测试。
 enum TextCleanup {
-    /// 至少有一种整理方式会让文字变样时才出现在圆盘上：有换行、连续空白、汉字或者全角字母数字。
-    static let applicablePattern = #"\n|[ \t\x{00A0}\x{3000}]{2}|\p{Han}|[\x{FF10}-\x{FF19}\x{FF21}-\x{FF3A}\x{FF41}-\x{FF5A}]"#
+    /// 至少有一种整理方式会让文字变样时才出现在圆盘上：有换行、连续空白、汉字、全角字母数字或者看不见的字符。
+    static let applicablePattern = #"\n|[ \t\x{00A0}\x{3000}]{2}|\p{Han}|[\x{FF10}-\x{FF19}\x{FF21}-\x{FF3A}\x{FF41}-\x{FF5A}]|[\x{00AD}\x{200B}-\x{200F}\x{2028}-\x{202E}\x{2060}-\x{2064}\x{2066}-\x{2069}\x{FEFF}]"#
 
     /// 只列出会让文字变样的整理方式
     static func conversions(_ text: String) -> [ResultCard.Row] {
@@ -18,6 +18,7 @@ enum TextCleanup {
         add("去多余空格", collapseSpaces(text))
         add("中英文空格", spaceBetweenCJKAndLatin(text))
         add("全角转半角", halfWidth(text))
+        add("去掉看不见的字符", CharacterInspector.removingInvisibles(text))
         if ScriptProfile(text).han > 0 {
             add("转为繁体", text.applyingTransform(StringTransform(rawValue: "Hans-Hant"), reverse: false))
             add("转为简体", text.applyingTransform(StringTransform(rawValue: "Hant-Hans"), reverse: false))

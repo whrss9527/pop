@@ -45,22 +45,36 @@ final class SelectionReader: @unchecked Sendable {
         if case .text(let text) = axResult {
             return .text(text)
         }
+        let copyItem = findCopyMenuItem(in: AXUIElementCreateApplication(pid))
+        // 找不到菜单栏，但辅助功能明确说没有选中文字，就信它，避免无谓的 ⌘C。
+        if copyItem == nil, case .empty = axResult {
+            return .none
+        }
+        return copySelection(copyItem: copyItem) { pasteboard -> SelectionContent? in Self.readContent(from: pasteboard) } ?? .none
+    }
 
-        let app = AXUIElementCreateApplication(pid)
-        if let copyItem = findCopyMenuItem(in: app) {
+    /// 带格式地重新拷贝一次选中的内容（HTML、RTF），给「转成 Markdown」用。
+    /// 辅助功能只能读到纯文字，所以这里直接点「拷贝」或者模拟 ⌘C。
+    func readRich(pid: pid_t?) async -> RichSelection? {
+        guard !Self.skipsReading, let pid, pid != ProcessInfo.processInfo.processIdentifier else { return nil }
+        return await withCheckedContinuation { continuation in
+            queue.async {
+                let copyItem = self.findCopyMenuItem(in: AXUIElementCreateApplication(pid))
+                continuation.resume(returning: self.copySelection(copyItem: copyItem, read: Self.richContent(from:)))
+            }
+        }
+    }
+
+    /// 点菜单栏里的「拷贝」，找不到菜单栏时模拟 ⌘C，读完剪贴板再还原
+    private func copySelection<T>(copyItem: AXUIElement?, read: (NSPasteboard) -> T?) -> T? {
+        if let copyItem {
             // 「拷贝」是灰的：确定没有选中任何东西，也就不用碰剪贴板了。
-            guard axBool(copyItem, kAXEnabledAttribute) != false else { return .none }
-            return copyThroughPasteboard(muteAlerts: false) {
+            guard axBool(copyItem, kAXEnabledAttribute) != false else { return nil }
+            return copyThroughPasteboard(muteAlerts: false, read: read) {
                 AXUIElementPerformAction(copyItem, kAXPressAction as CFString) == .success
             }
         }
-
-        // 找不到菜单栏，但辅助功能明确说没有选中文字，就信它，避免无谓的 ⌘C。
-        if case .empty = axResult {
-            return .none
-        }
-
-        return copyThroughPasteboard(muteAlerts: true) {
+        return copyThroughPasteboard(muteAlerts: true, read: read) {
             KeySimulator.waitForModifierRelease(timeout: 0.5)
             KeySimulator.pressCommand(kVK_ANSI_C)
             return true
@@ -93,7 +107,7 @@ final class SelectionReader: @unchecked Sendable {
         return nil
     }
 
-    private func copyThroughPasteboard(muteAlerts: Bool, trigger: () -> Bool) -> SelectionContent {
+    private func copyThroughPasteboard<T>(muteAlerts: Bool, read: (NSPasteboard) -> T?, trigger: () -> Bool) -> T? {
         let pasteboard = NSPasteboard.general
         // 读取期间剪贴板历史不要记录（包括读完还原的那一次变化）
         PasteboardGuard.shared.begin()
@@ -111,18 +125,26 @@ final class SelectionReader: @unchecked Sendable {
             }
         }
 
-        guard trigger() else { return .none }
+        guard trigger() else { return nil }
 
         let deadline = Date().addingTimeInterval(copyTimeout)
         while pasteboard.changeCount == before, Date() < deadline {
             Thread.sleep(forTimeInterval: 0.01)
         }
-        guard pasteboard.changeCount != before else { return .none }
+        guard pasteboard.changeCount != before else { return nil }
         // 有的 App 先清空剪贴板再分几次写入，稍等一下再读。
         Thread.sleep(forTimeInterval: 0.02)
-        let content = Self.readContent(from: pasteboard)
+        let content = read(pasteboard)
         snapshot.restore(to: pasteboard)
         return content
+    }
+
+    static func richContent(from pasteboard: NSPasteboard) -> RichSelection? {
+        let selection = RichSelection(html: pasteboard.string(forType: .html),
+                                      rtf: pasteboard.data(forType: .rtf),
+                                      rtfd: pasteboard.data(forType: .rtfd),
+                                      text: pasteboard.string(forType: .string))
+        return selection.isEmpty ? nil : selection
     }
 
     static func readContent(from pasteboard: NSPasteboard) -> SelectionContent {

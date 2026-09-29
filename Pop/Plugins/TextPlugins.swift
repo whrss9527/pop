@@ -337,3 +337,32 @@ struct TextCleanupPlugin: PopPlugin {
         return .card(ResultCard(title: "文字整理", rows: rows, rowsReplaceable: true, rowLineLimit: 2))
     }
 }
+
+struct ExtractInfoPlugin: PopPlugin {
+    let info = PluginInfo(id: BuiltinPluginID.extractInfo, name: "提取信息", symbol: "text.magnifyingglass",
+                          summary: "从一段文字里找出链接、邮箱、电话号码和 IP 地址，逐个复制或者一起复制",
+                          accepts: [.text], maxLength: InfoExtractor.maxLength, check: .extractable)
+
+    @MainActor func run(_ content: ClassifiedContent, context: PluginContext) async -> PluginOutcome {
+        guard let text = content.text else { return .failure("没有文字") }
+        let items = await runInBackground { InfoExtractor.extract(text) }
+        guard !items.isEmpty else { return .failure("没有找到链接、邮箱、电话号码或 IP 地址") }
+        return .card(InfoExtractor.card(for: items))
+    }
+}
+
+struct LineToolsPlugin: PopPlugin {
+    let info = PluginInfo(id: BuiltinPluginID.lineTools, name: "按行处理", symbol: "list.bullet.rectangle",
+                          summary: "一列文字加引号和逗号（SQL 的 IN 列表）、转 JSON 数组、加减序号、倒序、打乱；一行用逗号隔开的拆成多行",
+                          accepts: [.text], maxLength: 500_000, check: .lineList)
+
+    @MainActor func run(_ content: ClassifiedContent, context: PluginContext) async -> PluginOutcome {
+        guard let text = content.text, let items = LineTools.items(text) else {
+            return .failure("需要至少两项：一行一项，或者一行里用逗号隔开")
+        }
+        let rows = await runInBackground { LineTools.conversions(text) }
+        guard !rows.isEmpty else { return .failure("这些内容没有可以转换的写法") }
+        return .card(ResultCard(title: "按行处理", detail: "共 \(items.values.count) 项", rows: rows,
+                                rowsReplaceable: true, rowLineLimit: 2))
+    }
+}

@@ -712,14 +712,19 @@ enum DateParser {
             clock.timeZone = zone
             return ResultCard.Row(label: city, value: clock.string(from: date))
         }
-        return [
+        var rows = [
             ResultCard.Row(label: "本地时间", value: TimestampConverter.localString(date, timeZone: timeZone)),
             ResultCard.Row(label: "UTC", value: TimestampConverter.isoString(date)),
             ResultCard.Row(label: "Unix 秒", value: String(seconds)),
             ResultCard.Row(label: "Unix 毫秒", value: String(milliseconds)),
             ResultCard.Row(label: "距今", value: relative.localizedString(for: date, relativeTo: now)),
             ResultCard.Row(label: "星期", value: weekday.string(from: date)),
-        ] + cities
+        ]
+        if let lunar = LunarCalendar.describe(date, timeZone: timeZone) {
+            rows.append(ResultCard.Row(label: "农历", value: lunar))
+        }
+        rows.append(ResultCard.Row(label: "第几周", value: LunarCalendar.weekAndDay(date, timeZone: timeZone)))
+        return rows + cities
     }
 
     /// 时间转换卡片上列出的城市
