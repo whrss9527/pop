@@ -51,6 +51,8 @@ enum ContentClassifier {
             content.kinds.insert(.number)
         } else if looksLikeMath(text) {
             content.kinds.insert(.math)
+        } else if looksLikeToken(text) {
+            // 令牌、哈希、密钥这类串只当普通文字，不算外文（免得被「外文直接翻译」接走）
         } else {
             let profile = ScriptProfile(text)
             if profile.isChinese {
@@ -67,6 +69,13 @@ enum ContentClassifier {
             }
         }
         return content
+    }
+
+    /// 没有空白、又长又混着字母和数字的串：JWT、哈希、API Key、提交号、订单号……
+    static func looksLikeToken(_ text: String) -> Bool {
+        guard text.count >= 16, !text.contains(where: \.isWhitespace) else { return false }
+        return text.contains(where: { $0.isASCII && $0.isNumber }) && text.contains(where: { $0.isASCII && $0.isLetter })
+            && ScriptProfile(text).han == 0
     }
 
     /// 单个英文单词（可以带连字符、撇号），或者不超过 8 个字的纯中文词。

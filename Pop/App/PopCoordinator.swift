@@ -343,7 +343,10 @@ final class PopCoordinator: MouseTriggerDelegate {
                                                  canReplace: Self.isTextSelection(current.content) && current.content?.text == text,
                                                  onAction: { [weak self] action in self?.perform(action) },
                                                  onMore: moreAction(for: current),
-                                                 onDownload: { [weak self] in self?.downloadLanguagePack(source: language, target: target) },
+                                                 onDownload: { [weak self, weak model] in
+                                                     // 卡片上可能换过目标语言
+                                                     self?.downloadLanguagePack(source: language, target: model?.targetCode ?? target)
+                                                 },
                                                  onClose: { [weak self] in self?.endSession() }),
                              anchor: current.anchor)
         case .replace(let text):

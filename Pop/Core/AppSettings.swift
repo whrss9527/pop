@@ -46,6 +46,10 @@ enum BuiltinPluginID {
     static let windowLayout = "windowLayout"
     static let imageConvert = "imageConvert"
 
+    static let linkInspect = "linkInspect"
+    static let jwtDecode = "jwtDecode"
+    static let markdownCopy = "markdownCopy"
+
     /// 0.1 版就有的功能。旧版本的设置里没有记录「见过哪些内置功能」，按这个列表补齐。
     static let legacy = [translate, search, openURL, calculate, copyPlain, formatJSON, timestamp, copyPath, revealInFinder, settings]
 
@@ -55,6 +59,7 @@ enum BuiltinPluginID {
         unitConvert, textCleanup, screenshotTranslate, pin, removeBackground, airDrop,
         aiAssistant, aiPolish, aiSummarize, aiExplain,
         windowLayout, imageConvert,
+        linkInspect, jwtDecode, markdownCopy,
     ]
 
     /// 默认不装的内置功能（需要的话在「设置 → 功能」里打开）
