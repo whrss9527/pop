@@ -65,6 +65,7 @@ plan = [
     ("unpin", [0.4]),
     ("ai", [0.6, 3.0]),
     ("layout", [3.0]),
+    ("translate", [3.0]),
     ("settings-ai", [0.5]),
     ("settings-hotKeys", [0.5]),
 ]
@@ -72,7 +73,7 @@ if appearance == "dark":
     # 深色外观只拍停下来之后的样子
     plan = [("loaded", [2.6]), ("slide", [3.0]), ("commit", [5.0]), ("toast", [1.2]), ("chooser", [4.0]),
             ("drag-clipboard", [2.4]), ("release", [3.5]), ("unit", [3.0]), ("pin", [3.0]), ("ai", [3.0]),
-            ("layout", [3.0]), ("settings-ai", [0.5]), ("settings-hotKeys", [0.5])]
+            ("layout", [3.0]), ("translate", [3.0]), ("settings-ai", [0.5]), ("settings-hotKeys", [0.5])]
 factor = scale / 6.0
 
 def markers():

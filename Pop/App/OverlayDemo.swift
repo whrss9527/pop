@@ -6,7 +6,7 @@ import AppKit
 /// 指向一格、滑到另一格、选中后弹出结果卡片、提示、「全部功能」列表、再展开一次圆盘并取消；
 /// 再按真实的手势流程走一遍：按住右键唤起、拖到上面一格、再拖到「剪贴板」、松开执行
 /// （直接调用鼠标拦截的回调，拖动位置和真实使用时一样由拦截送来，不看系统的指针位置）；
-/// 最后是单位换算的卡片、贴图、AI 卡片、窗口布局卡片和设置窗口里新加的几页。
+/// 最后是单位换算的卡片、贴图、AI 卡片、窗口布局卡片、翻译卡片和设置窗口里新加的几页。
 /// 配合 POP_ANIMATION_SCALE 放慢动画，截图脚本就能拍到动画的中间帧；POP_APPEARANCE=dark 时用深色外观。
 /// 每一步开始时往 POP_DEMO_LOG 指定的文件里写一行「步骤名 时间戳」；region 行是截图区域在屏幕上的位置
 /// （点，AppKit 坐标：x y 宽 高）和屏幕大小，脚本按拍照时最新的那一行裁图。
@@ -133,6 +133,14 @@ enum OverlayDemo {
             await pause(1.4 * unit)
             step("layout")
             overlay.showCard(WindowLayoutCardView(hasMultipleDisplays: false, onChoose: { _ in }, onClose: {}), anchor: center)
+
+            // 翻译卡片（CI 上没有离线语言包，显示的是引导下载的样子），左上角可以换目标语言
+            await pause(1.4 * unit)
+            step("translate")
+            let translation = TranslationModel(text: "Liquid glass", sourceLanguage: "en", targetLanguage: "zh-Hans")
+            overlay.showCard(TranslationCardView(model: translation, canReplace: false, onAction: { _ in }, onMore: {},
+                                                 onDownload: {}, onClose: {}),
+                             anchor: center)
 
             // 设置窗口里新加的几页：截图区域换成设置窗口
             await pause(1.4 * unit)
