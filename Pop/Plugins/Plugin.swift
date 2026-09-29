@@ -53,6 +53,12 @@ enum CardAction: Equatable {
     case reveal(URL)
     /// 复制 PNG 图片
     case copyImage(Data)
+    /// PNG 图片存到「下载」文件夹，文件名不带扩展名
+    case saveImage(Data, name: String)
+    /// 把 PNG 图片贴在屏幕上
+    case pinImage(Data)
+    /// 把文字贴在屏幕上
+    case pinText(String)
     /// 用翻译卡片翻译这段文字
     case translate(String)
 }
@@ -85,6 +91,8 @@ struct ResultCard: Equatable {
     var rows: [Row] = []
     /// 每一行都可以替换原文（比如大小写转换、编码转换）
     var rowsReplaceable = false
+    /// 每一行最多显示几行字（完整内容仍然可以复制、替换）
+    var rowLineLimit = 4
     /// PNG 图片（比如二维码）
     var image: Data? = nil
     /// 颜色样本（#RRGGBB 或 #RRGGBBAA）
@@ -113,6 +121,8 @@ struct PluginContext {
     var openSettings: @MainActor () -> Void
     /// 唤起时前台 App 的名字
     var sourceAppName: String? = nil
+    /// 唤起的位置（AppKit 屏幕坐标），贴图之类的功能在这附近显示
+    var anchor: CGPoint? = nil
 }
 
 /// 所有功能都实现这个协议。内置功能是写死的 Swift 代码，用户插件由 manifest 描述（见 ManifestPlugin）。

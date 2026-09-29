@@ -228,3 +228,33 @@ struct QuickNotePlugin: PopPlugin {
         try handle.write(contentsOf: Data(entry(text, source: source, date: date).utf8))
     }
 }
+
+struct UnitConvertPlugin: PopPlugin {
+    let info = PluginInfo(id: BuiltinPluginID.unitConvert, name: "单位换算", symbol: "ruler",
+                          summary: "长度、重量、温度、体积、面积、速度、数据大小和传输速率互相换算，认得斤、亩等市制单位",
+                          accepts: [.measurement])
+
+    @MainActor func run(_ content: ClassifiedContent, context: PluginContext) async -> PluginOutcome {
+        guard let text = content.text, let quantity = UnitConverter.parse(text) else {
+            return .failure("没有识别到带单位的数值")
+        }
+        let rows = UnitConverter.rows(for: quantity)
+        guard !rows.isEmpty else { return .failure("没有可以换算的单位") }
+        let source = UnitConverter.display(quantity.value, quantity.unit)
+        return .card(ResultCard(title: "单位换算", detail: "\(quantity.unit.category.title)：\(source)",
+                                rows: rows, rowsReplaceable: true))
+    }
+}
+
+struct TextCleanupPlugin: PopPlugin {
+    let info = PluginInfo(id: BuiltinPluginID.textCleanup, name: "文字整理", symbol: "text.alignleft",
+                          summary: "合并换行、去掉空行和多余空格、中英文之间加空格、全角转半角、简繁转换、拼音、按行排序去重",
+                          accepts: [.text], pattern: TextCleanup.applicablePattern, maxLength: 100_000)
+
+    @MainActor func run(_ content: ClassifiedContent, context: PluginContext) async -> PluginOutcome {
+        guard let text = content.text else { return .failure("没有文字") }
+        let rows = await runInBackground { TextCleanup.conversions(text) }
+        guard !rows.isEmpty else { return .failure("这段文字没有需要整理的地方") }
+        return .card(ResultCard(title: "文字整理", rows: rows, rowsReplaceable: true, rowLineLimit: 2))
+    }
+}

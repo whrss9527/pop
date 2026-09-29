@@ -100,4 +100,33 @@ enum ScreenGeometry {
         }
         return clamp(CGRect(x: x, y: y, width: size.width, height: size.height), within: bounds)
     }
+
+    // MARK: - 贴图
+
+    /// 按比例缩小到 maxSize 以内；本来就放得下时不变。
+    static func fitted(_ size: CGSize, within maxSize: CGSize) -> CGSize {
+        guard size.width > 0, size.height > 0 else { return size }
+        let ratio = min(1, maxSize.width / size.width, maxSize.height / size.height)
+        return CGSize(width: (size.width * ratio).rounded(), height: (size.height * ratio).rounded())
+    }
+
+    /// 以 point 为中心的贴图位置，超出屏幕时往里挪。
+    static func pinFrame(size: CGSize, centeredAt point: CGPoint, within bounds: CGRect) -> CGRect {
+        clamp(CGRect(x: point.x - size.width / 2, y: point.y - size.height / 2, width: size.width, height: size.height),
+              within: bounds)
+    }
+
+    /// 刚框选完的截图：框选通常是从左上拖到右下，松开时指针在右下角，贴图就盖在原来的位置上。
+    static func pinFrame(size: CGSize, bottomRightAt point: CGPoint, within bounds: CGRect) -> CGRect {
+        clamp(CGRect(x: point.x - size.width, y: point.y, width: size.width, height: size.height), within: bounds)
+    }
+
+    /// 缩放贴图：换成 size 大小，point（屏幕坐标）在贴图上的相对位置保持不变，这样以指针为中心放大缩小。
+    static func resized(_ frame: CGRect, to size: CGSize, keeping point: CGPoint) -> CGRect {
+        guard frame.width > 0, frame.height > 0 else { return CGRect(origin: frame.origin, size: size) }
+        let relativeX = min(max((point.x - frame.minX) / frame.width, 0), 1)
+        let relativeY = min(max((point.y - frame.minY) / frame.height, 0), 1)
+        return CGRect(x: (point.x - size.width * relativeX).rounded(), y: (point.y - size.height * relativeY).rounded(),
+                      width: size.width, height: size.height)
+    }
 }

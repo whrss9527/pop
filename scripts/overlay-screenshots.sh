@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # 给浮窗拍一组截图：用演示模式启动 Pop（POP_DEMO=1，动画放慢 POP_ANIMATION_SCALE 倍），
 # 按 Pop 写出的步骤时间在固定的时刻截屏，裁出浮窗那一块，存成 JPEG。
-# 圆盘展开、指向、滑动、选中、结果卡片、提示、列表、取消都会拍到，包括动画的中间帧。
+# 圆盘展开、指向、滑动、选中、结果卡片、提示、列表、取消、贴图都会拍到，包括动画的中间帧。
 #
 # 用法：scripts/overlay-screenshots.sh <Pop.app> <输出目录> [动画放慢倍数，默认 6]
 set -euo pipefail
@@ -51,6 +51,9 @@ plan = [
     ("drag-up", [0.6, 2.4]),
     ("drag-clipboard", [0.5, 2.4]),
     ("release", [0.4, 1.2, 3.5]),
+    ("unit", [0.6, 3.0]),
+    ("pin", [0.3, 1.0, 3.0]),
+    ("unpin", [0.4]),
 ]
 factor = scale / 6.0
 

@@ -104,6 +104,18 @@ final class ContentClassifierTests: XCTestCase {
         XCTAssertEqual(ContentClassifier.classify(.files(images)).kinds, [.files, .imageFile])
     }
 
+    func testMeasurements() {
+        XCTAssertEqual(kinds("5 km"), [.text, .measurement])
+        XCTAssertEqual(kinds("100°F"), [.text, .measurement])
+        XCTAssertEqual(kinds("2斤"), [.text, .measurement])
+        XCTAssertEqual(kinds("16 GB"), [.text, .measurement])
+        XCTAssertEqual(ContentClassifier.classify(.text("16 GB")).summary, "16 GB")
+        // 单独的数字、算式、日期不受影响
+        XCTAssertEqual(kinds("12345"), [.text, .number])
+        XCTAssertEqual(kinds("1 + 2"), [.text, .math])
+        XCTAssertEqual(kinds("2026-09-28"), [.text, .dateTime])
+    }
+
     func testScriptProfile() {
         XCTAssertTrue(ScriptProfile("中文").isChinese)
         XCTAssertFalse(ScriptProfile("日本語のテキスト").isChinese)

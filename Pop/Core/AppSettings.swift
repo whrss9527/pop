@@ -31,12 +31,20 @@ enum BuiltinPluginID {
     static let clipboardHistory = "clipboardHistory"
     static let allPlugins = "allPlugins"
 
+    static let unitConvert = "unitConvert"
+    static let textCleanup = "textCleanup"
+    static let screenshotTranslate = "screenshotTranslate"
+    static let pin = "pin"
+    static let removeBackground = "removeBackground"
+    static let airDrop = "airDrop"
+
     /// 0.1 版就有的功能。旧版本的设置里没有记录「见过哪些内置功能」，按这个列表补齐。
     static let legacy = [translate, search, openURL, calculate, copyPlain, formatJSON, timestamp, copyPath, revealInFinder, settings]
 
     static let all = legacy + [
         dictionary, speak, changeCase, encodeDecode, textStats, hash, numberConvert, colorConvert, random, qrCode,
         ocr, screenshotOCR, colorPicker, openInTerminal, quickNote, clipboardHistory, allPlugins,
+        unitConvert, textCleanup, screenshotTranslate, pin, removeBackground, airDrop,
     ]
 }
 
@@ -219,6 +227,7 @@ enum RuleCondition: String, Codable, CaseIterable, Identifiable {
     case url
     case email
     case math
+    case measurement
     case timestamp
     case dateTime
     case number
@@ -238,6 +247,7 @@ enum RuleCondition: String, Codable, CaseIterable, Identifiable {
         case .url: return .url
         case .email: return .email
         case .math: return .math
+        case .measurement: return .measurement
         case .timestamp: return .timestamp
         case .dateTime: return .dateTime
         case .number: return .number
@@ -257,6 +267,7 @@ enum RuleCondition: String, Codable, CaseIterable, Identifiable {
         case .url: return "选中链接"
         case .email: return "选中邮箱"
         case .math: return "选中算式"
+        case .measurement: return "选中带单位的数值"
         case .timestamp: return "选中时间戳"
         case .dateTime: return "选中日期时间"
         case .number: return "选中数字"
@@ -285,6 +296,7 @@ struct DirectRule: Codable, Equatable, Identifiable {
         DirectRule(condition: .url, pluginID: BuiltinPluginID.openURL, enabled: false),
         DirectRule(condition: .email, pluginID: BuiltinPluginID.openURL, enabled: false),
         DirectRule(condition: .math, pluginID: BuiltinPluginID.calculate, enabled: true),
+        DirectRule(condition: .measurement, pluginID: BuiltinPluginID.unitConvert, enabled: true),
         DirectRule(condition: .timestamp, pluginID: BuiltinPluginID.timestamp, enabled: false),
         DirectRule(condition: .dateTime, pluginID: BuiltinPluginID.timestamp, enabled: false),
         DirectRule(condition: .number, pluginID: BuiltinPluginID.numberConvert, enabled: false),
@@ -461,7 +473,7 @@ struct AppSettings: Codable, Equatable {
         trigger = c.lenient(.trigger, default: d.trigger)
         ring = c.lenient(.ring, default: d.ring)
         installedPlugins = c.lenient(.installedPlugins, default: d.installedPlugins)
-        rules = DirectRule.normalized(c.lenient(.rules, default: d.rules))
+        rules = DirectRule.normalized(c.lossyArray(.rules) ?? d.rules)
         translation = c.lenient(.translation, default: d.translation)
         searchEngine = c.lenient(.searchEngine, default: d.searchEngine)
         clipboard = c.lenient(.clipboard, default: d.clipboard)
@@ -512,4 +524,24 @@ extension KeyedDecodingContainer {
     func lenient<T: Decodable>(_ key: Key, default defaultValue: T) -> T {
         (try? decodeIfPresent(T.self, forKey: key)) ?? defaultValue
     }
+
+    /// 逐项解码数组：某一项解码失败（比如更新的版本加的规则条件）时只跳过这一项，其余照常读出来。
+    /// 字段缺失或者不是数组时返回 nil。
+    func lossyArray<T: Decodable>(_ key: Key) -> [T]? {
+        guard var container = try? nestedUnkeyedContainer(forKey: key) else { return nil }
+        var result: [T] = []
+        while !container.isAtEnd {
+            if let value = try? container.decode(T.self) {
+                result.append(value)
+            } else if (try? container.decode(SkippedItem.self)) == nil {
+                break
+            }
+        }
+        return result
+    }
+}
+
+/// 解码时跳过数组里的一项：什么都不读，总是成功
+private struct SkippedItem: Decodable {
+    init(from decoder: Decoder) throws {}
 }

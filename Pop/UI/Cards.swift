@@ -88,7 +88,8 @@ struct ResultCardView: View {
                 AdaptiveText(text: card.body, monospaced: card.monospaced)
             }
             if !card.rows.isEmpty {
-                ResultRowsView(rows: card.rows, replaceable: card.rowsReplaceable, onAction: onAction)
+                ResultRowsView(rows: card.rows, replaceable: card.rowsReplaceable, lineLimit: card.rowLineLimit,
+                               onAction: onAction)
             }
             if let detail = card.detail {
                 Text(detail)
@@ -123,6 +124,7 @@ struct ResultCardView: View {
 struct ResultRowsView: View {
     let rows: [ResultCard.Row]
     let replaceable: Bool
+    var lineLimit = 4
     let onAction: (CardAction) -> Void
 
     var body: some View {
@@ -137,7 +139,7 @@ struct ResultRowsView: View {
                     Text(row.value)
                         .font(.system(size: 12, design: .monospaced))
                         .textSelection(.enabled)
-                        .lineLimit(4)
+                        .lineLimit(lineLimit)
                         .frame(maxWidth: .infinity, alignment: .leading)
                     Button {
                         onAction(.copy(row.value))
@@ -272,6 +274,8 @@ struct TranslationCardView: View {
                             .keyboardShortcut(.return, modifiers: .command)
                             .help("用译文替换选中的文字（⌘↩）")
                     }
+                    Button("贴到屏幕") { onAction(.pinText(translated)) }
+                        .help("把译文贴在屏幕最前面，边看原文边对照")
                 }
                 if let onMore {
                     Button("更多功能", action: onMore)
