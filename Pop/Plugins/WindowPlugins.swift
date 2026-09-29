@@ -106,10 +106,14 @@ struct ImageConvertPlugin: PopPlugin {
             default: return true
             }
         }
-        return .card(ResultCard(title: "图片转换", detail: "\(what)，转换后存在原图旁边", rows: rows,
-                                buttons: operations.map { operation in
-                                    CardButton(title: operation.title, action: .convertImages(files, operation))
-                                }))
+        var buttons = operations.map { operation in
+            CardButton(title: operation.title, action: .convertImages(files, operation))
+        }
+        // 一张不太大的图可以直接复制成 data URI（写进网页、CSS、Markdown）
+        if files.count == 1, let uri = Base64Image.dataURI(for: files[0]) {
+            buttons.append(CardButton(title: "复制为 data URI", action: .copy(uri)))
+        }
+        return .card(ResultCard(title: "图片转换", detail: "\(what)，转换后存在原图旁边", rows: rows, buttons: buttons))
     }
 }
 

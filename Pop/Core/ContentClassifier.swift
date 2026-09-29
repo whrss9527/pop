@@ -55,6 +55,8 @@ enum ContentClassifier {
             // 两个颜色（文字和背景）：只当普通文字，不算外文（免得被「外文直接翻译」接走）
         } else if looksLikeToken(text) {
             // 令牌、哈希、密钥这类串只当普通文字，不算外文（免得被「外文直接翻译」接走）
+        } else if XMLFormatter.isXML(text) || SQLFormatter.looksLikeSQL(text) {
+            // XML、SQL 这类代码也只当普通文字
         } else {
             let profile = ScriptProfile(text)
             if profile.isChinese {

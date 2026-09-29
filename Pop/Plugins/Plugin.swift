@@ -65,6 +65,14 @@ enum ContentCheck: Hashable {
     case lineList
     /// 说到了时间（明天、周五、下午 3 点……）
     case dateMention
+    /// JSON，或者读得出来的 YAML
+    case yamlOrJSON
+    /// XML（包括 SVG、plist）
+    case xml
+    /// 一条 SQL 语句
+    case sql
+    /// Base64 写的图片
+    case base64Image
 
     func matches(_ subject: String) -> Bool {
         switch self {
@@ -82,6 +90,14 @@ enum ContentCheck: Hashable {
             return LineTools.isApplicable(subject)
         case .dateMention:
             return NaturalDate.parse(subject) != nil
+        case .yamlOrJSON:
+            return JSONFormatter.isJSON(subject) || YAMLConverter.looksLikeYAML(subject)
+        case .xml:
+            return XMLFormatter.isXML(subject)
+        case .sql:
+            return SQLFormatter.looksLikeSQL(subject)
+        case .base64Image:
+            return Base64Image.looksLikeImage(subject)
         }
     }
 }

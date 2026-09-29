@@ -294,6 +294,16 @@ enum OverlayDemo {
             overlay.showCard(RenameCardView(model: renaming, onReveal: { _ in }, onClose: {}), anchor: center)
             step("rename")
 
+            // SQL 格式化：写在一行里的查询按子句分行
+            await pause(1.4 * unit)
+            let query = "select u.id, u.name, count(o.id) as orders from users u left join orders o on o.user_id = u.id "
+                + "where u.created_at >= '2026-01-01' and u.vip = true group by u.id, u.name order by orders desc limit 20"
+            if case .card(let sqlCard) = await FormatSQLPlugin().run(ContentClassifier.classify(.text(query)),
+                                                                      context: PluginContext(settings: AppSettings(), openSettings: {})) {
+                overlay.showCard(ResultCardView(card: sqlCard, onAction: { _ in }, onMore: {}, onClose: {}), anchor: center)
+            }
+            step("sql")
+
             // 截图标注窗口：拿一张画好的示例图，标上方框、箭头、文字、马赛克和序号；截图区域换成标注窗口
             await pause(1.4 * unit)
             overlay.hide()
