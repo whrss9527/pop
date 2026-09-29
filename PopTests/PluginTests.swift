@@ -95,6 +95,15 @@ final class RouterTests: XCTestCase {
         XCTAssertFalse(changeCase.canHandle(ContentClassifier.classify(.text("你好"))))
     }
 
+    /// 设置里按分类显示：只有剪贴板、全部功能、设置归到「其他」
+    func testEveryBuiltinHasACategory() {
+        let others = catalog.map(\.id).filter { BuiltinCategory.of($0) == .other }
+        XCTAssertEqual(Set(others), [BuiltinPluginID.clipboardHistory, BuiltinPluginID.allPlugins, BuiltinPluginID.settings])
+        for category in BuiltinCategory.allCases {
+            XCTAssertTrue(catalog.contains { BuiltinCategory.of($0.id) == category }, category.title)
+        }
+    }
+
     func testPluginIDsAreUniqueAndCoverDefaults() {
         let ids = catalog.map(\.id)
         XCTAssertEqual(Set(ids).count, ids.count)

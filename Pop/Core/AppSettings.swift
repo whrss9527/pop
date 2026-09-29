@@ -50,6 +50,10 @@ enum BuiltinPluginID {
     static let jwtDecode = "jwtDecode"
     static let markdownCopy = "markdownCopy"
 
+    static let tableConvert = "tableConvert"
+    static let zip = "zip"
+    static let unzip = "unzip"
+
     /// 0.1 版就有的功能。旧版本的设置里没有记录「见过哪些内置功能」，按这个列表补齐。
     static let legacy = [translate, search, openURL, calculate, copyPlain, formatJSON, timestamp, copyPath, revealInFinder, settings]
 
@@ -60,6 +64,7 @@ enum BuiltinPluginID {
         aiAssistant, aiPolish, aiSummarize, aiExplain,
         windowLayout, imageConvert,
         linkInspect, jwtDecode, markdownCopy,
+        tableConvert, zip, unzip,
     ]
 
     /// 默认不装的内置功能（需要的话在「设置 → 功能」里打开）
@@ -472,6 +477,14 @@ struct ClipboardSettings: Codable, Equatable {
     }
 }
 
+/// 某个 App 专用的圆盘布局：在这个 App 里唤起时用它，其他 App 用默认布局。
+struct AppRing: Codable, Equatable, Identifiable {
+    var bundleID: String
+    var layout: RingLayout
+
+    var id: String { bundleID }
+}
+
 /// AI 功能的设置。接口地址和模型会随设置同步，API Key 只存在这台 Mac 的钥匙串里（见 AIKeyStore）。
 struct AISettings: Codable, Equatable {
     /// 兼容 OpenAI Chat Completions 的接口地址，到 /v1 为止
@@ -496,6 +509,8 @@ struct AISettings: Codable, Equatable {
 struct AppSettings: Codable, Equatable {
     var trigger = TriggerSettings()
     var ring = RingLayout.default
+    /// 按 App 单独设置的圆盘布局
+    var appRings: [AppRing] = []
     /// 已安装（启用）的插件
     var installedPlugins: [String] = BuiltinPluginID.installedByDefault
     var rules: [DirectRule] = DirectRule.defaults
@@ -518,6 +533,7 @@ struct AppSettings: Codable, Equatable {
         let d = AppSettings()
         trigger = c.lenient(.trigger, default: d.trigger)
         ring = c.lenient(.ring, default: d.ring)
+        appRings = c.lossyArray(.appRings) ?? []
         installedPlugins = c.lenient(.installedPlugins, default: d.installedPlugins)
         rules = DirectRule.normalized(c.lossyArray(.rules) ?? d.rules)
         translation = c.lenient(.translation, default: d.translation)
@@ -562,8 +578,17 @@ struct AppSettings: Codable, Equatable {
         } else {
             installedPlugins.removeAll { $0 == pluginID }
             ring.remove(pluginID)
+            for index in appRings.indices {
+                appRings[index].layout.remove(pluginID)
+            }
             pluginHotKeys.removeAll { $0.pluginID == pluginID }
         }
+    }
+
+    /// 在这个 App 里唤起时用的圆盘布局
+    func ring(for bundleID: String?) -> RingLayout {
+        guard let bundleID else { return ring }
+        return appRings.first { $0.bundleID == bundleID }?.layout ?? ring
     }
 
     func hotKey(for pluginID: String) -> KeyCombo? {

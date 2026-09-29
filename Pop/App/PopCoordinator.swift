@@ -26,6 +26,8 @@ final class PopCoordinator: MouseTriggerDelegate {
         let pid: pid_t?
         /// 唤起时前台 App 的名字（收集箱记录来源用）
         let sourceAppName: String?
+        /// 唤起时前台 App 的 Bundle ID（选用这个 App 专用的圆盘布局）
+        var bundleID: String? = nil
         /// 鼠标键是否还按着：按着时用「划一下再松开」选择，松开后改为点击选择
         var buttonHeld: Bool
         /// 松开鼠标键时关闭圆盘（长按右键唤起、没打开「保持圆盘打开」时）
@@ -161,7 +163,8 @@ final class PopCoordinator: MouseTriggerDelegate {
         guard !isPaused, settingsStore.settings.isInstalled(pluginID), let plugin = registry.plugin(id: pluginID) else { return }
         let app = NSWorkspace.shared.frontmostApplication
         let pid = app?.processIdentifier
-        let newSession = Session(anchor: NSEvent.mouseLocation, pid: pid, sourceAppName: app?.localizedName, buttonHeld: false)
+        let newSession = Session(anchor: NSEvent.mouseLocation, pid: pid, sourceAppName: app?.localizedName,
+                                 bundleID: app?.bundleIdentifier, buttonHeld: false)
         session = newSession
         if plugin.info.accepts.isEmpty && !plugin.info.optionalContent {
             session?.content = .empty
@@ -224,8 +227,8 @@ final class PopCoordinator: MouseTriggerDelegate {
         endSession()
         let app = NSWorkspace.shared.frontmostApplication
         let pid = app?.processIdentifier
-        let newSession = Session(anchor: anchor, pid: pid, sourceAppName: app?.localizedName, buttonHeld: buttonHeld,
-                                 closesOnRelease: closesOnRelease)
+        let newSession = Session(anchor: anchor, pid: pid, sourceAppName: app?.localizedName, bundleID: app?.bundleIdentifier,
+                                 buttonHeld: buttonHeld, closesOnRelease: closesOnRelease)
         session = newSession
         let sessionID = newSession.id
 
@@ -286,7 +289,7 @@ final class PopCoordinator: MouseTriggerDelegate {
     private func showRing(content: ClassifiedContent?) {
         guard let current = session else { return }
         let settings = settingsStore.settings
-        let ring = RingViewModel(layout: settings.ring, catalog: registry.catalog,
+        let ring = RingViewModel(layout: settings.ring(for: current.bundleID), catalog: registry.catalog,
                                  installed: Set(settings.installedPlugins), content: content)
         session?.ring = ring
         session?.panel = nil
@@ -518,10 +521,56 @@ final class PopCoordinator: MouseTriggerDelegate {
             self?.endSession()
             self?.openSettings(.clipboard)
         }
+        model.onTranslate = { [weak self] text in
+            self?.present(.translate(text: text, language: ContentClassifier.dominantLanguage(text)))
+        }
+        model.onPin = { [weak self] item in
+            self?.pinFromHistory(item)
+        }
+        model.onRecognize = { [weak self] item in
+            self?.recognizeFromHistory(item)
+        }
         session?.panel = .clipboard
         overlay.showCard(ClipboardHistoryView(model: model, onClose: { [weak self] in self?.endSession() }),
                          anchor: current.anchor,
                          keyHandler: { event in model.handleKey(event) })
+    }
+
+    /// 剪贴板历史里的文字或图片贴到屏幕上
+    private func pinFromHistory(_ item: ClipboardItem) {
+        let anchor = session?.anchor ?? NSEvent.mouseLocation
+        endSession()
+        switch item.kind {
+        case .text:
+            PinBoard.shared.pin(text: item.text, around: anchor)
+        case .image:
+            if let url = clipboard.store.imageURL(for: item), let data = try? Data(contentsOf: url) {
+                PinBoard.shared.pin(imageData: data, around: anchor)
+            }
+        case .files:
+            break
+        }
+    }
+
+    /// 识别剪贴板历史里某张图片上的文字
+    private func recognizeFromHistory(_ item: ClipboardItem) {
+        guard let url = clipboard.store.imageURL(for: item), let image = TextRecognizer.cgImage(contentsOf: url) else {
+            present(.failure("无法读取这张图片"))
+            return
+        }
+        let sessionID = session?.id
+        Task { [weak self] in
+            let result = await TextRecognizer.recognize(image)
+            guard let self, self.session?.id == sessionID else { return }
+            switch result {
+            case .success(let text) where !text.isEmpty:
+                self.present(.card(TextRecognizer.card(title: "识别文字", text: text)))
+            case .success:
+                self.present(.failure("图片里没有识别到文字"))
+            case .failure(let error):
+                self.present(.failure(error.message))
+            }
+        }
     }
 
     private func pasteFromHistory(_ item: ClipboardItem) {

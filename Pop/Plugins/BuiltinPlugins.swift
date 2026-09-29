@@ -22,6 +22,7 @@ enum BuiltinPlugins {
             EncodeDecodePlugin(),
             TextStatsPlugin(),
             FormatJSONPlugin(),
+            TableConvertPlugin(),
             JWTPlugin(),
             MarkdownCopyPlugin(),
             TimestampPlugin(),
@@ -41,12 +42,61 @@ enum BuiltinPlugins {
             AirDropPlugin(),
             CopyPathPlugin(),
             RevealInFinderPlugin(),
+            ZipPlugin(),
+            UnzipPlugin(),
             OpenInTerminalPlugin(),
             ClipboardHistoryPlugin(),
             AllPluginsPlugin(),
             OpenSettingsPlugin(),
         ]
         return text + ai + others
+    }
+}
+
+/// 内置功能的分类，设置里按它分组显示。
+enum BuiltinCategory: CaseIterable, Identifiable {
+    case text
+    case ai
+    case convert
+    case developer
+    case screen
+    case files
+    case other
+
+    var id: Self { self }
+
+    var title: String {
+        switch self {
+        case .text: return "文字"
+        case .ai: return "AI"
+        case .convert: return "转换"
+        case .developer: return "开发"
+        case .screen: return "屏幕与图片"
+        case .files: return "文件和窗口"
+        case .other: return "其他"
+        }
+    }
+
+    private static let members: [BuiltinCategory: [String]] = [
+        .text: [BuiltinPluginID.translate, BuiltinPluginID.screenshotTranslate, BuiltinPluginID.search,
+                BuiltinPluginID.dictionary, BuiltinPluginID.speak, BuiltinPluginID.openURL, BuiltinPluginID.copyPlain,
+                BuiltinPluginID.textCleanup, BuiltinPluginID.textStats, BuiltinPluginID.quickNote],
+        .ai: [BuiltinPluginID.aiAssistant, BuiltinPluginID.aiPolish, BuiltinPluginID.aiSummarize, BuiltinPluginID.aiExplain],
+        .convert: [BuiltinPluginID.calculate, BuiltinPluginID.unitConvert, BuiltinPluginID.changeCase,
+                   BuiltinPluginID.encodeDecode, BuiltinPluginID.formatJSON, BuiltinPluginID.tableConvert,
+                   BuiltinPluginID.markdownCopy, BuiltinPluginID.timestamp, BuiltinPluginID.numberConvert,
+                   BuiltinPluginID.colorConvert],
+        .developer: [BuiltinPluginID.hash, BuiltinPluginID.qrCode, BuiltinPluginID.random, BuiltinPluginID.linkInspect,
+                     BuiltinPluginID.jwtDecode],
+        .screen: [BuiltinPluginID.ocr, BuiltinPluginID.screenshotOCR, BuiltinPluginID.pin, BuiltinPluginID.removeBackground,
+                  BuiltinPluginID.imageConvert, BuiltinPluginID.colorPicker],
+        .files: [BuiltinPluginID.copyPath, BuiltinPluginID.revealInFinder, BuiltinPluginID.openInTerminal, BuiltinPluginID.zip,
+                 BuiltinPluginID.unzip, BuiltinPluginID.airDrop, BuiltinPluginID.windowLayout],
+    ]
+
+    /// 没有列出来的（剪贴板、全部功能、设置）都算「其他」
+    static func of(_ pluginID: String) -> BuiltinCategory {
+        allCases.first { members[$0]?.contains(pluginID) == true } ?? .other
     }
 }
 
