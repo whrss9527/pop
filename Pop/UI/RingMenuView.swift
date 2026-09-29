@@ -163,10 +163,11 @@ struct RingMenuView: View {
             Circle()
                 .fill(Color.primary.opacity(0.06))
                 .overlay(Circle().strokeBorder(Color.primary.opacity(0.12), lineWidth: 1))
-            if model.hovered != nil {
+            if let hovered = model.hovered {
                 // 圆心边上的小点指着当前的格子，跟着高亮一起转
+                let enabled = model.slots.indices.contains(hovered) && model.slots[hovered].enabled
                 PolarDot(angle: model.highlightAngle, distance: diameter / 2 - 6, radius: 2.5)
-                    .fill(Color.accentColor)
+                    .fill(enabled ? Color.accentColor : Color.primary.opacity(0.4))
                     .id(model.highlightID)
                     .transition(.opacity)
             }
@@ -215,6 +216,7 @@ struct RingMenuView: View {
 }
 
 /// 指向的格子下面衬一块圆形高亮，外圈一段弧线；两者都沿着圆环滑到下一格。
+/// 这一格现在用不了（比如没选中文字时的「翻译」）时换成灰色，仍然看得出指着哪里。
 private struct RingHighlight: View {
     let angle: Double
     let geometry: RingGeometry
@@ -224,16 +226,16 @@ private struct RingHighlight: View {
     var body: some View {
         let radius = geometry.highlightRadius
         let arcSpan = min(360.0 / Double(max(geometry.slotCount, 1)) * 0.62, 42)
+        let tint = enabled ? Color.accentColor : Color.primary
         ZStack {
             PolarDot(angle: angle, distance: geometry.labelRadius, radius: radius)
-                .fill(Color.accentColor.opacity(committed ? 0.34 : 0.2))
+                .fill(tint.opacity(enabled ? (committed ? 0.34 : 0.2) : 0.1))
             PolarDot(angle: angle, distance: geometry.labelRadius, radius: radius)
-                .stroke(Color.accentColor.opacity(0.4), lineWidth: 1)
+                .stroke(tint.opacity(enabled ? 0.4 : 0.22), lineWidth: 1)
             RingArc(angle: angle, radius: geometry.outerRadius - 5, span: arcSpan)
-                .stroke(Color.accentColor, style: StrokeStyle(lineWidth: 3, lineCap: .round))
-                .shadow(color: Color.accentColor.opacity(0.7), radius: 5)
+                .stroke(tint.opacity(enabled ? 1 : 0.35), style: StrokeStyle(lineWidth: 3, lineCap: .round))
+                .shadow(color: enabled ? Color.accentColor.opacity(0.7) : .clear, radius: 5)
         }
-        .opacity(enabled ? 1 : 0.35)
         .frame(width: geometry.diameter, height: geometry.diameter)
         .allowsHitTesting(false)
     }
