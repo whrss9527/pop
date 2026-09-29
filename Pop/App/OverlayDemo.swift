@@ -6,7 +6,7 @@ import AppKit
 /// 指向一格、滑到另一格、选中后弹出结果卡片、提示、「全部功能」列表、再展开一次圆盘并取消；
 /// 再按真实的手势流程走一遍：按住右键唤起、拖到上面一格、再拖到「剪贴板」、松开执行
 /// （直接调用鼠标拦截的回调，拖动位置和真实使用时一样由拦截送来，不看系统的指针位置）；
-/// 最后是单位换算的卡片、贴图和 AI 卡片。
+/// 最后是单位换算的卡片、贴图、AI 卡片和窗口布局卡片。
 /// 配合 POP_ANIMATION_SCALE 放慢动画，截图脚本就能拍到动画的中间帧。
 /// 每一步开始时往 POP_DEMO_LOG 指定的文件里写一行「步骤名 时间戳」；第一行是演示区域在屏幕上的位置
 /// （点，AppKit 坐标：x y 宽 高）和屏幕大小，脚本按它裁图。
@@ -126,6 +126,11 @@ enum OverlayDemo {
             overlay.showCard(AICardView(model: assistant, canReplace: false, onAction: { _ in }, onMore: {},
                                         onOpenSettings: {}, onClose: {}),
                              anchor: center)
+
+            // 窗口布局卡片
+            await pause(1.4 * unit)
+            step("layout")
+            overlay.showCard(WindowLayoutCardView(hasMultipleDisplays: false, onChoose: { _ in }, onClose: {}), anchor: center)
 
             await pause(1.4 * unit)
             step("end")

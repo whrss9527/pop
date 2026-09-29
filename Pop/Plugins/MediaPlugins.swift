@@ -167,7 +167,7 @@ struct ScreenshotTranslatePlugin: PopPlugin {
 struct PinPlugin: PopPlugin {
     let info = PluginInfo(id: BuiltinPluginID.pin, name: "贴图", symbol: "pin",
                           summary: "把选中的图片或文字贴在屏幕最前面；什么都没选中时先框选一块屏幕", accepts: [],
-                          hidesOverlay: true)
+                          hidesOverlay: true, optionalContent: true)
 
     @MainActor func run(_ content: ClassifiedContent, context: PluginContext) async -> PluginOutcome {
         let board = PinBoard.shared

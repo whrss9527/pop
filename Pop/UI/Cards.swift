@@ -97,7 +97,7 @@ struct ResultCardView: View {
                     .foregroundStyle(.secondary)
                     .lineLimit(2)
             }
-            HStack(spacing: 8) {
+            FlowLayout(spacing: 8) {
                 if let copyText = card.copyText {
                     Button("复制") { onAction(.copy(copyText)) }
                         .keyboardShortcut("c", modifiers: .command)
@@ -113,7 +113,6 @@ struct ResultCardView: View {
                 if let onMore {
                     Button("更多功能", action: onMore)
                 }
-                Spacer()
             }
             .controlSize(.small)
         }
@@ -265,7 +264,7 @@ struct TranslationCardView: View {
             Divider()
             result
                 .animation(Motion.content, value: model.phase)
-            HStack(spacing: 8) {
+            FlowLayout(spacing: 8) {
                 if let translated = model.translatedText {
                     Button("复制译文") { onAction(.copy(translated)) }
                         .keyboardShortcut("c", modifiers: .command)
@@ -280,7 +279,6 @@ struct TranslationCardView: View {
                 if let onMore {
                     Button("更多功能", action: onMore)
                 }
-                Spacer()
             }
             .controlSize(.small)
         }

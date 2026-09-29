@@ -79,7 +79,7 @@ final class RouterTests: XCTestCase {
         XCTAssertEqual(Set(catalog.filter { $0.canHandle(.empty) }.map(\.id)), [
             BuiltinPluginID.random, BuiltinPluginID.screenshotOCR, BuiltinPluginID.colorPicker,
             BuiltinPluginID.clipboardHistory, BuiltinPluginID.allPlugins, BuiltinPluginID.settings,
-            BuiltinPluginID.screenshotTranslate, BuiltinPluginID.pin,
+            BuiltinPluginID.screenshotTranslate, BuiltinPluginID.pin, BuiltinPluginID.windowLayout,
         ])
     }
 

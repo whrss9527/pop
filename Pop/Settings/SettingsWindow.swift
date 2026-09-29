@@ -6,6 +6,7 @@ enum SettingsTab: String, CaseIterable, Identifiable, Hashable {
     case ring
     case plugins
     case rules
+    case hotKeys
     case clipboard
     case translation
     case ai
@@ -85,6 +86,9 @@ struct SettingsRootView: View {
             RulesSettingsView(catalog: catalog)
                 .tabItem { Label("直达规则", systemImage: "arrow.turn.down.right") }
                 .tag(SettingsTab.rules)
+            HotKeySettingsView(catalog: catalog)
+                .tabItem { Label("快捷键", systemImage: "keyboard") }
+                .tag(SettingsTab.hotKeys)
             ClipboardSettingsView()
                 .tabItem { Label("剪贴板", systemImage: "list.clipboard") }
                 .tag(SettingsTab.clipboard)
@@ -101,7 +105,7 @@ struct SettingsRootView: View {
                 .tabItem { Label("更新", systemImage: "arrow.down.circle") }
                 .tag(SettingsTab.update)
         }
-        .frame(width: 760, height: 580)
+        .frame(width: 840, height: 600)
     }
 }
 

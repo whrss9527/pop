@@ -203,6 +203,9 @@ final class AppController {
         hotKeys.register(.clipboard, preset: clipboardHotKey) { [weak self] in
             self?.coordinator.showClipboardHistoryFromHotKey()
         }
+        hotKeys.registerPluginHotKeys(settings.pluginHotKeys) { [weak self] pluginID in
+            self?.coordinator.runFromHotKey(pluginID: pluginID)
+        }
         clipboard.apply(settings.clipboard)
     }
 
