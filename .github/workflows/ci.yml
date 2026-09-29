@@ -1,5 +1,8 @@
 name: CI
 
+# 推送代码和合并请求时：编译、单元测试、启动测试、一键更新的端到端测试，并给浮窗截图。
+# 推到 main 并且测试都通过后，CHANGELOG.md 最上面的版本还没有标签的话，
+# 就自动打标签、打包并发布正式版（调用 release.yml），已安装的 Pop 会提示更新。
 on:
   push:
     branches: ["**"]
@@ -8,7 +11,8 @@ on:
 
 concurrency:
   group: ci-${{ github.ref }}
-  cancel-in-progress: true
+  # main 上的运行可能正在发布新版本，不能被下一次推送取消
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
 
 jobs:
   build-and-test:
@@ -170,3 +174,39 @@ jobs:
           scripts/update-e2e.sh build/e2e-signed/Pop.app
           security delete-keychain "$keychain"
 
+  plan-release:
+    name: 看要不要发版
+    needs: [build-and-test, launch-smoke]
+    # 推到 main 并且测试都通过了
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.plan.outputs.version }}
+      sha: ${{ steps.plan.outputs.sha }}
+    steps:
+      - uses: actions/checkout@v5
+      - name: 读 CHANGELOG.md 最上面的版本
+        id: plan
+        run: |
+          version=$(sed -n 's/^## \([0-9][0-9.]*[0-9]\).*/\1/p' CHANGELOG.md | head -1)
+          [ -n "$version" ] || { echo "::error::CHANGELOG.md 里找不到版本号（格式是「## 0.4.0（2026-09-29）」）"; exit 1; }
+          if git ls-remote --exit-code --tags origin "refs/tags/v${version}" > /dev/null; then
+            echo "v${version} 已经发布过，这次不发版。要发版就在 CHANGELOG.md 最上面加一节新版本。"
+            exit 0
+          fi
+          echo "发布 v${version}，提交 $(git rev-parse HEAD)"
+          echo "version=${version}" >> "$GITHUB_OUTPUT"
+          echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+
+  release:
+    name: 发布新版本
+    needs: plan-release
+    if: needs.plan-release.outputs.version != ''
+    permissions:
+      contents: write
+    uses: ./.github/workflows/release.yml
+    with:
+      version: ${{ needs.plan-release.outputs.version }}
+      ref: ${{ needs.plan-release.outputs.sha }}
+      prerelease: false
+    secrets: inherit

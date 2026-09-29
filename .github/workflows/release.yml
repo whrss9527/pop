@@ -1,7 +1,13 @@
 name: Release
 
-# 手动运行：构建 Pop.app（Apple 芯片 / Intel 通用），发布到 GitHub Releases，附带 SHA256SUMS.txt。
+# 构建 Pop.app（Apple 芯片 / Intel 通用），发布到 GitHub Releases，附带 SHA256SUMS.txt，
+# 发布说明取 CHANGELOG.md 里这个版本的那一节。
 # 已安装的 Pop 从这里检查更新：下载 zip、比对 SHA256SUMS.txt 里的校验和、检查代码签名，再替换并重新启动。
+#
+# 两种触发方式：
+#   - 自动：改动合并进 main、CI 通过后，CHANGELOG.md 最上面的版本还没有标签，CI 就调用这里发布正式版（见 ci.yml 的 plan-release）。
+#   - 手动：在 Actions 页面运行，填版本号，可以选择发成测试版（预发布）。
+# Release 先建成草稿，附件都传完才公开，已安装的 Pop 不会看到一个没有安装包的新版本。
 #
 # 签名（都是可选的，配在仓库的 Secrets 里，见 README「签名与公证」）：
 #   MACOS_CERTIFICATE_P12 + MACOS_CERTIFICATE_PASSWORD：用证书签名。证书固定不变，更新后辅助功能授权不会丢。
@@ -17,27 +23,41 @@ on:
       prerelease:
         description: "作为测试版（预发布）发布"
         type: boolean
-        default: true
+        default: false
       overwrite:
         description: "版本已存在时覆盖：用原标签的代码重新构建，替换附件并更新标题和说明"
+        type: boolean
+        default: false
+  workflow_call:
+    inputs:
+      version:
+        description: "版本号，例如 0.4.0"
+        required: true
+        type: string
+      ref:
+        description: "在哪个提交上发布"
+        required: true
+        type: string
+      prerelease:
         type: boolean
         default: false
 
 permissions:
   contents: write
 
-concurrency:
-  group: release
-  cancel-in-progress: false
-
 jobs:
   release:
     runs-on: macos-15
     timeout-minutes: 60
+    # 同一时间只发一个版本（手动发布和合并后的自动发布可能撞在一起）
+    concurrency:
+      group: release
+      cancel-in-progress: false
     env:
       VERSION: ${{ inputs.version }}
-      OVERWRITE: ${{ inputs.overwrite }}
+      OVERWRITE: ${{ inputs.overwrite || false }}
       PRERELEASE: ${{ inputs.prerelease }}
+      TARGET_REF: ${{ inputs.ref }}
     steps:
       # 注意：shell 变量后面紧跟中文或全角符号时一定要写成 ${VAR}，否则 bash 可能把多字节字符的一部分当成变量名。
       - name: Check version
@@ -60,7 +80,7 @@ jobs:
             echo "ref=v$V" >> "$GITHUB_OUTPUT"
           else
             echo "exists=false" >> "$GITHUB_OUTPUT"
-            echo "ref=$GITHUB_SHA" >> "$GITHUB_OUTPUT"
+            echo "ref=${TARGET_REF:-$GITHUB_SHA}" >> "$GITHUB_OUTPUT"
           fi
           echo "VERSION=$V" >> "$GITHUB_ENV"
 
@@ -133,10 +153,15 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          # CHANGELOG.md 里这个版本的那一节（「## 0.3.0」到下一个「## 」之前）放进发布说明
+          # CHANGELOG.md 里这个版本的那一节（「## 0.4.0（2026-09-29）」到下一个「## 」之前）放进发布说明
           awk -v v="${VERSION}" '
-            $0 == "## " v { found = 1; next }
-            /^## / { if (found) exit }
+            /^## / {
+              if (found) exit
+              heading = $2
+              sub(/（.*$/, "", heading)
+              sub(/\(.*$/, "", heading)
+              if (heading == v) { found = 1; next }
+            }
             found { print }
           ' CHANGELOG.md > changes.md 2>/dev/null || : > changes.md
 
@@ -197,12 +222,14 @@ jobs:
             gh release upload "v${VERSION}" "dist/Pop-${VERSION}.zip" dist/SHA256SUMS.txt --repo "$GITHUB_REPOSITORY" --clobber
             gh release edit "v${VERSION}" --repo "$GITHUB_REPOSITORY" --title "$TITLE" --notes-file notes.md --prerelease="$PRERELEASE"
           else
-            gh release create "v${VERSION}" "dist/Pop-${VERSION}.zip" dist/SHA256SUMS.txt \
+            # 先建草稿、传附件，都好了再公开：已安装的 Pop 不会看到一个没有安装包的新版本
+            gh release create "v${VERSION}" --draft \
               --repo "$GITHUB_REPOSITORY" \
               --target "$(git rev-parse HEAD)" \
               --title "$TITLE" \
-              --notes-file notes.md \
-              "$FLAG"
+              --notes-file notes.md
+            gh release upload "v${VERSION}" "dist/Pop-${VERSION}.zip" dist/SHA256SUMS.txt --repo "$GITHUB_REPOSITORY"
+            gh release edit "v${VERSION}" --repo "$GITHUB_REPOSITORY" --draft=false "$FLAG"
           fi
           echo "已发布到 https://github.com/${GITHUB_REPOSITORY}/releases/tag/v${VERSION}"
 

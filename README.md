@@ -159,17 +159,20 @@ Pop 直接从这个仓库的 GitHub Releases 检查更新，不需要额外的�
 
 ## 发布新版本
 
-1. 在 `CHANGELOG.md` 顶部写好这个版本的一节（标题就是版本号，比如 `## 0.3.0`），它会放进发布说明；
-2. 把代码推送到 GitHub，在 Actions 页面手动运行「Release」工作流并填上版本号；或者在本机用 GitHub CLI（`brew install gh && gh auth login`）：
+发版由 `CHANGELOG.md` 驱动，不用手动打标签：
 
-   ```bash
-   make release VERSION=0.3.0            # 发布测试版（预发布）
-   make release VERSION=1.0.0 STABLE=1   # 发布正式版
-   ```
+1. 在 `CHANGELOG.md` 最上面加一节新版本，标题是版本号加日期，比如 `## 0.4.0（2026-09-29）`，内容会原样放进发布说明；
+2. 改动推到 main（或者合并进 main）。CI 全部通过后，发现这个版本还没有 `v0.4.0` 标签，就自动构建通用版（Apple 芯片 / Intel）、启动测试、打包成 `Pop-<版本>.zip`、生成 `SHA256SUMS.txt`，打上标签并发布正式版。Release 先建成草稿，附件传完才公开；
+3. 已经装着 Pop 的 Mac 下一次检查时就会收到这个版本，提示一键更新。
 
-CI 会在 macOS 上构建通用版（Apple 芯片 / Intel），启动测试通过后打包成 `Pop-<版本>.zip`、生成 `SHA256SUMS.txt`，创建 `v<版本>` 标签和 Release。已经装着 Pop 的 Mac 下一次检查时就会收到这个版本。
+只改 CI、文档或测试、不想发版的话，就不要在 `CHANGELOG.md` 里加新版本。想先发个测试版给少数人试用，可以在 Actions 页面手动运行「Release」工作流并勾选「作为测试版」，或者在本机用 GitHub CLI（`brew install gh && gh auth login`）：
 
-- 版本号已经发布过时工作流会报错；勾选 overwrite 可以用原标签的代码重新构建，替换附件并更新说明；
+```bash
+make release VERSION=0.4.0          # 手动发布正式版
+make release VERSION=0.4.0 BETA=1   # 手动发布测试版（预发布）
+```
+
+- 版本号已经发布过时工作流会报错；手动运行时勾选 overwrite 可以用原标签的代码重新构建，替换附件并更新说明；
 - `CFBundleShortVersionString` 取你填的版本号，`CFBundleVersion` 自动取 Git 提交数；
 - 比较新旧时按数字逐段比较，同一个版本号带 `-beta.1` 之类后缀的比不带的旧。
 

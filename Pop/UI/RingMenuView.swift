@@ -247,7 +247,7 @@ struct PolarDot: Shape {
     }
 
     func path(in rect: CGRect) -> Path {
-        let radians = angle * .pi / 180
+        let radians = CGFloat(angle) * .pi / 180
         let center = CGPoint(x: rect.midX + cos(radians) * distance, y: rect.midY + sin(radians) * distance)
         return Path(ellipseIn: CGRect(x: center.x - radius, y: center.y - radius, width: radius * 2, height: radius * 2))
     }
