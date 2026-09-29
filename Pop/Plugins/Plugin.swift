@@ -22,6 +22,8 @@ struct PluginInfo: Identifiable, Hashable {
     var source: Source = .builtin
     /// 执行前先收起浮窗：截图、取色这类需要看清屏幕的功能
     var hidesOverlay = false
+    /// 不需要选中内容，但选中了会用上（比如贴图：选中了图片就贴图片，没选中就先截图）
+    var optionalContent = false
 
     func canHandle(_ content: ClassifiedContent) -> Bool {
         guard accepts.isEmpty || !accepts.isDisjoint(with: content.kinds) else { return false }
@@ -61,6 +63,8 @@ enum CardAction: Equatable {
     case pinText(String)
     /// 用翻译卡片翻译这段文字
     case translate(String)
+    /// 转换图片文件，结果存在原图旁边
+    case convertImages([URL], ImageConverter.Operation)
 }
 
 struct CardButton: Equatable, Identifiable {
@@ -115,6 +119,8 @@ enum PluginOutcome: Equatable {
     case showClipboardHistory
     /// 打开 AI 卡片
     case ai(AIRequestSpec)
+    /// 打开窗口布局卡片
+    case showWindowLayouts
     case failure(String)
 }
 

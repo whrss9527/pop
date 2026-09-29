@@ -152,6 +152,37 @@ final class PopCoordinator: MouseTriggerDelegate {
         begin(at: NSEvent.mouseLocation, buttonHeld: false)
     }
 
+    /// 功能的快捷键：读取选中的内容后直接执行这个功能，不弹圆盘。
+    /// 不需要选中内容的功能（截图翻译、屏幕取色……）不读取，马上执行。
+    func runFromHotKey(pluginID: String) {
+        if overlay.isVisible || session != nil {
+            endSession()
+        }
+        guard !isPaused, settingsStore.settings.isInstalled(pluginID), let plugin = registry.plugin(id: pluginID) else { return }
+        let app = NSWorkspace.shared.frontmostApplication
+        let pid = app?.processIdentifier
+        let newSession = Session(anchor: NSEvent.mouseLocation, pid: pid, sourceAppName: app?.localizedName, buttonHeld: false)
+        session = newSession
+        if plugin.info.accepts.isEmpty && !plugin.info.optionalContent {
+            session?.content = .empty
+            run(pluginID)
+            return
+        }
+        let sessionID = newSession.id
+        Task { [weak self] in
+            guard let self else { return }
+            let raw = await self.reader.read(pid: pid)
+            guard self.session?.id == sessionID else { return }
+            let content = ContentClassifier.classify(raw)
+            self.session?.content = content
+            if plugin.info.canHandle(content) {
+                self.run(pluginID)
+            } else {
+                self.finish(toast: content.isEmpty ? "没有选中内容" : "「\(plugin.info.name)」处理不了选中的内容")
+            }
+        }
+    }
+
     /// 剪贴板历史快捷键：不读取选中内容，直接打开历史面板；再按一次关闭
     func showClipboardHistoryFromHotKey() {
         if overlay.isVisible || session != nil {
@@ -312,7 +343,10 @@ final class PopCoordinator: MouseTriggerDelegate {
                                                  canReplace: Self.isTextSelection(current.content) && current.content?.text == text,
                                                  onAction: { [weak self] action in self?.perform(action) },
                                                  onMore: moreAction(for: current),
-                                                 onDownload: { [weak self] in self?.downloadLanguagePack(source: language, target: target) },
+                                                 onDownload: { [weak self, weak model] in
+                                                     // 卡片上可能换过目标语言
+                                                     self?.downloadLanguagePack(source: language, target: model?.targetCode ?? target)
+                                                 },
                                                  onClose: { [weak self] in self?.endSession() }),
                              anchor: current.anchor)
         case .replace(let text):
@@ -323,6 +357,8 @@ final class PopCoordinator: MouseTriggerDelegate {
             presentClipboardHistory()
         case .ai(let spec):
             presentAI(spec)
+        case .showWindowLayouts:
+            presentWindowLayouts()
         case .failure(let message):
             overlay.showCard(ResultCardView(card: ResultCard(title: "没能完成", body: message),
                                             onAction: { [weak self] action in self?.perform(action) },
@@ -365,6 +401,67 @@ final class PopCoordinator: MouseTriggerDelegate {
             PinBoard.shared.pin(text: text, around: anchor)
         case .translate(let text):
             present(.translate(text: text, language: ContentClassifier.dominantLanguage(text)))
+        case .convertImages(let files, let operation):
+            convertImages(files, operation)
+        }
+    }
+
+    /// 在后台转换图片，完成后在访达里选中新文件
+    private func convertImages(_ files: [URL], _ operation: ImageConverter.Operation) {
+        let anchor = session?.anchor ?? NSEvent.mouseLocation
+        endSession()
+        Task { [weak self] in
+            let (outputs, failures) = await runInBackground { () -> ([URL], [String]) in
+                var outputs: [URL] = []
+                var failures: [String] = []
+                for file in files {
+                    do {
+                        outputs.append(try ImageConverter.convert(file, operation))
+                    } catch let failure as ImageConverter.Failure {
+                        failures.append(failure.message)
+                    } catch {
+                        failures.append(error.localizedDescription)
+                    }
+                }
+                return (outputs, failures)
+            }
+            guard let self else { return }
+            if !outputs.isEmpty {
+                NSWorkspace.shared.activateFileViewerSelecting(outputs)
+            }
+            let message: String
+            if let failure = failures.first {
+                message = outputs.isEmpty ? failure : "转换了 \(outputs.count) 张，\(failures.count) 张失败：\(failure)"
+            } else {
+                message = outputs.count == 1 ? "已存到原图旁边" : "已转换 \(outputs.count) 张"
+            }
+            self.showToast(message, at: anchor)
+        }
+    }
+
+    /// 窗口布局：选一个位置，把唤起时前台 App 的窗口放过去
+    private func presentWindowLayouts() {
+        guard let current = session else { return }
+        stopPointerTracking()
+        let choose: (WindowLayout) -> Void = { [weak self] layout in
+            self?.arrangeWindow(layout)
+        }
+        overlay.showCard(WindowLayoutCardView(hasMultipleDisplays: NSScreen.screens.count > 1, onChoose: choose,
+                                              onClose: { [weak self] in self?.endSession() }),
+                         anchor: current.anchor,
+                         keyHandler: { event in
+                             guard let layout = WindowLayoutCardView.layout(for: event) else { return false }
+                             choose(layout)
+                             return true
+                         })
+    }
+
+    private func arrangeWindow(_ layout: WindowLayout) {
+        guard let current = session else { return }
+        endSession()
+        guard let pid = current.pid else { return }
+        if let problem = WindowMover.apply(layout, pid: pid) {
+            overlay.showToast(problem, anchor: current.anchor)
         }
     }
 

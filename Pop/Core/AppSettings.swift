@@ -43,6 +43,13 @@ enum BuiltinPluginID {
     static let aiSummarize = "aiSummarize"
     static let aiExplain = "aiExplain"
 
+    static let windowLayout = "windowLayout"
+    static let imageConvert = "imageConvert"
+
+    static let linkInspect = "linkInspect"
+    static let jwtDecode = "jwtDecode"
+    static let markdownCopy = "markdownCopy"
+
     /// 0.1 版就有的功能。旧版本的设置里没有记录「见过哪些内置功能」，按这个列表补齐。
     static let legacy = [translate, search, openURL, calculate, copyPlain, formatJSON, timestamp, copyPath, revealInFinder, settings]
 
@@ -51,6 +58,8 @@ enum BuiltinPluginID {
         ocr, screenshotOCR, colorPicker, openInTerminal, quickNote, clipboardHistory, allPlugins,
         unitConvert, textCleanup, screenshotTranslate, pin, removeBackground, airDrop,
         aiAssistant, aiPolish, aiSummarize, aiExplain,
+        windowLayout, imageConvert,
+        linkInspect, jwtDecode, markdownCopy,
     ]
 
     /// 默认不装的内置功能（需要的话在「设置 → 功能」里打开）
@@ -494,6 +503,8 @@ struct AppSettings: Codable, Equatable {
     var searchEngine: SearchEngine = .google
     var clipboard = ClipboardSettings()
     var ai = AISettings()
+    /// 功能的全局快捷键
+    var pluginHotKeys: [PluginHotKey] = []
     /// 已经「见过」的内置功能。新版本新增的内置功能不在这里面，读取旧设置时会自动装上。
     var knownBuiltinPlugins: [String] = BuiltinPluginID.all
     /// 用户最后一次修改的时间，iCloud 同步时用它判断哪边更新。
@@ -513,6 +524,7 @@ struct AppSettings: Codable, Equatable {
         searchEngine = c.lenient(.searchEngine, default: d.searchEngine)
         clipboard = c.lenient(.clipboard, default: d.clipboard)
         ai = c.lenient(.ai, default: d.ai)
+        pluginHotKeys = c.lossyArray(.pluginHotKeys) ?? []
         knownBuiltinPlugins = c.lenient(.knownBuiltinPlugins, default: BuiltinPluginID.legacy)
         modifiedAt = c.lenient(.modifiedAt, default: d.modifiedAt)
         if !knownBuiltinPlugins.contains(BuiltinPluginID.allPlugins), ring == .legacyDefault {
@@ -550,6 +562,19 @@ struct AppSettings: Codable, Equatable {
         } else {
             installedPlugins.removeAll { $0 == pluginID }
             ring.remove(pluginID)
+            pluginHotKeys.removeAll { $0.pluginID == pluginID }
+        }
+    }
+
+    func hotKey(for pluginID: String) -> KeyCombo? {
+        pluginHotKeys.first { $0.pluginID == pluginID }?.key
+    }
+
+    /// 设置某个功能的快捷键（nil 表示清除）。同一个组合键原来给了别的功能的话，从那个功能上拿掉。
+    mutating func setHotKey(_ key: KeyCombo?, for pluginID: String) {
+        pluginHotKeys.removeAll { $0.pluginID == pluginID || $0.key == key }
+        if let key {
+            pluginHotKeys.append(PluginHotKey(pluginID: pluginID, key: key))
         }
     }
 }

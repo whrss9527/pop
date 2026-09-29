@@ -97,7 +97,7 @@ struct ResultCardView: View {
                     .foregroundStyle(.secondary)
                     .lineLimit(2)
             }
-            HStack(spacing: 8) {
+            FlowLayout(spacing: 8) {
                 if let copyText = card.copyText {
                     Button("复制") { onAction(.copy(copyText)) }
                         .keyboardShortcut("c", modifiers: .command)
@@ -113,7 +113,6 @@ struct ResultCardView: View {
                 if let onMore {
                     Button("更多功能", action: onMore)
                 }
-                Spacer()
             }
             .controlSize(.small)
         }
@@ -188,7 +187,8 @@ final class TranslationModel: ObservableObject {
 
     let text: String
     let sourceCode: String?
-    let targetCode: String
+    /// 译成哪种语言；卡片上可以临时换
+    @Published private(set) var targetCode: String
     @Published private(set) var phase: Phase = .checking
     @Published private(set) var configuration: TranslationSession.Configuration?
 
@@ -196,6 +196,17 @@ final class TranslationModel: ObservableObject {
         self.text = text
         sourceCode = sourceLanguage
         targetCode = targetLanguage
+    }
+
+    /// 换一种目标语言重新翻译
+    func switchTarget(to code: String) {
+        guard code != targetCode else { return }
+        targetCode = code
+        configuration = nil
+        phase = .checking
+        Task {
+            await prepare()
+        }
     }
 
     var pairDescription: String {
@@ -258,6 +269,21 @@ struct TranslationCardView: View {
 
     var body: some View {
         CardContainer(title: "翻译", subtitle: model.pairDescription, onClose: onClose) {
+            HStack(spacing: 6) {
+                Menu {
+                    ForEach(LanguageOption.translationTargets) { option in
+                        Button(option.name) { model.switchTarget(to: option.id) }
+                            .disabled(option.id == model.targetCode)
+                    }
+                } label: {
+                    Text("译成\(LanguageOption.name(for: model.targetCode))")
+                }
+                .menuStyle(.borderlessButton)
+                .fixedSize()
+                .help("换一种语言重新翻译")
+                Spacer()
+            }
+            .font(.callout)
             Text(model.text)
                 .font(.callout)
                 .foregroundStyle(.secondary)
@@ -265,7 +291,7 @@ struct TranslationCardView: View {
             Divider()
             result
                 .animation(Motion.content, value: model.phase)
-            HStack(spacing: 8) {
+            FlowLayout(spacing: 8) {
                 if let translated = model.translatedText {
                     Button("复制译文") { onAction(.copy(translated)) }
                         .keyboardShortcut("c", modifiers: .command)
@@ -276,11 +302,11 @@ struct TranslationCardView: View {
                     }
                     Button("贴到屏幕") { onAction(.pinText(translated)) }
                         .help("把译文贴在屏幕最前面，边看原文边对照")
+                    Button("朗读") { Speaker.shared.speak(translated, language: model.targetCode) }
                 }
                 if let onMore {
                     Button("更多功能", action: onMore)
                 }
-                Spacer()
             }
             .controlSize(.small)
         }

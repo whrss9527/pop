@@ -210,7 +210,7 @@ struct AICardView: View {
     }
 
     private var buttons: some View {
-        HStack(spacing: 8) {
+        FlowLayout(spacing: 8) {
             if !model.output.isEmpty {
                 Button("复制") { onAction(.copy(model.output)) }
                 if canReplace {
@@ -228,7 +228,6 @@ struct AICardView: View {
             if let onMore {
                 Button("更多功能", action: onMore)
             }
-            Spacer()
         }
         .controlSize(.small)
     }
