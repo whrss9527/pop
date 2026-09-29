@@ -55,27 +55,37 @@ struct PluginsSettingsView: View {
                     .foregroundStyle(.secondary)
             }
 
-            Section {
-                ForEach(catalog.filter { $0.source == .builtin }) { info in
-                    Toggle(isOn: installedBinding(for: info.id)) {
-                        HStack(spacing: 10) {
-                            Image(systemName: info.symbol)
-                                .frame(width: 22)
-                            VStack(alignment: .leading, spacing: 2) {
-                                Text(info.name)
-                                Text(info.summary)
+            let builtins = catalog.filter { $0.source == .builtin }
+            ForEach(BuiltinCategory.allCases) { category in
+                let members = builtins.filter { BuiltinCategory.of($0.id) == category }
+                if !members.isEmpty {
+                    Section {
+                        ForEach(members) { info in
+                            Toggle(isOn: installedBinding(for: info.id)) {
+                                HStack(spacing: 10) {
+                                    Image(systemName: info.symbol)
+                                        .frame(width: 22)
+                                    VStack(alignment: .leading, spacing: 2) {
+                                        Text(info.name)
+                                        Text(info.summary)
+                                            .font(.caption)
+                                            .foregroundStyle(.secondary)
+                                    }
+                                }
+                            }
+                        }
+                    } header: {
+                        VStack(alignment: .leading, spacing: 4) {
+                            if category == BuiltinCategory.allCases.first {
+                                Text("关掉的功能会从圆盘上移除，也不会再被直达规则调用。打开后到「圆盘」里拖到想要的位置，或者在圆盘的「全部功能」里找到它。")
                                     .font(.caption)
                                     .foregroundStyle(.secondary)
+                                    .fixedSize(horizontal: false, vertical: true)
                             }
+                            Text("内置功能 · \(category.title)")
                         }
                     }
                 }
-            } header: {
-                Text("内置功能")
-            } footer: {
-                Text("关掉的功能会从圆盘上移除，也不会再被直达规则调用。打开后到「圆盘」里拖到想要的位置，或者在圆盘的「全部功能」里找到它。")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
             }
 
             Section("搜索") {
