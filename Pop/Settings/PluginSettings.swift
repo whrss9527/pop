@@ -10,6 +10,8 @@ struct PluginsSettingsView: View {
     let catalog: [PluginInfo]
     @State var editing: PluginDraft? = nil
     @State var errorMessage: String? = nil
+    /// 搜索内置功能
+    @State private var query = ""
 
     var body: some View {
         Form {
@@ -55,7 +57,18 @@ struct PluginsSettingsView: View {
                     .foregroundStyle(.secondary)
             }
 
-            let builtins = catalog.filter { $0.source == .builtin }
+            Section {
+                TextField("搜索内置功能，支持拼音首字母", text: $query)
+                    .textFieldStyle(.roundedBorder)
+            }
+
+            let builtins = catalog.filter { $0.source == .builtin && matchesQuery($0) }
+            if builtins.isEmpty {
+                Section {
+                    Text("没有匹配的内置功能")
+                        .foregroundStyle(.secondary)
+                }
+            }
             ForEach(BuiltinCategory.allCases) { category in
                 let members = builtins.filter { BuiltinCategory.of($0.id) == category }
                 if !members.isEmpty {
@@ -109,6 +122,12 @@ struct PluginsSettingsView: View {
         } message: {
             Text(errorMessage ?? "")
         }
+    }
+
+    private func matchesQuery(_ info: PluginInfo) -> Bool {
+        let trimmed = query.trimmingCharacters(in: .whitespaces)
+        guard !trimmed.isEmpty else { return true }
+        return SearchText.matches(trimmed, keys: SearchText.keys(for: info.name) + [info.summary.lowercased()])
     }
 
     private func installedBinding(for id: String) -> Binding<Bool> {

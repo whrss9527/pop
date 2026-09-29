@@ -220,7 +220,7 @@ enum OverlayDemo {
 
             // 设置窗口里新加的几页：截图区域换成设置窗口
             await pause(0.6 * unit)
-            for tab in [SettingsTab.ai, .hotKeys] {
+            for tab in [SettingsTab.plugins, .ai, .hotKeys] {
                 coordinator.openSettings(tab)
                 await pause(0.6 * unit)
                 if let window = NSApp.windows.first(where: { $0.isVisible && $0.title == "Pop 设置" }) {
