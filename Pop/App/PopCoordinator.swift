@@ -378,6 +378,8 @@ final class PopCoordinator: MouseTriggerDelegate {
             presentReminder(text)
         case .rename(let files):
             presentRename(files)
+        case .showVocabulary:
+            presentVocabulary()
         case .failure(let message):
             overlay.showCard(ResultCardView(card: ResultCard(title: "没能完成", body: message),
                                             onAction: { [weak self] action in self?.perform(action) },
@@ -423,6 +425,9 @@ final class PopCoordinator: MouseTriggerDelegate {
             PinBoard.shared.pin(text: text, around: anchor)
         case .translate(let text):
             present(.translate(text: text, language: ContentClassifier.dominantLanguage(text)))
+        case .addToVocabulary(let word, let translation, let source, let target):
+            let isNew = VocabularyStore.shared.add(word: word, translation: translation, sourceLanguage: source, targetLanguage: target)
+            finish(toast: isNew ? "已加入生词本" : "生词本里已经有了，换成了这次的释义")
         case .convertImages(let files, let operation):
             convertImages(files, operation)
         case .stitchImages(let files, let direction):
@@ -759,6 +764,36 @@ final class PopCoordinator: MouseTriggerDelegate {
         }
         overlay.showCard(ReminderCardView(draft: draft, onAdd: add, onClose: { [weak self] in self?.endSession() }),
                          anchor: current.anchor)
+    }
+
+    /// 生词本：搜索、朗读、复习、导出
+    private func presentVocabulary() {
+        guard let current = session else { return }
+        stopPointerTracking()
+        let model = VocabularyModel(store: VocabularyStore.shared)
+        overlay.showCard(VocabularyView(model: model,
+                                        onCopy: { [weak self] text in self?.copy(text) },
+                                        onSpeak: { entry in Speaker.shared.speak(entry.word, language: entry.sourceLanguage) },
+                                        onExport: { [weak self] format in self?.exportVocabulary(format) },
+                                        onClose: { [weak self] in self?.endSession() }),
+                         anchor: current.anchor)
+    }
+
+    /// 生词本存成文件：CSV 开头加 BOM，Excel 打开中文不会乱码
+    private func exportVocabulary(_ format: VocabularyStore.ExportFormat) {
+        endSession()
+        let text = (format == .csv ? "\u{FEFF}" : "") + VocabularyStore.export(VocabularyStore.shared.entries, as: format)
+        NSApp.activate()
+        let panel = NSSavePanel()
+        panel.nameFieldStringValue = "Pop 生词本.\(format.fileExtension)"
+        panel.allowedContentTypes = [format.contentType]
+        guard panel.runModal() == .OK, let url = panel.url else { return }
+        do {
+            try text.write(to: url, atomically: true, encoding: .utf8)
+            NSWorkspace.shared.activateFileViewerSelecting([url])
+        } catch {
+            showToast("导出失败：\(error.localizedDescription)", at: NSEvent.mouseLocation)
+        }
     }
 
     /// 批量重命名：按规则预览新名字，改完可以撤销

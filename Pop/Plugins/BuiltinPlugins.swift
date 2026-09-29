@@ -8,6 +8,7 @@ enum BuiltinPlugins {
             ScreenshotTranslatePlugin(),
             WebSearchPlugin(),
             DictionaryPlugin(),
+            VocabularyPlugin(),
             SpeakPlugin(),
             OpenLinkPlugin(),
             LinkInspectPlugin(),
@@ -112,7 +113,8 @@ enum BuiltinCategory: CaseIterable, Identifiable {
 
     private static let members: [BuiltinCategory: [String]] = [
         .text: [BuiltinPluginID.translate, BuiltinPluginID.screenshotTranslate, BuiltinPluginID.search,
-                BuiltinPluginID.dictionary, BuiltinPluginID.speak, BuiltinPluginID.openURL, BuiltinPluginID.copyPlain,
+                BuiltinPluginID.dictionary, BuiltinPluginID.vocabulary, BuiltinPluginID.speak, BuiltinPluginID.openURL,
+                BuiltinPluginID.copyPlain,
                 BuiltinPluginID.textCleanup, BuiltinPluginID.extractInfo, BuiltinPluginID.lineTools, BuiltinPluginID.reminder,
                 BuiltinPluginID.spellCheck,
                 BuiltinPluginID.textStats, BuiltinPluginID.textDiff,

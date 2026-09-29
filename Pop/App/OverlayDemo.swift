@@ -304,6 +304,22 @@ enum OverlayDemo {
             }
             step("sql")
 
+            // 生词本：几个示例单词（放在临时文件里，不动真的生词本）
+            await pause(1.4 * unit)
+            let words = VocabularyStore(url: FileManager.default.temporaryDirectory.appending(path: "pop-demo-vocabulary.json"))
+            words.remove(Set(words.entries.map(\.id)))
+            for (word, meaning) in [("resilient", "有韧性的；能迅速恢复的"), ("liquid glass", "液态玻璃"), ("ephemeral", "短暂的"),
+                                    ("serendipity", "意外发现美好事物的运气")] {
+                words.add(word: word, translation: meaning, sourceLanguage: "en", targetLanguage: "zh-Hans")
+            }
+            if let oldest = words.entries.last {
+                words.setMastered(oldest.id, true)
+            }
+            overlay.showCard(VocabularyView(model: VocabularyModel(store: words), onCopy: { _ in }, onSpeak: { _ in },
+                                            onExport: { _ in }, onClose: {}),
+                             anchor: center)
+            step("vocabulary")
+
             // 截图标注窗口：拿一张画好的示例图，标上方框、箭头、文字、马赛克和序号；截图区域换成标注窗口
             await pause(1.4 * unit)
             overlay.hide()

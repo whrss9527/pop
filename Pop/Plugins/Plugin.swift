@@ -121,6 +121,8 @@ enum CardAction: Equatable {
     case pinText(String)
     /// 用翻译卡片翻译这段文字
     case translate(String)
+    /// 把单词和译文加进生词本
+    case addToVocabulary(word: String, translation: String, source: String?, target: String?)
     /// 转换图片文件，结果存在原图旁边
     case convertImages([URL], ImageConverter.Operation)
     /// 几张图片拼成一张，存在第一张旁边
@@ -222,6 +224,8 @@ enum PluginOutcome: Equatable {
     case reminder(text: String)
     /// 打开批量重命名卡片
     case rename([URL])
+    /// 打开生词本
+    case showVocabulary
     case failure(String)
 }
 
