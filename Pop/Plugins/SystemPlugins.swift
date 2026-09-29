@@ -33,3 +33,29 @@ struct RulerPlugin: PopPlugin {
         return .done(toast: nil)
     }
 }
+
+// MARK: - 计时器
+
+struct TimerPlugin: PopPlugin {
+    let info = PluginInfo(id: BuiltinPluginID.timer, name: "计时器", symbol: "timer",
+                          summary: "倒计时：选一个时长，或者选中「25 分钟」「1:30」这样的文字直接开始；到点时响一声、发通知",
+                          accepts: [], optionalContent: true)
+
+    @MainActor func run(_ content: ClassifiedContent, context: PluginContext) async -> PluginOutcome {
+        let countdown = CountdownTimer.shared
+        // 选中的文字就是一个时长：直接开始
+        if let text = content.text, let seconds = DurationParser.parse(text), seconds <= 24 * 3600 {
+            countdown.start(seconds: seconds)
+            return .done(toast: "开始计时 \(CountdownTimer.title(seconds: seconds))")
+        }
+        var buttons = CountdownTimer.presets.map { minutes -> CardButton in
+            let seconds = TimeInterval(minutes * 60)
+            return CardButton(title: CountdownTimer.title(seconds: seconds), action: .startTimer(seconds: seconds))
+        }
+        if countdown.isRunning {
+            buttons.append(CardButton(title: "取消计时", action: .cancelTimer))
+        }
+        let body = countdown.statusText() ?? "选一个时长开始倒计时；到点时响一声、发一条通知。也可以选中「25 分钟」「1:30」这样的文字再用它。"
+        return .card(ResultCard(title: "计时器", body: body, buttons: buttons))
+    }
+}

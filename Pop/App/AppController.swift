@@ -87,7 +87,8 @@ final class AppController {
                                               pendingUpdateVersion: self.updater.release?.version,
                                               pinCount: PinBoard.shared.count,
                                               keepAwakeStatus: KeepAwake.shared.statusText(),
-                                              shelfCount: FileShelf.shared.files.count)
+                                              shelfCount: FileShelf.shared.files.count,
+                                              timerStatus: CountdownTimer.shared.statusText())
         }
         statusItem.onCloseAllPins = {
             PinBoard.shared.closeAll()
@@ -97,6 +98,12 @@ final class AppController {
         }
         statusItem.onShowShelf = {
             FileShelf.shared.show(near: NSEvent.mouseLocation)
+        }
+        statusItem.onCancelTimer = {
+            CountdownTimer.shared.cancel()
+        }
+        CountdownTimer.shared.onFinish = { [weak self] message in
+            self?.coordinator.showToast(message, at: NSEvent.mouseLocation)
         }
         shakeDetector.onShake = { [weak self] point in
             guard let self, !self.coordinator.isPaused else { return }

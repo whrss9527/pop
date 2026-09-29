@@ -1,7 +1,7 @@
 import AppKit
 import UserNotifications
 
-/// 系统通知。目前只用来提醒有新版本（带一个「立即更新」按钮）；第一次发通知时才请求权限。
+/// 系统通知：提醒有新版本（带一个「立即更新」按钮）、计时到点；第一次发通知时才请求权限。
 final class Notifier: NSObject, UNUserNotificationCenterDelegate, @unchecked Sendable {
     static let shared = Notifier()
 
@@ -43,6 +43,19 @@ final class Notifier: NSObject, UNUserNotificationCenterDelegate, @unchecked Sen
         }
     }
 
+    /// 一条普通的提醒（计时到点）
+    func showReminder(title: String, body: String) {
+        guard available else { return }
+        UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound]) { granted, _ in
+            guard granted else { return }
+            let content = UNMutableNotificationContent()
+            content.title = title
+            content.body = body
+            let request = UNNotificationRequest(identifier: "pop-reminder-\(UUID().uuidString)", content: content, trigger: nil)
+            UNUserNotificationCenter.current().add(request)
+        }
+    }
+
     func userNotificationCenter(_ center: UNUserNotificationCenter, willPresent notification: UNNotification,
                                 withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void) {
         completionHandler([.banner, .list])
@@ -51,8 +64,11 @@ final class Notifier: NSObject, UNUserNotificationCenterDelegate, @unchecked Sen
     func userNotificationCenter(_ center: UNUserNotificationCenter, didReceive response: UNNotificationResponse,
                                 withCompletionHandler completionHandler: @escaping () -> Void) {
         let action = response.actionIdentifier
+        // 只有新版本的通知有后续操作；点计时提醒什么都不用做
+        let isUpdate = response.notification.request.content.categoryIdentifier == Self.updateCategory
         DispatchQueue.main.async {
             MainActor.assumeIsolated {
+                guard isUpdate else { return }
                 if action == Self.installUpdateAction {
                     self.onInstall?()
                 } else if action == UNNotificationDefaultActionIdentifier {

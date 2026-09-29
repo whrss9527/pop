@@ -98,6 +98,9 @@ enum CardAction: Equatable {
     case copyRichText(String)
     /// 跟着短链接的跳转，看最后到哪个网址
     case expandLink(URL)
+    /// 开始倒计时（秒）
+    case startTimer(seconds: TimeInterval)
+    case cancelTimer
 }
 
 struct CardButton: Equatable, Identifiable {

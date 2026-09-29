@@ -430,6 +430,12 @@ final class PopCoordinator: MouseTriggerDelegate {
             finish(toast: "已复制为富文本")
         case .expandLink(let url):
             expandLink(url)
+        case .startTimer(let seconds):
+            CountdownTimer.shared.start(seconds: seconds)
+            finish(toast: "开始计时 \(CountdownTimer.title(seconds: seconds))")
+        case .cancelTimer:
+            CountdownTimer.shared.cancel()
+            finish(toast: "已取消计时")
         }
     }
 

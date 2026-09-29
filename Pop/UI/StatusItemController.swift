@@ -13,6 +13,8 @@ final class StatusItemController: NSObject, NSMenuDelegate {
         var keepAwakeStatus: String?
         /// 暂存架上有几个文件
         var shelfCount = 0
+        /// 倒计时的状态说明；没在计时时为 nil
+        var timerStatus: String?
     }
 
     var stateProvider: () -> State = { State() }
@@ -25,6 +27,7 @@ final class StatusItemController: NSObject, NSMenuDelegate {
     var onCloseAllPins: () -> Void = {}
     var onStopKeepAwake: () -> Void = {}
     var onShowShelf: () -> Void = {}
+    var onCancelTimer: () -> Void = {}
 
     private let statusItem: NSStatusItem
 
@@ -77,6 +80,12 @@ final class StatusItemController: NSObject, NSMenuDelegate {
             menu.addItem(info)
             addItem(to: menu, title: "停止保持唤醒", action: #selector(stopKeepAwake))
         }
+        if let status = state.timerStatus {
+            let info = NSMenuItem(title: status, action: nil, keyEquivalent: "")
+            info.isEnabled = false
+            menu.addItem(info)
+            addItem(to: menu, title: "取消计时", action: #selector(cancelTimer))
+        }
         addItem(to: menu, title: state.isPaused ? "恢复 Pop" : "暂停 Pop", action: #selector(togglePause))
         menu.addItem(.separator())
         addItem(to: menu, title: "设置…", action: #selector(openSettings), key: ",")
@@ -107,4 +116,5 @@ final class StatusItemController: NSObject, NSMenuDelegate {
     @objc private func closeAllPins() { onCloseAllPins() }
     @objc private func stopKeepAwake() { onStopKeepAwake() }
     @objc private func showShelf() { onShowShelf() }
+    @objc private func cancelTimer() { onCancelTimer() }
 }

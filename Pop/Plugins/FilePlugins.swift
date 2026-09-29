@@ -203,3 +203,24 @@ struct ShelfPlugin: PopPlugin {
         return .done(toast: nil)
     }
 }
+
+// MARK: - 文件信息
+
+struct FileInfoPlugin: PopPlugin {
+    let info = PluginInfo(id: BuiltinPluginID.fileInfo, name: "文件信息", symbol: "info.circle",
+                          summary: "文件的类型、大小（文件夹算上里面所有文件）、创建和修改时间，图片尺寸、PDF 页数、音视频时长",
+                          accepts: [.files])
+
+    @MainActor func run(_ content: ClassifiedContent, context: PluginContext) async -> PluginOutcome {
+        let files = content.files
+        guard let first = files.first else { return .failure("没有选中文件") }
+        if files.count == 1 {
+            // 不在主线程上算：文件夹可能很大
+            let rows = await FileInfo.rows(for: first)
+            guard !rows.isEmpty else { return .failure("读不到「\(first.lastPathComponent)」的信息") }
+            return .card(ResultCard(title: "文件信息", body: first.lastPathComponent, rows: rows))
+        }
+        let rows = await runInBackground { FileInfo.summary(for: files) }
+        return .card(ResultCard(title: "文件信息", body: "\(files.count) 项", rows: rows))
+    }
+}

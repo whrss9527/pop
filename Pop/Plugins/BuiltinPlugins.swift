@@ -51,6 +51,7 @@ enum BuiltinPlugins {
             WindowLayoutPlugin(),
             AirDropPlugin(),
             CopyPathPlugin(),
+            FileInfoPlugin(),
             RevealInFinderPlugin(),
             OpenWithPlugin(),
             ZipPlugin(),
@@ -59,6 +60,7 @@ enum BuiltinPlugins {
             ShelfPlugin(),
             OpenInTerminalPlugin(),
             KeepAwakePlugin(),
+            TimerPlugin(),
             ClipboardHistoryPlugin(),
             SnippetsPlugin(),
             AllPluginsPlugin(),
@@ -107,11 +109,11 @@ enum BuiltinCategory: CaseIterable, Identifiable {
         .screen: [BuiltinPluginID.ocr, BuiltinPluginID.screenshotOCR, BuiltinPluginID.scanCode, BuiltinPluginID.annotate,
                   BuiltinPluginID.pin, BuiltinPluginID.removeBackground,
                   BuiltinPluginID.imageConvert, BuiltinPluginID.palette, BuiltinPluginID.colorPicker, BuiltinPluginID.ruler],
-        .files: [BuiltinPluginID.copyPath, BuiltinPluginID.revealInFinder, BuiltinPluginID.openWith,
+        .files: [BuiltinPluginID.copyPath, BuiltinPluginID.fileInfo, BuiltinPluginID.revealInFinder, BuiltinPluginID.openWith,
                  BuiltinPluginID.openInTerminal, BuiltinPluginID.zip,
                  BuiltinPluginID.unzip, BuiltinPluginID.pdf, BuiltinPluginID.shelf, BuiltinPluginID.airDrop,
                  BuiltinPluginID.windowLayout,
-                 BuiltinPluginID.keepAwake],
+                 BuiltinPluginID.keepAwake, BuiltinPluginID.timer],
     ]
 
     /// 没有列出来的（剪贴板、全部功能、设置）都算「其他」
