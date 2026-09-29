@@ -75,6 +75,10 @@ final class ShelfPanel: NSPanel {
         fatalError("init(coder:) has not been implemented")
     }
 
+    // 无边框窗口默认拿不到焦点，按钮就不好点；非激活面板拿到焦点也不会把 Pop 切到前台
+    override var canBecomeKey: Bool { true }
+    override var canBecomeMain: Bool { false }
+
     /// 放在 point 右下方一点，超出屏幕时往里收
     func present(near point: CGPoint) {
         contentView?.layoutSubtreeIfNeeded()
