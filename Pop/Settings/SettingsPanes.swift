@@ -277,15 +277,33 @@ struct BundleIDListView: View {
 struct RingSettingsView: View {
     @EnvironmentObject var store: SettingsStore
     let catalog: [PluginInfo]
+    /// 正在编辑哪个 App 的圆盘；nil 是默认圆盘（所有没单独设置的 App）
+    @State private var editing: String? = nil
 
     private var installed: [PluginInfo] {
         catalog.filter { store.settings.isInstalled($0.id) }
     }
 
+    /// 正在编辑的布局
+    private var layout: RingLayout {
+        editing.flatMap { id in store.settings.appRings.first { $0.bundleID == id }?.layout } ?? store.settings.ring
+    }
+
+    private func updateLayout(_ change: @escaping (inout RingLayout) -> Void) {
+        let editing = self.editing
+        store.update { settings in
+            if let editing, let index = settings.appRings.firstIndex(where: { $0.bundleID == editing }) {
+                change(&settings.appRings[index].layout)
+            } else {
+                change(&settings.ring)
+            }
+        }
+    }
+
     private var slotCount: Binding<Int> {
         Binding(
-            get: { store.settings.ring.slotCount },
-            set: { count in store.update { $0.ring.setSlotCount(count) } }
+            get: { layout.slotCount },
+            set: { count in updateLayout { $0.setSlotCount(count) } }
         )
     }
 
@@ -298,7 +316,7 @@ struct RingSettingsView: View {
                     .font(.caption)
                     .foregroundStyle(.secondary)
                 List(installed) { info in
-                    PluginRow(info: info, slotIndex: store.settings.ring.index(of: info.id))
+                    PluginRow(info: info, slotIndex: layout.index(of: info.id))
                         .draggable(info.id)
                 }
                 .listStyle(.bordered)
@@ -306,8 +324,9 @@ struct RingSettingsView: View {
             .frame(width: 250)
 
             VStack(spacing: 14) {
-                RingEditorCanvas(layout: store.settings.ring, catalog: catalog, installed: installed) { pluginID, index in
-                    store.update { $0.ring.place(pluginID, at: index) }
+                appPicker
+                RingEditorCanvas(layout: layout, catalog: catalog, installed: installed) { pluginID, index in
+                    updateLayout { $0.place(pluginID, at: index) }
                 }
                 Picker("格子数", selection: slotCount) {
                     ForEach(RingLayout.allowedSlotCounts, id: \.self) { count in
@@ -320,15 +339,67 @@ struct RingSettingsView: View {
                     Text("格子上点右键可以直接选择功能或清空。")
                         .font(.caption)
                         .foregroundStyle(.secondary)
-                    Button("恢复默认布局") {
-                        store.update { $0.ring = .default }
+                    if editing == nil {
+                        Button("恢复默认布局") {
+                            store.update { $0.ring = .default }
+                        }
+                        .controlSize(.small)
+                    } else {
+                        Button("和默认圆盘一样") {
+                            let base = store.settings.ring
+                            updateLayout { $0 = base }
+                        }
+                        .controlSize(.small)
                     }
-                    .controlSize(.small)
                 }
             }
             .frame(maxWidth: .infinity)
         }
         .padding(20)
+        .onChange(of: store.settings.appRings) {
+            // 正在编辑的 App 圆盘被删掉了（比如从另一台 Mac 同步过来）：回到默认圆盘
+            if let editing, !store.settings.appRings.contains(where: { $0.bundleID == editing }) {
+                self.editing = nil
+            }
+        }
+    }
+
+    /// 选择编辑默认圆盘还是某个 App 专用的圆盘
+    private var appPicker: some View {
+        HStack(spacing: 8) {
+            Picker("圆盘", selection: $editing) {
+                Text("默认（所有 App）").tag(String?.none)
+                ForEach(store.settings.appRings) { appRing in
+                    Text(AppInfo.name(for: appRing.bundleID)).tag(Optional(appRing.bundleID))
+                }
+            }
+            .frame(width: 260)
+            Button("为 App 单独设置…", action: addAppRing)
+                .controlSize(.small)
+            if let editing {
+                Button("删除") {
+                    store.update { $0.appRings.removeAll { $0.bundleID == editing } }
+                    self.editing = nil
+                }
+                .controlSize(.small)
+                .help("这个 App 改回用默认圆盘")
+            }
+        }
+    }
+
+    /// 选一个 App，从默认圆盘复制一份给它单独调整
+    private func addAppRing() {
+        let panel = NSOpenPanel()
+        panel.allowedContentTypes = [.application]
+        panel.directoryURL = URL(fileURLWithPath: "/Applications")
+        panel.prompt = "单独设置"
+        guard panel.runModal() == .OK, let url = panel.url, let bundleID = Bundle(url: url)?.bundleIdentifier else { return }
+        store.update { settings in
+            if !settings.appRings.contains(where: { $0.bundleID == bundleID }) {
+                settings.appRings.append(AppRing(bundleID: bundleID, layout: settings.ring))
+            }
+        }
+        editing = bundleID
     }
 }
 

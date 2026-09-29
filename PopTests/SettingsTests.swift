@@ -40,6 +40,27 @@ final class SettingsCodingTests: XCTestCase {
         XCTAssertEqual(settings.rules.map(\.condition), DirectRule.defaults.map(\.condition))
     }
 
+    /// 某个 App 单独设置的圆盘：在那个 App 里用它，其他 App 用默认圆盘；卸载功能时一起拿掉
+    func testPerAppRings() throws {
+        var settings = AppSettings()
+        var xcode = RingLayout(slots: [BuiltinPluginID.formatJSON, BuiltinPluginID.hash, nil, nil])
+        xcode.place(BuiltinPluginID.search, at: 2)
+        settings.appRings = [AppRing(bundleID: "com.apple.dt.Xcode", layout: xcode)]
+        XCTAssertEqual(settings.ring(for: "com.apple.dt.Xcode"), xcode)
+        XCTAssertEqual(settings.ring(for: "com.apple.Safari"), settings.ring)
+        XCTAssertEqual(settings.ring(for: nil), settings.ring)
+
+        settings.setInstalled(BuiltinPluginID.hash, false)
+        XCTAssertNil(settings.ring(for: "com.apple.dt.Xcode").index(of: BuiltinPluginID.hash))
+
+        let decoded = try JSONDecoder().decode(AppSettings.self, from: JSONEncoder().encode(settings))
+        XCTAssertEqual(decoded.appRings, settings.appRings)
+        // 坏掉的一项跳过
+        let lossy = try decode(#"{"appRings": [{"bundleID": 1}, {"bundleID": "com.apple.Notes", "layout": {"slots": ["translate", null]}}]}"#)
+        XCTAssertEqual(lossy.appRings.map(\.bundleID), ["com.apple.Notes"])
+        XCTAssertEqual(lossy.ring(for: "com.apple.Notes").slots, [BuiltinPluginID.translate, nil])
+    }
+
     /// 更新的版本加的规则条件：这一条跳过，其他规则照常读出来，不会整个回到默认值。
     func testUnknownRuleConditionIsSkipped() throws {
         let settings = try decode(#"{"rules": [{"condition": "fromTheFuture", "enabled": true}, {"condition": "math", "pluginID": "calculate", "enabled": false}, {"condition": "url", "pluginID": "openURL", "enabled": true}]}"#)

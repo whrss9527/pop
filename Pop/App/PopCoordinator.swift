@@ -26,6 +26,8 @@ final class PopCoordinator: MouseTriggerDelegate {
         let pid: pid_t?
         /// 唤起时前台 App 的名字（收集箱记录来源用）
         let sourceAppName: String?
+        /// 唤起时前台 App 的 Bundle ID（选用这个 App 专用的圆盘布局）
+        var bundleID: String? = nil
         /// 鼠标键是否还按着：按着时用「划一下再松开」选择，松开后改为点击选择
         var buttonHeld: Bool
         /// 松开鼠标键时关闭圆盘（长按右键唤起、没打开「保持圆盘打开」时）
@@ -161,7 +163,8 @@ final class PopCoordinator: MouseTriggerDelegate {
         guard !isPaused, settingsStore.settings.isInstalled(pluginID), let plugin = registry.plugin(id: pluginID) else { return }
         let app = NSWorkspace.shared.frontmostApplication
         let pid = app?.processIdentifier
-        let newSession = Session(anchor: NSEvent.mouseLocation, pid: pid, sourceAppName: app?.localizedName, buttonHeld: false)
+        let newSession = Session(anchor: NSEvent.mouseLocation, pid: pid, sourceAppName: app?.localizedName,
+                                 bundleID: app?.bundleIdentifier, buttonHeld: false)
         session = newSession
         if plugin.info.accepts.isEmpty && !plugin.info.optionalContent {
             session?.content = .empty
@@ -224,8 +227,8 @@ final class PopCoordinator: MouseTriggerDelegate {
         endSession()
         let app = NSWorkspace.shared.frontmostApplication
         let pid = app?.processIdentifier
-        let newSession = Session(anchor: anchor, pid: pid, sourceAppName: app?.localizedName, buttonHeld: buttonHeld,
-                                 closesOnRelease: closesOnRelease)
+        let newSession = Session(anchor: anchor, pid: pid, sourceAppName: app?.localizedName, bundleID: app?.bundleIdentifier,
+                                 buttonHeld: buttonHeld, closesOnRelease: closesOnRelease)
         session = newSession
         let sessionID = newSession.id
 
@@ -286,7 +289,7 @@ final class PopCoordinator: MouseTriggerDelegate {
     private func showRing(content: ClassifiedContent?) {
         guard let current = session else { return }
         let settings = settingsStore.settings
-        let ring = RingViewModel(layout: settings.ring, catalog: registry.catalog,
+        let ring = RingViewModel(layout: settings.ring(for: current.bundleID), catalog: registry.catalog,
                                  installed: Set(settings.installedPlugins), content: content)
         session?.ring = ring
         session?.panel = nil
