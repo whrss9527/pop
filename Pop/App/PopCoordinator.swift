@@ -1,4 +1,5 @@
 import AppKit
+import os
 
 /// 一次唤起的完整流程：读取选中内容 → 分类 → 命中直达规则就直接执行，否则弹出圆盘 → 执行插件 → 展示结果。
 @MainActor
@@ -33,6 +34,8 @@ final class PopCoordinator: MouseTriggerDelegate {
         var pendingSlot: Int?
         /// 按住鼠标键拖动时，事件拦截送来的最新指针位置（AppKit 屏幕坐标）
         var dragPoint: CGPoint?
+        /// 这次按住期间收到的拖动事件数（写进日志，排查手势问题用）
+        var dragCount = 0
         var content: ClassifiedContent?
         var ring: RingViewModel?
         /// 当前显示的列表面板
@@ -41,6 +44,8 @@ final class PopCoordinator: MouseTriggerDelegate {
 
     private var session: Session?
     private var pointerTimer: Timer?
+    /// 手势日志：「控制台」里按子系统 io.github.whrss9527.pop、类别 gesture 过滤
+    private static let log = Logger(subsystem: Bundle.main.bundleIdentifier ?? "Pop", category: "gesture")
     private var lastPointer: CGPoint?
 
     init(settingsStore: SettingsStore, registry: PluginRegistry, overlay: OverlayController,
@@ -80,13 +85,15 @@ final class PopCoordinator: MouseTriggerDelegate {
     }
 
     func mouseTriggerDidActivate(at location: CGPoint) {
-        begin(at: Self.appKitPoint(location), buttonHeld: true,
-              closesOnRelease: settingsStore.settings.trigger.closesRingOnRelease)
+        let anchor = Self.appKitPoint(location)
+        Self.log.notice("唤起：按下点 \(Int(anchor.x), privacy: .public), \(Int(anchor.y), privacy: .public)")
+        begin(at: anchor, buttonHeld: true, closesOnRelease: settingsStore.settings.trigger.closesRingOnRelease)
     }
 
     func mouseTriggerDidDrag(to location: CGPoint) {
         guard session?.buttonHeld == true else { return }
         session?.dragPoint = Self.appKitPoint(location)
+        session?.dragCount += 1
         updateHeldHover()
     }
 
@@ -105,6 +112,10 @@ final class PopCoordinator: MouseTriggerDelegate {
                                               selectable: ring.selectablePlugin(at: ring.hovered)?.id,
                                               isLoading: ring.isLoading,
                                               closesOnRelease: current.closesOnRelease)
+        let dragCount = session?.dragCount ?? 0
+        let offset = session?.dragPoint.map { "\(Int($0.x - current.anchor.x)), \(Int($0.y - current.anchor.y))" } ?? "没有拖动"
+        let hovered = ring.hovered.map { "\($0)" } ?? "无"
+        Self.log.notice("松开：拖动事件 \(dragCount, privacy: .public) 个，偏移 \(offset, privacy: .public)，指向第 \(hovered, privacy: .public) 格，\(String(describing: action), privacy: .public)")
         switch action {
         case .run(let pluginID):
             if let slot = ring.hovered {
