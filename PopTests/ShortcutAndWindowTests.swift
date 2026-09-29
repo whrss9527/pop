@@ -154,6 +154,41 @@ final class ImageConverterTests: XCTestCase {
         XCTAssertEqual(ImageInfo.rows(for: original).first?.value, "40 × 20")
     }
 
+    func testRotateAndFlip() throws {
+        // 左红右蓝的 2×1 图片
+        let context = try XCTUnwrap(CGContext(data: nil, width: 2, height: 1, bitsPerComponent: 8, bytesPerRow: 0,
+                                              space: try XCTUnwrap(CGColorSpace(name: CGColorSpace.sRGB)),
+                                              bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue))
+        context.setFillColor(CGColor(red: 1, green: 0, blue: 0, alpha: 1))
+        context.fill(CGRect(x: 0, y: 0, width: 1, height: 1))
+        context.setFillColor(CGColor(red: 0, green: 0, blue: 1, alpha: 1))
+        context.fill(CGRect(x: 1, y: 0, width: 1, height: 1))
+        let url = folder.appending(path: "方向.png")
+        let destination = try XCTUnwrap(CGImageDestinationCreateWithURL(url as CFURL, UTType.png.identifier as CFString, 1, nil))
+        CGImageDestinationAddImage(destination, try XCTUnwrap(context.makeImage()), nil)
+        XCTAssertTrue(CGImageDestinationFinalize(destination))
+
+        func isRed(_ file: URL, _ x: Int, _ y: Int) throws -> Bool {
+            let rep = try XCTUnwrap(NSBitmapImageRep(data: try Data(contentsOf: file)))
+            let color = try XCTUnwrap(rep.colorAt(x: x, y: y)?.usingColorSpace(.sRGB))
+            return color.redComponent > 0.8 && color.blueComponent < 0.2
+        }
+        // 向右转（顺时针）：红的到上面
+        let right = try ImageConverter.convert(url, .rotateRight)
+        XCTAssertEqual(right.lastPathComponent, "方向 向右转.png")
+        XCTAssertEqual(try pixelSize(right), CGSize(width: 1, height: 2))
+        XCTAssertTrue(try isRed(right, 0, 0))
+        // 向左转：红的到下面
+        let left = try ImageConverter.convert(url, .rotateLeft)
+        XCTAssertEqual(try pixelSize(left), CGSize(width: 1, height: 2))
+        XCTAssertTrue(try isRed(left, 0, 1))
+        // 左右翻转：红的到右边
+        let flipped = try ImageConverter.convert(url, .flipHorizontal)
+        XCTAssertEqual(flipped.lastPathComponent, "方向 翻转.png")
+        XCTAssertTrue(try isRed(flipped, 1, 0))
+        XCTAssertFalse(try isRed(flipped, 0, 0))
+    }
+
     @MainActor
     func testPluginOffersEveryOperation() async throws {
         let original = try makePNG(named: "a.png")

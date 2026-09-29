@@ -81,6 +81,10 @@ final class TextTransformsTests: XCTestCase {
         XCTAssertEqual(value(rows, "八进制"), "0o377")
         XCTAssertEqual(value(rows, "二进制"), "0b11111111")
         XCTAssertEqual(value(rows, "千分位"), "255")
+        XCTAssertEqual(value(rows, "英文读法"), "two hundred fifty-five")
+        XCTAssertEqual(value(rows, "中文读法"), "二百五十五")
+        XCTAssertEqual(NumberConverter.spelledOut(Decimal(10_050), locale: "zh_CN"), "一万零五十")
+        XCTAssertNil(NumberConverter.spelledOut(Decimal(string: "1e20")!, locale: "en_US"))
         XCTAssertEqual(NumberConverter.signed(-255, radix: 16, prefix: "0x"), "-0xFF")
         XCTAssertEqual(NumberConverter.grouped(Decimal(1_234_567)), "1,234,567")
     }

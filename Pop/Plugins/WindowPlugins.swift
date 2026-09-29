@@ -87,7 +87,7 @@ private struct LayoutTile: View {
 
 struct ImageConvertPlugin: PopPlugin {
     let info = PluginInfo(id: BuiltinPluginID.imageConvert, name: "图片转换", symbol: "photo.on.rectangle.angled",
-                          summary: "把选中的图片文件转成 PNG、JPEG、HEIC，或者缩小一半、压缩体积；结果存在原图旁边",
+                          summary: "把选中的图片文件转成 PNG、JPEG、HEIC，缩小一半、压缩体积，或者旋转、左右翻转；结果存在原图旁边",
                           accepts: [.imageFile])
 
     @MainActor func run(_ content: ClassifiedContent, context: PluginContext) async -> PluginOutcome {

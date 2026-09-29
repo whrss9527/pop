@@ -382,10 +382,25 @@ enum NumberConverter {
             rows.append(ResultCard.Row(label: "二进制", value: signed(value, radix: 2, prefix: "0b")))
         }
         rows.append(ResultCard.Row(label: "千分位", value: grouped(number.decimal)))
+        if let english = spelledOut(number.decimal, locale: "en_US") {
+            rows.append(ResultCard.Row(label: "英文读法", value: english))
+        }
+        if let chinese = spelledOut(number.decimal, locale: "zh_CN") {
+            rows.append(ResultCard.Row(label: "中文读法", value: chinese))
+        }
         if let uppercase = rmbUppercase(number.decimal) {
             rows.append(ResultCard.Row(label: "人民币大写", value: uppercase))
         }
         return rows
+    }
+
+    /// 读法：255 → two hundred fifty-five / 二百五十五；太大的数不读
+    static func spelledOut(_ value: Decimal, locale: String) -> String? {
+        guard value.magnitude < Decimal(1_000_000_000_000_000) else { return nil }
+        let formatter = NumberFormatter()
+        formatter.locale = Locale(identifier: locale)
+        formatter.numberStyle = .spellOut
+        return formatter.string(from: value as NSDecimalNumber)
     }
 
     static func signed(_ value: Int, radix: Int, prefix: String) -> String {

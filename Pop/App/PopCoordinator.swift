@@ -374,6 +374,8 @@ final class PopCoordinator: MouseTriggerDelegate {
             presentOpenWith(request)
         case .regexTester(let text):
             presentRegexTester(text)
+        case .reminder(let text):
+            presentReminder(text)
         case .failure(let message):
             overlay.showCard(ResultCardView(card: ResultCard(title: "没能完成", body: message),
                                             onAction: { [weak self] action in self?.perform(action) },
@@ -393,6 +395,9 @@ final class PopCoordinator: MouseTriggerDelegate {
         case .open(let url):
             endSession()
             NSWorkspace.shared.open(url)
+        case .openAll(let urls):
+            endSession()
+            urls.forEach { NSWorkspace.shared.open($0) }
         case .reveal(let url):
             endSession()
             NSWorkspace.shared.activateFileViewerSelecting([url])
@@ -618,6 +623,36 @@ final class PopCoordinator: MouseTriggerDelegate {
         overlay.showCard(RegexTesterView(model: model, canReplace: Self.isTextSelection(current.content),
                                          onAction: { [weak self] action in self?.perform(action) },
                                          onClose: { [weak self] in self?.endSession() }),
+                         anchor: current.anchor)
+    }
+
+    /// 加到提醒事项或日历：先认出时间和事情，可以再改
+    private func presentReminder(_ text: String) {
+        guard let current = session else { return }
+        stopPointerTracking()
+        let draft = ReminderDraft(text: text)
+        let add: (ReminderDraft.Target) -> Void = { [weak self, weak draft] target in
+            guard let draft else { return }
+            draft.isSaving = true
+            draft.errorMessage = nil
+            let title = draft.title.trimmingCharacters(in: .whitespacesAndNewlines)
+            let (date, hasTime, notes) = (draft.date, draft.hasTime, draft.notes)
+            Task { [weak self] in
+                do {
+                    switch target {
+                    case .reminder:
+                        try await ReminderService.addReminder(title: title, date: date, hasTime: hasTime, notes: notes)
+                    case .calendar:
+                        try await ReminderService.addEvent(title: title, date: date, hasTime: hasTime, notes: notes)
+                    }
+                    self?.finish(toast: target == .reminder ? "已加到提醒事项" : "已加到日历")
+                } catch {
+                    draft.isSaving = false
+                    draft.errorMessage = (error as? ReminderService.Failure)?.message ?? error.localizedDescription
+                }
+            }
+        }
+        overlay.showCard(ReminderCardView(draft: draft, onAdd: add, onClose: { [weak self] in self?.endSession() }),
                          anchor: current.anchor)
     }
 

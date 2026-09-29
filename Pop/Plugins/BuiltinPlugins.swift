@@ -18,6 +18,7 @@ enum BuiltinPlugins {
             TextCleanupPlugin(),
             ExtractInfoPlugin(),
             LineToolsPlugin(),
+            ReminderPlugin(),
             SpellCheckPlugin(),
         ]
         let ai: [any PopPlugin] = AIPlugin.all.map { $0 as any PopPlugin }
@@ -45,6 +46,7 @@ enum BuiltinPlugins {
             QRCodePlugin(),
             OCRPlugin(),
             ScreenshotOCRPlugin(),
+            TableOCRPlugin(),
             ScanCodePlugin(),
             AnnotatePlugin(),
             PinPlugin(),
@@ -104,7 +106,8 @@ enum BuiltinCategory: CaseIterable, Identifiable {
     private static let members: [BuiltinCategory: [String]] = [
         .text: [BuiltinPluginID.translate, BuiltinPluginID.screenshotTranslate, BuiltinPluginID.search,
                 BuiltinPluginID.dictionary, BuiltinPluginID.speak, BuiltinPluginID.openURL, BuiltinPluginID.copyPlain,
-                BuiltinPluginID.textCleanup, BuiltinPluginID.extractInfo, BuiltinPluginID.lineTools, BuiltinPluginID.spellCheck,
+                BuiltinPluginID.textCleanup, BuiltinPluginID.extractInfo, BuiltinPluginID.lineTools, BuiltinPluginID.reminder,
+                BuiltinPluginID.spellCheck,
                 BuiltinPluginID.textStats, BuiltinPluginID.textDiff,
                 BuiltinPluginID.snippets, BuiltinPluginID.quickNote],
         .ai: [BuiltinPluginID.aiAssistant, BuiltinPluginID.aiPolish, BuiltinPluginID.aiSummarize, BuiltinPluginID.aiExplain],
@@ -115,7 +118,8 @@ enum BuiltinCategory: CaseIterable, Identifiable {
         .developer: [BuiltinPluginID.hash, BuiltinPluginID.qrCode, BuiltinPluginID.random, BuiltinPluginID.linkInspect,
                      BuiltinPluginID.jwtDecode, BuiltinPluginID.regexTest, BuiltinPluginID.cron, BuiltinPluginID.codeImage,
                      BuiltinPluginID.jsonTypes, BuiltinPluginID.charInfo],
-        .screen: [BuiltinPluginID.ocr, BuiltinPluginID.screenshotOCR, BuiltinPluginID.scanCode, BuiltinPluginID.annotate,
+        .screen: [BuiltinPluginID.ocr, BuiltinPluginID.screenshotOCR, BuiltinPluginID.tableOCR, BuiltinPluginID.scanCode,
+                  BuiltinPluginID.annotate,
                   BuiltinPluginID.pin, BuiltinPluginID.removeBackground,
                   BuiltinPluginID.imageConvert, BuiltinPluginID.palette, BuiltinPluginID.colorPicker, BuiltinPluginID.ruler],
         .files: [BuiltinPluginID.copyPath, BuiltinPluginID.fileInfo, BuiltinPluginID.revealInFinder, BuiltinPluginID.openWith,

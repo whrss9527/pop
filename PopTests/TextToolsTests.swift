@@ -96,6 +96,9 @@ final class InfoExtractorTests: XCTestCase {
         XCTAssertEqual(card.rows.map(\.label), ["邮箱 1", "电话 1", "链接 1", "链接 2", "IP 地址 1"])
         XCTAssertEqual(card.buttons.first { $0.title == "复制全部链接" }?.action,
                        .copy("https://github.com/whrss9527/pop/releases\nwww.example.com"))
+        // 没写协议的链接按 https 打开
+        XCTAssertEqual(card.buttons.first { $0.title == "打开全部链接" }?.action,
+                       .openAll([URL(string: "https://github.com/whrss9527/pop/releases")!, URL(string: "https://www.example.com")!]))
         XCTAssertEqual(card.detail, "2 个链接，1 个邮箱，1 个电话，1 个 IP 地址")
     }
 
