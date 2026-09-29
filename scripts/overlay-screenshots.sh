@@ -19,6 +19,15 @@ for _ in $(seq 1 20); do
   pgrep -x Pop > /dev/null || break
   sleep 0.5
 done
+# 之前启动时留下的辅助功能授权提示框会挡在浮窗后面，先关掉
+pkill -f universalAccessAuthWarn 2>/dev/null || true
+
+# 「减弱动态效果」「降低透明度」打开时，玻璃是不透明的，动画也只剩淡入淡出，截图看不出效果。
+# 先看看现在的设置，能关就关掉（关不掉也继续，演示模式本身会忽略「减弱动态效果」）
+for key in reduceMotion reduceTransparency; do
+  echo "${key}：$(defaults read com.apple.universalaccess "$key" 2>/dev/null || echo 未设置)"
+  defaults write com.apple.universalaccess "$key" -bool false 2>/dev/null || echo "改不了 ${key}"
+done
 
 open -n --env POP_DEMO=1 --env "POP_ANIMATION_SCALE=${SCALE}" --env "POP_DEMO_LOG=${LOG}" "$APP"
 

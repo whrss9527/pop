@@ -71,7 +71,11 @@ struct OverlayStage<Content: View>: View {
     @ObservedObject var presentation: OverlayPresentation
     let style: Style
     let content: Content
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.accessibilityReduceMotion) private var systemReduceMotion
+
+    private var reduceMotion: Bool {
+        systemReduceMotion && !Motion.ignoresReduceMotion
+    }
 
     init(presentation: OverlayPresentation, style: Style, @ViewBuilder content: () -> Content) {
         self.presentation = presentation
@@ -263,12 +267,13 @@ final class OverlayController {
         cardKeyHandler = nil
         // 正在显示的内容挪去退场，和新内容的进场同时进行
         retireContent(animated: true)
+        // 先记下新的状态再放内容：卡片第一次排版时就会报告大小，这时要认得出它是当前的卡片
+        self.mode = mode
+        self.presentation = presentation
         let hosting = NSHostingView(rootView: content)
         hosting.sizingOptions = []
         panel.contentView = hosting
         panel.setFrame(frame, display: true)
-        self.mode = mode
-        self.presentation = presentation
         // 先按「进场前」的样子画出第一帧，下一轮再切到显示状态，视图才有动画可做
         DispatchQueue.main.async {
             MainActor.assumeIsolated {

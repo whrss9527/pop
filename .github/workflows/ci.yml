@@ -103,13 +103,14 @@ jobs:
           APP=$(scripts/build-app.sh 0.0.0-ci build/ci | tail -n 1)
           echo "APP=$APP" >> "$GITHUB_ENV"
 
-      - name: Launch smoke test
-        run: scripts/launch-smoke.sh "$APP"
-
       # 演示模式下把圆盘、结果卡片、提示、列表依次展示一遍（动画放慢 6 倍），按时截图，
       # 看玻璃效果和动画的中间帧；同时也确认这些浮窗在真实的 macOS 上能正常显示。
+      # 放在启动测试前面：启动测试会弹出辅助功能的授权提示框，挡在截图里
       - name: Overlay screenshots
         run: scripts/overlay-screenshots.sh "$APP" build/screenshots 6
+
+      - name: Launch smoke test
+        run: scripts/launch-smoke.sh "$APP"
 
       # 截图放到单独的 ci-screenshots/<系统> 分支（只有这一次的截图，每次覆盖），git 拉下来就能看
       - name: Publish screenshots

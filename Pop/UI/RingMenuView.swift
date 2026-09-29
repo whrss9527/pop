@@ -102,7 +102,11 @@ final class RingViewModel: ObservableObject {
 struct RingMenuView: View {
     @ObservedObject var model: RingViewModel
     @ObservedObject var presentation: OverlayPresentation
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.accessibilityReduceMotion) private var systemReduceMotion
+
+    private var reduceMotion: Bool {
+        systemReduceMotion && !Motion.ignoresReduceMotion
+    }
 
     var body: some View {
         let geometry = model.geometry

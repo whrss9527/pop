@@ -11,6 +11,9 @@ enum Motion {
         return min(value, 40)
     }()
 
+    /// 演示模式（CI 截图）忽略系统的「减弱动态效果」，才能拍到完整的动画
+    static let ignoresReduceMotion = ProcessInfo.processInfo.environment["POP_DEMO"] == "1"
+
     static func seconds(_ value: Double) -> Double {
         value * timeScale
     }
