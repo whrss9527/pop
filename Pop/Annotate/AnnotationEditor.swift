@@ -35,8 +35,14 @@ final class AnnotationWindowController: NSObject, NSWindowDelegate {
         window.isReleasedWhenClosed = false
         window.delegate = self
         window.level = .floating
-        window.contentView = NSHostingView(rootView: AnnotationEditorView(model: model, canvasSize: canvas,
-                                                                          onFinish: { [weak self] action in self?.finish(action) }))
+        let hosting = NSHostingView(rootView: AnnotationEditorView(model: model, canvasSize: canvas,
+                                                                   onFinish: { [weak self] action in self?.finish(action) }))
+        window.contentView = hosting
+        // 截图比工具栏窄时，窗口按工具栏的宽度来，按钮上的字不会被挤掉
+        let fitting = hosting.fittingSize
+        if fitting.width > contentSize.width {
+            window.setContentSize(CGSize(width: ceil(fitting.width), height: contentSize.height))
+        }
         window.setFrameOrigin(CGPoint(x: visible.midX - window.frame.width / 2, y: visible.midY - window.frame.height / 2))
     }
 
@@ -174,12 +180,16 @@ struct AnnotationEditorView: View {
             }
             .help("撤销（⌘Z）")
             .disabled(!model.canUndo && model.textAnchor == nil)
+            .fixedSize()
             Button("贴到屏幕") { onFinish(.pin) }
+                .fixedSize()
             Button("存储") { onFinish(.save) }
                 .help("存到「下载」（⌘S）")
+                .fixedSize()
             Button("复制") { onFinish(.copy) }
                 .buttonStyle(.borderedProminent)
                 .help("复制标注后的图片（⌘C 或回车）")
+                .fixedSize()
         }
         .controlSize(.small)
         .padding(.horizontal, 12)

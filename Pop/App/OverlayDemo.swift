@@ -26,7 +26,8 @@ enum OverlayDemo {
         let visible = screen.visibleFrame
         // 唤起点放在屏幕中间偏左上，右下方留出卡片和列表的位置
         let center = CGPoint(x: (visible.midX - 150).rounded(), y: (visible.midY + 150).rounded())
-        logRegion(CGRect(x: center.x - 190, y: center.y - 480, width: 680, height: 680), screen: screen)
+        // 宽一些，放得下文本对比那样的宽卡片
+        logRegion(CGRect(x: center.x - 190, y: center.y - 480, width: 760, height: 680), screen: screen)
 
         let installed = Set(settings.installedPlugins)
         let text = ContentClassifier.classify(.text("Liquid glass"))
