@@ -73,6 +73,12 @@ enum ContentCheck: Hashable {
     case sql
     /// Base64 写的图片
     case base64Image
+    /// 正好两个日期
+    case twoDates
+    /// 选中的是文件夹
+    case folder
+    /// Markdown 里至少有两个标题
+    case markdownHeadings
 
     func matches(_ subject: String) -> Bool {
         switch self {
@@ -98,6 +104,12 @@ enum ContentCheck: Hashable {
             return SQLFormatter.looksLikeSQL(subject)
         case .base64Image:
             return Base64Image.looksLikeImage(subject)
+        case .twoDates:
+            return DateSpan.find(in: subject) != nil
+        case .folder:
+            return FolderTree.isFolder(subject.components(separatedBy: "\n").first ?? "")
+        case .markdownHeadings:
+            return MarkdownTOC.headings(in: subject).count >= 2
         }
     }
 }

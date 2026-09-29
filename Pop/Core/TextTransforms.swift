@@ -665,6 +665,24 @@ struct ColorValue: Equatable {
     }
 }
 
+extension ColorValue {
+    /// 由浅到深的色阶：和白色混合 80%、60%、40%、20%，原色，再和黑色混合 20%、40%、60%、80%
+    func scale() -> [ColorValue] {
+        let white = ColorValue(red: 255, green: 255, blue: 255)
+        let black = ColorValue(red: 0, green: 0, blue: 0)
+        return [0.8, 0.6, 0.4, 0.2].map { mixed(with: white, amount: $0) } + [self]
+            + [0.2, 0.4, 0.6, 0.8].map { mixed(with: black, amount: $0) }
+    }
+
+    /// 按比例往另一个颜色靠（透明度不变）
+    func mixed(with other: ColorValue, amount: Double) -> ColorValue {
+        func channel(_ from: Double, _ to: Double) -> Double {
+            (from + (to - from) * amount).rounded()
+        }
+        return ColorValue(red: channel(red, other.red), green: channel(green, other.green), blue: channel(blue, other.blue), alpha: alpha)
+    }
+}
+
 // MARK: - 日期时间
 
 enum DateParser {

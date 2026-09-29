@@ -42,8 +42,12 @@ enum TextRecognizer {
 
     /// 识别结果卡片：可以复制，也可以接着翻译。
     static func card(title: String, text: String) -> ResultCard {
-        ResultCard(title: title, body: text, copyText: text,
-                   buttons: [CardButton(title: "翻译", action: .translate(text))])
+        var buttons = [CardButton(title: "翻译", action: .translate(text))]
+        // 识别出来的文字按图片里的样子断行，接成整段更好贴进文档
+        if let joined = TextCleanup.joinLines(text), joined != text {
+            buttons.append(CardButton(title: "合并换行后复制", action: .copy(joined)))
+        }
+        return ResultCard(title: title, body: text, copyText: text, buttons: buttons)
     }
 }
 
