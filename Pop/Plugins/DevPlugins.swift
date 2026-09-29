@@ -300,3 +300,20 @@ struct CharInfoPlugin: PopPlugin {
         return .card(await runInBackground { CharacterInspector.card(for: source) })
     }
 }
+
+// MARK: - 正则测试
+
+struct RegexTestPlugin: PopPlugin {
+    let info = PluginInfo(id: BuiltinPluginID.regexTest, name: "正则测试", symbol: "asterisk.circle",
+                          summary: "在选中的文字里试正则表达式：实时标出每处匹配、列出分组，也可以试替换",
+                          accepts: [.text], maxLength: 200_000)
+
+    @MainActor func run(_ content: ClassifiedContent, context: PluginContext) async -> PluginOutcome {
+        guard let text = content.text else { return .failure("没有文字") }
+        // 用原始的选中内容，替换原文时首尾的空白不会丢
+        if case .text(let selected) = content.selection {
+            return .regexTester(text: selected)
+        }
+        return .regexTester(text: text)
+    }
+}

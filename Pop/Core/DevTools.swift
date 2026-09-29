@@ -35,14 +35,23 @@ enum LinkInspector {
         }
     }
 
-    /// 去掉跟踪参数后的链接；没有可去掉的参数时返回 nil
+    /// 去掉跟踪参数后的链接；没有可去掉的参数时返回 nil。留下的参数保持原来的编码（不会把 %2B 变回 +）
     static func cleaned(_ url: URL) -> URL? {
         guard var components = URLComponents(url: url, resolvingAgainstBaseURL: false),
-              let items = components.queryItems, !items.isEmpty else { return nil }
-        let kept = items.filter { !isTracking($0.name, host: components.host) }
+              let items = components.percentEncodedQueryItems, !items.isEmpty else { return nil }
+        let kept = items.filter { !isTracking($0.name.removingPercentEncoding ?? $0.name, host: components.host) }
         guard kept.count != items.count else { return nil }
-        components.queryItems = kept.isEmpty ? nil : kept
+        components.percentEncodedQueryItems = kept.isEmpty ? nil : kept
         return components.url
+    }
+
+    /// 复制的内容只是一个带跟踪参数的网址时，返回去掉参数后的网址（「复制链接时去掉跟踪参数」用）
+    static func cleanedLink(in text: String) -> String? {
+        let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard trimmed.count <= 8192, !trimmed.contains(where: \.isWhitespace),
+              let url = URL(string: trimmed), let scheme = url.scheme?.lowercased(), scheme == "http" || scheme == "https",
+              url.host?.isEmpty == false, let cleaned = cleaned(url) else { return nil }
+        return cleaned.absoluteString
     }
 
     /// 协议、主机、端口、路径、每个参数（解码后的值）、片段

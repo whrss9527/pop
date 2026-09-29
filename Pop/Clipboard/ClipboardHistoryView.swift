@@ -3,16 +3,50 @@ import Combine
 import ImageIO
 import SwiftUI
 
+/// 剪贴板历史面板上的分类
+enum ClipboardFilter: String, CaseIterable, Identifiable {
+    case all, text, image, files, pinned
+
+    var id: Self { self }
+
+    var title: String {
+        switch self {
+        case .all: return "全部"
+        case .text: return "文字"
+        case .image: return "图片"
+        case .files: return "文件"
+        case .pinned: return "固定"
+        }
+    }
+
+    func includes(_ item: ClipboardItem) -> Bool {
+        switch self {
+        case .all: return true
+        case .text: return item.kind == .text
+        case .image: return item.kind == .image
+        case .files: return item.kind == .files
+        case .pinned: return item.pinned
+        }
+    }
+}
+
 @MainActor
 final class ClipboardHistoryModel: ObservableObject {
     @Published var query = "" {
         didSet { reload() }
     }
+    @Published var filter: ClipboardFilter = .all {
+        didSet { reload() }
+    }
     @Published private(set) var items: [ClipboardItem] = []
     @Published var selection = 0
+    /// ⌘ 点选的几条文字，按点选的顺序；回车时合在一起粘贴
+    @Published private(set) var marked: [ClipboardItem] = []
 
     let service: ClipboardService
     var onPaste: (ClipboardItem) -> Void = { _ in }
+    /// 几条合在一起粘贴
+    var onPasteText: (String) -> Void = { _ in }
     var onOpenSettings: () -> Void = {}
     /// 右键菜单里的「翻译」「贴到屏幕」「识别文字」，由协调器处理
     var onTranslate: (String) -> Void = { _ in }
@@ -41,7 +75,7 @@ final class ClipboardHistoryModel: ObservableObject {
 
     func reload(keepSelection: Bool = false) {
         let selectedID = keepSelection ? selectedItem?.id : nil
-        items = service.items(matching: query)
+        items = service.items(matching: query).filter(filter.includes)
         if let selectedID, let index = items.firstIndex(where: { $0.id == selectedID }) {
             selection = index
         } else {
@@ -58,6 +92,35 @@ final class ClipboardHistoryModel: ObservableObject {
         onPaste(item)
     }
 
+    /// 点一条：按着 ⌘ 时加入（或移出）多选，否则直接粘贴
+    func click(_ item: ClipboardItem) {
+        if NSEvent.modifierFlags.contains(.command) {
+            toggleMark(item)
+        } else {
+            paste(item)
+        }
+    }
+
+    /// 只有文字能合在一起
+    func toggleMark(_ item: ClipboardItem) {
+        guard item.kind == .text else { return }
+        if let index = marked.firstIndex(where: { $0.id == item.id }) {
+            marked.remove(at: index)
+        } else {
+            marked.append(item)
+        }
+    }
+
+    /// 在多选里排第几（从 1 开始）；没选时为 nil
+    func markNumber(of item: ClipboardItem) -> Int? {
+        marked.firstIndex { $0.id == item.id }.map { $0 + 1 }
+    }
+
+    /// 多选的几条按点选的顺序、每条一行合起来
+    var mergedText: String {
+        marked.map(\.text).joined(separator: "\n")
+    }
+
     func togglePin(_ item: ClipboardItem) {
         service.setPinned(!item.pinned, item: item)
     }
@@ -66,10 +129,15 @@ final class ClipboardHistoryModel: ObservableObject {
         service.delete(item)
     }
 
-    /// ↑↓ 选择，回车粘贴，⌘1–9 直接粘贴，⌘P 固定，⌘⌫ 删除。返回 true 表示已处理，不再交给搜索框。
+    /// ↑↓ 选择，回车粘贴，⌘1–9 直接粘贴，⌘P 固定，⌘⌫ 删除；多选时回车合在一起粘贴、⌘C 合在一起复制、Esc 取消多选。
+    /// 返回 true 表示已处理，不再交给搜索框。
     func handleKey(_ event: NSEvent) -> Bool {
         let command = event.modifierFlags.contains(.command)
         switch event.keyCode {
+        case 53: // Esc
+            guard !marked.isEmpty else { return false }
+            marked = []
+            return true
         case 125: // ↓
             move(1)
             return true
@@ -77,7 +145,9 @@ final class ClipboardHistoryModel: ObservableObject {
             move(-1)
             return true
         case 36, 76: // Return / Enter
-            if let item = selectedItem {
+            if !marked.isEmpty {
+                onPasteText(mergedText)
+            } else if let item = selectedItem {
                 paste(item)
             }
             return true
@@ -91,6 +161,11 @@ final class ClipboardHistoryModel: ObservableObject {
             break
         }
         guard command, let characters = event.charactersIgnoringModifiers?.lowercased() else { return false }
+        if characters == "c", !marked.isEmpty {
+            service.copy(text: mergedText)
+            marked = []
+            return true
+        }
         if characters == "p" {
             if let item = selectedItem {
                 togglePin(item)
@@ -119,10 +194,18 @@ struct ClipboardHistoryView: View {
                 TextField("搜索", text: $model.query)
                     .textFieldStyle(.roundedBorder)
                     .focused($searchFocused)
+                Picker("", selection: $model.filter) {
+                    ForEach(ClipboardFilter.allCases) { Text($0.title).tag($0) }
+                }
+                .pickerStyle(.segmented)
+                .labelsHidden()
+                .controlSize(.small)
                 list
-                Text("⏎ 粘贴 · ⌘1–9 快速粘贴 · ⌘P 固定 · ⌘⌫ 删除 · 右键更多")
+                Text(model.marked.isEmpty
+                     ? "⏎ 粘贴 · ⌘1–9 快速粘贴 · ⌘ 点选多条 · ⌘P 固定 · ⌘⌫ 删除 · 右键更多"
+                     : "已选 \(model.marked.count) 条 · ⏎ 按顺序合在一起粘贴 · ⌘C 合在一起复制 · Esc 取消")
                     .font(.caption2)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(model.marked.isEmpty ? Color.secondary : Color.accentColor)
             } else {
                 Text("剪贴板历史已关闭，打开后 Pop 会在本机记录你复制过的内容。")
                     .font(.callout)
@@ -144,15 +227,19 @@ struct ClipboardHistoryView: View {
             ScrollView {
                 LazyVStack(spacing: 2) {
                     ForEach(Array(model.items.enumerated()), id: \.element.id) { index, item in
-                        ClipboardRow(item: item, index: index, imageURL: model.service.store.imageURL(for: item))
+                        ClipboardRow(item: item, index: index, imageURL: model.service.store.imageURL(for: item),
+                                     markNumber: model.markNumber(of: item))
                             .selectionHighlight(index == model.selection, in: selectionSpace)
                             .id(item.id)
                             .onTapGesture {
-                                model.paste(item)
+                                model.click(item)
                             }
                             .contextMenu {
                                 Button("粘贴") { model.paste(item) }
                                 Button("只复制") { model.service.copy(item) }
+                                if item.kind == .text {
+                                    Button(model.markNumber(of: item) == nil ? "加入多选" : "移出多选") { model.toggleMark(item) }
+                                }
                                 Divider()
                                 if item.kind == .text {
                                     Button("翻译") { model.onTranslate(item.text) }
@@ -192,9 +279,19 @@ struct ClipboardRow: View {
     let item: ClipboardItem
     let index: Int
     let imageURL: URL?
+    /// 多选时的顺序号
+    var markNumber: Int? = nil
 
     var body: some View {
         HStack(alignment: .center, spacing: 10) {
+            if let markNumber {
+                Text("\(markNumber)")
+                    .font(.caption.weight(.semibold).monospacedDigit())
+                    .foregroundStyle(.white)
+                    .frame(width: 18, height: 18)
+                    .background(Circle().fill(Color.accentColor))
+                    .transition(.scale.combined(with: .opacity))
+            }
             preview
                 .frame(maxWidth: .infinity, alignment: .leading)
             VStack(alignment: .trailing, spacing: 3) {

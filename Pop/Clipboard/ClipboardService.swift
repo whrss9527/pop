@@ -41,7 +41,8 @@ final class ClipboardMonitor {
 
     func apply(_ settings: ClipboardSettings) {
         self.settings = settings
-        if settings.enabled {
+        // 只开了「复制链接时去掉跟踪参数」时也要盯着剪贴板
+        if settings.enabled || settings.cleanLinks {
             start()
         } else {
             stop()
@@ -83,7 +84,18 @@ final class ClipboardMonitor {
         }
         let sourceApp = NSWorkspace.shared.frontmostApplication?.bundleIdentifier
         if let sourceApp, settings.ignoredBundleIDs.contains(sourceApp) { return }
-        guard let clip = Self.read(pasteboard, recordImages: settings.recordImages) else { return }
+        guard let copied = Self.read(pasteboard, recordImages: settings.enabled && settings.recordImages) else { return }
+        let clip: Clip
+        if settings.cleanLinks, case .text(let text) = copied, let cleaned = LinkInspector.cleanedLink(in: text) {
+            // 复制的是带跟踪参数的链接：换成去掉参数的，自己这次写入不再处理
+            pasteboard.clearContents()
+            pasteboard.setString(cleaned, forType: .string)
+            lastChangeCount = pasteboard.changeCount
+            clip = .text(cleaned)
+        } else {
+            clip = copied
+        }
+        guard settings.enabled else { return }
         let store = self.store
         DispatchQueue.global(qos: .utility).async { [weak self] in
             guard let capture = Self.capture(clip, sourceApp: sourceApp), store.add(capture) != nil else { return }
@@ -222,6 +234,13 @@ final class ClipboardService: ObservableObject {
             Self.write(item, imageURL: imageURL, to: pasteboard)
         }
         store.markUsed(id: item.id)
+    }
+
+    /// 复制一段文字（比如多选合起来的几条），会作为新的一条记进历史
+    func copy(text: String) {
+        let pasteboard = NSPasteboard.general
+        pasteboard.clearContents()
+        pasteboard.setString(text, forType: .string)
     }
 
     /// 只复制，不粘贴。

@@ -85,6 +85,8 @@ enum BuiltinPluginID {
     static let jsonTypes = "jsonTypes"
     static let charInfo = "charInfo"
 
+    static let regexTest = "regexTest"
+
     /// 0.1 版就有的功能。旧版本的设置里没有记录「见过哪些内置功能」，按这个列表补齐。
     static let legacy = [translate, search, openURL, calculate, copyPlain, formatJSON, timestamp, copyPath, revealInFinder, settings]
 
@@ -104,6 +106,7 @@ enum BuiltinPluginID {
         cron, contrast, markdownPreview,
         timer, fileInfo, codeImage,
         extractInfo, lineTools, toMarkdown, jsonTypes, charInfo,
+        regexTest,
     ]
 
     /// 默认不装的内置功能（需要的话在「设置 → 功能」里打开）
@@ -489,6 +492,8 @@ struct ClipboardSettings: Codable, Equatable {
     var recordImages = true
     /// 不记录这些 App 里复制的内容（Bundle ID），比如密码管理器
     var ignoredBundleIDs: [String] = ClipboardSettings.defaultIgnoredBundleIDs
+    /// 复制带跟踪参数（utm_source、fbclid……）的链接时，自动换成去掉参数的链接；不开剪贴板历史也能用
+    var cleanLinks = false
 
     static let retentionChoices = [1, 3, 7, 30, 90, 0]
     static let maxItemChoices = [100, 200, 500, 1000, 5000]
@@ -512,6 +517,7 @@ struct ClipboardSettings: Codable, Equatable {
         maxItems = min(max(c.lenient(.maxItems, default: d.maxItems), 10), 100_000)
         recordImages = c.lenient(.recordImages, default: d.recordImages)
         ignoredBundleIDs = c.lenient(.ignoredBundleIDs, default: d.ignoredBundleIDs)
+        cleanLinks = c.lenient(.cleanLinks, default: d.cleanLinks)
     }
 
     static func retentionTitle(_ days: Int) -> String {

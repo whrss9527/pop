@@ -372,6 +372,8 @@ final class PopCoordinator: MouseTriggerDelegate {
             presentSnippets()
         case .chooseApp(let request):
             presentOpenWith(request)
+        case .regexTester(let text):
+            presentRegexTester(text)
         case .failure(let message):
             overlay.showCard(ResultCardView(card: ResultCard(title: "没能完成", body: message),
                                             onAction: { [weak self] action in self?.perform(action) },
@@ -608,6 +610,17 @@ final class PopCoordinator: MouseTriggerDelegate {
         }
     }
 
+    /// 正则测试：输入表达式，实时看匹配和替换结果
+    private func presentRegexTester(_ text: String) {
+        guard let current = session else { return }
+        stopPointerTracking()
+        let model = RegexTesterModel(text: text)
+        overlay.showCard(RegexTesterView(model: model, canReplace: Self.isTextSelection(current.content),
+                                         onAction: { [weak self] action in self?.perform(action) },
+                                         onClose: { [weak self] in self?.endSession() }),
+                         anchor: current.anchor)
+    }
+
     /// 「全部功能」：列出所有能处理当前内容的已安装功能
     private func presentChooser() {
         guard let current = session else { return }
@@ -636,6 +649,13 @@ final class PopCoordinator: MouseTriggerDelegate {
         let model = ClipboardHistoryModel(service: clipboard)
         model.onPaste = { [weak self] item in
             self?.pasteFromHistory(item)
+        }
+        model.onPasteText = { [weak self] text in
+            // 合在一起的文字留在剪贴板里，和粘贴一条历史一样
+            self?.endSession()
+            Paster.paste(restoringPrevious: false) { pasteboard in
+                pasteboard.setString(text, forType: .string)
+            }
         }
         model.onOpenSettings = { [weak self] in
             self?.endSession()

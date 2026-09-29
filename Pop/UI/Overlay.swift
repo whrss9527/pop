@@ -380,8 +380,10 @@ final class OverlayController {
         keyMonitor = NSEvent.addLocalMonitorForEvents(matching: [.keyDown]) { [weak self] event in
             let handled = MainActor.assumeIsolated { () -> Bool in
                 guard let self, self.mode == .card, event.window === self.panel else { return false }
-                if event.keyCode == 53 { // Esc
-                    self.dismissByUser()
+                if event.keyCode == 53 { // Esc：卡片自己没处理（比如取消多选）就关闭
+                    if self.cardKeyHandler?(event) != true {
+                        self.dismissByUser()
+                    }
                     return true
                 }
                 return self.cardKeyHandler?(event) ?? false

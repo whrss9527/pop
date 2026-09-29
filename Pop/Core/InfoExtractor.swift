@@ -128,7 +128,11 @@ enum InfoExtractor {
             let values = items.filter { $0.kind == kind }.map(\.value)
             return values.isEmpty ? nil : (kind, values)
         }
-        let summary = groups.map { "\($0.1.count) 个\($0.0.title)" }.joined(separator: "，")
+        // 「1 个 IP 地址」：英文前面空一格
+        let summary = groups.map { group in
+            let title = group.0.title
+            return "\(group.1.count) 个" + (title.first?.isASCII == true ? " " : "") + title
+        }.joined(separator: "，")
         let buttons = groups.filter { $0.1.count > 1 }.map { group in
             CardButton(title: "复制全部\(group.0.title)", action: .copy(group.1.joined(separator: "\n")))
         }

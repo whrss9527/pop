@@ -188,6 +188,8 @@ enum PluginOutcome: Equatable {
     case showSnippets
     /// 选一个 App 打开文件或链接
     case chooseApp(OpenWithRequest)
+    /// 打开正则测试卡片
+    case regexTester(text: String)
     case failure(String)
 }
 

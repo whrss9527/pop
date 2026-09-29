@@ -96,7 +96,7 @@ final class InfoExtractorTests: XCTestCase {
         XCTAssertEqual(card.rows.map(\.label), ["邮箱 1", "电话 1", "链接 1", "链接 2", "IP 地址 1"])
         XCTAssertEqual(card.buttons.first { $0.title == "复制全部链接" }?.action,
                        .copy("https://github.com/whrss9527/pop/releases\nwww.example.com"))
-        XCTAssertEqual(card.detail, "2 个链接，1 个邮箱，1 个电话，1 个IP 地址")
+        XCTAssertEqual(card.detail, "2 个链接，1 个邮箱，1 个电话，1 个 IP 地址")
     }
 
     func testPhoneFormats() {
