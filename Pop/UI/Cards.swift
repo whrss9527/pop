@@ -73,9 +73,13 @@ struct ResultCardView: View {
     var onClose: () -> Void
 
     var body: some View {
-        CardContainer(title: card.title, onClose: onClose) {
+        // 文本对比的每一行比较长，卡片放宽一些
+        CardContainer(title: card.title, width: card.diff == nil ? 380 : 520, onClose: onClose) {
             if let hex = card.swatchHex, let color = ColorValue.parse(hex) {
                 ColorSwatch(color: color)
+            }
+            if !card.palette.isEmpty {
+                PaletteStrip(hexes: card.palette) { onAction(.copy($0)) }
             }
             if let data = card.image, let image = NSImage(data: data) {
                 Image(nsImage: image)
@@ -86,6 +90,9 @@ struct ResultCardView: View {
             }
             if !card.body.isEmpty {
                 AdaptiveText(text: card.body, monospaced: card.monospaced)
+            }
+            if let diff = card.diff {
+                TextDiffView(result: diff)
             }
             if !card.rows.isEmpty {
                 ResultRowsView(rows: card.rows, replaceable: card.rowsReplaceable, lineLimit: card.rowLineLimit,
@@ -162,14 +169,54 @@ struct ResultRowsView: View {
     }
 }
 
+/// 一排色块，下面写着色值，点一下复制
+struct PaletteStrip: View {
+    let hexes: [String]
+    let onCopy: (String) -> Void
+
+    var body: some View {
+        HStack(spacing: 6) {
+            ForEach(Array(hexes.enumerated()), id: \.offset) { _, hex in
+                if let color = ColorValue.parse(hex) {
+                    Button {
+                        onCopy(hex)
+                    } label: {
+                        VStack(spacing: 4) {
+                            RoundedRectangle(cornerRadius: 8, style: .continuous)
+                                .fill(color.swiftUIColor)
+                                .overlay(RoundedRectangle(cornerRadius: 8, style: .continuous)
+                                    .strokeBorder(Color.primary.opacity(0.15), lineWidth: 1))
+                                .frame(height: 44)
+                            Text(hex)
+                                .font(.system(size: 10, design: .monospaced))
+                                .foregroundStyle(.secondary)
+                                .lineLimit(1)
+                                .minimumScaleFactor(0.8)
+                        }
+                        .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
+                    .help("复制 \(hex)")
+                }
+            }
+        }
+    }
+}
+
 struct ColorSwatch: View {
     let color: ColorValue
 
     var body: some View {
         RoundedRectangle(cornerRadius: 8, style: .continuous)
-            .fill(Color(.sRGB, red: color.red / 255, green: color.green / 255, blue: color.blue / 255, opacity: color.alpha))
+            .fill(color.swiftUIColor)
             .overlay(RoundedRectangle(cornerRadius: 8, style: .continuous).strokeBorder(Color.primary.opacity(0.15), lineWidth: 1))
             .frame(height: 40)
+    }
+}
+
+extension ColorValue {
+    var swiftUIColor: Color {
+        Color(.sRGB, red: red / 255, green: green / 255, blue: blue / 255, opacity: alpha)
     }
 }
 

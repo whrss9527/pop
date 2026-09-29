@@ -83,10 +83,14 @@ final class AppController {
             return StatusItemController.State(isPaused: self.coordinator.isPaused,
                                               isTrusted: self.permissions.isTrusted,
                                               pendingUpdateVersion: self.updater.release?.version,
-                                              pinCount: PinBoard.shared.count)
+                                              pinCount: PinBoard.shared.count,
+                                              keepAwakeStatus: KeepAwake.shared.statusText())
         }
         statusItem.onCloseAllPins = {
             PinBoard.shared.closeAll()
+        }
+        statusItem.onStopKeepAwake = {
+            KeepAwake.shared.stop()
         }
         statusItem.onOpenSettings = { [weak self] in
             self?.settingsWindow.show()

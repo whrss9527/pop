@@ -65,6 +65,11 @@ enum CardAction: Equatable {
     case translate(String)
     /// 转换图片文件，结果存在原图旁边
     case convertImages([URL], ImageConverter.Operation)
+    /// PDF 的每一页存成图片，放在旁边的文件夹里
+    case exportPDFPages(URL)
+    /// 保持唤醒一段时间（分钟）；nil 表示一直保持
+    case keepAwake(minutes: Int?)
+    case stopKeepAwake
 }
 
 struct CardButton: Equatable, Identifiable {
@@ -101,6 +106,10 @@ struct ResultCard: Equatable {
     var image: Data? = nil
     /// 颜色样本（#RRGGBB 或 #RRGGBBAA）
     var swatchHex: String? = nil
+    /// 一排颜色（#RRGGBB），点一下复制色值
+    var palette: [String] = []
+    /// 两段文字的差异（文本对比）
+    var diff: TextDiff.Result? = nil
     var buttons: [CardButton] = []
 }
 

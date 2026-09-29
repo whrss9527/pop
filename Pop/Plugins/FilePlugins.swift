@@ -120,3 +120,71 @@ struct TableConvertPlugin: PopPlugin {
                                 rows: rows, rowsReplaceable: true, rowLineLimit: 3))
     }
 }
+
+// MARK: - PDF
+
+struct PDFPlugin: PopPlugin {
+    let info = PluginInfo(id: BuiltinPluginID.pdf, name: "PDF", symbol: "doc.richtext",
+                          summary: "把选中的图片和 PDF 按文件名顺序合成一个 PDF；只选了一个 PDF 时可以把每页存成图片或者复制里面的文字",
+                          accepts: [.files], pattern: #"(?im)\.(pdf|png|jpe?g|heic|heif|tiff?|gif|bmp|webp)$"#)
+    /// 完成后在访达里选中结果（测试时换掉）
+    var reveal: @MainActor ([URL]) -> Void = { NSWorkspace.shared.activateFileViewerSelecting($0) }
+
+    @MainActor func run(_ content: ClassifiedContent, context: PluginContext) async -> PluginOutcome {
+        let files = PDFTools.sorted(content.files.filter { PDFTools.isPDF($0) || PDFTools.isImage($0) })
+        guard let first = files.first else { return .failure("选中的文件里没有 PDF 或图片") }
+        if files.count == 1, PDFTools.isPDF(first) {
+            return await summary(of: first)
+        }
+        // 合成的 PDF 放在第一个文件旁边
+        let base = first.deletingPathExtension().lastPathComponent
+        let destination = FileNames.available(in: first.deletingLastPathComponent(),
+                                              base: files.count == 1 ? base : "\(base) 等 \(files.count) 个文件",
+                                              extension: "pdf")
+        let result = await runInBackground { () -> Result<Int, PDFTools.Failure> in
+            do {
+                return .success(try PDFTools.combine(files, into: destination))
+            } catch let failure as PDFTools.Failure {
+                return .failure(failure)
+            } catch {
+                return .failure(PDFTools.Failure(message: error.localizedDescription))
+            }
+        }
+        switch result {
+        case .success(let pages):
+            reveal([destination])
+            return .done(toast: "已合成 \(pages) 页的 PDF")
+        case .failure(let failure):
+            try? FileManager.default.removeItem(at: destination)
+            return .failure(failure.message)
+        }
+    }
+
+    /// 一个 PDF：列出页数，可以把每页存成图片、复制全部文字
+    @MainActor private func summary(of pdf: URL) async -> PluginOutcome {
+        let result = await runInBackground { () -> Result<(pages: Int, text: String), PDFTools.Failure> in
+            do {
+                let document = try PDFTools.open(pdf)
+                return .success((document.pageCount, document.string?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""))
+            } catch let failure as PDFTools.Failure {
+                return .failure(failure)
+            } catch {
+                return .failure(PDFTools.Failure(message: error.localizedDescription))
+            }
+        }
+        switch result {
+        case .failure(let failure):
+            return .failure(failure.message)
+        case .success(let summary):
+            var buttons = [CardButton(title: "每页存成图片", action: .exportPDFPages(pdf))]
+            let detail: String
+            if summary.text.isEmpty {
+                detail = "\(summary.pages) 页，没有文字层（扫描件可以先存成图片，再用「识别文字」）"
+            } else {
+                detail = "\(summary.pages) 页，\(summary.text.count) 个字"
+                buttons.append(CardButton(title: "复制全部文字", action: .copy(summary.text)))
+            }
+            return .card(ResultCard(title: "PDF", body: pdf.lastPathComponent, detail: detail, buttons: buttons))
+        }
+    }
+}

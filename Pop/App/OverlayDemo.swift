@@ -6,7 +6,8 @@ import AppKit
 /// 指向一格、滑到另一格、选中后弹出结果卡片、提示、「全部功能」列表、再展开一次圆盘并取消；
 /// 再按真实的手势流程走一遍：按住右键唤起、拖到上面一格、再拖到「剪贴板」、松开执行
 /// （直接调用鼠标拦截的回调，拖动位置和真实使用时一样由拦截送来，不看系统的指针位置）；
-/// 最后是单位换算的卡片、贴图、AI 卡片、窗口布局卡片、翻译卡片、常用短语、截图标注窗口和设置窗口里新加的几页。
+/// 最后是单位换算的卡片、贴图、AI 卡片、窗口布局卡片、翻译卡片、常用短语、文本对比、图片配色、截图标注窗口
+/// 和设置窗口里新加的几页。
 /// 配合 POP_ANIMATION_SCALE 放慢动画，截图脚本就能拍到动画的中间帧；POP_APPEARANCE=dark 时用深色外观。
 /// 每一步开始时往 POP_DEMO_LOG 指定的文件里写一行「步骤名 时间戳」；region 行是截图区域在屏幕上的位置
 /// （点，AppKit 坐标：x y 宽 高）和屏幕大小，脚本按拍照时最新的那一行裁图。
@@ -150,6 +151,29 @@ enum OverlayDemo {
                 Snippet(title: "会议链接", text: "https://meet.example.com/pop-weekly"),
             ])
             overlay.showCard(SnippetPickerView(model: snippets, onClose: {}), anchor: center)
+
+            // 文本对比卡片
+            await pause(1.4 * unit)
+            step("diff")
+            let diff = TextDiff.compare("长按右键唤起圆盘\n松开就执行\n支持 40 多个功能",
+                                        "长按右键弹出圆盘\n松开就执行\n支持 50 多个功能\n还可以写自己的插件")
+            overlay.showCard(ResultCardView(card: ResultCard(title: "文本对比",
+                                                             detail: "剪贴板 → 选中的文字：删去 \(diff.removedCount) 行，"
+                                                                 + "新增 \(diff.addedCount) 行",
+                                                             copyText: diff.unifiedText, diff: diff),
+                                            onAction: { _ in }, onMore: {}, onClose: {}),
+                             anchor: center)
+
+            // 图片配色卡片（用标注演示的那张示例图）
+            await pause(1.4 * unit)
+            step("palette")
+            if let sample = sampleScreenshot() {
+                let swatches = ColorPalette.extract(from: sample.image)
+                let card = ResultCard(title: "图片配色", detail: "按面积从大到小；点色块复制色值",
+                                      rows: swatches.map { ResultCard.Row(label: "占 \(Int((($0.share) * 100).rounded()))%", value: $0.hex) },
+                                      palette: swatches.map(\.hex))
+                overlay.showCard(ResultCardView(card: card, onAction: { _ in }, onMore: {}, onClose: {}), anchor: center)
+            }
 
             // 截图标注窗口：拿一张画好的示例图，标上方框、箭头、文字、马赛克和序号；截图区域换成标注窗口
             await pause(1.4 * unit)

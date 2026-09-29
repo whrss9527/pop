@@ -408,6 +408,41 @@ final class PopCoordinator: MouseTriggerDelegate {
             present(.translate(text: text, language: ContentClassifier.dominantLanguage(text)))
         case .convertImages(let files, let operation):
             convertImages(files, operation)
+        case .exportPDFPages(let pdf):
+            exportPDFPages(pdf)
+        case .keepAwake(let minutes):
+            let started = KeepAwake.shared.start(minutes: minutes)
+            finish(toast: started ? (minutes.map { "保持唤醒 \(KeepAwake.title(minutes: $0))" } ?? "一直保持唤醒") : "没能保持唤醒")
+        case .stopKeepAwake:
+            KeepAwake.shared.stop()
+            finish(toast: "已停止保持唤醒")
+        }
+    }
+
+    /// 在后台把 PDF 的每一页存成图片，完成后在访达里选中放图片的文件夹
+    private func exportPDFPages(_ pdf: URL) {
+        let anchor = session?.anchor ?? NSEvent.mouseLocation
+        endSession()
+        let folder = FileNames.available(in: pdf.deletingLastPathComponent(),
+                                         base: pdf.deletingPathExtension().lastPathComponent + " 的页面")
+        Task { [weak self] in
+            let result = await runInBackground { () -> Result<[URL], PDFTools.Failure> in
+                do {
+                    return .success(try PDFTools.exportPages(of: pdf, to: folder))
+                } catch let failure as PDFTools.Failure {
+                    return .failure(failure)
+                } catch {
+                    return .failure(PDFTools.Failure(message: error.localizedDescription))
+                }
+            }
+            guard let self else { return }
+            switch result {
+            case .success(let pages):
+                NSWorkspace.shared.activateFileViewerSelecting([folder])
+                self.showToast("已存成 \(pages.count) 张图片", at: anchor)
+            case .failure(let failure):
+                self.showToast(failure.message, at: anchor)
+            }
         }
     }
 

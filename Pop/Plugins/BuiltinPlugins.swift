@@ -21,6 +21,7 @@ enum BuiltinPlugins {
             ChangeCasePlugin(),
             EncodeDecodePlugin(),
             TextStatsPlugin(),
+            TextDiffPlugin(),
             FormatJSONPlugin(),
             TableConvertPlugin(),
             JWTPlugin(),
@@ -32,10 +33,12 @@ enum BuiltinPlugins {
             QRCodePlugin(),
             OCRPlugin(),
             ScreenshotOCRPlugin(),
+            ScanCodePlugin(),
             AnnotatePlugin(),
             PinPlugin(),
             RemoveBackgroundPlugin(),
             ImageConvertPlugin(),
+            PalettePlugin(),
             ColorPickerPlugin(),
             RandomPlugin(),
             QuickNotePlugin(),
@@ -45,7 +48,9 @@ enum BuiltinPlugins {
             RevealInFinderPlugin(),
             ZipPlugin(),
             UnzipPlugin(),
+            PDFPlugin(),
             OpenInTerminalPlugin(),
+            KeepAwakePlugin(),
             ClipboardHistoryPlugin(),
             SnippetsPlugin(),
             AllPluginsPlugin(),
@@ -74,7 +79,7 @@ enum BuiltinCategory: CaseIterable, Identifiable {
         case .convert: return "转换"
         case .developer: return "开发"
         case .screen: return "屏幕与图片"
-        case .files: return "文件和窗口"
+        case .files: return "文件和系统"
         case .other: return "其他"
         }
     }
@@ -82,7 +87,8 @@ enum BuiltinCategory: CaseIterable, Identifiable {
     private static let members: [BuiltinCategory: [String]] = [
         .text: [BuiltinPluginID.translate, BuiltinPluginID.screenshotTranslate, BuiltinPluginID.search,
                 BuiltinPluginID.dictionary, BuiltinPluginID.speak, BuiltinPluginID.openURL, BuiltinPluginID.copyPlain,
-                BuiltinPluginID.textCleanup, BuiltinPluginID.textStats, BuiltinPluginID.snippets, BuiltinPluginID.quickNote],
+                BuiltinPluginID.textCleanup, BuiltinPluginID.textStats, BuiltinPluginID.textDiff, BuiltinPluginID.snippets,
+                BuiltinPluginID.quickNote],
         .ai: [BuiltinPluginID.aiAssistant, BuiltinPluginID.aiPolish, BuiltinPluginID.aiSummarize, BuiltinPluginID.aiExplain],
         .convert: [BuiltinPluginID.calculate, BuiltinPluginID.unitConvert, BuiltinPluginID.changeCase,
                    BuiltinPluginID.encodeDecode, BuiltinPluginID.formatJSON, BuiltinPluginID.tableConvert,
@@ -90,11 +96,12 @@ enum BuiltinCategory: CaseIterable, Identifiable {
                    BuiltinPluginID.colorConvert],
         .developer: [BuiltinPluginID.hash, BuiltinPluginID.qrCode, BuiltinPluginID.random, BuiltinPluginID.linkInspect,
                      BuiltinPluginID.jwtDecode],
-        .screen: [BuiltinPluginID.ocr, BuiltinPluginID.screenshotOCR, BuiltinPluginID.annotate, BuiltinPluginID.pin,
-                  BuiltinPluginID.removeBackground,
-                  BuiltinPluginID.imageConvert, BuiltinPluginID.colorPicker],
+        .screen: [BuiltinPluginID.ocr, BuiltinPluginID.screenshotOCR, BuiltinPluginID.scanCode, BuiltinPluginID.annotate,
+                  BuiltinPluginID.pin, BuiltinPluginID.removeBackground,
+                  BuiltinPluginID.imageConvert, BuiltinPluginID.palette, BuiltinPluginID.colorPicker],
         .files: [BuiltinPluginID.copyPath, BuiltinPluginID.revealInFinder, BuiltinPluginID.openInTerminal, BuiltinPluginID.zip,
-                 BuiltinPluginID.unzip, BuiltinPluginID.airDrop, BuiltinPluginID.windowLayout],
+                 BuiltinPluginID.unzip, BuiltinPluginID.pdf, BuiltinPluginID.airDrop, BuiltinPluginID.windowLayout,
+                 BuiltinPluginID.keepAwake],
     ]
 
     /// 没有列出来的（剪贴板、全部功能、设置）都算「其他」
