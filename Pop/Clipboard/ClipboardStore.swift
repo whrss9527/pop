@@ -21,6 +21,8 @@ struct ClipboardItem: Identifiable, Equatable {
     var usedAt: Date
     var pinned: Bool
     var byteSize: Int
+    /// 图片里识别出的文字（搜索时一起找）；还没识别过是 nil，识别过但没有文字是空字符串
+    var recognizedText: String? = nil
 
     var fileURLs: [URL] {
         guard kind == .files else { return [] }
@@ -127,7 +129,7 @@ final class ClipboardStore: @unchecked Sendable {
         }
     }
 
-    /// 固定的排在最前，其余按最近使用排序。search 不为空时按文字搜索（图片不参与搜索）。
+    /// 固定的排在最前，其余按最近使用排序。search 不为空时按文字搜索，图片按里面识别出的文字搜索。
     func items(matching search: String = "", limit: Int = 200) -> [ClipboardItem] {
         queue.sync { () -> [ClipboardItem] in
             var items: [ClipboardItem] = []
@@ -135,8 +137,9 @@ final class ClipboardStore: @unchecked Sendable {
             var values: [SQLValue] = []
             var sql = "SELECT \(Self.columns) FROM items"
             if !keyword.isEmpty {
-                sql += " WHERE text LIKE ? ESCAPE '\\'"
-                values.append(.text("%" + Self.escapeLike(keyword) + "%"))
+                sql += " WHERE text LIKE ? ESCAPE '\\' OR recognized_text LIKE ? ESCAPE '\\'"
+                let pattern = "%" + Self.escapeLike(keyword) + "%"
+                values += [.text(pattern), .text(pattern)]
             }
             sql += " ORDER BY pinned DESC, used_at DESC LIMIT ?"
             values.append(.int(Int64(max(limit, 0))))
@@ -156,6 +159,27 @@ final class ClipboardStore: @unchecked Sendable {
                 result = Self.item(from: statement)
             }
             return result
+        }
+    }
+
+    /// 记下图片里识别出的文字；没有文字时存空字符串，下次不再识别
+    func setRecognizedText(_ text: String, id: Int64) {
+        queue.sync {
+            _ = run("UPDATE items SET recognized_text = ? WHERE id = ?", [.text(text), .int(id)])
+        }
+    }
+
+    /// 还没识别过文字的图片，最近用过的在前
+    func imagesWithoutRecognizedText(limit: Int) -> [ClipboardItem] {
+        queue.sync { () -> [ClipboardItem] in
+            var items: [ClipboardItem] = []
+            _ = run("SELECT \(Self.columns) FROM items WHERE kind = 'image' AND recognized_text IS NULL ORDER BY used_at DESC LIMIT ?",
+                    [.int(Int64(max(limit, 0)))]) { statement in
+                if let item = Self.item(from: statement) {
+                    items.append(item)
+                }
+            }
+            return items
         }
     }
 
@@ -228,7 +252,7 @@ final class ClipboardStore: @unchecked Sendable {
         }
     }
 
-    private static let columns = "id, kind, text, image_name, source_app, created_at, used_at, pinned, byte_size"
+    private static let columns = "id, kind, text, image_name, source_app, created_at, used_at, pinned, byte_size, recognized_text"
 
     private func openDatabase() {
         do {
@@ -263,7 +287,19 @@ final class ClipboardStore: @unchecked Sendable {
             )
             """)
         execute("CREATE INDEX IF NOT EXISTS items_order ON items (pinned DESC, used_at DESC)")
-        execute("PRAGMA user_version = 1")
+        // 第 2 版：加一列图片里识别出的文字
+        if userVersion() < 2 {
+            execute("ALTER TABLE items ADD COLUMN recognized_text TEXT")
+            execute("PRAGMA user_version = 2")
+        }
+    }
+
+    private func userVersion() -> Int {
+        var version = 0
+        _ = run("PRAGMA user_version", []) { statement in
+            version = Int(sqlite3_column_int(statement, 0))
+        }
+        return version
     }
 
     private func execute(_ sql: String) {
@@ -348,7 +384,8 @@ final class ClipboardStore: @unchecked Sendable {
                              createdAt: Date(timeIntervalSince1970: sqlite3_column_double(statement, 5)),
                              usedAt: Date(timeIntervalSince1970: sqlite3_column_double(statement, 6)),
                              pinned: sqlite3_column_int(statement, 7) != 0,
-                             byteSize: Int(sqlite3_column_int64(statement, 8)))
+                             byteSize: Int(sqlite3_column_int64(statement, 8)),
+                             recognizedText: text(statement, 9))
     }
 
     static func escapeLike(_ text: String) -> String {

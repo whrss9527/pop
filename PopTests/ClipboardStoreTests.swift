@@ -1,3 +1,5 @@
+import AppKit
+import SQLite3
 import XCTest
 @testable import Pop
 
@@ -97,5 +99,62 @@ final class ClipboardStoreTests: XCTestCase {
         XCTAssertNotEqual(asText.hash, asFiles.hash)
         XCTAssertEqual(asText.hash, ClipboardCapture(kind: .text, text: "/tmp/a", sourceApp: "other").hash)
         XCTAssertEqual(ClipboardStore.escapeLike("50%_\\"), "50\\%\\_\\\\")
+    }
+
+    func testImagesAreFoundByTheirText() throws {
+        let store = ClipboardStore(directory: directory)
+        let png = try XCTUnwrap(Self.renderText("HELLO POP 2026"))
+        let id = try XCTUnwrap(store.add(ClipboardCapture(kind: .image, text: "", imagePNG: png)))
+        XCTAssertEqual(store.imagesWithoutRecognizedText(limit: 10).map(\.id), [id])
+        XCTAssertTrue(store.items(matching: "hello").isEmpty)
+
+        // 在本机识别图片里的文字，之后搜索能找到这张图
+        ClipboardImageIndex.backfill(store: store)
+        XCTAssertTrue(store.imagesWithoutRecognizedText(limit: 10).isEmpty)
+        XCTAssertEqual(store.items(matching: "hello").map(\.id), [id])
+        XCTAssertEqual(store.item(id: id)?.recognizedText?.uppercased().contains("POP"), true)
+
+        // 识别过的不再识别
+        store.setRecognizedText("", id: id)
+        ClipboardImageIndex.index(png: png, id: id, store: store)
+        XCTAssertEqual(store.item(id: id)?.recognizedText, "")
+    }
+
+    func testMigratesTheFirstSchema() throws {
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        var handle: OpaquePointer?
+        let path = directory.appending(path: "history.sqlite").path(percentEncoded: false)
+        XCTAssertEqual(sqlite3_open(path, &handle), SQLITE_OK)
+        let old = """
+            CREATE TABLE items (id INTEGER PRIMARY KEY AUTOINCREMENT, kind TEXT NOT NULL, text TEXT NOT NULL DEFAULT '',
+                image_name TEXT, hash TEXT NOT NULL UNIQUE, source_app TEXT, created_at REAL NOT NULL, used_at REAL NOT NULL,
+                pinned INTEGER NOT NULL DEFAULT 0, byte_size INTEGER NOT NULL DEFAULT 0);
+            INSERT INTO items (kind, text, hash, created_at, used_at) VALUES ('text', '旧的记录', 'text:old', 1, 1);
+            PRAGMA user_version = 1;
+            """
+        XCTAssertEqual(sqlite3_exec(handle, old, nil, nil, nil), SQLITE_OK)
+        sqlite3_close(handle)
+
+        let store = ClipboardStore(directory: directory)
+        XCTAssertEqual(store.items().map(\.text), ["旧的记录"])
+        XCTAssertNil(store.items().first?.recognizedText)
+        XCTAssertEqual(store.items(matching: "旧的").count, 1)
+    }
+
+    /// 白底黑字的一张图
+    private static func renderText(_ text: String) -> Data? {
+        let size = CGSize(width: 640, height: 140)
+        guard let context = CGContext(data: nil, width: Int(size.width), height: Int(size.height), bitsPerComponent: 8, bytesPerRow: 0,
+                                      space: CGColorSpace(name: CGColorSpace.sRGB) ?? CGColorSpaceCreateDeviceRGB(),
+                                      bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue) else { return nil }
+        context.setFillColor(CGColor(red: 1, green: 1, blue: 1, alpha: 1))
+        context.fill(CGRect(origin: .zero, size: size))
+        NSGraphicsContext.saveGraphicsState()
+        NSGraphicsContext.current = NSGraphicsContext(cgContext: context, flipped: false)
+        NSAttributedString(string: text, attributes: [.font: NSFont.systemFont(ofSize: 56, weight: .bold),
+                                                      .foregroundColor: NSColor.black]).draw(at: CGPoint(x: 24, y: 36))
+        NSGraphicsContext.restoreGraphicsState()
+        guard let image = context.makeImage() else { return nil }
+        return NSBitmapImageRep(cgImage: image).representation(using: .png, properties: [:])
     }
 }

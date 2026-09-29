@@ -53,6 +53,7 @@ final class ClipboardHistoryModel: ObservableObject {
     var onPin: (ClipboardItem) -> Void = { _ in }
     var onRecognize: (ClipboardItem) -> Void = { _ in }
     var onAnnotate: (ClipboardItem) -> Void = { _ in }
+    var onRecognizeTable: (ClipboardItem) -> Void = { _ in }
     var onSaveSnippet: (ClipboardItem) -> Void = { _ in }
 
     private var cancellable: AnyCancellable?
@@ -119,6 +120,22 @@ final class ClipboardHistoryModel: ObservableObject {
     /// 多选的几条按点选的顺序、每条一行合起来
     var mergedText: String {
         marked.map(\.text).joined(separator: "\n")
+    }
+
+    /// 搜索时图片是因为里面的文字被找到的：显示找到的那一段
+    func matchedImageText(for item: ClipboardItem) -> String? {
+        let keyword = query.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard item.kind == .image, !keyword.isEmpty, let text = item.recognizedText else { return nil }
+        return Self.excerpt(of: text, around: keyword)
+    }
+
+    /// 关键词前后各留几个字：「…会议改到周五下午…」
+    static func excerpt(of text: String, around keyword: String, context: Int = 8) -> String? {
+        let flat = text.replacingOccurrences(of: "\n", with: " ")
+        guard let range = flat.range(of: keyword, options: [.caseInsensitive, .diacriticInsensitive]) else { return nil }
+        let start = flat.index(range.lowerBound, offsetBy: -context, limitedBy: flat.startIndex) ?? flat.startIndex
+        let end = flat.index(range.upperBound, offsetBy: context, limitedBy: flat.endIndex) ?? flat.endIndex
+        return (start > flat.startIndex ? "…" : "") + flat[start..<end] + (end < flat.endIndex ? "…" : "")
     }
 
     func togglePin(_ item: ClipboardItem) {
@@ -228,7 +245,7 @@ struct ClipboardHistoryView: View {
                 LazyVStack(spacing: 2) {
                     ForEach(Array(model.items.enumerated()), id: \.element.id) { index, item in
                         ClipboardRow(item: item, index: index, imageURL: model.service.store.imageURL(for: item),
-                                     markNumber: model.markNumber(of: item))
+                                     markNumber: model.markNumber(of: item), matchedText: model.matchedImageText(for: item))
                             .selectionHighlight(index == model.selection, in: selectionSpace)
                             .id(item.id)
                             .onTapGesture {
@@ -247,6 +264,7 @@ struct ClipboardHistoryView: View {
                                 }
                                 if item.kind == .image {
                                     Button("识别文字") { model.onRecognize(item) }
+                                    Button("识别表格") { model.onRecognizeTable(item) }
                                     Button("标注…") { model.onAnnotate(item) }
                                 }
                                 if item.kind != .files {
@@ -281,6 +299,8 @@ struct ClipboardRow: View {
     let imageURL: URL?
     /// 多选时的顺序号
     var markNumber: Int? = nil
+    /// 搜索时在图片里找到的那段文字
+    var matchedText: String? = nil
 
     var body: some View {
         HStack(alignment: .center, spacing: 10) {
@@ -317,6 +337,19 @@ struct ClipboardRow: View {
         .padding(.horizontal, 8)
         .padding(.vertical, 6)
         .contentShape(Rectangle())
+        .help(Self.tooltip(item))
+    }
+
+    /// 指针停在一条上时显示的完整内容（太长的截掉）
+    static func tooltip(_ item: ClipboardItem) -> String {
+        let text: String
+        switch item.kind {
+        case .text, .files:
+            text = item.text
+        case .image:
+            text = item.recognizedText.map { $0.isEmpty ? "" : "图片里的文字：\n" + $0 } ?? ""
+        }
+        return text.count > 1000 ? String(text.prefix(1000)) + "…" : text
     }
 
     @ViewBuilder
@@ -338,9 +371,16 @@ struct ClipboardRow: View {
             HStack(spacing: 8) {
                 ClipboardThumbnail(url: imageURL)
                     .frame(width: 72, height: 44)
-                Text("图片 · \(ByteCountFormatter.string(fromByteCount: Int64(item.byteSize), countStyle: .file))")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("图片 · \(ByteCountFormatter.string(fromByteCount: Int64(item.byteSize), countStyle: .file))")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                    if let matchedText {
+                        Text("图里有「\(matchedText)」")
+                            .font(.caption)
+                            .lineLimit(1)
+                    }
+                }
             }
         }
     }

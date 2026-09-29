@@ -253,6 +253,18 @@ enum OverlayDemo {
             }
             step("history")
 
+            // 剪贴板历史按图片里的文字搜索：示例截图在本机识别出文字，搜「账户」能找到它
+            await pause(1.4 * unit)
+            if let history = sampleClipboardHistory(marking: false), let capture = sampleScreenshot() {
+                let store = history.service.store
+                if let id = store.add(ClipboardCapture(kind: .image, text: "", imagePNG: capture.png)) {
+                    await runInBackground { ClipboardImageIndex.index(png: capture.png, id: id, store: store) }
+                }
+                history.query = "账户"
+                overlay.showCard(ClipboardHistoryView(model: history, onClose: {}), anchor: center)
+            }
+            step("history-search")
+
             // 加到提醒事项：从一句话里认出时间和事情
             await pause(1.4 * unit)
             let draft = ReminderDraft(text: "明天下午3点和设计组过一遍新版本的截图")
@@ -298,7 +310,7 @@ enum OverlayDemo {
     }
 
     /// 剪贴板历史演示：放在临时文件夹里的几条示例记录，不碰真的历史；⌘ 点选了其中两条
-    private static func sampleClipboardHistory() -> ClipboardHistoryModel? {
+    private static func sampleClipboardHistory(marking: Bool = true) -> ClipboardHistoryModel? {
         let directory = FileManager.default.temporaryDirectory.appending(path: "pop-demo-history", directoryHint: .isDirectory)
         try? FileManager.default.removeItem(at: directory)
         let store = ClipboardStore(directory: directory)
@@ -310,7 +322,7 @@ enum OverlayDemo {
             _ = store.add(ClipboardCapture(kind: .text, text: text), at: now.addingTimeInterval(Double(offset - samples.count) * 90))
         }
         let model = ClipboardHistoryModel(service: ClipboardService(store: store))
-        for item in model.items where item.text.hasPrefix("会议") || item.text.hasPrefix("pop@") {
+        for item in model.items where marking && (item.text.hasPrefix("会议") || item.text.hasPrefix("pop@")) {
             model.toggleMark(item)
         }
         return model

@@ -68,6 +68,17 @@ final class RegexTesterModel: ObservableObject {
     var allMatches: String {
         result.matches.map(\.text).joined(separator: "\n")
     }
+
+    /// 预览区的高度：按折行后大概有几行估算，最少两行、最多七行
+    static func previewHeight(for text: String, width: CGFloat = 480) -> CGFloat {
+        let lineHeight: CGFloat = 16
+        let lines = String(text.prefix(previewLength)).components(separatedBy: "\n").reduce(0) { count, line in
+            // 等宽字体 12 号：英文字母大约 7.2 点宽，汉字大约 12 点宽
+            let lineWidth = line.reduce(CGFloat(0)) { $0 + ($1.isASCII ? 7.2 : 12) }
+            return count + max(Int((lineWidth / width).rounded(.up)), 1)
+        }
+        return min(max(CGFloat(lines) * lineHeight + 8, lineHeight * 2 + 8), lineHeight * 7 + 8)
+    }
 }
 
 struct RegexTesterView: View {
@@ -114,7 +125,7 @@ struct RegexTesterView: View {
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .padding(.trailing, 6)
             }
-            .frame(height: 110)
+            .frame(height: RegexTesterModel.previewHeight(for: model.text))
 
             if let error = model.result.error {
                 Text(error)

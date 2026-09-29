@@ -498,6 +498,8 @@ struct ClipboardSettings: Codable, Equatable {
     var ignoredBundleIDs: [String] = ClipboardSettings.defaultIgnoredBundleIDs
     /// 复制带跟踪参数（utm_source、fbclid……）的链接时，自动换成去掉参数的链接；不开剪贴板历史也能用
     var cleanLinks = false
+    /// 在本机识别历史里图片上的文字，搜索时一起找
+    var searchImageText = true
 
     static let retentionChoices = [1, 3, 7, 30, 90, 0]
     static let maxItemChoices = [100, 200, 500, 1000, 5000]
@@ -522,6 +524,7 @@ struct ClipboardSettings: Codable, Equatable {
         recordImages = c.lenient(.recordImages, default: d.recordImages)
         ignoredBundleIDs = c.lenient(.ignoredBundleIDs, default: d.ignoredBundleIDs)
         cleanLinks = c.lenient(.cleanLinks, default: d.cleanLinks)
+        searchImageText = c.lenient(.searchImageText, default: d.searchImageText)
     }
 
     static func retentionTitle(_ days: Int) -> String {

@@ -97,12 +97,16 @@ final class ClipboardMonitor {
         }
         guard settings.enabled else { return }
         let store = self.store
+        let indexImages = settings.searchImageText
         DispatchQueue.global(qos: .utility).async { [weak self] in
-            guard let capture = Self.capture(clip, sourceApp: sourceApp), store.add(capture) != nil else { return }
+            guard let capture = Self.capture(clip, sourceApp: sourceApp), let id = store.add(capture) else { return }
             DispatchQueue.main.async {
                 MainActor.assumeIsolated {
                     self?.onRecord?()
                 }
+            }
+            if indexImages, capture.kind == .image, let png = capture.imagePNG {
+                ClipboardImageIndex.index(png: png, id: id, store: store)
             }
         }
     }
@@ -155,6 +159,7 @@ final class ClipboardService: ObservableObject {
     let changes = PassthroughSubject<Void, Never>()
 
     private var cleanupTimer: Timer?
+    private var backfillStarted = false
 
     init(store: ClipboardStore = ClipboardStore()) {
         self.store = store
@@ -170,6 +175,14 @@ final class ClipboardService: ObservableObject {
         let previous = self.settings
         self.settings = settings
         monitor.apply(settings)
+        if settings.enabled, settings.searchImageText, !backfillStarted {
+            // 以前记下的图片补上文字识别，慢慢做，不和别的事抢
+            backfillStarted = true
+            let store = self.store
+            DispatchQueue.global(qos: .background).async {
+                ClipboardImageIndex.backfill(store: store)
+            }
+        }
         if cleanupTimer == nil {
             // 启动时清理一次，之后每小时一次
             let timer = Timer(timeInterval: 3600, repeats: true) { [weak self] _ in
@@ -269,5 +282,29 @@ final class ClipboardService: ObservableObject {
     private func didChange() {
         refreshStatistics()
         changes.send()
+    }
+}
+
+/// 给剪贴板历史里的图片识别文字，搜索时用。都在本机做，不联网。
+enum ClipboardImageIndex {
+    /// 刚记下的图片；同样的图片以前识别过就不再识别
+    static func index(png: Data, id: Int64, store: ClipboardStore) {
+        guard store.item(id: id)?.recognizedText == nil else { return }
+        guard let image = TextRecognizer.cgImage(from: png) else {
+            store.setRecognizedText("", id: id)
+            return
+        }
+        store.setRecognizedText((try? TextRecognizer.recognizeLines(in: image)) ?? "", id: id)
+    }
+
+    /// 以前记下、还没识别过的图片补上（每次最多 limit 张，最近用过的先做）
+    static func backfill(store: ClipboardStore, limit: Int = 300) {
+        for item in store.imagesWithoutRecognizedText(limit: limit) {
+            guard let url = store.imageURL(for: item), let image = TextRecognizer.cgImage(contentsOf: url) else {
+                store.setRecognizedText("", id: item.id)
+                continue
+            }
+            store.setRecognizedText((try? TextRecognizer.recognizeLines(in: image)) ?? "", id: item.id)
+        }
     }
 }

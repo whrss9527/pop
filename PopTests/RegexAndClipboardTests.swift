@@ -53,6 +53,14 @@ final class RegexTesterTests: XCTestCase {
     }
 
     @MainActor
+    func testPreviewHeightFollowsTheText() {
+        // 至少两行高，最多七行
+        XCTAssertEqual(RegexTesterModel.previewHeight(for: "a"), 40)
+        XCTAssertEqual(RegexTesterModel.previewHeight(for: "a\nb\nc"), 56)
+        XCTAssertEqual(RegexTesterModel.previewHeight(for: String(repeating: "长", count: 2000)), 120)
+    }
+
+    @MainActor
     func testPluginOpensTheTester() async {
         let context = PluginContext(settings: AppSettings(), openSettings: {})
         let outcome = await RegexTestPlugin().run(ContentClassifier.classify(.text(" a1 b2 \n")), context: context)

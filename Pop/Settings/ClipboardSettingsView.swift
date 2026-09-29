@@ -33,6 +33,9 @@ struct ClipboardSettingsView: View {
                     }
                 }
                 Toggle("记录图片", isOn: store.binding(\.clipboard.recordImages))
+                Toggle("搜索图片里的文字", isOn: store.binding(\.clipboard.searchImageText))
+                    .disabled(!store.settings.clipboard.recordImages)
+                    .help("在本机识别历史里图片上的文字（不联网），搜索时一起找")
                 LabeledContent("已保存") {
                     Text("\(clipboard.itemCount) 条，共 \(ByteCountFormatter.string(fromByteCount: Int64(clipboard.totalBytes), countStyle: .file))")
                         .foregroundStyle(.secondary)
@@ -50,7 +53,7 @@ struct ClipboardSettingsView: View {
             } header: {
                 Text("保存")
             } footer: {
-                Text("历史只保存在这台 Mac 上（~/Library/Application Support/Pop/Clipboard），不会上传到 iCloud。超过保存时间或条数上限的记录每小时自动清理一次，固定的记录不会被清理。")
+                Text("历史只保存在这台 Mac 上（~/Library/Application Support/Pop/Clipboard），不会上传到 iCloud。超过保存时间或条数上限的记录每小时自动清理一次，固定的记录不会被清理。图片里的文字也是在这台 Mac 上识别的，不联网。")
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
