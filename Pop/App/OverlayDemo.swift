@@ -156,8 +156,8 @@ enum OverlayDemo {
             // 文本对比卡片
             await pause(1.4 * unit)
             step("diff")
-            let diff = TextDiff.compare("长按右键唤起圆盘\n松开就执行\n支持 40 多个功能",
-                                        "长按右键弹出圆盘\n松开就执行\n支持 50 多个功能\n还可以写自己的插件")
+            let diff = TextDiff.compare("长按右键唤起圆盘\n松开就执行\n支持 50 多个功能",
+                                        "长按右键弹出圆盘\n松开就执行\n支持 60 多个功能\n还可以写自己的插件")
             overlay.showCard(ResultCardView(card: ResultCard(title: "文本对比",
                                                              detail: "剪贴板 → 选中的文字：删去 \(diff.removedCount) 行，"
                                                                  + "新增 \(diff.addedCount) 行",
@@ -202,6 +202,41 @@ enum OverlayDemo {
                                             onAction: { _ in }, onMore: {}, onClose: {}),
                              anchor: center)
             step("markdown")
+
+            // 提取信息卡片
+            await pause(1.4 * unit)
+            let notice = "联系 pop@example.com，电话 138-1234-5678；下载 https://github.com/whrss9527/pop/releases，"
+                + "文档在 www.example.com；测试机 192.168.1.20:8080，备用 support@example.com"
+            overlay.showCard(ResultCardView(card: InfoExtractor.card(for: InfoExtractor.extract(notice)),
+                                            onAction: { _ in }, onMore: {}, onClose: {}),
+                             anchor: center)
+            step("extract")
+
+            // JSON 转代码卡片（分段切换语言）
+            await pause(1.4 * unit)
+            let json = #"{"id": 42, "name": "Pop", "tags": ["效率"], "owner": {"login": "pop", "site_url": null}, "#
+                + #""releases": [{"version": "0.10.0", "draft": false}, {"version": "0.11.0", "draft": true, "notes": "新功能"}]}"#
+            if let output = JSONTypes.generate(json) {
+                let tabs = output.code.map { ResultCard.Tab(title: $0.language.rawValue, text: $0.text) }
+                overlay.showCard(ResultCardView(card: ResultCard(title: "JSON 转代码", detail: "\(output.typeCount) 个类型；字段是否可选、能否为空按示例推断",
+                                                                 tabs: tabs),
+                                                onAction: { _ in }, onMore: {}, onClose: {}),
+                                 anchor: center)
+            }
+            step("jsonTypes")
+
+            // 网页内容转成 Markdown
+            await pause(1.4 * unit)
+            let html = "<h2>发布说明</h2><p>这一版加了<strong>提取信息</strong>和<a href=\"https://github.com/whrss9527/pop\">JSON 转代码</a>。</p>"
+                + "<ul><li>支持 <code>HTML</code> 和 RTF</li><li>表格也能转</li></ul>"
+                + "<table><tr><th>功能</th><th>分类</th></tr><tr><td>按行处理</td><td>文字</td></tr></table>"
+            if let converted = HTMLToMarkdown.convert(html) {
+                overlay.showCard(ResultCardView(card: ResultCard(title: "转成 Markdown", body: converted, monospaced: true,
+                                                                 copyText: converted),
+                                                onAction: { _ in }, onMore: {}, onClose: {}),
+                                 anchor: center)
+            }
+            step("toMarkdown")
 
             // 截图标注窗口：拿一张画好的示例图，标上方框、箭头、文字、马赛克和序号；截图区域换成标注窗口
             await pause(1.4 * unit)
