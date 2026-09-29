@@ -245,14 +245,15 @@ struct NumberConvertPlugin: PopPlugin {
 
 struct ColorConvertPlugin: PopPlugin {
     let info = PluginInfo(id: BuiltinPluginID.colorConvert, name: "颜色转换", symbol: "paintpalette",
-                          summary: "HEX、RGB、HSL、SwiftUI 颜色写法互相转换", accepts: [.color])
+                          summary: "HEX、RGB、HSL、SwiftUI 颜色写法互相转换，列出由浅到深的色阶", accepts: [.color])
 
     @MainActor func run(_ content: ClassifiedContent, context: PluginContext) async -> PluginOutcome {
         guard let text = content.text, let color = ColorValue.parse(text) else {
             return .failure("不是有效的颜色值")
         }
+        // 下面一排是由浅到深的色阶，点一下复制色值
         return .card(ResultCard(title: "颜色转换", detail: ColorContrast.summary(for: color), rows: color.rows,
-                                rowsReplaceable: true, swatchHex: color.hexString))
+                                rowsReplaceable: true, swatchHex: color.hexString, palette: color.scale().map(\.hexString)))
     }
 }
 
