@@ -76,7 +76,8 @@ final class FileInfoTests: XCTestCase {
 
     func testFormatting() {
         XCTAssertTrue(FileInfo.describe(bytes: 1234).hasSuffix("（1,234 字节）"), FileInfo.describe(bytes: 1234))
-        XCTAssertFalse(FileInfo.describe(bytes: 999).contains("字节"))
+        // 不到 1000 字节时不再在括号里重复写一遍字节数（格式化出来的文字随系统语言，不比较它）
+        XCTAssertFalse(FileInfo.describe(bytes: 999).contains("（"), FileInfo.describe(bytes: 999))
         XCTAssertEqual(FileInfo.duration(3725), "1:02:05")
         XCTAssertEqual(FileInfo.duration(65), "1:05")
     }
