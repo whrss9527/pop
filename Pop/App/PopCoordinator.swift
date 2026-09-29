@@ -708,6 +708,9 @@ final class PopCoordinator: MouseTriggerDelegate {
         model.onAnnotate = { [weak self] item in
             self?.annotateFromHistory(item)
         }
+        model.onRecognizeTable = { [weak self] item in
+            self?.recognizeTableFromHistory(item)
+        }
         model.onSaveSnippet = { [weak self] item in
             self?.saveSnippet(from: item)
         }
@@ -774,6 +777,20 @@ final class PopCoordinator: MouseTriggerDelegate {
             case .failure(let error):
                 self.present(.failure(error.message))
             }
+        }
+    }
+
+    /// 剪贴板历史里的图片按表格识别（macOS 26；更早的系统按普通文字识别）
+    private func recognizeTableFromHistory(_ item: ClipboardItem) {
+        guard let url = clipboard.store.imageURL(for: item), let image = TextRecognizer.cgImage(contentsOf: url) else {
+            present(.failure("无法读取这张图片"))
+            return
+        }
+        let sessionID = session?.id
+        Task { [weak self] in
+            let outcome = await TableOCRPlugin.recognize(image)
+            guard let self, self.session?.id == sessionID else { return }
+            self.present(outcome)
         }
     }
 

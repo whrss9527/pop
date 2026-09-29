@@ -20,19 +20,24 @@ enum TextRecognizer {
     /// 用 Vision 离线识别图片里的文字（中英日韩），按行返回。
     static func recognize(_ image: CGImage) async -> Result<String, PluginRunError> {
         await runInBackground {
-            let request = VNRecognizeTextRequest()
-            request.recognitionLevel = .accurate
-            request.usesLanguageCorrection = true
-            request.recognitionLanguages = ["zh-Hans", "zh-Hant", "en-US", "ja-JP", "ko-KR"]
-            let handler = VNImageRequestHandler(cgImage: image, options: [:])
             do {
-                try handler.perform([request])
+                return .success(try recognizeLines(in: image))
             } catch {
                 return .failure(PluginRunError("文字识别失败：\(error.localizedDescription)"))
             }
-            let lines = (request.results ?? []).compactMap { $0.topCandidates(1).first?.string }
-            return .success(lines.joined(separator: "\n"))
         }
+    }
+
+    /// 同步识别，在后台线程里调用
+    static func recognizeLines(in image: CGImage) throws -> String {
+        let request = VNRecognizeTextRequest()
+        request.recognitionLevel = .accurate
+        request.usesLanguageCorrection = true
+        request.recognitionLanguages = ["zh-Hans", "zh-Hant", "en-US", "ja-JP", "ko-KR"]
+        let handler = VNImageRequestHandler(cgImage: image, options: [:])
+        try handler.perform([request])
+        let lines = (request.results ?? []).compactMap { $0.topCandidates(1).first?.string }
+        return lines.joined(separator: "\n")
     }
 
     /// 识别结果卡片：可以复制，也可以接着翻译。
