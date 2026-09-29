@@ -8,6 +8,7 @@ enum SettingsTab: String, CaseIterable, Identifiable, Hashable {
     case rules
     case clipboard
     case translation
+    case ai
     case sync
     case update
 
@@ -90,6 +91,9 @@ struct SettingsRootView: View {
             TranslationSettingsView()
                 .tabItem { Label("翻译", systemImage: "character.bubble") }
                 .tag(SettingsTab.translation)
+            AISettingsView()
+                .tabItem { Label("AI", systemImage: "sparkles") }
+                .tag(SettingsTab.ai)
             SyncSettingsView()
                 .tabItem { Label("同步", systemImage: "icloud") }
                 .tag(SettingsTab.sync)

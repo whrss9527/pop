@@ -3,7 +3,7 @@ import AppKit
 enum BuiltinPlugins {
     /// 顺序就是设置里「内置功能」和「全部功能」列表的顺序。
     static func make() -> [any PopPlugin] {
-        [
+        let text: [any PopPlugin] = [
             TranslatePlugin(),
             ScreenshotTranslatePlugin(),
             WebSearchPlugin(),
@@ -14,6 +14,9 @@ enum BuiltinPlugins {
             UnitConvertPlugin(),
             CopyPlainTextPlugin(),
             TextCleanupPlugin(),
+        ]
+        let ai: [any PopPlugin] = AIPlugin.all.map { $0 as any PopPlugin }
+        let others: [any PopPlugin] = [
             ChangeCasePlugin(),
             EncodeDecodePlugin(),
             TextStatsPlugin(),
@@ -38,6 +41,7 @@ enum BuiltinPlugins {
             AllPluginsPlugin(),
             OpenSettingsPlugin(),
         ]
+        return text + ai + others
     }
 }
 

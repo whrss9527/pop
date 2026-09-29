@@ -88,7 +88,7 @@ struct PluginsSettingsView: View {
         }
         .formStyle(.grouped)
         .sheet(item: $editing) { draft in
-            PluginEditorView(draft: draft, onSave: { manifest in
+            PluginEditorView(draft: draft, ai: store.settings.ai, onSave: { manifest in
                 save(manifest, isNew: draft.isNew)
             }, onCancel: {
                 editing = nil
@@ -231,6 +231,8 @@ struct PluginDraft: Identifiable {
 
 struct PluginEditorView: View {
     private let isNew: Bool
+    /// 试运行 AI 指令用的接口设置
+    private let ai: AISettings
     private let onSave: (PluginManifest) -> String?
     private let onCancel: () -> Void
 
@@ -249,8 +251,9 @@ struct PluginEditorView: View {
         .color, .dateTime, .timestamp, .math, .measurement, .files, .imageFile, .image,
     ]
 
-    init(draft: PluginDraft, onSave: @escaping (PluginManifest) -> String?, onCancel: @escaping () -> Void) {
+    init(draft: PluginDraft, ai: AISettings, onSave: @escaping (PluginManifest) -> String?, onCancel: @escaping () -> Void) {
         isNew = draft.isNew
+        self.ai = ai
         self.onSave = onSave
         self.onCancel = onCancel
         _manifest = State(initialValue: draft.manifest)
@@ -283,6 +286,8 @@ struct PluginEditorView: View {
                                 Text(output.title).tag(output)
                             }
                         }
+                    }
+                    if manifest.action.type != .url, manifest.action.type != .ai {
                         Stepper(value: $manifest.action.timeout, in: PluginManifest.Action.timeoutRange, step: 5) {
                             Text("最长运行 \(Int(manifest.action.timeout)) 秒")
                         }
@@ -371,6 +376,10 @@ struct PluginEditorView: View {
             TextEditor(text: $manifest.action.script)
                 .font(.system(size: 12, design: .monospaced))
                 .frame(height: 150)
+        case .ai:
+            TextEditor(text: $manifest.action.prompt)
+                .font(.body)
+                .frame(height: 120)
         case .shortcut:
             HStack {
                 TextField("快捷指令", text: $manifest.action.shortcut, prompt: Text("快捷指令的名称"))
@@ -398,6 +407,8 @@ struct PluginEditorView: View {
             return "定义 function run(input, files) 并返回结果（返回对象会自动转成 JSON），也可以直接写一个表达式。脚本在隔离的环境里运行，不能访问网络和文件。"
         case .shortcut:
             return "选中的文字作为快捷指令的输入，快捷指令的输出就是结果。第一次运行时系统可能会请求权限。"
+        case .ai:
+            return "指令和选中的文字一起发给「设置 → AI」里填写的服务，{text} 换成选中的文字（没写的话文字接在指令后面）。结果选「显示结果卡片」时一边生成一边显示。"
         }
     }
 
@@ -448,7 +459,7 @@ struct PluginEditorView: View {
         testResult = nil
         let input = ManifestRunner.Input(content)
         Task {
-            let result = await ManifestRunner.execute(normalized.action, input: input)
+            let result = await ManifestRunner.execute(normalized.action, input: input, ai: ai)
             isTesting = false
             switch result {
             case .success(let output):
