@@ -400,7 +400,9 @@ enum NumberConverter {
         let formatter = NumberFormatter()
         formatter.locale = Locale(identifier: locale)
         formatter.numberStyle = .spellOut
-        return formatter.string(from: value as NSDecimalNumber)
+        let spelled = formatter.string(from: value as NSDecimalNumber)
+        // 系统的中文读法把中间的零写成「〇」（一万〇五十），读数时习惯写「零」
+        return locale.hasPrefix("zh") ? spelled?.replacingOccurrences(of: "〇", with: "零") : spelled
     }
 
     static func signed(_ value: Int, radix: Int, prefix: String) -> String {
