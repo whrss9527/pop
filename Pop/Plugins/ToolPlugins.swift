@@ -58,3 +58,17 @@ struct MarkdownTOCPlugin: PopPlugin {
         return .card(ResultCard(title: "Markdown 目录", body: toc, detail: "\(headings.count) 个标题", monospaced: true, copyText: toc))
     }
 }
+
+// MARK: - 查找重复文件
+
+struct DuplicatesPlugin: PopPlugin {
+    let info = PluginInfo(id: BuiltinPluginID.findDuplicates, name: "查找重复文件", symbol: "doc.on.doc",
+                          summary: "在选中的文件夹里找出内容完全一样的文件，每组留一个，其余的移到废纸篓",
+                          accepts: [.files], check: .folder)
+
+    @MainActor func run(_ content: ClassifiedContent, context: PluginContext) async -> PluginOutcome {
+        let folders = content.files.filter { FolderTree.isFolder($0.path(percentEncoded: false)) }
+        guard !folders.isEmpty else { return .failure("没有选中文件夹") }
+        return .findDuplicates(folders)
+    }
+}

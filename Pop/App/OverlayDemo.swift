@@ -320,6 +320,22 @@ enum OverlayDemo {
                              anchor: center)
             step("vocabulary")
 
+            // 查找重复文件：示例文件夹里有两组内容一样的文件
+            await pause(1.4 * unit)
+            if let folder = sampleDuplicates() {
+                let duplicates = DuplicatesModel(roots: [folder])
+                duplicates.start()
+                overlay.showCard(DuplicatesView(model: duplicates, onReveal: { _ in }, onClose: {}), anchor: center)
+            }
+            step("duplicates")
+
+            // PDF 页面：一份 12 页的 PDF，写好了要取出的页码（卡片只用到文件名和页数）
+            await pause(1.4 * unit)
+            let pdfPages = PDFPagesModel(pdf: FileManager.default.temporaryDirectory.appending(path: "产品手册.pdf"), pageCount: 12)
+            pdfPages.input = "1-3, 5, 8-"
+            overlay.showCard(PDFPagesView(model: pdfPages, onExtract: { _ in }, onSplit: {}, onClose: {}), anchor: center)
+            step("pdfPages")
+
             // 截图标注窗口：拿一张画好的示例图，标上方框、箭头、文字、马赛克和序号；截图区域换成标注窗口
             await pause(1.4 * unit)
             overlay.hide()
@@ -428,6 +444,28 @@ enum OverlayDemo {
             files.append(note)
         }
         return files
+    }
+
+    /// 查找重复文件演示：临时文件夹里三份一样的照片、两份一样的报告，再加两个不重复的
+    private static func sampleDuplicates() -> URL? {
+        let root = FileManager.default.temporaryDirectory.appending(path: "pop-demo-duplicates/资料", directoryHint: .isDirectory)
+        try? FileManager.default.removeItem(at: root)
+        let photo = Data(repeating: 7, count: 2_400_000)
+        let report = Data(repeating: 9, count: 860_000)
+        let files: [(path: String, data: Data)] = [
+            ("旅行照片/IMG_2041.jpg", photo), ("下载/IMG_2041 (1).jpg", photo), ("桌面/IMG_2041 副本.jpg", photo),
+            ("文稿/季度报告.pdf", report), ("下载/季度报告 最终版.pdf", report),
+            ("文稿/会议记录.txt", Data("周一例会：确认发布时间。\n".utf8)), ("下载/安装包.dmg", Data(repeating: 3, count: 1_200_000)),
+        ]
+        for (offset, file) in files.enumerated() {
+            let url = root.appending(path: file.path)
+            try? FileManager.default.createDirectory(at: url.deletingLastPathComponent(), withIntermediateDirectories: true)
+            guard (try? file.data.write(to: url)) != nil else { return nil }
+            // 按列出的顺序一个比一个晚创建，每组留下的是排在前面的那个
+            try? FileManager.default.setAttributes([.creationDate: Date(timeIntervalSinceNow: Double(offset - files.count) * 86_400)],
+                                                   ofItemAtPath: url.path(percentEncoded: false))
+        }
+        return root
     }
 
     /// 在示例图上标几笔：给手机号打码、序号、框出按钮、箭头指过去再写一句话，再加上渐变背景

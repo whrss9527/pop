@@ -123,6 +123,82 @@ enum PDFTools {
         return Compression(url: output, before: size(pdf), after: size(output))
     }
 
+    /// 「1-3, 5, 8-」这样的页码（从 1 数），返回从 0 开始的页码，顺序照写的来；写错或者超出范围时返回 nil
+    static func pageIndices(_ text: String, pageCount: Int) -> [Int]? {
+        guard pageCount > 0 else { return nil }
+        var result: [Int] = []
+        let normalized = text.replacingOccurrences(of: "，", with: ",").replacingOccurrences(of: "、", with: ",")
+            .replacingOccurrences(of: "～", with: "-").replacingOccurrences(of: "~", with: "-").replacingOccurrences(of: "—", with: "-")
+            .replacingOccurrences(of: "–", with: "-").replacingOccurrences(of: "－", with: "-").replacingOccurrences(of: "到", with: "-")
+        for rawPart in normalized.split(separator: ",") {
+            let part = rawPart.trimmingCharacters(in: .whitespaces)
+            guard !part.isEmpty else { continue }
+            let pieces = part.split(separator: "-", omittingEmptySubsequences: false).map { $0.trimmingCharacters(in: .whitespaces) }
+            switch pieces.count {
+            case 1:
+                guard let page = Int(pieces[0]), (1...pageCount).contains(page) else { return nil }
+                result.append(page - 1)
+            case 2:
+                // 「-3」是开头到第 3 页，「8-」是第 8 页到最后
+                guard let start = pieces[0].isEmpty ? 1 : Int(pieces[0]), let end = pieces[1].isEmpty ? pageCount : Int(pieces[1]),
+                      1 <= start, start <= end, end <= pageCount else { return nil }
+                result += (start...end).map { $0 - 1 }
+            default:
+                return nil
+            }
+        }
+        return result.isEmpty ? nil : result
+    }
+
+    /// 取出这几页（按给的顺序）存成新的 PDF
+    static func extract(_ pdf: URL, pages: [Int], to destination: URL) throws {
+        try write(pages, of: try open(pdf), to: destination)
+    }
+
+    private static func write(_ pages: [Int], of document: PDFDocument, to destination: URL) throws {
+        let output = PDFDocument()
+        for index in pages {
+            guard let page = document.page(at: index)?.copy() as? PDFPage else {
+                throw Failure(message: "没有第 \(index + 1) 页")
+            }
+            output.insert(page, at: output.pageCount)
+        }
+        guard output.pageCount > 0 else { throw Failure(message: "没有选中页面") }
+        guard output.write(to: destination) else { throw Failure(message: "写不进「\(destination.lastPathComponent)」") }
+    }
+
+    /// 每一页存成一个 PDF，放进 folder，返回这些文件
+    static func split(_ pdf: URL, to folder: URL) throws -> [URL] {
+        let document = try open(pdf)
+        guard document.pageCount > 0 else { throw Failure(message: "「\(pdf.lastPathComponent)」里没有页面") }
+        try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+        let base = pdf.deletingPathExtension().lastPathComponent
+        let digits = max(String(document.pageCount).count, 2)
+        var outputs: [URL] = []
+        for index in 0..<document.pageCount {
+            let number = String(repeating: "0", count: max(digits - String(index + 1).count, 0)) + String(index + 1)
+            let url = folder.appending(path: "\(base)-\(number).pdf")
+            try write([index], of: document, to: url)
+            outputs.append(url)
+        }
+        return outputs
+    }
+
+    /// 页码写法的简短说明：「第 1–3、5 页」
+    static func describe(_ pages: [Int]) -> String {
+        var ranges: [String] = []
+        var index = 0
+        while index < pages.count {
+            var end = index
+            while end + 1 < pages.count, pages[end + 1] == pages[end] + 1 {
+                end += 1
+            }
+            ranges.append(end > index ? "\(pages[index] + 1)–\(pages[end] + 1)" : "\(pages[index] + 1)")
+            index = end + 1
+        }
+        return "第 " + ranges.joined(separator: "、") + " 页"
+    }
+
     /// PDF 里的全部文字（扫描件没有文字层时为空）
     static func text(of pdf: URL) -> String {
         (try? open(pdf))?.string?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
