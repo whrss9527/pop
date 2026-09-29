@@ -11,19 +11,22 @@ struct EdgeFinder {
     var tolerance = 24
 
     init?(image: CGImage) {
-        width = image.width
-        height = image.height
-        guard width > 0, height > 0 else { return nil }
-        var buffer = [UInt8](repeating: 0, count: width * height * 4)
+        // 闭包里只用局部常量：属性还没全部赋值时不能在闭包里用 self
+        let columns = image.width
+        let rows = image.height
+        guard columns > 0, rows > 0 else { return nil }
+        var buffer = [UInt8](repeating: 0, count: columns * rows * 4)
         let drawn = buffer.withUnsafeMutableBytes { raw -> Bool in
-            guard let context = CGContext(data: raw.baseAddress, width: width, height: height, bitsPerComponent: 8,
-                                          bytesPerRow: width * 4,
+            guard let context = CGContext(data: raw.baseAddress, width: columns, height: rows, bitsPerComponent: 8,
+                                          bytesPerRow: columns * 4,
                                           space: CGColorSpace(name: CGColorSpace.sRGB) ?? CGColorSpaceCreateDeviceRGB(),
                                           bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue) else { return false }
-            context.draw(image, in: CGRect(x: 0, y: 0, width: width, height: height))
+            context.draw(image, in: CGRect(x: 0, y: 0, width: columns, height: rows))
             return true
         }
         guard drawn else { return nil }
+        width = columns
+        height = rows
         pixels = buffer
     }
 
