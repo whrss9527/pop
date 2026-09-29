@@ -238,6 +238,21 @@ enum OverlayDemo {
             }
             step("toMarkdown")
 
+            // 正则测试卡片：用「日期」表达式找出日期，替换成日/月/年
+            await pause(1.4 * unit)
+            let notes = "0.10.0 发布于 2026-09-29，0.9.0 发布于 2026-09-28。\n下一版计划在 2026-10-08 之前发布。"
+            let regex = RegexTesterModel(text: notes, pattern: RegexTester.presets.first { $0.title == "日期" }?.pattern ?? "")
+            regex.replacement = "$3/$2/$1"
+            overlay.showCard(RegexTesterView(model: regex, canReplace: true, onAction: { _ in }, onClose: {}), anchor: center)
+            step("regex")
+
+            // 剪贴板历史：几条示例记录，⌘ 点选两条准备合在一起粘贴
+            await pause(1.4 * unit)
+            if let history = sampleClipboardHistory() {
+                overlay.showCard(ClipboardHistoryView(model: history, onClose: {}), anchor: center)
+            }
+            step("history")
+
             // 截图标注窗口：拿一张画好的示例图，标上方框、箭头、文字、马赛克和序号；截图区域换成标注窗口
             await pause(1.4 * unit)
             overlay.hide()
@@ -267,6 +282,25 @@ enum OverlayDemo {
 
             step("end")
         }
+    }
+
+    /// 剪贴板历史演示：放在临时文件夹里的几条示例记录，不碰真的历史；⌘ 点选了其中两条
+    private static func sampleClipboardHistory() -> ClipboardHistoryModel? {
+        let directory = FileManager.default.temporaryDirectory.appending(path: "pop-demo-history", directoryHint: .isDirectory)
+        try? FileManager.default.removeItem(at: directory)
+        let store = ClipboardStore(directory: directory)
+        guard store.isAvailable else { return nil }
+        let now = Date()
+        let samples = ["SELECT * FROM orders WHERE id IN (1001, 1002, 1003);", "https://github.com/whrss9527/pop/releases",
+                       "会议改到周五下午三点", "pop@example.com", "长按右键唤起圆盘，松开就执行"]
+        for (offset, text) in samples.enumerated() {
+            _ = store.add(ClipboardCapture(kind: .text, text: text), at: now.addingTimeInterval(Double(offset - samples.count) * 90))
+        }
+        let model = ClipboardHistoryModel(service: ClipboardService(store: store))
+        for item in model.items where item.text.hasPrefix("会议") || item.text.hasPrefix("pop@") {
+            model.toggleMark(item)
+        }
+        return model
     }
 
     /// 标注演示用的「截图」：一张账户设置卡片，480×300 点，像素按屏幕倍率（和真的截图一样）
