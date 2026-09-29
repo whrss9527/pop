@@ -112,3 +112,47 @@ final class EdgeFinderTests: XCTestCase {
         XCTAssertNil(finder.span(atX: 20, y: 0))
     }
 }
+
+final class PluginUsageTests: XCTestCase {
+    private var suite: String!
+    private var defaults: UserDefaults!
+
+    override func setUpWithError() throws {
+        suite = "pop-usage-tests-\(UUID().uuidString)"
+        defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
+    }
+
+    override func tearDown() {
+        defaults.removePersistentDomain(forName: suite)
+    }
+
+    func testRecentFirst() {
+        let usage = PluginUsage(defaults: defaults)
+        let now = Date()
+        usage.record("a", at: now.addingTimeInterval(-300))
+        usage.record("b", at: now.addingTimeInterval(-100))
+        usage.record("c", at: now.addingTimeInterval(-200))
+        // 太久以前用过的不算
+        usage.record("old", at: now.addingTimeInterval(-40 * 24 * 3600))
+        XCTAssertEqual(usage.recent(now: now), ["b", "c", "a"])
+        XCTAssertEqual(usage.recent(limit: 2, now: now), ["b", "c"])
+
+        let plugins = ["x", "a", "y", "b"].map {
+            PluginInfo(id: $0, name: $0, symbol: "circle", summary: "", accepts: [])
+        }
+        let ordered = PluginUsage.ordered(plugins, recent: usage.recent(now: now))
+        XCTAssertEqual(ordered.plugins.map(\.id), ["b", "a", "x", "y"])
+        XCTAssertEqual(ordered.recentCount, 2)
+    }
+
+    func testKeepsOnlyTheNewest() {
+        let usage = PluginUsage(defaults: defaults)
+        let now = Date()
+        for index in 0..<(PluginUsage.capacity + 5) {
+            usage.record("p\(index)", at: now.addingTimeInterval(Double(index)))
+        }
+        XCTAssertEqual(usage.lastUsed.count, PluginUsage.capacity)
+        XCTAssertNil(usage.lastUsed["p0"])
+        XCTAssertNotNil(usage.lastUsed["p\(PluginUsage.capacity + 4)"])
+    }
+}

@@ -306,6 +306,9 @@ final class PopCoordinator: MouseTriggerDelegate {
         let content = current.content ?? .empty
         guard plugin.info.canHandle(content) else { return }
         stopPointerTracking()
+        if pluginID != BuiltinPluginID.allPlugins {
+            PluginUsage.shared.record(pluginID)
+        }
         if plugin.info.hidesOverlay {
             // 截图、取色要看清屏幕：立刻收起浮窗（不播放收起动画），结果出来后再显示在原来的位置
             overlay.hide(animated: false)
@@ -579,7 +582,10 @@ final class PopCoordinator: MouseTriggerDelegate {
         let plugins = registry.catalog.filter { info in
             info.id != BuiltinPluginID.allPlugins && settings.isInstalled(info.id) && info.canHandle(content)
         }
-        let model = PluginChooserModel(plugins: plugins)
+        // 最近用过的排在前面，⌘1–5 就能直接选到
+        let ordered = PluginUsage.ordered(plugins, recent: PluginUsage.shared.recent())
+        let model = PluginChooserModel(plugins: ordered.plugins,
+                                       recent: Set(ordered.plugins.prefix(ordered.recentCount).map(\.id)))
         model.onRun = { [weak self] info in
             self?.run(info.id)
         }
