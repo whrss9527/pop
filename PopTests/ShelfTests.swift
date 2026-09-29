@@ -81,3 +81,34 @@ final class OpenWithTests: XCTestCase {
         XCTAssertFalse(OpenWithPlugin().info.canHandle(ContentClassifier.classify(.text("hello"))))
     }
 }
+
+final class EdgeFinderTests: XCTestCase {
+    /// 20×10 的白图，中间 x 5–14、y 2–6 是一块黑色
+    private func image() throws -> CGImage {
+        var pixels: [UInt8] = []
+        for y in 0..<10 {
+            for x in 0..<20 {
+                let inside = (5...14).contains(x) && (2...6).contains(y)
+                let value: UInt8 = inside ? 0 : 255
+                pixels += [value, value, value, 255]
+            }
+        }
+        let provider = try XCTUnwrap(CGDataProvider(data: Data(pixels) as CFData))
+        return try XCTUnwrap(CGImage(width: 20, height: 10, bitsPerComponent: 8, bitsPerPixel: 32, bytesPerRow: 80,
+                                     space: try XCTUnwrap(CGColorSpace(name: CGColorSpace.sRGB)),
+                                     bitmapInfo: CGBitmapInfo(rawValue: CGImageAlphaInfo.premultipliedLast.rawValue),
+                                     provider: provider, decode: nil, shouldInterpolate: false, intent: .defaultIntent))
+    }
+
+    func testSpansStopAtEdges() throws {
+        let finder = try XCTUnwrap(EdgeFinder(image: try image()))
+        // 在黑块里：量出黑块的范围
+        let inside = try XCTUnwrap(finder.span(atX: 8, y: 4))
+        XCTAssertEqual(inside, EdgeFinder.Span(left: 5, right: 14, top: 2, bottom: 6))
+        XCTAssertEqual(inside.width, 10)
+        XCTAssertEqual(inside.height, 5)
+        // 在左边的白色里：横着到黑块为止，竖着一直到图的上下边
+        XCTAssertEqual(finder.span(atX: 1, y: 4), EdgeFinder.Span(left: 0, right: 4, top: 0, bottom: 9))
+        XCTAssertNil(finder.span(atX: 20, y: 0))
+    }
+}
