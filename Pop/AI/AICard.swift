@@ -92,18 +92,16 @@ final class AIChatModel: ObservableObject {
             phase = .failed(AIClient.describe(AIClient.Failure.notConfigured))
             return
         }
-        let configuration = AIClient.Configuration(baseURL: settings.ai.baseURL, apiKey: keyProvider() ?? "",
-                                                   model: settings.ai.model)
-        let request: URLRequest
-        do {
-            request = try AIClient.makeRequest(configuration, messages: messages)
-        } catch {
-            phase = .failed(AIClient.describe(error))
-            return
-        }
+        let ai = settings.ai
+        let keyProvider = self.keyProvider
         phase = .running
         task = Task { [weak self] in
+            // 读钥匙串时系统可能弹窗请用户允许，不放在主线程上等
+            let key = await runInBackground { keyProvider() ?? "" }
+            guard !Task.isCancelled else { return }
+            let configuration = AIClient.Configuration(baseURL: ai.baseURL, apiKey: key, model: ai.model)
             do {
+                let request = try AIClient.makeRequest(configuration, messages: messages)
                 for try await piece in AIClient.stream(request) {
                     guard let self, !Task.isCancelled else { return }
                     self.output += piece
