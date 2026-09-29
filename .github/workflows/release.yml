@@ -1,0 +1,211 @@
+name: Release
+
+# 手动运行：构建 Pop.app（Apple 芯片 / Intel 通用），发布到 GitHub Releases，附带 SHA256SUMS.txt。
+# 已安装的 Pop 从这里检查更新：下载 zip、比对 SHA256SUMS.txt 里的校验和、检查代码签名，再替换并重新启动。
+#
+# 签名（都是可选的，配在仓库的 Secrets 里，见 README「签名与公证」）：
+#   MACOS_CERTIFICATE_P12 + MACOS_CERTIFICATE_PASSWORD：用证书签名。证书固定不变，更新后辅助功能授权不会丢。
+#     可以是苹果的 Developer ID Application 证书，也可以是 scripts/create-signing-certificate.sh 生成的自签名证书。
+#   NOTARY_*：证书是 Developer ID 时提交苹果公证，用户下载后双击就能打开。
+#   都没配时本地签名（ad-hoc）。
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "版本号，例如 0.3.0（会创建 v0.3.0 标签）"
+        required: true
+      prerelease:
+        description: "作为测试版（预发布）发布"
+        type: boolean
+        default: true
+      overwrite:
+        description: "版本已存在时覆盖：用原标签的代码重新构建，替换附件并更新标题和说明"
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+jobs:
+  release:
+    runs-on: macos-15
+    timeout-minutes: 60
+    env:
+      VERSION: ${{ inputs.version }}
+      OVERWRITE: ${{ inputs.overwrite }}
+      PRERELEASE: ${{ inputs.prerelease }}
+    steps:
+      # 注意：shell 变量后面紧跟中文或全角符号时一定要写成 ${VAR}，否则 bash 可能把多字节字符的一部分当成变量名。
+      - name: Check version
+        id: check
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          V="${VERSION#v}"
+          if [[ ! "$V" =~ ^[0-9]+\.[0-9]+\.[0-9]+([-.][0-9A-Za-z.]+)?$ ]]; then
+            echo "版本号格式不对：${VERSION}（应该像 0.3.0）"
+            exit 1
+          fi
+          if gh release view "v$V" --repo "$GITHUB_REPOSITORY" > /dev/null 2>&1; then
+            if [ "$OVERWRITE" != "true" ]; then
+              echo "v$V 已经发布过了：换一个版本号，或者勾选 overwrite 覆盖"
+              exit 1
+            fi
+            # 覆盖时仍然用原标签对应的代码构建，保证安装包和标签一致
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+            echo "ref=v$V" >> "$GITHUB_OUTPUT"
+          else
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+            echo "ref=$GITHUB_SHA" >> "$GITHUB_OUTPUT"
+          fi
+          echo "VERSION=$V" >> "$GITHUB_ENV"
+
+      - uses: actions/checkout@v5
+        with:
+          ref: ${{ steps.check.outputs.ref }}
+          fetch-depth: 0
+
+      - name: Select newest stable Xcode
+        run: |
+          XCODE=$(ls -d /Applications/Xcode_*.app | grep -iv -e beta -e release_candidate | sort -V | tail -1)
+          echo "Using $XCODE"
+          sudo xcode-select -s "$XCODE"
+          xcodebuild -version
+
+      - name: Install XcodeGen
+        run: brew install xcodegen
+
+      - name: Import signing certificate
+        env:
+          CERTIFICATE_P12_BASE64: ${{ secrets.MACOS_CERTIFICATE_P12 }}
+          CERTIFICATE_PASSWORD: ${{ secrets.MACOS_CERTIFICATE_PASSWORD }}
+        run: |
+          if [ -z "$CERTIFICATE_P12_BASE64" ]; then
+            echo "::warning::没有配置 MACOS_CERTIFICATE_P12：这次用本地签名（ad-hoc），用户一键更新后需要重新授权辅助功能。配置方法见 README「签名与公证」"
+            exit 0
+          fi
+          scripts/import-certificate.sh
+
+      - name: Build Pop.app (Release, universal)
+        run: |
+          APP=$(scripts/build-app.sh "$VERSION" build/release | tail -n 1)
+          echo "APP=$APP" >> "$GITHUB_ENV"
+          grep -E "warning:" build/release/build.log | grep -v -e SourcePackages -e appintentsmetadataprocessor | sort -u | head -50 || true
+          codesign -dvv "$APP" 2>&1 | grep -E "^(Identifier|Authority|TeamIdentifier|Timestamp)=|flags=" || true
+          echo "Architectures: $(lipo -archs "$APP/Contents/MacOS/Pop")"
+
+      - name: Launch smoke test
+        run: scripts/launch-smoke.sh "$APP"
+
+      - name: Package
+        run: |
+          mkdir -p dist
+          ditto -c -k --keepParent "$APP" "dist/Pop-${VERSION}.zip"
+
+      - name: Notarize (Developer ID only)
+        if: startsWith(env.CODESIGN_NAME, 'Developer ID Application:')
+        env:
+          NOTARY_KEY_P8: ${{ secrets.NOTARY_KEY_P8 }}
+          NOTARY_KEY_ID: ${{ secrets.NOTARY_KEY_ID }}
+          NOTARY_ISSUER_ID: ${{ secrets.NOTARY_ISSUER_ID }}
+          NOTARY_APPLE_ID: ${{ secrets.NOTARY_APPLE_ID }}
+          NOTARY_PASSWORD: ${{ secrets.NOTARY_PASSWORD }}
+          NOTARY_TEAM_ID: ${{ secrets.NOTARY_TEAM_ID }}
+        run: |
+          if [ -z "$NOTARY_KEY_P8" ] && [ -z "$NOTARY_APPLE_ID" ]; then
+            echo "::warning::证书是 Developer ID，但没有配置公证凭据（NOTARY_*），这次不公证"
+            exit 0
+          fi
+          scripts/notarize.sh "dist/Pop-${VERSION}.zip"
+          echo "NOTARIZED=1" >> "$GITHUB_ENV"
+
+      - name: Checksums
+        run: |
+          cd dist
+          shasum -a 256 "Pop-${VERSION}.zip" > SHA256SUMS.txt
+          cat SHA256SUMS.txt
+
+      - name: Create GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          # CHANGELOG.md 里这个版本的那一节（「## 0.3.0」到下一个「## 」之前）放进发布说明
+          awk -v v="${VERSION}" '
+            $0 == "## " v { found = 1; next }
+            /^## / { if (found) exit }
+            found { print }
+          ' CHANGELOG.md > changes.md 2>/dev/null || : > changes.md
+
+          if [ "${NOTARIZED:-}" = "1" ]; then
+            SIGNATURE="已用 Developer ID 签名并通过苹果公证，下载解压后双击就能打开。"
+            UNQUARANTINE=""
+          elif [ -n "${CODESIGN_IDENTITY:-}" ]; then
+            SIGNATURE="用固定证书（${CODESIGN_NAME}）签名：以后在 Pop 里一键更新，辅助功能授权不会丢。"
+            UNQUARANTINE="yes"
+          else
+            SIGNATURE="本地签名（ad-hoc）：在 Pop 里一键更新后，需要在「设置 → 通用」里点「清除旧的授权记录」再授权一次辅助功能。"
+            UNQUARANTINE="yes"
+          fi
+
+          {
+            echo "Pop ${VERSION}，需要 macOS 15 或更新版本，Apple 芯片和 Intel 通用。"
+            echo
+            cat changes.md
+            echo
+            echo "> ${SIGNATURE}"
+            echo
+            echo "### 安装"
+            echo
+            echo "1. 下载下面的 \`Pop-${VERSION}.zip\`，解压后把 \`Pop.app\` 拖进「应用程序」文件夹。"
+            if [ -n "$UNQUARANTINE" ]; then
+              echo "2. 这个包没有经过苹果公证，第一次打开会被系统拦截。在终端里执行下面这行解除拦截，然后正常打开："
+              echo "   \`\`\`"
+              echo "   xattr -dr com.apple.quarantine /Applications/Pop.app"
+              echo "   \`\`\`"
+              echo "   也可以先双击一次，再到「系统设置 → 隐私与安全性」页面底部点「仍要打开」。"
+            else
+              echo "2. 双击打开。"
+            fi
+            echo "3. 第一次打开会弹出 Pop 的设置窗口。按「快速上手」的提示，到「系统设置 → 隐私与安全性 → 辅助功能」里打开 Pop，几秒内自动生效。"
+            echo "4. 选中一段英文，**按住**鼠标右键约 0.25 秒再松开，就会弹出翻译；在空白处按住右键会弹出圆盘。普通点一下右键仍然是系统菜单。"
+            echo
+            echo "已经装了 0.3.0 或更新版本的话，不用手动下载：Pop 会提醒有新版本，在「设置 → 更新」或菜单栏图标里点「立即更新」即可。"
+            echo
+            echo "### 注意"
+            echo
+            echo "- Pop 平时只在菜单栏显示 ◎ 图标。图标被刘海挡住、或者在 macOS 26 的「系统设置 → 菜单栏」里被隐藏时，再次打开 Pop 应用就会弹出设置窗口。"
+            echo "- 按住右键没反应时，到「设置 → 通用」看看权限状态：列表里有 Pop 但不生效，点「清除旧的授权记录」再授权一次。"
+            echo "- CI 构建的包不带 iCloud 同步（需要付费开发者账号签名，见 README）。"
+            echo "- 截图识字第一次使用时，系统会请求「录屏与系统录音」权限；授权后如果截到的只有桌面背景，重新打开 Pop 即可。"
+            echo
+            echo "SHA-256：\`$(cut -d ' ' -f 1 dist/SHA256SUMS.txt)\`"
+          } > notes.md
+          cat notes.md
+
+          if [ "$PRERELEASE" = "true" ]; then
+            TITLE="Pop ${VERSION}（测试版）"
+            FLAG="--prerelease"
+          else
+            TITLE="Pop ${VERSION}"
+            FLAG="--latest"
+          fi
+          if [ "${{ steps.check.outputs.exists }}" = "true" ]; then
+            gh release upload "v${VERSION}" "dist/Pop-${VERSION}.zip" dist/SHA256SUMS.txt --repo "$GITHUB_REPOSITORY" --clobber
+            gh release edit "v${VERSION}" --repo "$GITHUB_REPOSITORY" --title "$TITLE" --notes-file notes.md --prerelease="$PRERELEASE"
+          else
+            gh release create "v${VERSION}" "dist/Pop-${VERSION}.zip" dist/SHA256SUMS.txt \
+              --repo "$GITHUB_REPOSITORY" \
+              --target "$(git rev-parse HEAD)" \
+              --title "$TITLE" \
+              --notes-file notes.md \
+              "$FLAG"
+          fi
+          echo "已发布到 https://github.com/${GITHUB_REPOSITORY}/releases/tag/v${VERSION}"
+
+      - name: Delete temporary keychain
+        if: always() && env.CODESIGN_KEYCHAIN != ''
+        run: security delete-keychain "$CODESIGN_KEYCHAIN" || true

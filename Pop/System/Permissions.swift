@@ -19,6 +19,19 @@ enum Permissions {
             NSWorkspace.shared.open(url)
         }
     }
+
+    /// 清除系统里 Pop 的辅助功能授权记录。本地签名的测试包每个版本签名都不一样，
+    /// 更新后列表里的旧记录（开关还是打开的）对新版本不生效，要先清掉再重新授权。
+    static func resetAccessibility() async -> Bool {
+        guard let bundleID = Bundle.main.bundleIdentifier else { return false }
+        let result = await ProcessRunner.run(URL(fileURLWithPath: "/usr/bin/tccutil"),
+                                             arguments: ["reset", "Accessibility", bundleID],
+                                             stdin: nil, environment: [:], timeout: 10)
+        if case .success(let output) = result, output.status == 0 {
+            return true
+        }
+        return false
+    }
 }
 
 /// 轮询辅助功能授权状态（系统没有可靠的授权变化通知）。
@@ -49,14 +62,10 @@ final class PermissionMonitor: ObservableObject {
 }
 
 enum AppRelauncher {
-    /// 退出后重新打开自己（等当前进程退出一秒后由 shell 重新 open）。
+    /// 退出后重新打开自己（等当前进程真正退出后由 shell 重新 open）。
     @MainActor
     static func relaunch() {
-        let path = Bundle.main.bundleURL.path(percentEncoded: false)
-        let process = Process()
-        process.executableURL = URL(fileURLWithPath: "/bin/sh")
-        process.arguments = ["-c", "sleep 1; /usr/bin/open \"$0\"", path]
-        try? process.run()
+        UpdateInstaller.relaunch(Bundle.main.bundleURL)
         NSApp.terminate(nil)
     }
 }

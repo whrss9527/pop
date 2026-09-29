@@ -6,7 +6,7 @@ Pop 是一个 macOS 菜单栏效率工具：在任意 App 里**长按鼠标右�
 - 选中的是算式、颜色值、图片：直接算出结果、转换颜色写法、识别图片里的文字；
 - 其他情况（或者什么都没选中）：弹出**圆形功能菜单**，按住右键往某个方向一划、松开就执行那一格的功能。
 
-装哪些功能、每个功能放在圆盘的哪一格、什么内容直接执行哪个功能，都可以在设置里调整。除了 20 多个内置功能，还可以用网址模板、Shell、JavaScript 或快捷指令**写自己的插件**。Pop 还带了一个**剪贴板历史**（只存在本机，按设置的时间自动清理）。设置和插件可以通过 **iCloud 同步**到你的其他 Mac，新版本可以在 App 里**一键更新**。
+装哪些功能、每个功能放在圆盘的哪一格、什么内容直接执行哪个功能，都可以在设置里调整。除了 20 多个内置功能，还可以用网址模板、Shell、JavaScript 或快捷指令**写自己的插件**。Pop 还带了一个**剪贴板历史**（只存在本机，按设置的时间自动清理）。设置和插件可以通过 **iCloud 同步**到你的其他 Mac，新版本直接从 GitHub 下载，在 App 里**一键更新**。
 
 ## 功能
 
@@ -22,7 +22,7 @@ Pop 是一个 macOS 菜单栏效率工具：在任意 App 里**长按鼠标右�
 | 结果卡片 | 复制、**替换原文**（粘贴回原来的 App）、逐行复制，二维码图片、颜色色块 |
 | 直达规则 | 按内容类型决定跳过圆盘直接执行哪个功能（默认：外文 → 翻译，算式 → 计算，颜色 → 颜色转换，图片 → 识别文字） |
 | iCloud 同步 | 圆盘布局、已安装的功能、自定义插件、直达规则、唤起方式、翻译和剪贴板设置；存在你自己的 iCloud 键值存储里 |
-| 检查更新 | Sparkle 2，从 GitHub Releases 检查；EdDSA 签名校验；后台发现新版本时菜单栏图标变成下载箭头，不打断你 |
+| 检查更新 | 直接读 GitHub Releases（可以选择是否接收测试版）；下载后比对 SHA-256 校验和、检查代码签名，确认无误再替换 Pop.app 并自动重新启动；发现新版本时发一条通知、菜单栏图标变成下载箭头，不打断你 |
 
 ### 内置功能
 
@@ -105,7 +105,7 @@ make open                                                # 生成 Pop.xcodeproj 
 2. 在任意 App 里选中一段英文，长按右键，就会看到翻译卡片；
 3. 第一次翻译某个语言组合时，按卡片上的提示到「设置 → 翻译」下载离线语言包。
 
-> **一定要用固定的开发证书签名**（在 `Local.xcconfig` 里设置 `DEVELOPMENT_TEAM`）。用「本地签名（-）」的话，每次重新编译系统都会把 Pop 当成新 App，辅助功能授权会失效，需要在系统设置里删掉 Pop 再重新添加。
+> **一定要用固定的开发证书签名**（在 `Local.xcconfig` 里设置 `DEVELOPMENT_TEAM`）。用「本地签名（-）」的话，每次重新编译系统都会把 Pop 当成新 App，辅助功能授权会失效，需要在 Pop 的「设置 → 通用」里点「清除旧的授权记录」（或者在系统设置里删掉 Pop）再重新授权。
 
 **没有付费开发者账号？** 在 `Config/Local.xcconfig` 里加上下面两行，关掉 iCloud 能力后也能正常开发（iCloud 同步会显示为不可用）：
 
@@ -118,11 +118,12 @@ CODE_SIGN_IDENTITY = -
 
 ```bash
 make build   # 编译
-make test    # 跑单元测试（内容识别、各种转换、计算器、圆盘几何、设置编解码与迁移、同步冲突判断、插件与脚本运行、剪贴板数据库）
+make test    # 跑单元测试（内容识别、各种转换、计算器、圆盘几何、设置编解码与迁移、同步冲突判断、插件与脚本运行、剪贴板数据库、更新检查）
+make app     # 在本机构建 Release 版 Pop.app（通用版，本地签名），输出在 build/app
 make clean
 ```
 
-每次推送代码，GitHub Actions 都会在 macOS 上生成工程、编译并运行测试（`.github/workflows/ci.yml`）。
+每次推送代码，GitHub Actions 都会在 macOS 上生成工程、编译并运行测试（`.github/workflows/ci.yml`），然后真正启动一次 Release 包，再用本地的假发布把一键更新完整走一遍（校验和不对要拒绝、换了签名证书要拒绝、正常版本要替换并重新启动；本地签名和证书签名各测一遍）。
 
 ## iCloud 同步
 
@@ -131,43 +132,73 @@ make clean
 - 多台 Mac 都改过时以最后一次修改为准；新装的 Mac 第一次同步会直接采用云端配置，不会用默认设置覆盖云端；
 - iCloud 的存储标识由 Team ID + Bundle ID 组成，**正式发布后不要再改 Bundle ID**，否则老用户的同步数据会找不到。发布前在 `Config/Pop.xcconfig` 里把 `POP_BUNDLE_ID` 改成你自己的。
 
-## 测试版（给自己的 Mac 试用）
+## 安装
 
-不想配置证书、只想装一个包试试：在 GitHub 的 Actions 页面手动运行「Preview Release」工作流，填上版本号（比如 `0.1.0`）。CI 会在 macOS 上构建一个本地签名的通用版（Apple 芯片 / Intel），作为 Pre-release 发布到 Releases，安装步骤写在发布说明里。
-
-测试包没有经过公证，第一次打开需要执行 `xattr -dr com.apple.quarantine /Applications/Pop.app`；也不带 iCloud 同步和自动更新，这两项要用你自己的开发者账号签名后才能启用（见下文）。
-
-## 发布新版本（App 内一键更新）
-
-更新流程：`scripts/release.sh` 打包 → Developer ID 签名 → Apple 公证 → 用 Sparkle 私钥签名并生成 `appcast.xml` → 上传到 GitHub Release。用户的 Pop 会定期读取 `https://github.com/whrss9527/pop/releases/latest/download/appcast.xml`，发现新版本后点「安装更新」即可完成下载、替换和重启。
-
-### 一次性准备
-
-1. **Developer ID 证书**：Xcode → Settings → Accounts → Manage Certificates → 添加「Developer ID Application」。
-2. **公证凭据**（App 专用密码在 appleid.apple.com 生成）：
-
-   ```bash
-   xcrun notarytool store-credentials pop-notary --apple-id you@example.com --team-id ABCDE12345
-   ```
-
-3. **Sparkle 更新签名密钥**：
-
-   ```bash
-   make sparkle-tools          # 打印 Sparkle 工具所在目录
-   <上面的目录>/generate_keys   # 私钥自动存进钥匙串，终端里会打印公钥
-   ```
-
-   把公钥填进 `Config/Pop.xcconfig` 的 `SPARKLE_PUBLIC_ED_KEY = ...` 并提交。私钥只存在你的钥匙串里，**不要提交、不要丢**（丢了之后已安装的旧版本将无法验证新版本）。可以用 `generate_keys -x 文件名` 导出备份。
-
-4. **GitHub CLI**：`brew install gh && gh auth login`。
-
-### 每次发布
+到 [Releases](https://github.com/whrss9527/pop/releases) 下载最新的 `Pop-<版本>.zip`，解压后把 `Pop.app` 拖进「应用程序」文件夹（每个版本的发布说明里也写了安装步骤）。没有经过苹果公证的包，第一次打开前需要在终端里执行：
 
 ```bash
-scripts/release.sh 0.2.0     # 或 make release VERSION=0.2.0
+xattr -dr com.apple.quarantine /Applications/Pop.app
 ```
 
-版本号写在 `CFBundleShortVersionString`；`CFBundleVersion` 自动取 Git 提交数，保证单调递增（Sparkle 用它比较新旧）。没有配置公钥的开发构建不会启动更新器，「检查更新」会提示这是开发版本。
+GitHub 上构建的包不带 iCloud 同步（需要用你自己的付费开发者账号签名，见上文），其他功能都可以用。
+
+## 一键更新
+
+Pop 直接从这个仓库的 GitHub Releases 检查更新，不需要额外的更新服务器：
+
+- 打开「自动检查更新」时（默认打开），启动后检查一次，之后每 6 小时一次；也可以在「设置 → 更新」或菜单栏图标里随时手动检查。默认也接收测试版（预发布版本），不想要可以在设置里关掉；
+- 发现新版本时发一条系统通知，菜单栏图标变成下载箭头；「设置 → 更新」里能看到更新说明，可以立即更新，也可以跳过这个版本；
+- 点「立即更新」后，Pop 会：
+  1. 下载 `Pop-<版本>.zip` 和 `SHA256SUMS.txt`，比对 SHA-256 校验和；
+  2. 解压，检查包名（Bundle ID）、版本号和代码签名是否完整；
+  3. 当前版本是用证书签名的话，新版本必须用**同一张证书**签名，否则拒绝安装；
+  4. 替换 Pop.app（所在文件夹没有写权限时会请求管理员密码）并重新启动。设置、插件和剪贴板历史都存在别处，不受影响。
+- 直接在「下载」文件夹里打开的 Pop，更新时会装进「应用程序」文件夹，旧的那份移到废纸篓。
+
+> 本地签名（ad-hoc）的包每个版本的签名都不一样，macOS 会把更新后的 Pop 当成另一个程序，辅助功能授权随之失效：系统设置里 Pop 的开关看起来还开着，但是不生效。这时在 Pop 的「设置 → 通用」里点「清除旧的授权记录」，再授权一次即可。用固定的证书签名发布就没有这个问题，见下文「签名与公证」。
+
+## 发布新版本
+
+1. 在 `CHANGELOG.md` 顶部写好这个版本的一节（标题就是版本号，比如 `## 0.3.0`），它会放进发布说明；
+2. 把代码推送到 GitHub，在 Actions 页面手动运行「Release」工作流并填上版本号；或者在本机用 GitHub CLI（`brew install gh && gh auth login`）：
+
+   ```bash
+   make release VERSION=0.3.0            # 发布测试版（预发布）
+   make release VERSION=1.0.0 STABLE=1   # 发布正式版
+   ```
+
+CI 会在 macOS 上构建通用版（Apple 芯片 / Intel），启动测试通过后打包成 `Pop-<版本>.zip`、生成 `SHA256SUMS.txt`，创建 `v<版本>` 标签和 Release。已经装着 Pop 的 Mac 下一次检查时就会收到这个版本。
+
+- 版本号已经发布过时工作流会报错；勾选 overwrite 可以用原标签的代码重新构建，替换附件并更新说明；
+- `CFBundleShortVersionString` 取你填的版本号，`CFBundleVersion` 自动取 Git 提交数；
+- 比较新旧时按数字逐段比较，同一个版本号带 `-beta.1` 之类后缀的比不带的旧。
+
+## 签名与公证
+
+发布流程默认用本地签名（ad-hoc），什么都不用配置。在仓库的 Settings → Secrets and variables → Actions 里加上证书后，之后发布的版本都会用证书签名：
+
+| 签名方式 | 需要什么 | 一键更新后的辅助功能授权 | 第一次打开 |
+| --- | --- | --- | --- |
+| 本地签名（默认） | 什么都不用 | 每次更新都要重新授权 | 要先解除隔离 |
+| 自签名证书 | 用 `make signing-certificate` 生成一张 | 保留 | 要先解除隔离 |
+| Developer ID + 公证 | 付费开发者账号 | 保留 | 双击就能打开 |
+
+**自签名证书**（免费）：
+
+```bash
+make signing-certificate    # 即 scripts/create-signing-certificate.sh，文件放在 ~/.pop-signing
+```
+
+按脚本最后打印的提示，把 `certificate.p12.base64` 的内容填进 Secret `MACOS_CERTIFICATE_P12`，把 `password.txt` 的内容填进 `MACOS_CERTIFICATE_PASSWORD`。**请备份这个文件夹**：用证书签名的 Pop 只接受同一张证书签名的更新，证书丢了只能换一张新的，已经安装的 Pop 就得手动下载一次新版本，并重新授权一次。
+
+**Developer ID**：在「钥匙串访问」里把「Developer ID Application: …」证书连同私钥导出成 .p12，`base64 -i 证书.p12 | pbcopy` 后填进 `MACOS_CERTIFICATE_P12`，导出时设的密码填进 `MACOS_CERTIFICATE_PASSWORD`。再配上下面任意一组公证凭据，发布流程会自动提交苹果公证并钉上票据：
+
+| Secrets | 说明 |
+| --- | --- |
+| `NOTARY_KEY_P8`、`NOTARY_KEY_ID`、`NOTARY_ISSUER_ID` | App Store Connect API 密钥：.p8 文件的内容（或者它的 base64）、密钥 ID、Issuer ID（个人密钥不填） |
+| `NOTARY_APPLE_ID`、`NOTARY_PASSWORD`、`NOTARY_TEAM_ID` | Apple ID、App 专用密码（在 appleid.apple.com 生成）、Team ID |
+
+从本地签名换成证书签名后，第一次更新仍然需要重新授权一次辅助功能，之后就不用了。
 
 ## 目录结构
 
@@ -177,15 +208,15 @@ Pop/
 ├── Core/       纯逻辑：设置模型与持久化、内容识别、各种文字转换、计算器、圆盘/屏幕几何
 ├── Plugins/    插件协议、分发规则（Router）、内置功能、自定义插件（manifest、运行器、插件文件夹）
 ├── Clipboard/  剪贴板历史：SQLite 存储、剪贴板监听、历史面板
-├── System/     事件拦截（MouseTrigger）、全局快捷键、读取选中内容、粘贴回原 App、权限
+├── System/     事件拦截（MouseTrigger）、全局快捷键、读取选中内容、粘贴回原 App、权限、通知
 ├── UI/         浮动面板、圆盘、结果/翻译卡片、「全部功能」列表、菜单栏图标
 ├── Settings/   设置窗口各页面（含拖拽式圆盘编辑器、插件编辑器）
 ├── Sync/       iCloud 同步
-├── Update/     Sparkle 自动更新
+├── Update/     检查更新（GitHub Releases）、下载校验、替换并重新启动
 └── Resources/  Info.plist、entitlements
 PopTests/       单元测试
-Config/         xcconfig（签名、Bundle ID、Sparkle 公钥）
-scripts/        发布脚本
+Config/         xcconfig（签名、Bundle ID）
+scripts/        构建、签名、公证和测试脚本（发布流程和 CI 都用它们）
 ```
 
 ## 扩展功能
@@ -212,6 +243,7 @@ struct UppercasePlugin: PopPlugin {
 ## 已知限制
 
 - 需要辅助功能权限，并且因为 App Store 沙盒不允许使用辅助功能，只能通过官网 / GitHub 分发；
+- 本地签名的发布包每次一键更新后都要重新授权辅助功能，用固定证书签名发布就不用（见[签名与公证](#签名与公证)）；
 - 少数 App 既不支持辅助功能读取选区，菜单里也找不到「拷贝」，这时会模拟 ⌘C；非 QWERTY 键盘布局下模拟按键可能不准；
 - 「替换原文」和剪贴板历史的粘贴是模拟 ⌘V 实现的，选中的地方不能编辑时不会有效果；
 - 截图识字需要「屏幕录制」权限，没授权时截到的可能只有桌面背景；

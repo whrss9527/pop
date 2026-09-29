@@ -13,6 +13,7 @@ final class StatusItemController: NSObject, NSMenuDelegate {
     var onOpenSettings: () -> Void = {}
     var onShowClipboard: () -> Void = {}
     var onCheckForUpdates: () -> Void = {}
+    var onInstallUpdate: () -> Void = {}
     var onTogglePause: () -> Void = {}
     var onGrantPermission: () -> Void = {}
 
@@ -49,7 +50,7 @@ final class StatusItemController: NSObject, NSMenuDelegate {
         menu.removeAllItems()
         let state = stateProvider()
         if let version = state.pendingUpdateVersion {
-            addItem(to: menu, title: "安装新版本 \(version)…", action: #selector(checkForUpdates))
+            addItem(to: menu, title: "安装新版本 \(version)…", action: #selector(installUpdate))
             menu.addItem(.separator())
         }
         if !state.isTrusted {
@@ -81,6 +82,7 @@ final class StatusItemController: NSObject, NSMenuDelegate {
         }
     }
     @objc private func checkForUpdates() { onCheckForUpdates() }
+    @objc private func installUpdate() { onInstallUpdate() }
     @objc private func togglePause() { onTogglePause() }
     @objc private func grantPermission() { onGrantPermission() }
 }

@@ -11,7 +11,7 @@ final class AppController {
     let permissions: PermissionMonitor
     let overlay: OverlayController
     let downloads: TranslationDownloadRequest
-    let updates: UpdateManager
+    let updater: Updater
     let cloudSync: CloudSync
     let clipboard: ClipboardService
     let trigger: MouseTrigger
@@ -29,7 +29,7 @@ final class AppController {
         permissions = PermissionMonitor()
         overlay = OverlayController()
         downloads = TranslationDownloadRequest()
-        updates = UpdateManager()
+        updater = Updater()
         cloudSync = CloudSync(settingsStore: settingsStore, pluginStore: pluginStore)
         clipboard = ClipboardService()
         trigger = MouseTrigger()
@@ -43,7 +43,7 @@ final class AppController {
         let pluginRegistry = registry
         let permissionMonitor = permissions
         let sync = cloudSync
-        let updateManager = updates
+        let appUpdater = updater
         let downloadRequest = downloads
         let clipboardService = clipboard
         settingsWindow = SettingsWindowController { navigation in
@@ -54,7 +54,7 @@ final class AppController {
                     .environmentObject(pluginRegistry)
                     .environmentObject(permissionMonitor)
                     .environmentObject(sync)
-                    .environmentObject(updateManager)
+                    .environmentObject(appUpdater)
                     .environmentObject(downloadRequest)
                     .environmentObject(clipboardService)
             )
@@ -63,6 +63,8 @@ final class AppController {
     }
 
     func start() {
+        // CI 的端到端更新测试靠这一行确认新版本已经跑起来了
+        NSLog("Pop 已启动，版本 %@", UpdateChecker.currentVersion)
         AlertVolume.restorePendingIfNeeded()
         MainMenu.install()
 
@@ -75,7 +77,7 @@ final class AppController {
             guard let self else { return StatusItemController.State() }
             return StatusItemController.State(isPaused: self.coordinator.isPaused,
                                               isTrusted: self.permissions.isTrusted,
-                                              pendingUpdateVersion: self.updates.pendingUpdateVersion)
+                                              pendingUpdateVersion: self.updater.release?.version)
         }
         statusItem.onOpenSettings = { [weak self] in
             self?.settingsWindow.show()
@@ -84,8 +86,28 @@ final class AppController {
             self?.coordinator.showClipboardHistoryFromHotKey()
         }
         statusItem.onCheckForUpdates = { [weak self] in
-            self?.updates.checkForUpdates()
+            self?.settingsWindow.show(tab: .update)
+            self?.updater.checkNow()
         }
+        statusItem.onInstallUpdate = { [weak self] in
+            self?.settingsWindow.show(tab: .update)
+            self?.updater.checkAndInstall()
+        }
+
+        updater.notify = { release in
+            Notifier.shared.showUpdate(version: release.version)
+        }
+        updater.onRelaunch = {
+            NSApp.terminate(nil)
+        }
+        Notifier.shared.onOpen = { [weak self] in
+            self?.settingsWindow.show(tab: .update)
+        }
+        Notifier.shared.onInstall = { [weak self] in
+            self?.settingsWindow.show(tab: .update)
+            self?.updater.checkAndInstall()
+        }
+        Notifier.shared.start()
         statusItem.onTogglePause = { [weak self] in
             self?.togglePause()
         }
@@ -110,7 +132,7 @@ final class AppController {
             }
             .store(in: &cancellables)
 
-        updates.$pendingUpdateVersion
+        updater.$phase
             .receive(on: RunLoop.main)
             .sink { [weak self] _ in
                 self?.statusItem.refresh()
@@ -127,7 +149,7 @@ final class AppController {
 
         pluginStore.startWatching()
         permissions.start()
-        updates.start()
+        updater.startAutomaticChecks()
         cloudSync.start()
 
         // 第一次启动、或者还没授权时，主动打开设置窗口：Pop 没有程序坞图标，

@@ -14,15 +14,10 @@ configFiles:
 settings:
   base:
     SWIFT_VERSION: "5.0"
-    MARKETING_VERSION: "0.1.0"
+    MARKETING_VERSION: "0.3.0"
     CURRENT_PROJECT_VERSION: "1"
     CODE_SIGN_STYLE: Automatic
     DEAD_CODE_STRIPPING: YES
-
-packages:
-  Sparkle:
-    url: https://github.com/sparkle-project/Sparkle
-    from: 2.10.0
 
 targets:
   Pop:
@@ -33,8 +28,6 @@ targets:
       Release: Config/Pop.xcconfig
     sources:
       - path: Pop
-    dependencies:
-      - package: Sparkle
     settings:
       base:
         INFOPLIST_FILE: Pop/Resources/Info.plist

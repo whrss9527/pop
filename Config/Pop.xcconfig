@@ -10,10 +10,7 @@ POP_ENTITLEMENTS = Pop/Resources/Pop.entitlements
 CODE_SIGN_ENTITLEMENTS = $(POP_ENTITLEMENTS)
 
 // 公证（notarization）要求开启 Hardened Runtime。
+// 两个 entitlements 文件里都带了 com.apple.security.cs.allow-jit：插件里的 JavaScript 用 JavaScriptCore 运行，需要 JIT。
 ENABLE_HARDENED_RUNTIME = YES
-
-// Sparkle 更新签名公钥：运行 Sparkle 的 generate_keys 生成后填在这里并提交（公钥不是秘密）。
-// 为空时 App 内的自动更新保持关闭，不会弹出配置错误。
-SPARKLE_PUBLIC_ED_KEY =
 
 #include? "Local.xcconfig"

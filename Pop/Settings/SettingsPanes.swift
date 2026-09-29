@@ -45,6 +45,22 @@ struct GeneralSettingsView: View {
                         }
                     }
                 }
+                if !permissions.isTrusted {
+                    HStack(alignment: .firstTextBaseline, spacing: 10) {
+                        Text("列表里已经有 Pop、开关也打开了，但还是不生效？多半是更新后签名变了：先清除旧的授权记录，再授权一次。")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                        Spacer()
+                        Button("清除旧的授权记录") {
+                            Task {
+                                _ = await Permissions.resetAccessibility()
+                                Permissions.requestAccessibility()
+                                Permissions.openAccessibilitySettings()
+                            }
+                        }
+                    }
+                }
             }
 
             Section {
@@ -635,58 +651,6 @@ struct SyncSettingsView: View {
             if !sync.isAvailableInBuild {
                 Section {
                     Text("当前构建没有 iCloud 能力：需要用付费开发者账号签名，并使用带 iCloud 的 entitlements（见 README）。")
-                        .foregroundStyle(.orange)
-                }
-            }
-        }
-        .formStyle(.grouped)
-    }
-}
-
-// MARK: - 更新
-
-struct UpdateSettingsView: View {
-    @EnvironmentObject private var updates: UpdateManager
-
-    var body: some View {
-        Form {
-            Section {
-                LabeledContent("当前版本") {
-                    Text(updates.currentVersion)
-                }
-                if let version = updates.pendingUpdateVersion {
-                    LabeledContent("可用更新") {
-                        Text(version)
-                            .foregroundStyle(Color.accentColor)
-                    }
-                }
-                Button("检查更新…") {
-                    updates.checkForUpdates()
-                }
-                .disabled(!updates.canCheckForUpdates)
-                Toggle("自动检查更新", isOn: Binding(
-                    get: { updates.automaticallyChecksForUpdates },
-                    set: { updates.automaticallyChecksForUpdates = $0 }
-                ))
-                .disabled(!updates.isConfigured)
-                Toggle("自动下载并安装更新", isOn: Binding(
-                    get: { updates.automaticallyDownloadsUpdates },
-                    set: { updates.automaticallyDownloadsUpdates = $0 }
-                ))
-                .disabled(!updates.isConfigured || !updates.automaticallyChecksForUpdates)
-                if let date = updates.lastUpdateCheckDate {
-                    LabeledContent("上次检查") {
-                        Text(date.formatted(date: .abbreviated, time: .shortened))
-                    }
-                }
-            } footer: {
-                Text("更新包从 GitHub Releases 下载，安装前会校验 EdDSA 签名。发现新版本时点「安装更新」，下载、替换、重启一步完成；打开「自动下载并安装」后会在退出 Pop 时静默安装。")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-            }
-            if !updates.isConfigured {
-                Section {
-                    Text("这是开发构建：没有配置更新签名公钥（SPARKLE_PUBLIC_ED_KEY），自动更新已关闭。发布流程见 README。")
                         .foregroundStyle(.orange)
                 }
             }

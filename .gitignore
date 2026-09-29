@@ -10,8 +10,10 @@ build/
 # 本地签名配置（Team ID 等），模板见 Config/Local.xcconfig.example
 Config/Local.xcconfig
 
-# Sparkle 私钥导出文件，千万不要提交
-*.sparkle-private-key
-sparkle_private_key*
+# 签名证书和私钥（scripts/create-signing-certificate.sh 默认放在 ~/.pop-signing），千万不要提交
+*.p12
+*.p12.base64
+*.p8
+.pop-signing/
 
 .DS_Store

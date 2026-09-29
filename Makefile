@@ -1,6 +1,6 @@
 # 常用命令。第一次使用前先：brew install xcodegen
 
-.PHONY: project open build test sparkle-tools release clean
+.PHONY: project open build test app release signing-certificate clean
 
 project:
 	xcodegen generate
@@ -14,14 +14,22 @@ build: project
 test: project
 	xcodebuild -project Pop.xcodeproj -scheme Pop -destination 'platform=macOS' -clonedSourcePackagesDirPath build/SourcePackages CODE_SIGNING_ALLOWED=NO test
 
-# 下载 Sparkle 并打印 generate_keys / generate_appcast 等工具所在目录
-sparkle-tools: project
-	xcodebuild -resolvePackageDependencies -project Pop.xcodeproj -clonedSourcePackagesDirPath build/SourcePackages
-	@find build/SourcePackages/artifacts -type f -name generate_keys -exec dirname {} \;
+# 在本机构建 Release 版 Pop.app（默认本地签名；设置 CODESIGN_IDENTITY 时用证书签名）
+# 用法：make app VERSION=0.3.0
+app:
+	scripts/build-app.sh $(or $(VERSION),0.0.0-dev) build/app
 
-# 用法：make release VERSION=0.2.0
+# 在 GitHub Actions 上构建并发布（需要 GitHub CLI：brew install gh && gh auth login）
+# 用法：make release VERSION=0.3.0            发布测试版
+#       make release VERSION=1.0.0 STABLE=1   发布正式版
 release:
-	scripts/release.sh $(VERSION)
+	@test -n "$(VERSION)" || (echo "用法：make release VERSION=0.3.0" && exit 1)
+	gh workflow run release.yml -f version=$(VERSION) -f prerelease=$(if $(STABLE),false,true)
+	@echo "已开始发布，进度见：gh run watch 或 GitHub 的 Actions 页面"
+
+# 生成一张自签名的代码签名证书（让更新后不用重新授权辅助功能），见 README「签名与公证」
+signing-certificate:
+	scripts/create-signing-certificate.sh
 
 clean:
 	rm -rf build Pop.xcodeproj

@@ -67,7 +67,8 @@ jobs:
           path: build.log
           if-no-files-found: ignore
 
-  # 单元测试不会执行 App 启动流程（测试宿主会跳过初始化），这里真正启动一次 Release 包。
+  # 单元测试不会执行 App 启动流程（测试宿主会跳过初始化），这里真正启动一次 Release 包，
+  # 再用假的发布走一遍一键更新。
   launch-smoke:
     name: launch-smoke (${{ matrix.os }})
     runs-on: ${{ matrix.os }}
@@ -92,9 +93,46 @@ jobs:
 
       - name: Build Release app
         run: |
-          APP=$(scripts/build-preview.sh 0.0.0-ci build/preview | tail -n 1)
+          APP=$(scripts/build-app.sh 0.0.0-ci build/ci | tail -n 1)
           echo "APP=$APP" >> "$GITHUB_ENV"
 
       - name: Launch smoke test
         run: scripts/launch-smoke.sh "$APP"
+
+      # 用本地 HTTP 服务器假装发布了 9.9.9，走一遍检查、下载、校验、替换、重新启动（本地签名的包）
+      - name: End-to-end update test
+        run: |
+          rm -rf build/e2e-adhoc && mkdir -p build/e2e-adhoc
+          ditto "$APP" build/e2e-adhoc/Pop.app
+          scripts/update-e2e.sh build/e2e-adhoc/Pop.app
+
+      # 发布时可以用证书签名：这里造一张临时的自签名证书，把生成、导入钥匙串、签名、启动、
+      # 以及「只接受同一个证书签名的更新」都走一遍
+      - name: Signing self-test (temporary self-signed certificate)
+        run: |
+          work="$RUNNER_TEMP/signing-selftest"
+          rm -rf "$work" && mkdir -p "$work"
+          POP_SIGNING_DIR="$work/cert" scripts/create-signing-certificate.sh "Pop CI Test" > /dev/null
+          : > "$work/env"
+          CERTIFICATE_P12_BASE64="$(cat "$work/cert/certificate.p12.base64")" \
+            CERTIFICATE_PASSWORD="$(cat "$work/cert/password.txt")" \
+            GITHUB_ENV="$work/env" scripts/import-certificate.sh
+          identity=$(awk -F= '/^CODESIGN_IDENTITY=/{print $2}' "$work/env")
+          keychain=$(awk -F= '/^CODESIGN_KEYCHAIN=/{print $2}' "$work/env")
+          [ -n "$identity" ] && [ -n "$keychain" ] || { echo "导入脚本没有给出签名身份和钥匙串"; exit 1; }
+          export CODESIGN_IDENTITY="$identity" CODESIGN_KEYCHAIN="$keychain"
+
+          rm -rf build/e2e-signed && mkdir -p build/e2e-signed
+          ditto "$APP" build/e2e-signed/Pop.app
+          scripts/sign-app.sh build/e2e-signed/Pop.app
+          info=$(codesign -dvv build/e2e-signed/Pop.app 2>&1)
+          echo "$info" | grep -E "^(Authority|Timestamp)=|flags=" || true
+          echo "$info" | grep -q "Authority=Pop CI Test" || { echo "$info"; echo "没有用证书签名"; exit 1; }
+          echo "$info" | grep -q "flags=.*runtime" || { echo "$info"; echo "没有开 Hardened Runtime"; exit 1; }
+          codesign -d --entitlements - --xml build/e2e-signed/Pop.app 2>/dev/null | grep -q "allow-jit" \
+            || { echo "签名里没有 allow-jit"; exit 1; }
+
+          scripts/launch-smoke.sh build/e2e-signed/Pop.app
+          scripts/update-e2e.sh build/e2e-signed/Pop.app
+          security delete-keychain "$keychain"
 
