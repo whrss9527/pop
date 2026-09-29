@@ -121,6 +121,8 @@ enum PluginOutcome: Equatable {
     case ai(AIRequestSpec)
     /// 打开窗口布局卡片
     case showWindowLayouts
+    /// 打开常用短语列表
+    case showSnippets
     case failure(String)
 }
 

@@ -703,6 +703,15 @@ enum DateParser {
         weekday.locale = Locale(identifier: "zh_CN")
         weekday.timeZone = timeZone
         weekday.dateFormat = "EEEE"
+        let clock = DateFormatter()
+        clock.locale = Locale(identifier: "en_US_POSIX")
+        clock.dateFormat = "yyyy-MM-dd HH:mm"
+        // 几个常用城市的当地时间（和本地时区相同的不重复列）
+        let cities = worldClocks.compactMap { city, identifier -> ResultCard.Row? in
+            guard identifier != timeZone.identifier, let zone = TimeZone(identifier: identifier) else { return nil }
+            clock.timeZone = zone
+            return ResultCard.Row(label: city, value: clock.string(from: date))
+        }
         return [
             ResultCard.Row(label: "本地时间", value: TimestampConverter.localString(date, timeZone: timeZone)),
             ResultCard.Row(label: "UTC", value: TimestampConverter.isoString(date)),
@@ -710,8 +719,17 @@ enum DateParser {
             ResultCard.Row(label: "Unix 毫秒", value: String(milliseconds)),
             ResultCard.Row(label: "距今", value: relative.localizedString(for: date, relativeTo: now)),
             ResultCard.Row(label: "星期", value: weekday.string(from: date)),
-        ]
+        ] + cities
     }
+
+    /// 时间转换卡片上列出的城市
+    static let worldClocks: [(city: String, zone: String)] = [
+        ("北京", "Asia/Shanghai"),
+        ("东京", "Asia/Tokyo"),
+        ("伦敦", "Europe/London"),
+        ("纽约", "America/New_York"),
+        ("旧金山", "America/Los_Angeles"),
+    ]
 }
 
 // MARK: - 随机生成

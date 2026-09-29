@@ -162,6 +162,39 @@ struct ScreenshotTranslatePlugin: PopPlugin {
     }
 }
 
+// MARK: - 截图标注
+
+struct AnnotatePlugin: PopPlugin {
+    let info = PluginInfo(id: BuiltinPluginID.annotate, name: "截图标注", symbol: "pencil.and.outline",
+                          summary: "框选屏幕上的一块区域（或者用选中的图片），画箭头、方框、文字、马赛克、序号，再复制、存储或贴到屏幕上",
+                          accepts: [], hidesOverlay: true, optionalContent: true)
+
+    @MainActor func run(_ content: ClassifiedContent, context: PluginContext) async -> PluginOutcome {
+        let anchor = context.anchor ?? NSEvent.mouseLocation
+        // 选中了图片：直接标注这张图
+        var data: Data?
+        if case .image(let image) = content.selection {
+            data = image
+        } else if content.kinds.contains(.imageFile), let url = content.files.first {
+            data = try? Data(contentsOf: url)
+        }
+        if let data {
+            guard let image = TextRecognizer.cgImage(from: data) else { return .failure("无法读取图片") }
+            AnnotationWindowController.present(ScreenCapture.Capture(image: image, png: data), near: anchor)
+            return .done(toast: nil)
+        }
+        switch await ScreenCapture.selectRegion() {
+        case .cancelled:
+            return .done(toast: nil)
+        case .failed(let message):
+            return .failure(message)
+        case .captured(let capture):
+            AnnotationWindowController.present(capture, near: NSEvent.mouseLocation)
+            return .done(toast: nil)
+        }
+    }
+}
+
 // MARK: - 贴图
 
 struct PinPlugin: PopPlugin {

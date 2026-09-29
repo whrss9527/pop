@@ -40,6 +40,10 @@ final class SettingsWindowController: NSObject, NSWindowDelegate {
             navigation.tab = tab
         }
         let window = self.window ?? makeWindow()
+        // 上次关掉时有一部分在屏幕外面（换了显示器、分辨率变了），这次重新居中
+        if !window.isVisible, let screen = window.screen ?? NSScreen.main, !screen.visibleFrame.contains(window.frame) {
+            window.center()
+        }
         // Pop 平时只在菜单栏（LSUIElement），系统启动它时不会把它切到前台，
         // 这时普通的 makeKeyAndOrderFront 会把窗口放到当前 App 的窗口后面，用户根本看不到。
         // 所以打开设置时临时变成普通 App（程序坞里出现图标、可以 ⌘Tab 切换），
@@ -57,6 +61,9 @@ final class SettingsWindowController: NSObject, NSWindowDelegate {
         window.styleMask = [.titled, .closable, .miniaturizable]
         window.isReleasedWhenClosed = false
         window.delegate = self
+        // SwiftUI 的内容这时还没排版，窗口可能还是很小的尺寸；先定好大小再居中，
+        // 否则窗口会从屏幕中间往右下方长大，小屏幕上有一部分跑到屏幕外面
+        window.setContentSize(SettingsRootView.size)
         window.center()
         self.window = window
         return window
@@ -68,6 +75,9 @@ final class SettingsWindowController: NSObject, NSWindowDelegate {
 }
 
 struct SettingsRootView: View {
+    /// 设置窗口内容的大小
+    static let size = CGSize(width: 840, height: 600)
+
     @ObservedObject var navigation: SettingsNavigation
     @EnvironmentObject var registry: PluginRegistry
 
@@ -105,7 +115,7 @@ struct SettingsRootView: View {
                 .tabItem { Label("更新", systemImage: "arrow.down.circle") }
                 .tag(SettingsTab.update)
         }
-        .frame(width: 840, height: 600)
+        .frame(width: Self.size.width, height: Self.size.height)
     }
 }
 

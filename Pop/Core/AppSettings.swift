@@ -54,6 +54,9 @@ enum BuiltinPluginID {
     static let zip = "zip"
     static let unzip = "unzip"
 
+    static let snippets = "snippets"
+    static let annotate = "annotate"
+
     /// 0.1 版就有的功能。旧版本的设置里没有记录「见过哪些内置功能」，按这个列表补齐。
     static let legacy = [translate, search, openURL, calculate, copyPlain, formatJSON, timestamp, copyPath, revealInFinder, settings]
 
@@ -65,6 +68,7 @@ enum BuiltinPluginID {
         windowLayout, imageConvert,
         linkInspect, jwtDecode, markdownCopy,
         tableConvert, zip, unzip,
+        snippets, annotate,
     ]
 
     /// 默认不装的内置功能（需要的话在「设置 → 功能」里打开）
@@ -520,6 +524,8 @@ struct AppSettings: Codable, Equatable {
     var ai = AISettings()
     /// 功能的全局快捷键
     var pluginHotKeys: [PluginHotKey] = []
+    /// 常用短语
+    var snippets: [Snippet] = Snippet.examples
     /// 已经「见过」的内置功能。新版本新增的内置功能不在这里面，读取旧设置时会自动装上。
     var knownBuiltinPlugins: [String] = BuiltinPluginID.all
     /// 用户最后一次修改的时间，iCloud 同步时用它判断哪边更新。
@@ -541,6 +547,7 @@ struct AppSettings: Codable, Equatable {
         clipboard = c.lenient(.clipboard, default: d.clipboard)
         ai = c.lenient(.ai, default: d.ai)
         pluginHotKeys = c.lossyArray(.pluginHotKeys) ?? []
+        snippets = c.lossyArray(.snippets) ?? d.snippets
         knownBuiltinPlugins = c.lenient(.knownBuiltinPlugins, default: BuiltinPluginID.legacy)
         modifiedAt = c.lenient(.modifiedAt, default: d.modifiedAt)
         if !knownBuiltinPlugins.contains(BuiltinPluginID.allPlugins), ring == .legacyDefault {
