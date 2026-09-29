@@ -101,6 +101,38 @@ enum AnnotationColor: String, CaseIterable, Identifiable {
     }
 }
 
+/// 截图四周加的背景：渐变色、圆角和阴影，适合发到文档、社交网络里
+enum AnnotationBackground: String, CaseIterable, Identifiable {
+    case sky, sunset, mint, grape, graphite, paper
+
+    var id: String { rawValue }
+
+    var title: String {
+        switch self {
+        case .sky: return "晴空"
+        case .sunset: return "晚霞"
+        case .mint: return "薄荷"
+        case .grape: return "葡萄"
+        case .graphite: return "石墨"
+        case .paper: return "纸白"
+        }
+    }
+
+    /// 从左上到右下的两种颜色
+    var nsColors: [NSColor] {
+        switch self {
+        case .sky: return [NSColor(srgbRed: 0.35, green: 0.62, blue: 1, alpha: 1), NSColor(srgbRed: 0.55, green: 0.36, blue: 0.96, alpha: 1)]
+        case .sunset: return [NSColor(srgbRed: 1, green: 0.62, blue: 0.35, alpha: 1), NSColor(srgbRed: 0.94, green: 0.33, blue: 0.56, alpha: 1)]
+        case .mint: return [NSColor(srgbRed: 0.36, green: 0.86, blue: 0.66, alpha: 1), NSColor(srgbRed: 0.16, green: 0.62, blue: 0.78, alpha: 1)]
+        case .grape: return [NSColor(srgbRed: 0.78, green: 0.44, blue: 0.95, alpha: 1), NSColor(srgbRed: 0.36, green: 0.27, blue: 0.84, alpha: 1)]
+        case .graphite: return [NSColor(srgbRed: 0.33, green: 0.35, blue: 0.4, alpha: 1), NSColor(srgbRed: 0.12, green: 0.13, blue: 0.16, alpha: 1)]
+        case .paper: return [NSColor(srgbRed: 0.96, green: 0.96, blue: 0.97, alpha: 1), NSColor(srgbRed: 0.86, green: 0.87, blue: 0.9, alpha: 1)]
+        }
+    }
+
+    var colors: [Color] { nsColors.map { Color(nsColor: $0) } }
+}
+
 enum AnnotationTool: String, CaseIterable, Identifiable {
     case arrow, rectangle, ellipse, pen, text, mosaic, counter
 
@@ -162,6 +194,8 @@ final class AnnotationModel: ObservableObject {
     /// 正在输入的文字的位置
     @Published var textAnchor: CGPoint?
     @Published var textDraft = ""
+    /// 四周加的背景；nil 表示不加
+    @Published var background: AnnotationBackground?
 
     init(image: CGImage, pointSize: CGSize) {
         self.image = image
@@ -242,6 +276,20 @@ final class AnnotationModel: ObservableObject {
 
     // MARK: - 合成
 
+    /// 加背景时截图四周留的宽度（点）
+    var backgroundPadding: CGFloat {
+        max(24, (min(size.width, size.height) * 0.08).rounded())
+    }
+
+    /// 加背景时截图的圆角（点）
+    static let backgroundCornerRadius: CGFloat = 10
+
+    /// 合成后图片的大小（点）：加了背景时四周多出 backgroundPadding
+    var outputSize: CGSize {
+        guard background != nil else { return size }
+        return CGSize(width: size.width + backgroundPadding * 2, height: size.height + backgroundPadding * 2)
+    }
+
     /// 文字的字号跟着线宽变
     static func fontSize(for lineWidth: CGFloat) -> CGFloat {
         max(lineWidth * 4, 14)
@@ -252,9 +300,20 @@ final class AnnotationModel: ObservableObject {
         max(lineWidth * 3, 11)
     }
 
-    /// 画上所有标注，得到和原图同样像素大小的 PNG
+    /// 画上所有标注（加了背景时再套上背景），得到 PNG；截图部分和原图的像素大小一样
     func renderPNG() -> Data? {
         commitText()
+        guard let annotated = composedImage() else { return nil }
+        var output = annotated
+        if let background {
+            guard let withBackground = framed(annotated, in: background) else { return nil }
+            output = withBackground
+        }
+        return NSBitmapImageRep(cgImage: output).representation(using: .png, properties: [:])
+    }
+
+    /// 原图加上所有标注
+    private func composedImage() -> CGImage? {
         let width = image.width
         let height = image.height
         guard let context = CGContext(data: nil, width: width, height: height, bitsPerComponent: 8, bytesPerRow: 0,
@@ -272,8 +331,41 @@ final class AnnotationModel: ObservableObject {
             draw(annotation, in: context)
         }
         NSGraphicsContext.restoreGraphicsState()
-        guard let output = context.makeImage() else { return nil }
-        return NSBitmapImageRep(cgImage: output).representation(using: .png, properties: [:])
+        return context.makeImage()
+    }
+
+    /// 截图放在渐变背景中间，圆角、带阴影
+    private func framed(_ image: CGImage, in background: AnnotationBackground) -> CGImage? {
+        let pixelsPerPoint = CGFloat(image.width) / max(size.width, 1)
+        let padding = backgroundPadding
+        let full = outputSize
+        let width = Int((full.width * pixelsPerPoint).rounded())
+        let height = Int((full.height * pixelsPerPoint).rounded())
+        let space = CGColorSpace(name: CGColorSpace.sRGB) ?? CGColorSpaceCreateDeviceRGB()
+        guard let context = CGContext(data: nil, width: width, height: height, bitsPerComponent: 8, bytesPerRow: 0, space: space,
+                                      bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue),
+              let gradient = CGGradient(colorsSpace: space, colors: background.nsColors.map(\.cgColor) as CFArray,
+                                        locations: [0, 1]) else { return nil }
+        // 下面用点做单位，原点在左下角
+        context.scaleBy(x: pixelsPerPoint, y: pixelsPerPoint)
+        context.drawLinearGradient(gradient, start: CGPoint(x: 0, y: full.height), end: CGPoint(x: full.width, y: 0), options: [])
+        let rect = CGRect(x: padding, y: padding, width: size.width, height: size.height)
+        let path = CGPath(roundedRect: rect, cornerWidth: Self.backgroundCornerRadius, cornerHeight: Self.backgroundCornerRadius,
+                          transform: nil)
+        // 阴影的偏移和模糊不跟着坐标缩放，按像素算
+        context.saveGState()
+        context.setShadow(offset: CGSize(width: 0, height: -6 * pixelsPerPoint), blur: 24 * pixelsPerPoint,
+                          color: NSColor.black.withAlphaComponent(0.35).cgColor)
+        context.addPath(path)
+        context.setFillColor(NSColor.white.cgColor)
+        context.fillPath()
+        context.restoreGState()
+        context.saveGState()
+        context.addPath(path)
+        context.clip()
+        context.draw(image, in: rect)
+        context.restoreGState()
+        return context.makeImage()
     }
 
     private func draw(_ annotation: Annotation, in context: CGContext) {

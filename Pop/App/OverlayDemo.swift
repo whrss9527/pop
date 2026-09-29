@@ -284,7 +284,7 @@ enum OverlayDemo {
         return files
     }
 
-    /// 在示例图上标几笔：给手机号打码、序号、框出按钮、箭头指过去再写一句话
+    /// 在示例图上标几笔：给手机号打码、序号、框出按钮、箭头指过去再写一句话，再加上渐变背景
     private static func annotateSample(_ model: AnnotationModel) {
         func stroke(_ tool: AnnotationTool, from start: CGPoint, to end: CGPoint) {
             model.tool = tool
@@ -302,6 +302,7 @@ enum OverlayDemo {
         model.textDraft = "改完点这里"
         model.commitText()
         model.tool = .arrow
+        model.background = .sky
     }
 
     /// 截图区域（点，AppKit 坐标）和屏幕大小，截图脚本按它裁图

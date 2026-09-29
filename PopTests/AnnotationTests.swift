@@ -78,6 +78,26 @@ final class AnnotationTests: XCTestCase {
         XCTAssertGreaterThan(inside.greenComponent, 0.9)
     }
 
+    func testRenderingWithBackground() throws {
+        let model = try makeModel()
+        model.background = .sky
+        // 四周各留 24 点
+        XCTAssertEqual(model.outputSize, CGSize(width: 98, height: 78))
+        let png = try XCTUnwrap(model.renderPNG())
+        let image = try XCTUnwrap(NSBitmapImageRep(data: png))
+        XCTAssertEqual(image.pixelsWide, 196)
+        XCTAssertEqual(image.pixelsHigh, 156)
+        // 角上是渐变背景，中间是截图（白的）
+        let corner = try XCTUnwrap(image.colorAt(x: 2, y: 2)?.usingColorSpace(.sRGB))
+        XCTAssertLessThan(corner.greenComponent, 0.8)
+        let middle = try XCTUnwrap(image.colorAt(x: 98, y: 78)?.usingColorSpace(.sRGB))
+        XCTAssertGreaterThan(middle.redComponent, 0.95)
+        XCTAssertGreaterThan(middle.greenComponent, 0.95)
+        // 不加背景时还是原图大小
+        model.background = nil
+        XCTAssertEqual(model.outputSize, CGSize(width: 50, height: 30))
+    }
+
     func testArrowHeadFollowsDirection() {
         let path = Annotation.arrowPath(from: CGPoint(x: 0, y: 0), to: CGPoint(x: 100, y: 0), lineWidth: 4)
         let bounds = path.boundingRect
