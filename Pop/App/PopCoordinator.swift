@@ -691,6 +691,8 @@ final class PopCoordinator: MouseTriggerDelegate {
             captureWeb(url, format: format)
         case .cropImages(let files, let ratio):
             cropImages(files, ratio)
+        case .redactImages(let files, let targets):
+            redactImages(files, targets)
         case .system(let action):
             runSystemAction(action)
         case .textImage(let text, let style):
@@ -955,6 +957,39 @@ final class PopCoordinator: MouseTriggerDelegate {
         Task { [weak self] in
             guard let message = await SystemActions.run(action) else { return }
             self?.showToast(message, at: anchor)
+        }
+    }
+
+    /// 隐私打码：在后台逐张处理，完成后在访达里选中新文件
+    private func redactImages(_ files: [URL], _ targets: Set<Redaction.Target>) {
+        let anchor = session?.anchor ?? NSEvent.mouseLocation
+        endSession()
+        Task { [weak self] in
+            let (outputs, failures) = await runInBackground { () -> ([URL], [String]) in
+                var outputs: [URL] = []
+                var failures: [String] = []
+                for file in files {
+                    do {
+                        outputs.append(try Redaction.redact(file, targets: targets).output)
+                    } catch let failure as Redaction.Failure {
+                        failures.append(failure.message)
+                    } catch {
+                        failures.append(error.localizedDescription)
+                    }
+                }
+                return (outputs, failures)
+            }
+            guard let self else { return }
+            if !outputs.isEmpty {
+                NSWorkspace.shared.activateFileViewerSelecting(outputs)
+            }
+            let message: String
+            if let failure = failures.first {
+                message = outputs.isEmpty ? failure : String(localized: "打好了 \(outputs.count) 张，\(failures.count) 张失败：\(failure)")
+            } else {
+                message = outputs.count == 1 ? String(localized: "已打码，另存在原图旁边") : String(localized: "已给 \(outputs.count) 张打码，各自另存在原图旁边")
+            }
+            self.showToast(message, at: anchor)
         }
     }
 

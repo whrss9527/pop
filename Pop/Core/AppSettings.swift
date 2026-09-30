@@ -124,6 +124,7 @@ enum BuiltinPluginID {
 
     static let webCapture = "webCapture"
     static let cropImage = "cropImage"
+    static let redact = "redact"
 
     static let screenRecord = "screenRecord"
 
@@ -162,7 +163,7 @@ enum BuiltinPluginID {
         watermark, compareFolders, compareFiles,
         sendToPhone, idNumber,
         transcribe, idPhoto,
-        webCapture, cropImage,
+        webCapture, cropImage, redact,
         screenRecord,
         systemActions,
         textImage,
