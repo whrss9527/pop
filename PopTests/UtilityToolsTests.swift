@@ -178,6 +178,40 @@ final class PDFToolsTests: XCTestCase {
         XCTAssertEqual(second.pixelsHigh, 200)
     }
 
+    func testPageNumbers() {
+        XCTAssertEqual(PDFTools.pageIndices("1-3, 5, 8-", pageCount: 10), [0, 1, 2, 4, 7, 8, 9])
+        XCTAssertEqual(PDFTools.pageIndices("-2，4到5、 7", pageCount: 10), [0, 1, 3, 4, 6])
+        XCTAssertEqual(PDFTools.pageIndices("3, 1", pageCount: 3), [2, 0])
+        // 卡片上显示的「1–3」复制回来也认
+        XCTAssertEqual(PDFTools.pageIndices("1–3", pageCount: 3), [0, 1, 2])
+        for wrong in ["", " , ", "4", "0", "3-1", "1-2-3", "a", "2-9"] {
+            XCTAssertNil(PDFTools.pageIndices(wrong, pageCount: 3), wrong)
+        }
+        XCTAssertNil(PDFTools.pageIndices("1", pageCount: 0))
+        XCTAssertEqual(PDFTools.describe([0, 1, 2, 4, 7, 8, 9]), "第 1–3、5、8–10 页")
+        XCTAssertEqual(PDFTools.describe([2, 0]), "第 3、1 页")
+    }
+
+    func testExtractAndSplitPages() throws {
+        let pdf = folder.appending(path: "报告.pdf")
+        try PDFTools.combine([try writePNG("a.png", width: 200, height: 100), try writePNG("b.png", width: 100, height: 200),
+                              try writePNG("c.png", width: 150, height: 150)], into: pdf)
+        let picked = folder.appending(path: "picked.pdf")
+        try PDFTools.extract(pdf, pages: [2, 0], to: picked)
+        let document = try XCTUnwrap(PDFDocument(url: picked))
+        XCTAssertEqual(document.pageCount, 2)
+        XCTAssertEqual(document.page(at: 0)?.bounds(for: .mediaBox).size, CGSize(width: 150, height: 150))
+        XCTAssertEqual(document.page(at: 1)?.bounds(for: .mediaBox).size, CGSize(width: 200, height: 100))
+        XCTAssertThrowsError(try PDFTools.extract(pdf, pages: [3], to: folder.appending(path: "x.pdf")))
+        // 原文件不动
+        XCTAssertEqual(PDFDocument(url: pdf)?.pageCount, 3)
+
+        let pages = try PDFTools.split(pdf, to: folder.appending(path: "每一页"))
+        XCTAssertEqual(pages.map(\.lastPathComponent), ["报告-01.pdf", "报告-02.pdf", "报告-03.pdf"])
+        XCTAssertEqual(pages.map { PDFDocument(url: $0)?.pageCount }, [1, 1, 1])
+        XCTAssertEqual(PDFDocument(url: pages[1])?.page(at: 0)?.bounds(for: .mediaBox).size, CGSize(width: 100, height: 200))
+    }
+
     func testNaturalOrder() {
         let urls = ["p10.png", "p2.png", "p1.png"].map { URL(fileURLWithPath: "/tmp/\($0)") }
         XCTAssertEqual(PDFTools.sorted(urls).map(\.lastPathComponent), ["p1.png", "p2.png", "p10.png"])
@@ -205,6 +239,7 @@ final class PDFToolsTests: XCTestCase {
         guard case .card(let card) = summary else { return XCTFail("应该返回结果卡片") }
         XCTAssertEqual(card.buttons.first?.action, .exportPDFPages(revealed.urls[0]))
         XCTAssertEqual(card.buttons.last?.action, .compressPDF(revealed.urls[0]))
+        XCTAssertTrue(card.buttons.contains { $0.action == .pdfPages(revealed.urls[0]) })
         XCTAssertTrue(card.detail?.hasPrefix("2 页") == true, card.detail ?? "")
     }
 

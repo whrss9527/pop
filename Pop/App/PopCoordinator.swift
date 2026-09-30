@@ -380,6 +380,8 @@ final class PopCoordinator: MouseTriggerDelegate {
             presentRename(files)
         case .showVocabulary:
             presentVocabulary()
+        case .findDuplicates(let folders):
+            presentDuplicates(folders)
         case .failure(let message):
             overlay.showCard(ResultCardView(card: ResultCard(title: "没能完成", body: message),
                                             onAction: { [weak self] action in self?.perform(action) },
@@ -438,6 +440,8 @@ final class PopCoordinator: MouseTriggerDelegate {
             exportPDFPages(pdf)
         case .compressPDF(let pdf):
             compressPDF(pdf)
+        case .pdfPages(let pdf):
+            presentPDFPages(pdf)
         case .keepAwake(let minutes):
             let started = KeepAwake.shared.start(minutes: minutes)
             finish(toast: started ? (minutes.map { "保持唤醒 \(KeepAwake.title(minutes: $0))" } ?? "一直保持唤醒") : "没能保持唤醒")
@@ -500,6 +504,76 @@ final class PopCoordinator: MouseTriggerDelegate {
             case .success(let pages):
                 NSWorkspace.shared.activateFileViewerSelecting([folder])
                 self.showToast("已存成 \(pages.count) 张图片", at: anchor)
+            case .failure(let failure):
+                self.showToast(failure.message, at: anchor)
+            }
+        }
+    }
+
+    /// PDF 页面：写上页码取出来，或者每页存成一个 PDF
+    private func presentPDFPages(_ pdf: URL) {
+        guard let current = session else { return }
+        stopPointerTracking()
+        guard let count = (try? PDFTools.open(pdf))?.pageCount, count > 0 else {
+            present(.failure("读不了「\(pdf.lastPathComponent)」"))
+            return
+        }
+        let model = PDFPagesModel(pdf: pdf, pageCount: count)
+        overlay.showCard(PDFPagesView(model: model,
+                                      onExtract: { [weak self] pages in self?.extractPDFPages(pdf, pages) },
+                                      onSplit: { [weak self] in self?.splitPDF(pdf) },
+                                      onClose: { [weak self] in self?.endSession() }),
+                         anchor: current.anchor)
+    }
+
+    private func extractPDFPages(_ pdf: URL, _ pages: [Int]) {
+        let anchor = session?.anchor ?? NSEvent.mouseLocation
+        endSession()
+        let base = pdf.deletingPathExtension().lastPathComponent
+        // 页码写得很长时文件名只写页数
+        let described = PDFTools.describe(pages)
+        let label = described.count <= 30 ? described : "中的 \(pages.count) 页"
+        let destination = FileNames.available(in: pdf.deletingLastPathComponent(), base: "\(base) \(label)", extension: "pdf")
+        Task { [weak self] in
+            let failure = await runInBackground { () -> String? in
+                do {
+                    try PDFTools.extract(pdf, pages: pages, to: destination)
+                    return nil
+                } catch {
+                    try? FileManager.default.removeItem(at: destination)
+                    return (error as? PDFTools.Failure)?.message ?? error.localizedDescription
+                }
+            }
+            guard let self else { return }
+            if let failure {
+                self.showToast(failure, at: anchor)
+            } else {
+                NSWorkspace.shared.activateFileViewerSelecting([destination])
+                self.showToast("已取出 \(pages.count) 页", at: anchor)
+            }
+        }
+    }
+
+    private func splitPDF(_ pdf: URL) {
+        let anchor = session?.anchor ?? NSEvent.mouseLocation
+        endSession()
+        let folder = FileNames.available(in: pdf.deletingLastPathComponent(),
+                                         base: pdf.deletingPathExtension().lastPathComponent + " 的每一页")
+        Task { [weak self] in
+            let result = await runInBackground { () -> Result<[URL], PDFTools.Failure> in
+                do {
+                    return .success(try PDFTools.split(pdf, to: folder))
+                } catch let failure as PDFTools.Failure {
+                    return .failure(failure)
+                } catch {
+                    return .failure(PDFTools.Failure(message: error.localizedDescription))
+                }
+            }
+            guard let self else { return }
+            switch result {
+            case .success(let files):
+                NSWorkspace.shared.activateFileViewerSelecting([folder])
+                self.showToast("已拆成 \(files.count) 个 PDF", at: anchor)
             case .failure(let failure):
                 self.showToast(failure.message, at: anchor)
             }
@@ -794,6 +868,17 @@ final class PopCoordinator: MouseTriggerDelegate {
         } catch {
             showToast("导出失败：\(error.localizedDescription)", at: NSEvent.mouseLocation)
         }
+    }
+
+    /// 查找重复文件：后台扫描，扫完可以每组只留一个
+    private func presentDuplicates(_ folders: [URL]) {
+        guard let current = session else { return }
+        stopPointerTracking()
+        let model = DuplicatesModel(roots: folders)
+        overlay.showCard(DuplicatesView(model: model,
+                                        onReveal: { urls in NSWorkspace.shared.activateFileViewerSelecting(urls) },
+                                        onClose: { [weak self] in self?.endSession() }),
+                         anchor: current.anchor)
     }
 
     /// 批量重命名：按规则预览新名字，改完可以撤销

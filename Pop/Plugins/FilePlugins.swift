@@ -125,7 +125,7 @@ struct TableConvertPlugin: PopPlugin {
 
 struct PDFPlugin: PopPlugin {
     let info = PluginInfo(id: BuiltinPluginID.pdf, name: "PDF", symbol: "doc.richtext",
-                          summary: "把选中的图片和 PDF 按文件名顺序合成一个 PDF；只选了一个 PDF 时可以把每页存成图片、复制里面的文字，或者压缩",
+                          summary: "把选中的图片和 PDF 按文件名顺序合成一个 PDF；只选了一个 PDF 时可以把每页存成图片、复制里面的文字、取出其中几页或者拆开，或者压缩",
                           accepts: [.files], pattern: #"(?im)\.(pdf|png|jpe?g|heic|heif|tiff?|gif|bmp|webp)$"#)
     /// 完成后在访达里选中结果（测试时换掉）
     var reveal: @MainActor ([URL]) -> Void = { NSWorkspace.shared.activateFileViewerSelecting($0) }
@@ -183,6 +183,9 @@ struct PDFPlugin: PopPlugin {
             } else {
                 detail = "\(summary.pages) 页，\(summary.text.count) 个字"
                 buttons.append(CardButton(title: "复制全部文字", action: .copy(summary.text)))
+            }
+            if summary.pages > 1 {
+                buttons.append(CardButton(title: "取出几页…", action: .pdfPages(pdf)))
             }
             buttons.append(CardButton(title: "压缩", action: .compressPDF(pdf)))
             return .card(ResultCard(title: "PDF", body: pdf.lastPathComponent, detail: detail, buttons: buttons))
