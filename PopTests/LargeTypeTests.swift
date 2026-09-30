@@ -17,6 +17,10 @@ final class LargeTypeTests: XCTestCase {
         XCTAssertLessThan(smaller, phone)
         XCTAssertTrue(LargeType.fits(sentence, fontSize: smaller, in: area))
 
+        // 很长的链接可以在中间换行，不用为了放进一行缩得很小
+        let link = "https://github.com/whrss9527/pop/releases?utm_source=newsletter&utm_medium=email"
+        XCTAssertGreaterThan(LargeType.fontSize(for: link, fitting: area), 60)
+
         // 很短的字到上限为止
         XCTAssertEqual(LargeType.fontSize(for: "好", fitting: area, maximum: 320), 320)
     }

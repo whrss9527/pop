@@ -12,6 +12,9 @@ enum LargeType {
         return style
     }()
 
+    /// 这么长以内连在一起的一段（单词、号码、验证码）不拆到两行；更长的（链接）可以在中间换行
+    static let longestUnbroken = 20
+
     /// 能放进 size 的最大字号：自动换行以后不超高，英文单词、数字这类连在一起的不会被拆到两行
     static func fontSize(for text: String, fitting size: CGSize, maximum: CGFloat = 320, minimum: CGFloat = 16) -> CGFloat {
         guard size.width > 0, size.height > 0, !text.isEmpty else { return minimum }
@@ -35,7 +38,8 @@ enum LargeType {
             .font: NSFont.systemFont(ofSize: fontSize, weight: .semibold),
             .paragraphStyle: centered,
         ]
-        for run in unbreakableRuns(text) where NSAttributedString(string: run, attributes: attributes).size().width > size.width {
+        for run in unbreakableRuns(text) where run.count <= longestUnbroken
+            && NSAttributedString(string: run, attributes: attributes).size().width > size.width {
             return false
         }
         let bounds = NSAttributedString(string: text, attributes: attributes)
