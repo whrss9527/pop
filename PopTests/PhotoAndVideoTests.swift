@@ -355,11 +355,12 @@ final class VideoConverterTests: XCTestCase {
         // 横的 1920×1080：每格 480×270，4 列 4 行
         let wide = ContactSheet.layout(videoSize: CGSize(width: 1920, height: 1080))
         XCTAssertEqual(wide.thumbnail, CGSize(width: 480, height: 270))
-        XCTAssertEqual(wide.size, CGSize(width: 24 * 2 + 480 * 4 + 12 * 3, height: 24 * 2 + 64 + 270 * 4 + 12 * 3))
-        // 第一格在左上角，第六格在第二行第二列
-        XCTAssertEqual(wide.frame(at: 0), CGRect(x: 24, y: wide.size.height - 24 - 64 - 270, width: 480, height: 270))
-        XCTAssertEqual(wide.frame(at: 5).minX, 24 + 480 + 12)
-        XCTAssertEqual(wide.frame(at: 5).maxY, wide.size.height - 24 - 64 - 270 - 12)
+        // 宽：两边各留 24、4 格、3 个 12 的间隔；高：再加上标题的 64
+        XCTAssertEqual(wide.size, CGSize(width: 2004, height: 1228))
+        // 第一格在左上角，第六格在第二行第二列（左下角为原点）
+        XCTAssertEqual(wide.frame(at: 0), CGRect(x: 24, y: 870, width: 480, height: 270))
+        XCTAssertEqual(wide.frame(at: 5).minX, 516)
+        XCTAssertEqual(wide.frame(at: 5).maxY, 858)
         // 竖的每格 300 宽；很小的视频每格也有 160 宽
         XCTAssertEqual(ContactSheet.layout(videoSize: CGSize(width: 1080, height: 1920)).thumbnail, CGSize(width: 300, height: 533))
         XCTAssertEqual(ContactSheet.layout(videoSize: CGSize(width: 64, height: 48)).thumbnail, CGSize(width: 160, height: 120))
