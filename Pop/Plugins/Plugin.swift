@@ -195,6 +195,8 @@ enum CardAction: Equatable {
     case textImage(String, TextImage.Style)
     /// 把内容生成条形码
     case barcode(String)
+    /// 识别图片里的文字（长图分几段识别）
+    case recognizeImageText(Data)
 }
 
 struct CardButton: Equatable, Identifiable {
@@ -229,6 +231,8 @@ struct ResultCard: Equatable {
     var rowLineLimit = 4
     /// PNG 图片（比如二维码）
     var image: Data? = nil
+    /// 长图的预览（缩到卡片宽度）：卡片里上下滚动着看，复制、拖出去的还是 image
+    var imagePreview: Data? = nil
     /// 颜色样本（#RRGGBB 或 #RRGGBBAA）
     var swatchHex: String? = nil
     /// 一排颜色（#RRGGBB），点一下复制色值
