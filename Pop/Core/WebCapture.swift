@@ -145,7 +145,9 @@ private final class PageLoader: NSObject, WKNavigationDelegate {
                 }
             }
         }
-        title = webView.title
+        // 网页视图的 title 有时比加载完晚一步才更新，直接问网页
+        let documentTitle = try? await webView.evaluateJavaScript("document.title") as? String
+        title = [documentTitle, webView.title].compactMap { $0 }.first { !$0.isEmpty }
     }
 
     /// 往下滚到底、让懒加载的图片都加载出来，再回到顶上
