@@ -204,6 +204,9 @@ button { font: inherit; color: inherit; }
 .fi.video::before { content: ""; border-left: 12px solid #fff; border-top: 8px solid transparent; border-bottom: 8px solid transparent; margin-left: 3px; }
 .fi.video .strip { position: absolute; left: 0; right: 0; height: 5px; background: repeating-linear-gradient(90deg, #fff 0 3px, transparent 3px 7px); opacity: .5; }
 .fi.video .strip.t { top: 2px; } .fi.video .strip.b { bottom: 2px; }
+.fi.shot { width: 44px; height: 58px; border-radius: 6px; background: #f2f2f7; box-shadow: 0 1px 3px rgba(0, 0, 0, .3), inset 0 0 0 .5px rgba(0, 0, 0, .15); display: flex; flex-direction: column; gap: 5px; padding: 9px 5px; }
+.fi.shot i { display: block; height: 7px; border-radius: 4px; background: #fff; box-shadow: 0 0 0 .5px rgba(0, 0, 0, .12); width: 70%; }
+.fi.shot i:nth-child(2) { align-self: flex-end; background: #0a84ff; width: 62%; }
 .fi.folder { width: 60px; height: 46px; }
 .fi.folder::before { content: ""; position: absolute; left: 0; top: 0; width: 26px; height: 10px; background: #5aa9f4; border-radius: 4px 4px 0 0; }
 .fi.folder::after { content: ""; position: absolute; left: 0; right: 0; top: 6px; bottom: 0; background: linear-gradient(#7cc1ff, #4a9ff0); border-radius: 3px 5px 5px 5px; box-shadow: 0 1px 2px rgba(0, 0, 0, .2); }
@@ -472,6 +475,7 @@ const ICONS = {
   trimMedia: '<circle cx="6.5" cy="7" r="2.6"/><circle cx="6.5" cy="17" r="2.6"/><path d="M8.7 8.4L20 17M8.7 15.6L20 7"/>',
   pdf: '<path d="M6.5 3.5h7.2l4.3 4.3v12a1.7 1.7 0 0 1-1.7 1.7H6.5a1.7 1.7 0 0 1-1.7-1.7V5.2a1.7 1.7 0 0 1 1.7-1.7z"/><path d="M13.5 3.6v4.4H18M8 12h8M8 15h8M8 18h5"/>',
   zip: '<path d="M6.6 3.5h10.8a1.6 1.6 0 0 1 1.6 1.6v14.3a1.6 1.6 0 0 1-1.6 1.6H6.6A1.6 1.6 0 0 1 5 19.4V5.1a1.6 1.6 0 0 1 1.6-1.6z"/><path d="M12 3.6v1.8M12 7.4v1.2M12 10.6v1.2"/><rect x="10.4" y="13.4" width="3.2" height="4" rx="1"/>',
+  redact: '<path d="M2.5 12s3.4-6.3 9.5-6.3 9.5 6.3 9.5 6.3-3.4 6.3-9.5 6.3S2.5 12 2.5 12z"/><circle cx="12" cy="12" r="2.9"/><path d="M4.2 4.2l15.6 15.6"/>',
   compareFiles: '<rect x="8" y="7.5" width="11.5" height="13.5" rx="2"/><path d="M5 16V5.5a2 2 0 0 1 2-2h8"/><path d="M11 12h5.5M11 15h5.5"/>',
   close: '<circle cx="12" cy="12" r="10" fill="currentColor" stroke="none"/><path d="M8.6 8.6l6.8 6.8M15.4 8.6l-6.8 6.8" style="stroke:var(--page)" stroke-width="2"/>',
   chevron: '<path d="M6 9.5l6 6 6-6"/>',
@@ -576,6 +580,7 @@ const P = {
   fileInfo: { icon: 'fileInfo', accepts: ['files'], keys: 'wenjianxinxi wjxx', name: { zh: '文件信息', en: 'File Info' }, summary: { zh: '文件的类型、大小（文件夹算上里面所有文件）、创建和修改时间，图片尺寸和拍摄信息（相机、参数、拍摄地点）、PDF 页数、音视频时长', en: 'Type, size (including everything in folders), creation and modification dates, image dimensions and capture info (camera, exposure, location), PDF page count, audio and video duration' } },
   imageConvert: { icon: 'imageConvert', accepts: ['imageFile'], keys: 'tupianzhuanhuan tpzh', name: { zh: '图片转换', en: 'Convert Images' }, summary: { zh: '把选中的图片文件转成 PNG、JPEG、HEIC，缩小一半、压缩体积或者压到指定大小以内，旋转、左右翻转，或者去掉照片里的位置和拍摄信息；结果存在原图旁边', en: 'Convert the selected images to PNG, JPEG or HEIC, halve their size, compress them (or under a given size), rotate, flip, or remove location and capture info; results are saved next to the originals' } },
   cropImage: { icon: 'cropImage', accepts: ['imageFile'], keys: 'caijiantupian cjtp', name: { zh: '裁剪图片', en: 'Crop Image' }, summary: { zh: '把选中的图片裁成 1:1、4:3、3:4、16:9、9:16，自动对准画面里的主体；另存一份放在原图旁边', en: 'Crop the selected images to 1:1, 4:3, 3:4, 16:9 or 9:16, centered on the subject; a copy is saved next to the original' } },
+  redact: { icon: 'redact', accepts: ['imageFile'], keys: 'yinsidama ysdm dama masaike mosaic', name: { zh: '隐私打码', en: 'Redact' }, summary: { zh: '找出选中图片里的人脸、电话号码、邮箱、身份证号、银行卡号和车牌，打上马赛克另存一份；在本机识别，另存的那份不带拍摄信息和位置', en: 'Find faces, phone numbers, email addresses, ID and bank card numbers and license plates in the selected images, pixelate them and save a copy; recognized on this Mac, and the copy carries no capture info or location' } },
   ocr: { icon: 'ocr', accepts: ['imageFile'], keys: 'shibiewenzi sbwz ocr', name: { zh: '识别文字', en: 'Recognize Text' }, summary: { zh: '识别选中图片里的文字（离线）', en: 'Recognize text in the selected images (offline)' } },
   removeBackground: { icon: 'removeBackground', accepts: ['imageFile'], keys: 'koutu kt', name: { zh: '抠图', en: 'Remove Background' }, summary: { zh: '去掉选中图片的背景，只留下人、动物或物品（离线）', en: 'Remove the background of the selected image, keeping only people, animals or objects (offline)' } },
   videoConvert: { icon: 'videoConvert', accepts: ['video'], keys: 'shipinzhuanhuan spzh gif', name: { zh: '视频转换', en: 'Convert Video' }, summary: { zh: '把选中的视频转成 GIF、转成 MP4、压缩到 720p、提取音频，或者均匀取 16 帧拼成一张缩略图；结果存在原视频旁边', en: 'Convert the selected videos to GIF or MP4, compress to 720p, extract audio, or make a contact sheet of 16 evenly spaced frames; results are saved next to the originals' } },
@@ -598,7 +603,7 @@ for (const [id, info] of Object.entries(P)) info.id = id;
 const LAYOUT = ['translate', 'search', 'dictionary', 'openURL', 'allPlugins', 'clipboard', 'screenshotOCR', 'colorPicker'];
 // 「全部功能」里的顺序
 const ORDER = ['translate', 'textImage', 'search', 'dictionary', 'speak', 'textStats', 'changeCase', 'openURL', 'webCapture', 'linkInspect', 'qrCode',
-  'fileInfo', 'imageConvert', 'cropImage', 'ocr', 'removeBackground', 'videoConvert', 'transcribe', 'trimMedia', 'pdf', 'compareFiles', 'zip',
+  'fileInfo', 'imageConvert', 'cropImage', 'redact', 'ocr', 'removeBackground', 'videoConvert', 'transcribe', 'trimMedia', 'pdf', 'compareFiles', 'zip',
   'airDrop', 'sendToPhone', 'screenRecord', 'screenshotOCR', 'annotate', 'pin', 'colorPicker', 'clipboard', 'shelf', 'systemActions'];
 
 function canHandle(info, content) {
@@ -665,6 +670,8 @@ const LINK = {
 const FILES = [
   { key: 'photo', kind: 'imageFile', icon: 'photo', name: { zh: '海边.heic', en: 'Beach.heic' },
     info: [[{ zh: '种类', en: 'Kind' }, { zh: 'HEIF 图像', en: 'HEIF Image' }], [{ zh: '大小', en: 'Size' }, '3.2 MB'], [{ zh: '尺寸', en: 'Dimensions' }, '4032 × 3024'], [{ zh: '相机', en: 'Camera' }, 'iPhone 16 Pro'], [{ zh: '参数', en: 'Exposure' }, 'ƒ/1.78 · 1/1250 s · ISO 64'], [{ zh: '拍摄时间', en: 'Taken' }, '2026-09-21 17:42'], [{ zh: '拍摄地点', en: 'Location' }, { zh: '山东省青岛市 · 第一海水浴场', en: 'Qingdao, Shandong · No. 1 Bathing Beach' }]] },
+  { key: 'chat', kind: 'imageFile', icon: 'shot', name: { zh: '聊天截图.png', en: 'Chat.png' },
+    info: [[{ zh: '种类', en: 'Kind' }, { zh: 'PNG 图像', en: 'PNG Image' }], [{ zh: '大小', en: 'Size' }, '412 KB'], [{ zh: '尺寸', en: 'Dimensions' }, '1170 × 720']] },
   { key: 'video', kind: 'video', icon: 'video', name: { zh: '发布会.mp4', en: 'Keynote.mp4' },
     info: [[{ zh: '种类', en: 'Kind' }, { zh: 'MPEG-4 影片', en: 'MPEG-4 Movie' }], [{ zh: '大小', en: 'Size' }, '248 MB'], [{ zh: '尺寸', en: 'Dimensions' }, '1920 × 1080'], [{ zh: '时长', en: 'Duration' }, '12:48'], [{ zh: '修改时间', en: 'Modified' }, '2026-09-28 10:05']] },
   { key: 'audio', kind: 'audio', icon: 'audio', name: { zh: '会议录音.m4a', en: 'Meeting.m4a' },
@@ -855,6 +862,7 @@ function fileIcon(kind, extra) {
     case 'audio': return h('div', { class: 'fi doc' }, h('div', { class: 'wave' }, [5, 9, 13, 7, 11, 6, 10].map((v) => h('i', { style: `height:${v * 2}px` }))), h('span', { class: 'tag', style: 'background:#ff9500' }, 'M4A'));
     case 'pdf': return h('div', { class: 'fi doc' }, h('span', { class: 'tag', style: 'background:#e5484d' }, 'PDF'));
     case 'folder': return h('div', { class: 'fi folder' });
+    case 'shot': return h('div', { class: 'fi shot' }, h('i'), h('i'), h('i'));
     case 'disk': return h('div', { class: 'fi disk' });
     case 'zip': return h('div', { class: 'fi doc' }, h('span', { class: 'tag', style: 'background:#8e8e93' }, 'ZIP'));
     case 'gif': return h('div', { class: 'fi doc' }, h('span', { class: 'tag', style: 'background:#34c759' }, 'GIF'));
@@ -1448,6 +1456,7 @@ const RUN = {
   pdf: (content, anchor) => showPDF(content.file, anchor),
   zip: (content, anchor) => addOutputFile(content.files.length > 1 ? { name: { zh: '归档.zip', en: 'Archive.zip' } } : content.file, { suffix: '', ext: 'zip', icon: 'zip', kind: 'zip' }, anchor, (name) => L({ zh: `已压缩成「${name}」`, en: `Compressed to “${name}”` })),
   compareFiles: (content, anchor) => showFileCompare(anchor),
+  redact: (content, anchor) => showRedact(content, anchor),
   sendToPhone: (content, anchor) => showSendToPhone(content, anchor),
   pin: (content, anchor) => content.text ? pinToScreen({ text: content.text }, anchor) : startRegionPicker('pin', anchor),
   screenRecord: (content, anchor) => startRecordPicker(anchor),
@@ -1664,7 +1673,7 @@ function showClipboard(anchor) {
 function showWebCapture(anchor) {
   const formats = [[{ zh: '存成 PDF', en: 'Save as PDF' }, 'pdf'], [{ zh: '存成长图', en: 'Save as Long Image' }, 'png'], [{ zh: '存成 Markdown', en: 'Save as Markdown' }, 'md']];
   const el = cardShell({ title: L(P.webCapture.name), children: [h('div', { class: 'body mono', style: 'font-size:12px' }, LINK.url)],
-    detail: lang === 'zh' ? '在后台打开这个网页，存到「下载」：PDF 和长图是整页，Markdown 只取正文；要登录才能看的页面存下来是登录页' : 'Opens the page in the background and saves it to Downloads: the PDF and long image keep the whole page, Markdown keeps just the article text. A page that needs you to sign in is saved as the sign-in page.',
+    detail: lang === 'zh' ? '在后台打开网页存到「下载」：PDF 和长图是整页，Markdown 只取正文；要登录的页面存下来是登录页' : 'Saved to Downloads: PDF and image keep the whole page, Markdown just the article. Pages behind a sign-in save as the sign-in page.',
     buttons: formats.map(([label, ext]) => button(L(label), () => {
       showToast(lang === 'zh' ? '正在打开网页…' : 'Opening the web page…', anchor);
       setTimeout(() => showToast(L({ zh: `已存到「下载」：Releases · whrss9527-pop.${ext}`, en: `Saved to Downloads: Releases · whrss9527-pop.${ext}` }), anchor), 1700);
@@ -1845,6 +1854,100 @@ const DIFF = {
     ['same', [['- Bug fixes', false]]],
   ] },
 };
+
+// 隐私打码：聊天截图里认出电话号码、邮箱和车牌，打上马赛克；照片里没有人脸也没有个人信息
+const CHAT = {
+  zh: { title: '张三', lines: [['left', '我的手机号是 ', '138 1234 5678', '', 'phone'], ['right', '简历发到 ', 'hr@example.com', ' 吧', 'email'], ['left', '车停在楼下，', '京A12345', '', 'plate']] },
+  en: { title: 'Sam', lines: [['left', 'My number is ', '138 1234 5678', '', 'phone'], ['right', 'Send the résumé to ', 'hr@example.com', '', 'email'], ['left', 'Parked outside, plate ', '京A12345', '', 'plate']] },
+};
+
+// 按画布的像素算（不管缩放）：每一格填上这一格的平均色
+function pixelateCanvas(ctx, x, y, w, hh, block) {
+  const image = ctx.getImageData(x, y, w, hh);
+  const data = image.data;
+  ctx.save();
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  for (let by = 0; by < hh; by += block) {
+    for (let bx = 0; bx < w; bx += block) {
+      let r = 0, g = 0, b = 0, n = 0;
+      for (let yy = by; yy < Math.min(by + block, hh); yy++) {
+        for (let xx = bx; xx < Math.min(bx + block, w); xx++) {
+          const i = (yy * w + xx) * 4;
+          r += data[i]; g += data[i + 1]; b += data[i + 2]; n++;
+        }
+      }
+      ctx.fillStyle = `rgb(${Math.round(r / n)}, ${Math.round(g / n)}, ${Math.round(b / n)})`;
+      ctx.fillRect(x + bx, y + by, Math.min(block, w - bx), Math.min(block, hh - by));
+    }
+  }
+  ctx.restore();
+}
+
+function renderChat(allText) {
+  const chat = CHAT[lang];
+  const scale = 2, width = 380, height = 236;
+  const canvas = document.createElement('canvas');
+  canvas.width = width * scale; canvas.height = height * scale;
+  const ctx = canvas.getContext('2d', { willReadFrequently: true });
+  ctx.scale(scale, scale);
+  ctx.fillStyle = '#f2f2f7'; ctx.fillRect(0, 0, width, height);
+  ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, width, 40);
+  ctx.fillStyle = '#d1d1d6'; ctx.fillRect(0, 40, width, 1);
+  const font = '15px -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", "Noto Sans SC", sans-serif';
+  ctx.font = '600 ' + font; ctx.fillStyle = '#1c1c1e'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.fillText(chat.title, width / 2, 21);
+  ctx.textAlign = 'left'; ctx.font = font;
+  const regions = [];
+  chat.lines.forEach(([side, before, secret, after, kind], i) => {
+    const text = before + secret + after;
+    const w = ctx.measureText(text).width + 24, y = 58 + i * 58;
+    const x = side === 'left' ? 14 : width - 14 - w;
+    ctx.fillStyle = side === 'left' ? '#ffffff' : '#0a84ff';
+    ctx.beginPath(); ctx.roundRect(x, y, w, 38, 12); ctx.fill();
+    ctx.fillStyle = side === 'left' ? '#1c1c1e' : '#ffffff';
+    ctx.fillText(text, x + 12, y + 20);
+    if (allText) regions.push([x + 8, y + 8, w - 16, 22, 'text']);
+    else regions.push([x + 12 + ctx.measureText(before).width - 3, y + 9, ctx.measureText(secret).width + 6, 22, kind]);
+  });
+  for (const [x, y, w, hh] of regions) {
+    pixelateCanvas(ctx, Math.round(x * scale), Math.round(y * scale), Math.round(w * scale), Math.round(hh * scale), Math.max(16, Math.round(hh * scale / 2.5)));
+  }
+  return { png: canvas.toDataURL('image/png'), kinds: regions.map((r) => r[4]) };
+}
+
+function renderBeach() {
+  const canvas = document.createElement('canvas');
+  canvas.width = 640; canvas.height = 480;
+  const ctx = canvas.getContext('2d');
+  const sky = ctx.createLinearGradient(0, 0, 0, 480);
+  [[0, '#ffb36b'], [0.34, '#ff8a7a'], [0.58, '#7a8cff'], [0.6, '#3553c9'], [1, '#2a3f8f']].forEach(([stop, color]) => sky.addColorStop(stop, color));
+  ctx.fillStyle = sky; ctx.fillRect(0, 0, 640, 480);
+  ctx.fillStyle = '#fff3c4'; ctx.shadowColor = '#ffe08a'; ctx.shadowBlur = 40;
+  ctx.beginPath(); ctx.arc(320, 200, 46, 0, Math.PI * 2); ctx.fill();
+  return canvas.toDataURL('image/png');
+}
+
+function showRedact(content, anchor) {
+  const file = content.file;
+  const chat = file.key === 'chat';
+  const preview = chat ? renderChat(false) : { png: renderBeach(), kinds: [] };
+  const names = { face: { zh: '人脸', en: 'Faces' }, phone: { zh: '电话号码', en: 'Phone numbers' }, email: { zh: '邮箱', en: 'Email' }, plate: { zh: '车牌', en: 'License plates' }, text: { zh: '文字', en: 'Text' } };
+  const counts = {};
+  for (const kind of preview.kinds) counts[kind] = (counts[kind] || 0) + 1;
+  const found = Object.entries(counts).map(([kind, n]) => L({ zh: `${names[kind].zh} ${n} 处`, en: `${names[kind].en}: ${n}` })).join(lang === 'zh' ? '、' : ', ');
+  const ext = /\.png$/i.test(L(file.name)) ? 'png' : 'jpg';
+  const save = (message) => addOutputFile(file, { suffix: lang === 'zh' ? ' 打码' : ' redacted', ext, icon: file.icon === 'shot' ? 'shot' : 'photo', kind: 'imageFile' }, anchor, () => message);
+  const buttons = [];
+  if (found) buttons.push(button(lang === 'zh' ? '存到原图旁边' : 'Save Next to Original', () => save(lang === 'zh' ? '已打码，另存在原图旁边' : 'Redacted and saved next to the original')));
+  buttons.push(button(lang === 'zh' ? '文字也全部打码' : 'Also Redact All Text', () => {
+    if (chat) save(lang === 'zh' ? '已打码，另存在原图旁边' : 'Redacted and saved next to the original');
+    else showToast(L({ zh: `「${file.name.zh}」里没找到要打码的地方`, en: `Nothing to redact in “${file.name.en}”` }), anchor);
+  }));
+  const detail = found
+    ? L({ zh: `找到${found}，预览里已经打上马赛克；存的时候另存一份，原图不动`, en: `Found ${found}. The preview is already pixelated; saving makes a copy and leaves the original untouched.` })
+    : L({ zh: '没找到人脸和个人信息；要把图里的文字都打上码，点「文字也全部打码」', en: 'No faces or personal info found. To pixelate all the text in the image, choose “Also Redact All Text”.' });
+  presentCard(cardShell({ title: L(P.redact.name), subtitle: L(file.name), children: [h('img', { class: 'preview', src: preview.png, alt: '' })], detail, buttons }), anchor);
+}
 
 function showFileCompare(anchor) {
   const d = DIFF[lang];

@@ -16,7 +16,7 @@ struct WebCapturePlugin: PopPlugin {
 
     static func card(_ url: URL) -> ResultCard {
         ResultCard(title: String(localized: "网页存档"), body: url.absoluteString,
-                   detail: String(localized: "在后台打开这个网页，存到「下载」：PDF 和长图是整页，Markdown 只取正文；要登录才能看的页面存下来是登录页"),
+                   detail: String(localized: "在后台打开网页存到「下载」：PDF 和长图是整页，Markdown 只取正文；要登录的页面存下来是登录页"),
                    buttons: WebCapture.Format.allCases.map { CardButton(title: $0.title, action: .captureWeb(url, $0)) })
     }
 }
