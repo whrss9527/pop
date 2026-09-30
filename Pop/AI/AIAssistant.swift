@@ -41,6 +41,14 @@ enum AIPrompt {
         [.system(system), .user("\(instruction)\n\n\(text)")]
     }
 
+    /// 常用指令：回答用「外文译为」的语言；翻译时原文是中文就译成「中文译为」的语言，否则译成「外文译为」的
+    static func messages(for action: AIAction, text: String, translation: TranslationSettings) -> [AIClient.Message] {
+        let answerLanguage = LanguageOption.name(for: translation.foreignTarget)
+        let isChinese = ScriptProfile(text).isChinese
+        let target = LanguageOption.name(for: isChinese ? translation.chineseTarget : translation.foreignTarget)
+        return messages(instruction: action.instruction(answerLanguage: answerLanguage, translationTarget: target), text: text)
+    }
+
     /// 自定义指令模板：{text}（或 {raw}）换成选中的文字；模板里没写的话把文字接在指令后面。
     static func expand(_ template: String, text: String) -> String {
         let trimmed = template.trimmingCharacters(in: .whitespacesAndNewlines)

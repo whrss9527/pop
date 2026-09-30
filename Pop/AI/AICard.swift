@@ -41,14 +41,8 @@ final class AIChatModel: ObservableObject {
     var canRegenerate: Bool { !lastMessages.isEmpty && phase != .running }
 
     func run(_ action: AIAction) {
-        let translation = settings.translation
-        let answerLanguage = LanguageOption.name(for: translation.foreignTarget)
-        let isChinese = ScriptProfile(source).isChinese
-        let target = LanguageOption.name(for: isChinese ? translation.chineseTarget : translation.foreignTarget)
         activeAction = action
-        start(label: action.title,
-              messages: AIPrompt.messages(instruction: action.instruction(answerLanguage: answerLanguage, translationTarget: target),
-                                          text: source))
+        start(label: action.title, messages: AIPrompt.messages(for: action, text: source, translation: settings.translation))
     }
 
     /// 自定义插件：指令里已经填好了选中的文字
