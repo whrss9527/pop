@@ -176,7 +176,6 @@
 "在浏览器中打开链接，或给邮箱写邮件" = "Open the link in your browser, or write to the email address";
 "没有识别到链接" = "No link found";
 "计算" = "Calculate";
-"计算选中的算式，支持 + - × ÷ ^ % 和括号" = "Calculate the selected expression; supports + - × ÷ ^ % and parentheses";
 "无法计算这个算式" = "Can’t calculate this expression";
 "计算结果" = "Result";
 "纯文本复制" = "Copy as Plain Text";
@@ -912,7 +911,7 @@
 "传到这台 Mac" = "Send to This Mac";
 "选择文件" = "Choose Files";
 "文件会存进 Mac 的「下载」文件夹。Mac 上停止共享后，这个网页就打不开了。" = "Files are saved to the Mac’s Downloads folder. This page stops working when sharing stops on the Mac.";
-"正在传 {name}：{percent}%" = "Sending {name}: {percent}%";
+"正在传 {name}：{percent}" = "Sending {name}: {percent}";
 "{name}（连接断了）" = "{name} (connection lost)";
 "传完了，在 Mac 的「下载」文件夹里" = "Done. Files are in the Mac’s Downloads folder.";
 "网页服务没能启动" = "The web server couldn’t start";

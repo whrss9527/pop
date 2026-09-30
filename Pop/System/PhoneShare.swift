@@ -246,7 +246,7 @@ enum LANSharePage {
             request.open("PUT", base + "/u?name=" + encodeURIComponent(file.name));
             request.upload.onprogress = function (event) {
               if (event.lengthComputable) {
-                progress.textContent = texts.sending.replace("{name}", file.name).replace("{percent}", Math.round(event.loaded / event.total * 100));
+                progress.textContent = texts.sending.replace("{name}", file.name).replace("{percent}", Math.round(event.loaded / event.total * 100) + "%");
               }
             };
             request.onload = function () {
@@ -277,7 +277,7 @@ enum LANSharePage {
     /// 网页脚本里用到的文字（JSON，{name} 这类占位符在脚本里替换）
     private static func scriptTexts() -> String {
         let texts = [
-            "sending": String(localized: "正在传 {name}：{percent}%"),
+            "sending": String(localized: "正在传 {name}：{percent}"),
             "failed": String(localized: "{name}（{reason}）"),
             "disconnected": String(localized: "{name}（连接断了）"),
             "finished": String(localized: "传完了，在 Mac 的「下载」文件夹里"),
