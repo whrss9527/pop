@@ -379,6 +379,23 @@ button { font: inherit; color: inherit; }
 .pen-bar .sep { width: 1px; height: 18px; background: rgba(255, 255, 255, .25); }
 .pen-bar .done { appearance: none; border: 0; border-radius: 6px; padding: 5px 11px; background: rgba(255, 255, 255, .18); color: #fff; font: 500 12px/1 var(--font); cursor: pointer; }
 .pen-bar .done:hover { background: rgba(255, 255, 255, .26); }
+.cam-bubble { position: absolute; z-index: 37; border-radius: 50%; overflow: hidden; border: 3px solid rgba(255, 255, 255, .92); box-shadow: 0 10px 28px rgba(0, 0, 0, .35); background: #111; cursor: grab; touch-action: none; transition: border-radius .2s; }
+.cam-bubble.square { border-radius: 16%; }
+.cam-bubble.dragging { cursor: grabbing; }
+.cam-bubble video, .cam-bubble svg { width: 100%; height: 100%; object-fit: cover; display: block; pointer-events: none; }
+.cam-bubble video { transform: scaleX(-1); }
+.cam-menu { position: absolute; z-index: 46; min-width: 150px; padding: 5px; border-radius: 10px; font-size: 13px; }
+.cam-menu button { appearance: none; border: 0; background: transparent; color: inherit; font: inherit; width: 100%; text-align: left; padding: 5px 10px 5px 24px; border-radius: 6px; position: relative; cursor: pointer; }
+.cam-menu button:hover { background: var(--accent); color: #fff; }
+.cam-menu button[aria-checked="true"]::before { content: '✓'; position: absolute; left: 8px; }
+.cam-menu hr { border: 0; border-top: 1px solid var(--fill); margin: 4px 6px; }
+.halo, .halo-wave { position: absolute; z-index: 45; width: 60px; height: 60px; margin: -30px 0 0 -30px; border-radius: 50%; pointer-events: none; }
+.halo { background: rgba(255, 214, 10, .28); box-shadow: inset 0 0 0 2px rgba(255, 214, 10, .75); transition: opacity .15s; }
+.halo.away { opacity: 0; }
+.halo.press { animation: halo-press .25s ease-out; }
+.halo-wave { box-shadow: inset 0 0 0 3px #ffd60a; animation: halo-wave .45s ease-out forwards; }
+@keyframes halo-press { from { transform: scale(.82); } to { transform: scale(1); } }
+@keyframes halo-wave { from { transform: scale(.7); opacity: 1; } to { transform: scale(1.7); opacity: 0; } }
 .win .content.scroll { overflow-y: auto; overscroll-behavior: contain; scrollbar-width: thin; }
 .scroll-frame { position: absolute; border: 2px dashed var(--accent); border-radius: 2px; z-index: 25; pointer-events: none; }
 .scroll-panel { position: absolute; z-index: 26; width: min(400px, calc(100% - 16px)); border-radius: 12px; padding: 7px 8px 7px 12px; display: flex; flex-direction: column; gap: 3px; font-size: 12px; }
@@ -507,6 +524,8 @@ const ICONS = {
   cleanKeyboard: '<rect x="2.8" y="6.5" width="18.4" height="11" rx="2"/><path d="M6.5 10h.01M9.5 10h.01M12.5 10h.01M15.5 10h.01M17.5 10h.01M7.5 14h9"/>',
   showKeystrokes: '<rect x="3" y="3" width="18" height="18" rx="4.5"/><path d="M14 8v8a2 2 0 1 0 2-2H8a2 2 0 1 0 2 2V8a2 2 0 1 0-2 2h8a2 2 0 1 0-2-2"/>',
   screenPen: '<path d="M14.8 4.8l3.9 3.9-8.6 8.6-4.5.6.6-4.5z"/><path d="M3.5 20.5c2.6-1.4 4.6-1.1 6.6-.1s4 .9 6.4-.6"/>',
+  cameraBubble: '<circle cx="12" cy="12" r="8.6"/><circle cx="12" cy="10.2" r="3"/><path d="M6.7 18.1a6.4 6.4 0 0 1 10.6 0"/>',
+  pointerHighlight: '<path d="M10 9l8.6 5.1-3.9.9-1.9 3.6z"/><path d="M6.4 3.2v2.4M3.2 6.4h2.4M4.1 4.1l1.6 1.6M8.7 4.1 7.1 5.7M4.1 8.7l1.6-1.6"/>',
   penScribble: '<path d="M4 15.5c1.8-3.8 3.8-8.4 5.8-7.6 2 .8-2.2 7.4-.2 8.3 2 .9 4.7-7.6 7-6.6 2.1.9-1.4 5.9.6 6.4 1.2.3 2.3-.9 2.8-1.6"/>',
   highlighter: '<path d="M15.2 4.2l4.6 4.6-7.6 7.6H7.6v-4.6z"/><path d="M7.6 16.4L5 19h5.2"/>',
   arrowTool: '<path d="M6 18L18 6M9.6 6H18v8.4"/>',
@@ -651,6 +670,8 @@ const P = {
   cleanKeyboard: { icon: 'cleanKeyboard', accepts: [], keys: 'qingjiejianpan qjjp', name: { zh: '清洁键盘', en: 'Clean Keyboard' }, summary: { zh: '锁住键盘一分钟，擦键盘时不会误触；亮度、音量键也不起作用，用鼠标点「结束清洁」随时恢复', en: 'Lock the keyboard for a minute so you can wipe it without typing anything; brightness and volume keys are blocked too. Click End Cleaning with the mouse to stop any time' } },
   scrollCapture: { icon: 'scrollCapture', accepts: [], keys: 'gundongjietu gdjt changjietu cjt', name: { zh: '滚动截图', en: 'Scrolling Screenshot' }, summary: { zh: '框选一块区域，一边往下滚动一边截，拼成一张长图；网页、聊天记录、长文档都能截全，还能接着识别文字。正在截的时候再用一次就是完成', en: 'Select an area, then scroll down while Pop captures it into one long image: whole web pages, chat histories and long documents, with text recognition afterwards if you like. Use it again while capturing to finish' } },
   screenRecord: { icon: 'screenRecord', accepts: [], keys: 'luping lp', name: { zh: '录屏', en: 'Record Screen' }, summary: { zh: '拖出一块区域、单击选一个窗口或者按回车录整个屏幕，存成 MP4；可以录上电脑里的声音或者麦克风、显示鼠标点击和按下的键，录好能接着转成 GIF。正在录的时候再用一次就停止', en: 'Drag out an area, click a window or press Return to record the whole screen as MP4; can include the Mac’s sound or the microphone and show clicks and keystrokes, and the recording can then be turned into a GIF. Use it again while recording to stop' } },
+  cameraBubble: { icon: 'cameraBubble', accepts: [], keys: 'shexiangtouxiaochuang sxtxc', name: { zh: '摄像头小窗', en: 'Camera Bubble' }, summary: { zh: '在屏幕角落用一个圆形小窗显示摄像头画面，录教程、演示时把自己也放进画面；拖动换位置，滚动或双击换大小，右键换形状和摄像头。再用一次关闭', en: 'Show the camera in a small round window in a corner of the screen, so you appear in tutorials and demos. Drag to move it, scroll or double-click to resize, right-click to change the shape or camera. Use it again to close' } },
+  pointerHighlight: { icon: 'pointerHighlight', accepts: [], keys: 'tuchuxianshizhizhen tcxszz guangquan', name: { zh: '突出显示指针', en: 'Highlight Pointer' }, summary: { zh: '演示、录教程时在指针周围加一圈黄色光圈，按下鼠标时泛起波纹，让人一眼看到指针在哪；再用一次关闭', en: 'Put a yellow halo around the pointer that ripples when you click, so people can always find it in demos and tutorials. Use it again to turn it off' } },
   screenPen: { icon: 'screenPen', accepts: [], keys: 'pingmuhuabi pmhb', name: { zh: '屏幕画笔', en: 'Draw on Screen' }, summary: { zh: '演示、录教程时直接在屏幕上画：画笔、荧光笔、箭头、方框、椭圆，笔迹可以几秒后自动消失，也可以留着去操作下面的窗口，录屏时一起录进去；Esc 或再用一次结束', en: 'Draw right on the screen for demos and tutorials: pen, highlighter, arrow, rectangle and ellipse. Strokes can fade after a few seconds or stay while you use the windows underneath, and screen recordings include them. Press Esc or use it again to finish' } },
   showKeystrokes: { icon: 'showKeystrokes', accepts: [], keys: 'xianshianjian xsaj', name: { zh: '显示按键', en: 'Show Keystrokes' }, summary: { zh: '演示、录教程时在屏幕下方显示按下的组合键（⌘C、⇧⌘4、方向键这些），普通打字不显示；再用一次关闭。录屏时也可以勾选一起录进去', en: 'Show the shortcuts you press (⌘C, ⇧⌘4, arrow keys and so on) at the bottom of the screen for demos and tutorials; ordinary typing isn’t shown. Use it again to turn it off. Screen recordings can include them too' } },
   annotate: { icon: 'annotate', accepts: [], keys: 'jietubiaozhu jtbz', name: { zh: '截图标注', en: 'Annotate Screenshot' }, summary: { zh: '框选屏幕上的一块区域（或者用选中的图片），画箭头、方框、文字、马赛克、序号，再复制、存储或贴到屏幕上', en: 'Select an area of the screen (or use the selected image), draw arrows, boxes, text, pixelation and numbered markers, then copy, save or pin it' } },
@@ -665,7 +686,7 @@ const LAYOUT = ['translate', 'search', 'dictionary', 'openURL', 'allPlugins', 'c
 // 「全部功能」里的顺序
 const ORDER = ['translate', 'textImage', 'largeType', 'search', 'dictionary', 'speak', 'textStats', 'changeCase', 'openURL', 'webCapture', 'linkInspect', 'qrCode',
   'fileInfo', 'imageConvert', 'cropImage', 'redact', 'ocr', 'removeBackground', 'videoConvert', 'transcribe', 'trimMedia', 'pdf', 'compareFiles', 'zip',
-  'airDrop', 'sendToPhone', 'screenRecord', 'scrollCapture', 'showKeystrokes', 'screenPen', 'screenshotOCR', 'annotate', 'pin', 'colorPicker', 'clipboard', 'shelf', 'menuShortcuts', 'systemActions', 'cleanKeyboard'];
+  'airDrop', 'sendToPhone', 'screenRecord', 'scrollCapture', 'showKeystrokes', 'screenPen', 'cameraBubble', 'pointerHighlight', 'screenshotOCR', 'annotate', 'pin', 'colorPicker', 'clipboard', 'shelf', 'menuShortcuts', 'systemActions', 'cleanKeyboard'];
 
 function canHandle(info, content) {
   if (!info) return false;
@@ -1631,6 +1652,8 @@ const RUN = {
   cleanKeyboard: () => startKeyboardCleaning(),
   showKeystrokes: (content, anchor) => toggleKeystrokes(anchor),
   screenPen: () => togglePen(),
+  cameraBubble: () => toggleCameraBubble(),
+  pointerHighlight: (content, anchor) => togglePointerHighlight(anchor),
 };
 
 // 翻译卡片：换目标语言、换引擎、几家对比；联网的引擎一边收一边显示
@@ -2886,6 +2909,144 @@ function togglePen() {
   };
   render();
   resize();
+}
+
+// 摄像头小窗：桌面右下角一个圆形小窗。网页里能用摄像头时显示真的画面（像照镜子一样左右翻过来），
+// 用不了时换成一张示例画面。拖动换位置，滚动或双击换大小，右键换形状、关闭；再用一次关闭
+let camera = null;
+const CAM_SIZES = [140, 200, 280];
+
+function cameraPlaceholder() {
+  const svg = s('svg', { viewBox: '0 0 100 100', 'aria-hidden': 'true' });
+  svg.innerHTML = '<defs><linearGradient id="cam-bg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#c7d9f2"/><stop offset="1" stop-color="#f0e1d4"/></linearGradient></defs>'
+    + '<rect width="100" height="100" fill="url(#cam-bg)"/><ellipse cx="50" cy="104" rx="36" ry="30" fill="#29334d"/><rect x="44" y="60" width="12" height="16" fill="#edc7a8"/>'
+    + '<ellipse cx="50" cy="44" rx="18" ry="22" fill="#1f1a17"/><ellipse cx="50" cy="48" rx="15" ry="19" fill="#f2cdb0"/>';
+  return svg;
+}
+
+function toggleCameraBubble() {
+  if (camera) { camera.stop(); return; }
+  closeRing(false);
+  dismissCard(false);
+  const scale = Math.min(1, stage.clientWidth / 900);
+  let size = CAM_SIZES[1] * scale;
+  const el = h('div', { class: 'cam-bubble', role: 'img', 'aria-label': L(P.cameraBubble.name) });
+  stage.append(el);
+  const place = (x, y) => {
+    const left = clamp(x, 6, stage.clientWidth - size - 6), top = clamp(y, MENUBAR + 6, stage.clientHeight - size - 6);
+    Object.assign(el.style, { left: `${left}px`, top: `${top}px`, width: `${size}px`, height: `${size}px` });
+  };
+  place(stage.clientWidth - size - 24, stage.clientHeight - size - 24);
+  let stream = null;
+  let closed = false;
+  const fallback = () => { if (!closed && !el.firstChild) el.append(cameraPlaceholder()); };
+  // 摄像头：只在打开小窗时请求，关掉时停下
+  if (navigator.mediaDevices?.getUserMedia) {
+    navigator.mediaDevices.getUserMedia({ video: true, audio: false }).then((media) => {
+      if (closed) { media.getTracks().forEach((track) => track.stop()); return; }
+      stream = media;
+      const video = h('video', { autoplay: true, playsinline: true, muted: true });
+      video.srcObject = media;
+      el.replaceChildren(video);
+    }).catch(() => {
+      fallback();
+      showToast(lang === 'zh' ? '这里用不了摄像头，先用一张示例画面' : 'The camera isn’t available here, so this shows a sample picture', { x: el.offsetLeft + size / 2, y: el.offsetTop });
+    });
+  } else fallback();
+  const resize = (next) => {
+    const cx = el.offsetLeft + size / 2, cy = el.offsetTop + size / 2;
+    size = clamp(next, 110 * scale, 420 * scale);
+    place(cx - size / 2, cy - size / 2);
+  };
+  let drag = null;
+  el.addEventListener('pointerdown', (event) => {
+    event.stopPropagation();
+    if (event.button !== 0) return;
+    drag = { id: event.pointerId, dx: event.clientX - el.offsetLeft, dy: event.clientY - el.offsetTop };
+    el.setPointerCapture(event.pointerId);
+    el.classList.add('dragging');
+  });
+  el.addEventListener('pointermove', (event) => { if (drag && event.pointerId === drag.id) place(event.clientX - drag.dx, event.clientY - drag.dy); });
+  const endDrag = () => { drag = null; el.classList.remove('dragging'); };
+  el.addEventListener('pointerup', endDrag);
+  el.addEventListener('pointercancel', endDrag);
+  el.addEventListener('dblclick', () => {
+    const steps = CAM_SIZES.map((value) => value * scale);
+    resize(steps.find((value) => value > size + 1) ?? steps[0]);
+  });
+  el.addEventListener('wheel', (event) => { event.preventDefault(); resize(size - event.deltaY * 0.5); }, { passive: false });
+  let menu = null;
+  const closeMenu = () => { menu?.remove(); menu = null; document.removeEventListener('pointerdown', outside, true); };
+  // 点菜单外面只是收起菜单，不把这一下传给桌面
+  const outside = (event) => { if (menu && !menu.contains(event.target)) { event.stopPropagation(); closeMenu(); } };
+  el.addEventListener('contextmenu', (event) => {
+    event.preventDefault();
+    event.stopPropagation();
+    closeMenu();
+    const p = stagePoint(event);
+    const item = (label, checked, action) => h('button', { type: 'button', role: 'menuitemcheckbox', 'aria-checked': String(checked), onclick: () => { closeMenu(); action(); } }, label);
+    const square = el.classList.contains('square');
+    menu = h('div', { class: 'cam-menu glass', role: 'menu', onpointerdown: (event) => event.stopPropagation() },
+      [[{ zh: '小', en: 'Small' }, 0], [{ zh: '中', en: 'Medium' }, 1], [{ zh: '大', en: 'Large' }, 2]].map(([label, index]) => item(L(label), Math.abs(size - CAM_SIZES[index] * scale) < 1, () => resize(CAM_SIZES[index] * scale))),
+      h('hr'),
+      item(lang === 'zh' ? '圆形' : 'Circle', !square, () => el.classList.remove('square')),
+      item(lang === 'zh' ? '圆角方形' : 'Rounded Square', square, () => el.classList.add('square')),
+      h('hr'),
+      item(lang === 'zh' ? '关闭摄像头小窗' : 'Close Camera Bubble', false, () => stop()));
+    stage.append(menu);
+    Object.assign(menu.style, { left: `${clamp(p.x, 4, stage.clientWidth - menu.offsetWidth - 4)}px`, top: `${clamp(p.y, MENUBAR + 4, stage.clientHeight - menu.offsetHeight - 4)}px` });
+    setTimeout(() => document.addEventListener('pointerdown', outside, true));
+  });
+  function stop() {
+    closed = true;
+    closeMenu();
+    stream?.getTracks().forEach((track) => track.stop());
+    el.remove();
+    camera = null;
+  }
+  camera = { stop };
+}
+
+// 突出显示指针：指针周围一圈黄色光圈，按下时泛起一圈波纹；指针离开桌面时藏起来
+let halo = null;
+
+function togglePointerHighlight(anchor) {
+  if (halo) {
+    halo.stop();
+    showToast(lang === 'zh' ? '不再突出显示指针' : 'Stopped highlighting the pointer', anchor);
+    return;
+  }
+  const el = h('div', { class: 'halo away', 'aria-hidden': 'true' });
+  stage.append(el);
+  const at = (event) => { const p = stagePoint(event); el.style.left = `${p.x}px`; el.style.top = `${p.y}px`; el.classList.remove('away'); return p; };
+  const move = (event) => at(event);
+  const press = (event) => {
+    const p = at(event);
+    el.classList.remove('press');
+    void el.offsetWidth;
+    el.classList.add('press');
+    const wave = h('div', { class: 'halo-wave', style: `left:${p.x}px;top:${p.y}px` });
+    stage.append(wave);
+    setTimeout(() => wave.remove(), 500);
+  };
+  const leave = () => el.classList.add('away');
+  stage.addEventListener('pointermove', move, true);
+  stage.addEventListener('pointerdown', press, true);
+  stage.addEventListener('pointerleave', leave);
+  halo = {
+    stop() {
+      stage.removeEventListener('pointermove', move, true);
+      stage.removeEventListener('pointerdown', press, true);
+      stage.removeEventListener('pointerleave', leave);
+      el.remove();
+      halo = null;
+    },
+  };
+  const start = anchor || defaultAnchor();
+  el.style.left = `${start.x}px`;
+  el.style.top = `${start.y}px`;
+  el.classList.remove('away');
+  showToast(lang === 'zh' ? '指针周围加上了光圈，再用一次就关闭' : 'The pointer now has a halo; use it again to turn it off', anchor);
 }
 
 // 清洁键盘：盖一层提示和倒计时，这期间按键都不管用；用鼠标点「结束清洁」或者等时间到

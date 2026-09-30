@@ -522,6 +522,19 @@ enum OverlayDemo {
             ScreenPen.shared.stop()
             PinBoard.shared.closeAll()
 
+            // 摄像头小窗和指针光圈：示例人像当作摄像头的画面，小窗在屏幕右下角；光圈停在小窗左边，泛起一圈波纹
+            await pause(0.4 * unit)
+            if let camera = sampleCameraFrame() {
+                let bubble = CameraBubble.shared.showForDemo(image: camera, on: screen)
+                let pointer = CGPoint(x: bubble.minX - 150, y: bubble.midY + 30)
+                PointerHighlight.shared.showForDemo(at: pointer)
+                logRegion(bubble.union(PointerHighlight.frame(around: pointer)).insetBy(dx: -40, dy: -40), screen: screen)
+            }
+            step("presenting")
+            await pause(1.4 * unit)
+            CameraBubble.shared.stop()
+            PointerHighlight.shared.stop()
+
             // 截图标注窗口：拿一张画好的示例图，标上方框、箭头、文字、马赛克和序号；截图区域换成标注窗口
             await pause(1.4 * unit)
             overlay.hide()
@@ -655,6 +668,21 @@ enum OverlayDemo {
         guard let image = context.makeImage() else { return nil }
         // 脸的位置（左上角为原点）
         return IDPhoto.Cutout(image: image, face: CGRect(x: 215, y: 330, width: 170, height: 190))
+    }
+
+    /// 摄像头小窗演示用的画面：浅色渐变的背景上的示例人像
+    private static func sampleCameraFrame() -> CGImage? {
+        let space = CGColorSpace(name: CGColorSpace.sRGB) ?? CGColorSpaceCreateDeviceRGB()
+        guard let portrait = samplePortrait(),
+              let context = CGContext(data: nil, width: 600, height: 600, bitsPerComponent: 8, bytesPerRow: 0, space: space,
+                                      bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue) else { return nil }
+        let colors = [CGColor(srgbRed: 0.78, green: 0.85, blue: 0.95, alpha: 1), CGColor(srgbRed: 0.94, green: 0.88, blue: 0.83, alpha: 1)]
+        if let gradient = CGGradient(colorsSpace: space, colors: colors as CFArray, locations: [0, 1]) {
+            context.drawLinearGradient(gradient, start: CGPoint(x: 0, y: 600), end: CGPoint(x: 600, y: 0), options: [])
+        }
+        // 人像是 600×800，下移一点让脸在中间
+        context.draw(portrait.image, in: CGRect(x: 0, y: -40, width: 600, height: 800))
+        return context.makeImage()
     }
 
     private static func sampleFiles() -> [URL] {
