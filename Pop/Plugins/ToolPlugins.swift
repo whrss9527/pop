@@ -114,3 +114,18 @@ struct CodeStatsPlugin: PopPlugin {
         return .card(ResultCard(title: "代码行数", detail: detail, copyText: CodeStats.markdown(result), rows: rows))
     }
 }
+
+// MARK: - 比较文件夹
+
+struct FolderComparePlugin: PopPlugin {
+    let info = PluginInfo(id: BuiltinPluginID.compareFolders, name: "比较文件夹", symbol: "rectangle.split.2x1",
+                          summary: "比较选中的两个文件夹：哪些文件只在一边有，哪些两边都有但内容不一样",
+                          accepts: [.files], check: .twoFolders)
+
+    @MainActor func run(_ content: ClassifiedContent, context: PluginContext) async -> PluginOutcome {
+        let folders = content.files.filter { FolderTree.isFolder($0.path(percentEncoded: false)) }
+        guard folders.count == 2 else { return .failure("选中两个文件夹才能比较") }
+        let result = await runInBackground { FolderCompare.compare(folders[0], folders[1]) }
+        return .card(FolderCompare.card(result))
+    }
+}

@@ -27,6 +27,20 @@ struct StitchImagesPlugin: PopPlugin {
     }
 }
 
+// MARK: - 加水印
+
+struct WatermarkPlugin: PopPlugin {
+    let info = PluginInfo(id: BuiltinPluginID.watermark, name: "加水印", symbol: "signature",
+                          summary: "给选中的图片斜着铺满一层半透明的文字（比如「仅供办理业务使用」），另存一份放在原图旁边",
+                          accepts: [.imageFile])
+
+    @MainActor func run(_ content: ClassifiedContent, context: PluginContext) async -> PluginOutcome {
+        let images = content.files.filter(ContentClassifier.isImageFile)
+        guard !images.isEmpty else { return .failure("没有选中图片") }
+        return .watermark(images)
+    }
+}
+
 // MARK: - 视频转换
 
 struct VideoConvertPlugin: PopPlugin {

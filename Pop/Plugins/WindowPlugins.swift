@@ -87,7 +87,7 @@ private struct LayoutTile: View {
 
 struct ImageConvertPlugin: PopPlugin {
     let info = PluginInfo(id: BuiltinPluginID.imageConvert, name: "图片转换", symbol: "photo.on.rectangle.angled",
-                          summary: "把选中的图片文件转成 PNG、JPEG、HEIC，缩小一半、压缩体积，旋转、左右翻转，或者去掉照片里的位置和拍摄信息；结果存在原图旁边",
+                          summary: "把选中的图片文件转成 PNG、JPEG、HEIC，缩小一半、压缩体积或者压到指定大小以内，旋转、左右翻转，或者去掉照片里的位置和拍摄信息；结果存在原图旁边",
                           accepts: [.imageFile])
 
     @MainActor func run(_ content: ClassifiedContent, context: PluginContext) async -> PluginOutcome {
@@ -109,6 +109,7 @@ struct ImageConvertPlugin: PopPlugin {
         var buttons = operations.map { operation in
             CardButton(title: operation.title, action: .convertImages(files, operation))
         }
+        buttons.append(CardButton(title: "压缩到指定大小…", action: .imageSizeLimit(files)))
         // 一张不太大的图可以直接复制成 data URI（写进网页、CSS、Markdown）
         if files.count == 1, let uri = Base64Image.dataURI(for: files[0]) {
             buttons.append(CardButton(title: "复制为 data URI", action: .copy(uri)))
