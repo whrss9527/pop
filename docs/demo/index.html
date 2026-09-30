@@ -185,6 +185,9 @@ button { font: inherit; color: inherit; }
 .file.on .thumb { background: var(--fill); }
 .file.on .name { background: var(--accent); color: #fff; }
 .file.fresh { animation: fresh .5s cubic-bezier(.2, .9, .3, 1.2); }
+.finder-main { display: flex; flex-direction: column; min-width: 0; min-height: 0; }
+.finder-main .files { flex: 1; min-height: 0; }
+.statusbar { flex: none; font-size: 11px; color: var(--win-text-2); padding: 6px 14px; border-top: 1px solid var(--sep); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 @keyframes fresh { from { opacity: 0; transform: scale(.6); } }
 @media (max-width: 720px) { .finder { grid-template-columns: 1fr; } .finder .side { display: none; } }
 
@@ -290,6 +293,18 @@ button { font: inherit; color: inherit; }
 .icon-btn { appearance: none; border: 0; background: none; padding: 0; width: 16px; height: 16px; color: var(--accent); cursor: pointer; align-self: center; }
 .icon-btn svg { width: 14px; height: 14px; display: block; margin: auto; }
 .swatch { height: 40px; border-radius: 8px; box-shadow: inset 0 0 0 1px var(--sep); }
+.diff { border-radius: 8px; background: var(--hover); padding: 4px 0; max-height: 320px; overflow: auto; }
+.dl { display: flex; gap: 6px; font: 12px/1.45 var(--mono); padding: 1.5px 6px; }
+.dl .sg { width: 10px; flex: none; color: var(--label-2); }
+.dl .tx { flex: 1; min-width: 0; white-space: pre-wrap; word-break: break-word; user-select: text; -webkit-user-select: text; }
+.dl.same .tx { color: var(--label-2); }
+.dl.removed { background: rgba(255, 59, 48, .13); }
+.dl.added { background: rgba(52, 199, 89, .13); }
+.dl.removed .sg { color: #ff3b30; }
+.dl.added .sg { color: #28b04d; }
+.dl mark { color: inherit; border-radius: 2px; }
+.dl.removed mark { background: rgba(255, 59, 48, .35); }
+.dl.added mark { background: rgba(52, 199, 89, .35); }
 
 .search { width: 100%; height: 24px; border-radius: 6px; border: 0; background: var(--field); box-shadow: inset 0 0 0 .5px var(--field-stroke); padding: 0 8px; font-size: 12.5px; color: var(--label); outline: none; }
 .search:focus { box-shadow: inset 0 0 0 .5px var(--field-stroke), 0 0 0 3px var(--accent-soft); }
@@ -457,6 +472,7 @@ const ICONS = {
   trimMedia: '<circle cx="6.5" cy="7" r="2.6"/><circle cx="6.5" cy="17" r="2.6"/><path d="M8.7 8.4L20 17M8.7 15.6L20 7"/>',
   pdf: '<path d="M6.5 3.5h7.2l4.3 4.3v12a1.7 1.7 0 0 1-1.7 1.7H6.5a1.7 1.7 0 0 1-1.7-1.7V5.2a1.7 1.7 0 0 1 1.7-1.7z"/><path d="M13.5 3.6v4.4H18M8 12h8M8 15h8M8 18h5"/>',
   zip: '<path d="M6.6 3.5h10.8a1.6 1.6 0 0 1 1.6 1.6v14.3a1.6 1.6 0 0 1-1.6 1.6H6.6A1.6 1.6 0 0 1 5 19.4V5.1a1.6 1.6 0 0 1 1.6-1.6z"/><path d="M12 3.6v1.8M12 7.4v1.2M12 10.6v1.2"/><rect x="10.4" y="13.4" width="3.2" height="4" rx="1"/>',
+  compareFiles: '<rect x="8" y="7.5" width="11.5" height="13.5" rx="2"/><path d="M5 16V5.5a2 2 0 0 1 2-2h8"/><path d="M11 12h5.5M11 15h5.5"/>',
   close: '<circle cx="12" cy="12" r="10" fill="currentColor" stroke="none"/><path d="M8.6 8.6l6.8 6.8M15.4 8.6l-6.8 6.8" style="stroke:var(--page)" stroke-width="2"/>',
   chevron: '<path d="M6 9.5l6 6 6-6"/>',
   copy: '<rect x="8" y="8" width="11.5" height="12" rx="2"/><path d="M5 15.5V6a2 2 0 0 1 2-2h8.5"/>',
@@ -550,7 +566,7 @@ const P = {
   clipboard: { icon: 'clipboard', accepts: [], keys: 'jiantieban jtb', name: { zh: '剪贴板', en: 'Clipboard' }, summary: { zh: '打开剪贴板历史，选一条粘贴', en: 'Open clipboard history and paste an item' } },
   screenshotOCR: { icon: 'screenshotOCR', accepts: [], keys: 'jietushizi jtsz ocr', name: { zh: '截图识字', en: 'Screenshot OCR' }, summary: { zh: '框选屏幕上的一块区域，识别里面的文字', en: 'Select an area of the screen and recognize its text' } },
   colorPicker: { icon: 'colorPicker', accepts: [], keys: 'pingmuqvse pmqs quse', name: { zh: '屏幕取色', en: 'Pick Color' }, summary: { zh: '吸取屏幕上任意位置的颜色，自动复制 HEX 值', en: 'Pick a color anywhere on the screen and copy its HEX value' } },
-  webCapture: { icon: 'webCapture', accepts: ['url'], keys: 'wangyecundang wycd pdf', name: { zh: '网页存档', en: 'Save Web Page' }, summary: { zh: '把选中的网址整页存成一页长 PDF（文字能选、能搜）或者一张长图，放在「下载」里', en: 'Save the whole page at the selected URL to Downloads as one long PDF (with selectable, searchable text) or a long image' } },
+  webCapture: { icon: 'webCapture', accepts: ['url'], keys: 'wangyecundang wycd pdf', name: { zh: '网页存档', en: 'Save Web Page' }, summary: { zh: '把选中的网址整页存成一页长 PDF（文字能选、能搜）、一张长图，或者只把正文存成 Markdown，放在「下载」里', en: 'Save the whole page at the selected URL to Downloads as one long PDF (with selectable, searchable text) or a long image, or save just the article text as Markdown' } },
   linkInspect: { icon: 'linkInspect', accepts: ['url'], keys: 'lianjiejiexi ljjx', name: { zh: '链接解析', en: 'Parse Link' }, summary: { zh: '拆开链接的协议、主机、路径和每个参数（解码后），去掉 utm_source 这类跟踪参数', en: 'Split a link into scheme, host, path and decoded parameters, and remove tracking parameters such as utm_source' } },
   qrCode: { icon: 'qrCode', accepts: ['text', 'imageFile'], keys: 'erweima ewm qr', name: { zh: '二维码', en: 'QR Code' }, summary: { zh: '把文字或链接生成二维码（英文字母和数字还能生成条形码）；选中图片时识别里面的二维码和条形码', en: 'Generate a QR code from text or a link (letters and digits can also become a barcode); with an image selected, read the QR codes and barcodes in it' } },
   textImage: { icon: 'textImage', accepts: ['text'], keys: 'wenzizhuantupian wzztp', name: { zh: '文字转图片', en: 'Text to Image' }, summary: { zh: '把选中的文字排成一张手机上看着舒服的长图（宽 1080 像素），白底、米黄、深色三种底色，可以复制、存储或贴到屏幕上', en: 'Lay out the selected text as a long image that reads well on a phone (1080 pixels wide) on a white, cream or dark background; copy it, save it or pin it to the screen' } },
@@ -566,6 +582,7 @@ const P = {
   transcribe: { icon: 'transcribe', accepts: ['audio', 'video'], keys: 'yuyinzhuanwenzi yyzwz', name: { zh: '语音转文字', en: 'Transcribe' }, summary: { zh: '把录音、视频里说的话转成文字和 SRT 字幕，存在原文件旁边；普通话、英语、粤语、日语，这台 Mac 支持时在本机识别', en: 'Turn speech in recordings and videos into text and SRT subtitles saved next to the original; Mandarin, English, Cantonese and Japanese, recognized on this Mac when it supports it' } },
   trimMedia: { icon: 'trimMedia', accepts: ['audio', 'video'], keys: 'jiequpianduan jqpd', name: { zh: '截取片段', en: 'Trim' }, summary: { zh: '截取选中的音频或视频的一段（写上开始和结束的时间），存在原文件旁边', en: 'Cut a range from the selected audio or video (by start and end time), saved next to the original' } },
   pdf: { icon: 'pdf', accepts: ['pdf', 'imageFile'], keys: 'pdf', name: { zh: 'PDF', en: 'PDF' }, summary: { zh: '把选中的图片和 PDF 按文件名顺序合成一个 PDF；只选了一个 PDF 时可以把每页存成图片、复制里面的文字、取出其中几页或者拆开、加密码或者去掉密码，或者压缩', en: 'Combine the selected images and PDFs into one PDF in file name order. With a single PDF, save each page as an image, copy its text, extract or split pages, add or remove a password, or compress it' } },
+  compareFiles: { icon: 'compareFiles', accepts: ['twoTextFiles'], keys: 'duibiwenjian dbwj diff', name: { zh: '对比文件', en: 'Compare Files' }, summary: { zh: '对比选中的两个文本文件（代码、Markdown、配置、CSV……），标出删去和新增的行，改动的地方逐词标出；按修改时间，旧的当原文', en: 'Compare the two selected text files (code, Markdown, config, CSV…), marking removed and added lines and the changed words in them; the older file by modification date is the original' } },
   zip: { icon: 'zip', accepts: ['files'], keys: 'yasuo ys zip', name: { zh: '压缩', en: 'Compress' }, summary: { zh: '把选中的文件或文件夹压缩成 zip，存在原来的文件夹里', en: 'Compress the selected files or folders into a zip in the same folder' } },
   airDrop: { icon: 'airDrop', accepts: ['text', 'files'], keys: 'gekongtousong gkts airdrop', name: { zh: '隔空投送', en: 'AirDrop' }, summary: { zh: '用隔空投送把选中的文件、图片、链接或文字发到附近的 iPhone、iPad 或 Mac', en: 'Send the selected files, images, links or text to a nearby iPhone, iPad or Mac with AirDrop' } },
   sendToPhone: { icon: 'sendToPhone', accepts: [], keys: 'chuandaoshouji cdsj', name: { zh: '传到手机', en: 'Send to Phone' }, summary: { zh: '手机扫码下载选中的文件、图片（文件夹先打包成 zip）或者拿到选中的文字，也能从手机传文件到「下载」文件夹；手机和 Mac 连同一个 Wi-Fi 就行，安卓手机也能用', en: 'Scan a QR code with your phone to download the selected files or images (folders are zipped first) or get the selected text, and upload files from the phone to Downloads. The phone and Mac just need to be on the same Wi-Fi; Android works too.' } },
@@ -581,7 +598,7 @@ for (const [id, info] of Object.entries(P)) info.id = id;
 const LAYOUT = ['translate', 'search', 'dictionary', 'openURL', 'allPlugins', 'clipboard', 'screenshotOCR', 'colorPicker'];
 // 「全部功能」里的顺序
 const ORDER = ['translate', 'textImage', 'search', 'dictionary', 'speak', 'textStats', 'changeCase', 'openURL', 'webCapture', 'linkInspect', 'qrCode',
-  'fileInfo', 'imageConvert', 'cropImage', 'ocr', 'removeBackground', 'videoConvert', 'transcribe', 'trimMedia', 'pdf', 'zip',
+  'fileInfo', 'imageConvert', 'cropImage', 'ocr', 'removeBackground', 'videoConvert', 'transcribe', 'trimMedia', 'pdf', 'compareFiles', 'zip',
   'airDrop', 'sendToPhone', 'screenRecord', 'screenshotOCR', 'annotate', 'pin', 'colorPicker', 'clipboard', 'shelf', 'systemActions'];
 
 function canHandle(info, content) {
@@ -654,6 +671,10 @@ const FILES = [
     info: [[{ zh: '种类', en: 'Kind' }, { zh: 'Apple MPEG-4 音频', en: 'Apple MPEG-4 Audio' }], [{ zh: '大小', en: 'Size' }, '18.6 MB'], [{ zh: '时长', en: 'Duration' }, '32:10'], [{ zh: '修改时间', en: 'Modified' }, '2026-09-29 16:20']] },
   { key: 'pdf', kind: 'pdf', icon: 'pdf', name: { zh: '季度报告.pdf', en: 'Q3 Report.pdf' },
     info: [[{ zh: '种类', en: 'Kind' }, { zh: 'PDF 文稿', en: 'PDF Document' }], [{ zh: '大小', en: 'Size' }, '2.4 MB'], [{ zh: '页数', en: 'Pages' }, '18'], [{ zh: '修改时间', en: 'Modified' }, '2026-09-30 09:12']] },
+  { key: 'notes-old', kind: 'textFile', icon: 'text', tag: 'MD', name: { zh: '更新说明.md', en: 'Release notes.md' },
+    info: [[{ zh: '种类', en: 'Kind' }, 'Markdown'], [{ zh: '大小', en: 'Size' }, '1 KB'], [{ zh: '修改时间', en: 'Modified' }, '2026-09-28 18:30']] },
+  { key: 'notes-new', kind: 'textFile', icon: 'text', tag: 'MD', name: { zh: '更新说明 v2.md', en: 'Release notes v2.md' },
+    info: [[{ zh: '种类', en: 'Kind' }, 'Markdown'], [{ zh: '大小', en: 'Size' }, '1 KB'], [{ zh: '修改时间', en: 'Modified' }, '2026-09-30 14:05']] },
   { key: 'folder', kind: 'folder', icon: 'folder', name: { zh: '设计稿', en: 'Designs' },
     info: [[{ zh: '种类', en: 'Kind' }, { zh: '文件夹', en: 'Folder' }], [{ zh: '大小', en: 'Size' }, { zh: '1.3 GB（128 个文件）', en: '1.3 GB (128 files)' }], [{ zh: '修改时间', en: 'Modified' }, '2026-09-30 11:47']] },
 ];
@@ -768,7 +789,7 @@ const MENUBAR = 26;
 
 const state = {
   scene: 'foreign',
-  file: 'photo',
+  selected: ['photo'],
   extraFiles: [],
   desktopIcons: true,
   diskMounted: true,
@@ -885,15 +906,24 @@ function renderWindow() {
       h('div', { class: 'bar' }, trafficLights(), h('div', { class: 'nav' }, icon('back'), icon('forward')), h('span', { class: 'title' }, lang === 'zh' ? '下载' : 'Downloads'), h('div', { class: 'addr', style: 'visibility:hidden' })),
       h('div', { class: 'content' }, h('div', { class: 'finder' },
         h('div', { class: 'side' }, h('div', { class: 'h' }, lang === 'zh' ? '个人收藏' : 'Favorites'), sidebar.map((name, i) => h('div', { class: 'it' + (i === 1 ? ' on' : '') }, icon(i === 1 ? 'download' : i === 0 ? 'desktop' : 'folder'), name))),
-        h('div', { class: 'files' }, all.map((file) => h('div', { class: 'file' + (file.key === state.file ? ' on' : '') + (file.fresh ? ' fresh' : ''), 'data-file': file.key, 'data-selection': file.key === state.file ? '' : null },
-          h('div', { class: 'thumb' }, fileIcon(file.icon, file.tag)), h('div', { class: 'name' }, L(file.name))))))));
+        h('div', { class: 'finder-main' },
+          h('div', { class: 'files' }, all.map((file) => h('div', { class: 'file' + (state.selected.includes(file.key) ? ' on' : '') + (file.fresh ? ' fresh' : ''), 'data-file': file.key, 'data-selection': file.key === state.selected[0] ? '' : null },
+            h('div', { class: 'thumb' }, fileIcon(file.icon, file.tag)), h('div', { class: 'name' }, L(file.name))))),
+          h('div', { class: 'statusbar', id: 'finder-status' }, finderStatus(all.length))))));
     for (const file of state.extraFiles) file.fresh = false;
   }
   windowHost.replaceChildren(...(win ? [win] : []));
 }
 
-function currentFile() {
-  return FILES.concat(state.extraFiles).find((file) => file.key === state.file) || FILES[0];
+function finderStatus(total) {
+  const count = state.selected.length;
+  return L({ zh: `选中 ${count} 项，共 ${total} 项 · 按住 ⌘ 点选多个文件`, en: `${count} of ${total} selected · ⌘-click to select more` });
+}
+
+function selectedFiles() {
+  const all = FILES.concat(state.extraFiles);
+  const files = state.selected.map((key) => all.find((file) => file.key === key)).filter(Boolean);
+  return files.length ? files : [FILES[0]];
 }
 
 // 当前场景下「选中」的内容
@@ -908,8 +938,13 @@ function currentContent() {
     case 'link':
       return { kinds: ['text', 'url', 'latin'], text: LINK.url, summary: L(T.linkKind) };
     case 'files': {
-      const file = currentFile();
-      return { kinds: ['files', file.kind], file, summary: L(file.name) };
+      const files = selectedFiles();
+      const file = files[0];
+      if (files.length === 1) return { kinds: ['files', file.kind], file, files, summary: L(file.name) };
+      const kinds = ['files'];
+      if (files.length === 2 && files.every((f) => f.kind === 'textFile')) kinds.push('twoTextFiles');
+      if (files.every((f) => f.kind === 'imageFile')) kinds.push('imageFile');
+      return { kinds, file, files, summary: L({ zh: `${files.length} 个文件`, en: `${files.length} files` }) };
     }
     default:
       return { kinds: [], summary: L(T.nothing) };
@@ -1404,14 +1439,15 @@ const RUN = {
   textStats: (content, anchor) => showTextStats(content.text, anchor),
   changeCase: (content, anchor) => showChangeCase(content.text, anchor),
   speak: (content, anchor) => speak(content.text, anchor),
-  fileInfo: (content, anchor) => showFileInfo(content.file, anchor),
+  fileInfo: (content, anchor) => content.files.length > 1 ? showFilesInfo(content.files, anchor) : showFileInfo(content.file, anchor),
   imageConvert: (content, anchor) => showImageConvert(content.file, anchor),
   cropImage: (content, anchor) => showCrop(content.file, anchor),
   ocr: (content, anchor) => showOCRResult(lang === 'zh' ? '日落 · 第一海水浴场\n2026.09.21' : 'Sunset · No. 1 Bathing Beach\n2026.09.21', anchor, L(P.ocr.name)),
   videoConvert: (content, anchor) => showVideoConvert(content.file, anchor),
   transcribe: (content, anchor) => runTranscribe(content.file, anchor),
   pdf: (content, anchor) => showPDF(content.file, anchor),
-  zip: (content, anchor) => addOutputFile(content.file, { suffix: '', ext: 'zip', icon: 'zip', kind: 'zip' }, anchor, (name) => L({ zh: `已压缩成「${name}」`, en: `Compressed to “${name}”` })),
+  zip: (content, anchor) => addOutputFile(content.files.length > 1 ? { name: { zh: '归档.zip', en: 'Archive.zip' } } : content.file, { suffix: '', ext: 'zip', icon: 'zip', kind: 'zip' }, anchor, (name) => L({ zh: `已压缩成「${name}」`, en: `Compressed to “${name}”` })),
+  compareFiles: (content, anchor) => showFileCompare(anchor),
   sendToPhone: (content, anchor) => showSendToPhone(content, anchor),
   pin: (content, anchor) => content.text ? pinToScreen({ text: content.text }, anchor) : startRegionPicker('pin', anchor),
   screenRecord: (content, anchor) => startRecordPicker(anchor),
@@ -1626,9 +1662,9 @@ function showClipboard(anchor) {
 
 // 网页存档
 function showWebCapture(anchor) {
-  const formats = [[{ zh: '存成 PDF', en: 'Save as PDF' }, 'pdf'], [{ zh: '存成长图', en: 'Save as Long Image' }, 'png']];
+  const formats = [[{ zh: '存成 PDF', en: 'Save as PDF' }, 'pdf'], [{ zh: '存成长图', en: 'Save as Long Image' }, 'png'], [{ zh: '存成 Markdown', en: 'Save as Markdown' }, 'md']];
   const el = cardShell({ title: L(P.webCapture.name), children: [h('div', { class: 'body mono', style: 'font-size:12px' }, LINK.url)],
-    detail: lang === 'zh' ? '在后台打开这个网页，整页存到「下载」；要登录才能看的页面存下来是登录页' : 'Opens the page in the background and saves the whole page to Downloads. A page that needs you to sign in is saved as the sign-in page.',
+    detail: lang === 'zh' ? '在后台打开这个网页，存到「下载」：PDF 和长图是整页，Markdown 只取正文；要登录才能看的页面存下来是登录页' : 'Opens the page in the background and saves it to Downloads: the PDF and long image keep the whole page, Markdown keeps just the article text. A page that needs you to sign in is saved as the sign-in page.',
     buttons: formats.map(([label, ext]) => button(L(label), () => {
       showToast(lang === 'zh' ? '正在打开网页…' : 'Opening the web page…', anchor);
       setTimeout(() => showToast(L({ zh: `已存到「下载」：Releases · whrss9527-pop.${ext}`, en: `Saved to Downloads: Releases · whrss9527-pop.${ext}` }), anchor), 1700);
@@ -1777,9 +1813,48 @@ function addOutputFile(file, { suffix, ext, icon: iconName, tag, kind }, anchor,
   const key = `out-${Date.now()}`;
   state.extraFiles.push({ key, kind: kind || 'other', icon: iconName, tag, name: { zh: name, en: name }, fresh: true,
     info: [[{ zh: '种类', en: 'Kind' }, ext.toUpperCase()], [{ zh: '修改时间', en: 'Modified' }, { zh: '刚刚', en: 'Just now' }]] });
-  state.file = key;
+  state.selected = [key];
   renderWindow();
   showToast(message(name), anchor);
+}
+
+function showFilesInfo(files, anchor) {
+  const size = (file) => { const row = file.info.find(([key]) => L(key) === L({ zh: '大小', en: 'Size' })); return row ? L(row[1]) : '—'; };
+  presentCard(cardShell({ title: L(P.fileInfo.name), subtitle: L({ zh: `${files.length} 个文件`, en: `${files.length} files` }), children: [rows(files.map((file) => [file.name, size(file)]), { anchor })],
+    buttons: [button(L(T.more), () => showChooser(currentContent(), anchor))] }), anchor);
+}
+
+// 对比两个文本文件：按修改时间旧的在前，删去的行标红、新增的标绿，行里改动的词颜色更深
+const DIFF = {
+  zh: { old: '更新说明.md', new: '更新说明 v2.md', removed: 2, added: 3, lines: [
+    ['removed', [['# Pop 0.', false], ['33', true], ['.0', false]]],
+    ['removed', [['- 录屏可以录电脑里的声音', false]]],
+    ['added', [['# Pop 0.', false], ['34', true], ['.0', false]]],
+    ['added', [['- 录屏可以录电脑里的声音', false], ['或者麦克风', true]]],
+    ['same', [['- 文字转图片的段距更紧凑', false]]],
+    ['added', [['- 网页可以存成 Markdown', false]]],
+    ['same', [['- 修复了一些问题', false]]],
+  ] },
+  en: { old: 'Release notes.md', new: 'Release notes v2.md', removed: 2, added: 3, lines: [
+    ['removed', [['# Pop 0.', false], ['33', true], ['.0', false]]],
+    ['removed', [['- Record the Mac’s sound in screen recordings', false]]],
+    ['added', [['# Pop 0.', false], ['34', true], ['.0', false]]],
+    ['added', [['- Record the Mac’s sound', false], [' or the microphone', true], [' in screen recordings', false]]],
+    ['same', [['- Tighter paragraphs in text images', false]]],
+    ['added', [['- Save web pages as Markdown', false]]],
+    ['same', [['- Bug fixes', false]]],
+  ] },
+};
+
+function showFileCompare(anchor) {
+  const d = DIFF[lang];
+  const signs = { same: ' ', removed: '−', added: '+' };
+  const view = h('div', { class: 'diff' }, d.lines.map(([kind, segments]) => h('div', { class: `dl ${kind}` }, h('span', { class: 'sg' }, signs[kind]),
+    h('span', { class: 'tx' }, segments.map(([text, changed]) => changed && kind !== 'same' ? h('mark', null, text) : text)))));
+  const unified = d.lines.map(([kind, segments]) => ({ same: '  ', removed: '- ', added: '+ ' }[kind]) + segments.map(([text]) => text).join('')).join('\n');
+  presentCard(cardShell({ title: L(P.compareFiles.name), width: 520, children: [view],
+    detail: L({ zh: `「${d.old}」→「${d.new}」（旧的在前）：删去 ${d.removed} 行，新增 ${d.added} 行`, en: `“${d.old}” → “${d.new}” (older first): ${d.removed} lines removed, ${d.added} added` }),
+    buttons: [button(L(T.copy), () => copyText(unified, null, anchor)), button(L(T.more), () => showChooser(currentContent(), anchor))] }), anchor);
 }
 
 function showFileInfo(file, anchor) {
@@ -2151,15 +2226,26 @@ let recording = null;
 // ---------- 指针和键盘 ----------
 let press = null;
 
-function selectFileAt(target) {
-  const fileEl = target.closest('[data-file]');
-  if (!fileEl || state.scene !== 'files' || fileEl.dataset.file === state.file) return;
-  state.file = fileEl.dataset.file;
-  for (const el of stage.querySelectorAll('[data-file]')) {
-    const on = el.dataset.file === state.file;
-    el.classList.toggle('on', on);
-    if (on) el.setAttribute('data-selection', ''); else el.removeAttribute('data-selection');
+// 访达里点文件：换一个选中的；按住 ⌘、Ctrl 或 Shift 点是多选；点已经选中的文件不改变选择
+function selectFileAt(event) {
+  const fileEl = event.target.closest('[data-file]');
+  if (!fileEl || state.scene !== 'files') return;
+  const key = fileEl.dataset.file;
+  if (event.metaKey || event.ctrlKey || event.shiftKey) {
+    if (!state.selected.includes(key)) state.selected = [...state.selected, key];
+    else if (state.selected.length > 1) state.selected = state.selected.filter((item) => item !== key);
+  } else if (!state.selected.includes(key)) {
+    state.selected = [key];
+  } else {
+    return;
   }
+  const all = stage.querySelectorAll('[data-file]');
+  for (const el of all) {
+    el.classList.toggle('on', state.selected.includes(el.dataset.file));
+    if (el.dataset.file === state.selected[0]) el.setAttribute('data-selection', ''); else el.removeAttribute('data-selection');
+  }
+  const status = $('#finder-status');
+  if (status) status.textContent = finderStatus(all.length);
 }
 
 stage.addEventListener('contextmenu', (event) => event.preventDefault());
@@ -2167,6 +2253,14 @@ stage.addEventListener('contextmenu', (event) => event.preventDefault());
 stage.addEventListener('pointerdown', (event) => {
   if (picker || event.target.closest('.card, .toast, .pin, .rec-panel, .fx, .picker')) return;
   if (event.button > 2) return;
+  // 按住 ⌘、Ctrl 或 Shift 点文件是多选，不弹圆盘
+  if (state.scene === 'files' && (event.metaKey || event.ctrlKey || event.shiftKey) && event.target.closest('[data-file]')) {
+    closeRing(false);
+    dismissCard(false);
+    selectFileAt(event);
+    press = null;
+    return;
+  }
   const point = stagePoint(event);
   if (ring) {
     press = { id: event.pointerId, x: point.x, y: point.y, onRing: true, type: event.pointerType };
@@ -2176,7 +2270,7 @@ stage.addEventListener('pointerdown', (event) => {
   let dismissed = false;
   if (card) { dismissCard(); dismissed = true; }
   if (toast) dismissToast();
-  selectFileAt(event.target);
+  selectFileAt(event);
   press = { id: event.pointerId, x: point.x, y: point.y, type: event.pointerType, held: false, moved: false, dismissed };
   press.timer = setTimeout(() => {
     if (!press || press.moved) return;
