@@ -20,6 +20,18 @@ final class RingViewModel: ObservableObject {
     @Published private(set) var committed: Int? = nil
     @Published private(set) var centerText: String
     @Published private(set) var isLoading: Bool
+    /// 读到的内容（读取完之前是 nil），用来说明某一格为什么用不了
+    private(set) var content: ClassifiedContent?
+
+    /// 圆心显示的文字
+    struct Center: Hashable {
+        var title: String
+        /// 第二行的小字：这一格为什么用不了
+        var detail: String?
+        /// 指着的是一个功能（不是读到的内容）
+        var isFunction = false
+        var enabled = true
+    }
 
     init(layout: RingLayout, catalog: [PluginInfo], installed: Set<String>, content: ClassifiedContent?) {
         let count = max(layout.slotCount, 1)
@@ -49,6 +61,31 @@ final class RingViewModel: ObservableObject {
         }
         centerText = content.summary
         isLoading = false
+        self.content = content
+    }
+
+    /// 指着一格时显示这一格的功能名（用不了时下面说明原因），指着空格子时说明是空的；没指着任何一格时显示读到的内容
+    var center: Center {
+        guard let hovered, slots.indices.contains(hovered) else { return Center(title: centerText) }
+        let slot = slots[hovered]
+        guard let info = slot.info else {
+            return Center(title: "空格子", detail: "可以在设置里放上功能", isFunction: true, enabled: false)
+        }
+        let hint = slot.enabled || isLoading ? nil : Self.unavailableHint(for: info, content: content)
+        return Center(title: info.name, detail: hint, isFunction: true, enabled: slot.enabled)
+    }
+
+    /// 这一格用不了时的简短说明：缺的是哪种内容，或者这次的内容不合适
+    static func unavailableHint(for info: PluginInfo, content: ClassifiedContent?) -> String {
+        let kinds = content?.kinds ?? []
+        guard !info.accepts.isEmpty, info.accepts.isDisjoint(with: kinds) else { return "当前内容用不了" }
+        let order: [(ContentKind, String)] = [
+            (.text, "文字"), (.chineseText, "文字"), (.foreignText, "外文"), (.files, "文件"), (.imageFile, "图片文件"),
+            (.image, "图片"), (.url, "链接"), (.email, "邮箱"), (.json, "JSON"), (.math, "算式"), (.number, "数字"),
+            (.color, "颜色值"), (.timestamp, "时间戳"), (.dateTime, "日期"), (.measurement, "带单位的数"), (.word, "一个词"),
+        ]
+        let needed = order.first(where: { info.accepts.contains($0.0) })?.1 ?? "内容"
+        return "要先选中" + needed
     }
 
     /// offset 是指针相对圆心（或按下点）的偏移，y 轴向上；nil 表示不指向任何格子。
@@ -177,21 +214,38 @@ struct RingMenuView: View {
                         .controlSize(.small)
                         .transition(.opacity)
                 } else {
-                    Text(model.centerText)
-                        .font(.system(size: 10, weight: .medium))
-                        .foregroundStyle(.secondary)
-                        .multilineTextAlignment(.center)
-                        .lineLimit(2)
+                    centerLabel(model.center)
                         .frame(width: diameter - 10)
                         .transition(.opacity)
                 }
             }
             .animation(Motion.content, value: model.isLoading)
+            .animation(Motion.hover, value: model.center)
         }
         .frame(width: diameter, height: diameter)
         .scaleEffect(reduceMotion || phase != .entering ? 1 : 0.5)
         .opacity(phase == .shown ? 1 : 0)
         .animation(phase == .shown ? Motion.ringOpen.delay(Motion.seconds(0.04)) : Motion.exit, value: phase)
+    }
+
+    /// 圆心的文字：指着的功能名用强调色（用不了时是灰色，下面一行小字说明原因），读到的内容用次要颜色
+    private func centerLabel(_ center: RingViewModel.Center) -> some View {
+        let tint = center.isFunction && center.enabled ? Color.accentColor : Color.secondary
+        let size: CGFloat = center.isFunction ? 11 : 10
+        let weight: Font.Weight = center.isFunction ? .semibold : .medium
+        return VStack(spacing: 2) {
+            Text(center.title)
+                .font(.system(size: size, weight: weight))
+                .foregroundStyle(tint)
+                .lineLimit(2)
+            if let detail = center.detail {
+                Text(detail)
+                    .font(.system(size: 9))
+                    .foregroundStyle(.secondary)
+                    .lineLimit(2)
+            }
+        }
+        .multilineTextAlignment(.center)
     }
 
     /// 圆盘的缩放：从小弹开，收起时微微放大着淡出
