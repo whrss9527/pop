@@ -222,6 +222,19 @@ final class AppController {
             self?.updater.checkAndInstall()
         }
         Notifier.shared.start()
+        Notifier.shared.onOpenWhatsNew = { [weak self] in
+            // 更新记录只有中文：英文界面打开网页上的版本说明
+            if Localization.isChinese {
+                self?.settingsWindow.show(tab: .update)
+            } else {
+                NSWorkspace.shared.open(Changelog.releasePage(UpdateChecker.currentVersion))
+            }
+        }
+        // 刚更新过：发一条通知说这一版新增了什么（界面演示时不发）
+        if !OverlayDemo.isEnabled,
+           let summary = Changelog.whatsNew(current: UpdateChecker.currentVersion, releases: Changelog.bundled) {
+            Notifier.shared.showWhatsNew(version: UpdateChecker.currentVersion, summary: summary)
+        }
         statusItem.onTogglePause = { [weak self] in
             self?.togglePause()
         }

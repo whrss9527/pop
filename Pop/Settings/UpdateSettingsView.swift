@@ -20,6 +20,14 @@ struct UpdateSettingsView: View {
                 statusRow
             }
 
+            // 更新记录只有中文，中文界面才列出来
+            let recent = Localization.isChinese ? Changelog.recent(current: UpdateChecker.currentVersion, releases: Changelog.bundled) : []
+            if !recent.isEmpty {
+                Section(recent.count > 1 ? String(localized: "这几版更新了什么") : String(localized: "这一版更新了什么")) {
+                    ChangelogNotes(releases: recent)
+                }
+            }
+
             if let release = updater.release {
                 Section(release.isPrerelease ? String(localized: "新版本（测试版）") : String(localized: "新版本")) {
                     ReleaseDetails(release: release)
@@ -215,6 +223,36 @@ struct ReleaseDetails: View {
         let markdown = lines.joined(separator: "\n").trimmingCharacters(in: .whitespacesAndNewlines)
         let options = AttributedString.MarkdownParsingOptions(interpretedSyntax: .inlineOnlyPreservingWhitespace)
         return (try? AttributedString(markdown: markdown, options: options)) ?? AttributedString(markdown)
+    }
+}
+
+/// App 里带着的更新记录中的几版：版本号、日期和内容
+struct ChangelogNotes: View {
+    let releases: [Changelog.Release]
+
+    var body: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 12) {
+                ForEach(releases, id: \.version) { release in
+                    VStack(alignment: .leading, spacing: 4) {
+                        HStack(alignment: .firstTextBaseline) {
+                            Text(verbatim: release.version)
+                                .font(.headline)
+                            if let date = release.date {
+                                Text(verbatim: date)
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                            }
+                        }
+                        Text(ReleaseDetails.render(release.notes))
+                            .font(.callout)
+                            .textSelection(.enabled)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                    }
+                }
+            }
+        }
+        .frame(maxHeight: 220)
     }
 }
 

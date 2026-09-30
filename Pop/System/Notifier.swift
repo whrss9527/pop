@@ -7,11 +7,14 @@ final class Notifier: NSObject, UNUserNotificationCenterDelegate, @unchecked Sen
 
     static let updateCategory = "update"
     static let installUpdateAction = "install-update"
+    static let whatsNewCategory = "whats-new"
 
     /// 用户点了通知本身
     var onOpen: (@MainActor () -> Void)?
     /// 用户点了「立即更新」
     var onInstall: (@MainActor () -> Void)?
+    /// 用户点了「已更新」那条通知
+    var onOpenWhatsNew: (@MainActor () -> Void)?
 
     private var available: Bool { Bundle.main.bundleIdentifier != nil }
 
@@ -23,6 +26,7 @@ final class Notifier: NSObject, UNUserNotificationCenterDelegate, @unchecked Sen
         let install = UNNotificationAction(identifier: Self.installUpdateAction, title: String(localized: "立即更新"), options: [])
         center.setNotificationCategories([
             UNNotificationCategory(identifier: Self.updateCategory, actions: [install], intentIdentifiers: [], options: []),
+            UNNotificationCategory(identifier: Self.whatsNewCategory, actions: [], intentIdentifiers: [], options: []),
         ])
     }
 
@@ -40,6 +44,20 @@ final class Notifier: NSObject, UNUserNotificationCenterDelegate, @unchecked Sen
                     UpdateLog.info("显示通知失败：\(error.localizedDescription)")
                 }
             }
+        }
+    }
+
+    /// 更新好以后第一次启动：说一句这一版新增了什么
+    func showWhatsNew(version: String, summary: String) {
+        guard available else { return }
+        UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound]) { granted, _ in
+            guard granted else { return }
+            let content = UNMutableNotificationContent()
+            content.title = String(localized: "Pop 已更新到 \(version)")
+            content.body = summary
+            content.categoryIdentifier = Notifier.whatsNewCategory
+            let request = UNNotificationRequest(identifier: "pop-whats-new-\(version)", content: content, trigger: nil)
+            UNUserNotificationCenter.current().add(request)
         }
     }
 
@@ -64,11 +82,17 @@ final class Notifier: NSObject, UNUserNotificationCenterDelegate, @unchecked Sen
     func userNotificationCenter(_ center: UNUserNotificationCenter, didReceive response: UNNotificationResponse,
                                 withCompletionHandler completionHandler: @escaping () -> Void) {
         let action = response.actionIdentifier
-        // 只有新版本的通知有后续操作；点计时提醒什么都不用做
-        let isUpdate = response.notification.request.content.categoryIdentifier == Self.updateCategory
+        // 新版本和「已更新」的通知有后续操作；点计时提醒什么都不用做
+        let category = response.notification.request.content.categoryIdentifier
         DispatchQueue.main.async {
             MainActor.assumeIsolated {
-                guard isUpdate else { return }
+                if category == Self.whatsNewCategory {
+                    if action == UNNotificationDefaultActionIdentifier {
+                        self.onOpenWhatsNew?()
+                    }
+                    return
+                }
+                guard category == Self.updateCategory else { return }
                 if action == Self.installUpdateAction {
                     self.onInstall?()
                 } else if action == UNNotificationDefaultActionIdentifier {

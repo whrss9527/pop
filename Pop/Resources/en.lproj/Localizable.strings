@@ -225,6 +225,12 @@
 "去下载语言包…" = "Download Languages…";
 "去设置…" = "Open Settings…";
 
+/* Changelog.swift */
+"点这里看这一版的更新说明。" = "Click to see the release notes.";
+"修了一些问题，用起来更顺手。点这里看更新内容。" = "Fixes and improvements. Click to see what changed.";
+"新增：%@ 等 %lld 项。点这里看更新内容。" = "New: %@ and more (%lld in all). Click to see what changed.";
+"新增：%@。点这里看更新内容。" = "New: %@. Click to see what changed.";
+
 /* CharacterInspector.swift */
 "不换行空格" = "No-break space";
 "软连字符" = "Soft hyphen";
@@ -847,6 +853,7 @@
 /* Notifier.swift */
 "Pop 有新版本 %@" = "Pop %@ is available";
 "点「立即更新」自动下载安装并重新启动，点通知查看更新内容。" = "Click Update Now to download, install and restart automatically, or click the notification to see what’s new.";
+"Pop 已更新到 %@" = "Pop was updated to %@";
 
 /* NumberStats.swift */
 "合计" = "Sum";
@@ -1892,6 +1899,8 @@
 "这个版本没有附带校验文件，不能在 Pop 里直接安装，请到网页上下载。" = "This version has no checksum file, so it can’t be installed from Pop. Please download it from the web page.";
 "点一下放大" = "Click to enlarge";
 "微信赞赏码：请我喝杯咖啡" = "WeChat tip code: buy me a coffee";
+"这几版更新了什么" = "What changed in these versions";
+"这一版更新了什么" = "What changed in this version";
 
 /* Updater.swift */
 "现在是从临时位置运行的，这次会装进%@" = "Pop is running from a temporary location; this update installs it in %@";
