@@ -178,6 +178,10 @@ enum CardAction: Equatable {
     case stopPhoneShare
     /// 把录音或视频里说的话转成文字（language 是语言代码，比如 zh-CN）
     case transcribe(URL, language: String)
+    /// 把网页整页存成 PDF 或长图
+    case captureWeb(URL, WebCapture.Format)
+    /// 按比例裁剪图片，对准画面主体
+    case cropImages([URL], SmartCrop.Ratio)
 }
 
 struct CardButton: Equatable, Identifiable {

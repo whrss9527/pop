@@ -54,6 +54,25 @@ struct IDPhotoPlugin: PopPlugin {
     }
 }
 
+struct CropImagePlugin: PopPlugin {
+    let info = PluginInfo(id: BuiltinPluginID.cropImage, name: "裁剪图片", symbol: "crop",
+                          summary: "把选中的图片裁成 1:1、4:3、3:4、16:9、9:16，自动对准画面里的主体；另存一份放在原图旁边",
+                          accepts: [.imageFile])
+
+    @MainActor func run(_ content: ClassifiedContent, context: PluginContext) async -> PluginOutcome {
+        let images = content.files.filter(ContentClassifier.isImageFile)
+        guard !images.isEmpty else { return .failure("没有选中图片") }
+        return .card(Self.card(images))
+    }
+
+    static func card(_ images: [URL]) -> ResultCard {
+        let question = images.count == 1 ? "把「\(images[0].lastPathComponent)」裁成哪种比例？" : "把 \(images.count) 张图片裁成哪种比例？"
+        return ResultCard(title: "裁剪图片", body: question,
+                          detail: "在这个比例下裁出最大的一块，自动对准画面里的主体；另存一份放在原图旁边，原图不动",
+                          buttons: SmartCrop.Ratio.allCases.map { CardButton(title: $0.title, action: .cropImages(images, $0)) })
+    }
+}
+
 struct TranscribePlugin: PopPlugin {
     let info = PluginInfo(id: BuiltinPluginID.transcribe, name: "语音转文字", symbol: "captions.bubble",
                           summary: "把录音、视频里说的话转成文字和 SRT 字幕，存在原文件旁边；普通话、英语、粤语、日语，这台 Mac 支持时在本机识别",
