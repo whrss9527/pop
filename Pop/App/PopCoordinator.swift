@@ -571,6 +571,8 @@ final class PopCoordinator: MouseTriggerDelegate {
             presentAI(spec)
         case .showWindowLayouts:
             presentWindowLayouts()
+        case .showMenuShortcuts:
+            presentMenuShortcuts()
         case .showSnippets:
             presentSnippets()
         case .chooseApp(let request):
@@ -1267,6 +1269,48 @@ final class PopCoordinator: MouseTriggerDelegate {
                              choose(layout)
                              return true
                          })
+    }
+
+    /// 快捷键一览：在后台读唤起时前台 App 的菜单（菜单多的 App 要一会儿），选一项就让那个 App 执行它
+    private func presentMenuShortcuts() {
+        guard let current = session else { return }
+        stopPointerTracking()
+        let model = MenuShortcutsModel(appName: current.sourceAppName ?? String(localized: "当前 App"))
+        overlay.showCard(MenuShortcutsView(model: model, onClose: { [weak self] in self?.endSession() }),
+                         anchor: current.anchor,
+                         keyHandler: { event in model.handleKey(event) })
+        guard let pid = current.pid, pid != ProcessInfo.processInfo.processIdentifier else {
+            model.fail(String(localized: "不知道要看哪个 App 的菜单：先点一下那个 App 的窗口，再唤起 Pop"))
+            return
+        }
+        guard Permissions.isAccessibilityTrusted else {
+            model.fail(String(localized: "要先在「系统设置 → 隐私与安全性 → 辅助功能」里允许 Pop，才能读到菜单"))
+            return
+        }
+        model.onRun = { [weak self] item in self?.runMenuItem(item, pid: pid) }
+        let sessionID = current.id
+        Task { [weak self, weak model] in
+            let nodes = await runInBackground { MenuShortcuts.read(pid: pid) }
+            guard let self, let model, self.session?.id == sessionID else { return }
+            model.load(nodes)
+        }
+    }
+
+    /// 先收起浮窗、让那个 App 回到前台，再点它的菜单项
+    private func runMenuItem(_ item: MenuShortcuts.Item, pid: pid_t) {
+        let anchor = session?.anchor ?? NSEvent.mouseLocation
+        endSession()
+        NSRunningApplication(processIdentifier: pid)?.activate()
+        let path = item.path
+        let title = item.title
+        Task { [weak self] in
+            try? await Task.sleep(nanoseconds: 150_000_000)
+            let pressed = await runInBackground { MenuShortcuts.press(pid: pid, path: path) }
+            // 这期间又唤起了 Pop 的话不去打断
+            if !pressed, let self, self.session == nil {
+                self.showToast(String(localized: "没能执行「\(title)」，菜单可能已经变了"), at: anchor)
+            }
+        }
     }
 
     private func arrangeWindow(_ layout: WindowLayout) {

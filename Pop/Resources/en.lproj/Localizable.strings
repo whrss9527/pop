@@ -2127,3 +2127,20 @@
 "打好了 %lld 张，%lld 张失败：%@" = "Redacted %lld images, %lld failed: %@";
 "已打码，另存在原图旁边" = "Redacted and saved next to the original";
 "已给 %lld 张打码，各自另存在原图旁边" = "Redacted %lld images and saved each next to its original";
+
+/* 0.36.0：快捷键一览 */
+"快捷键一览" = "Keyboard Shortcuts";
+"列出当前 App 菜单里的所有快捷键，可以搜索，点一项直接执行" = "List every keyboard shortcut in the current app’s menus; search them and click one to run it";
+"当前 App" = "Current app";
+"不知道要看哪个 App 的菜单：先点一下那个 App 的窗口，再唤起 Pop" = "Pop doesn’t know which app’s menus to read. Click a window of that app, then open Pop again.";
+"要先在「系统设置 → 隐私与安全性 → 辅助功能」里允许 Pop，才能读到菜单" = "To read menus, allow Pop in System Settings → Privacy & Security → Accessibility";
+"没能执行「%@」，菜单可能已经变了" = "Couldn’t run “%@”; the menu may have changed";
+"没读到「%@」的菜单" = "Couldn’t read the menus of “%@”";
+"正在读「%@」的菜单…" = "Reading the menus of “%@”…";
+"搜索菜单和快捷键" = "Search menus and shortcuts";
+"有快捷键（%lld）" = "Shortcuts (%lld)";
+"全部（%lld）" = "All (%lld)";
+"↑↓ 选择 · ⏎ 执行 · ⇥ 切换" = "↑↓ Choose · ⏎ Run · ⇥ Switch";
+"这个 App 的菜单里没有快捷键" = "This app’s menus have no shortcuts";
+"没有匹配的菜单项" = "No matching menu items";
+"现在用不了" = "Not available right now";

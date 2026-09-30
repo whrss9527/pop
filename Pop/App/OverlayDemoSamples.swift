@@ -94,4 +94,27 @@ extension OverlayDemo {
         NSGraphicsContext.restoreGraphicsState()
         return context.makeImage()
     }
+
+    /// 快捷键一览演示用的菜单：备忘录的一部分菜单
+    static var sampleMenus: [MenuShortcuts.Node] {
+        func entry(_ title: String, _ shortcut: String? = nil, enabled: Bool = true) -> MenuShortcuts.Node {
+            MenuShortcuts.Node(title: title, shortcut: shortcut, enabled: enabled)
+        }
+        return [
+            MenuShortcuts.Node(title: "备忘录", shortcut: nil, enabled: true, children: [
+                entry("关于备忘录"), entry("设置…", "⌘,"), entry("隐藏备忘录", "⌘H"), entry("退出备忘录", "⌘Q"),
+            ]),
+            MenuShortcuts.Node(title: "文件", shortcut: nil, enabled: true, children: [
+                entry("新建备忘录", "⌘N"), entry("新建文件夹", "⇧⌘N"), entry("关闭", "⌘W"), entry("导出为 PDF…"), entry("打印…", "⌘P"),
+            ]),
+            MenuShortcuts.Node(title: "编辑", shortcut: nil, enabled: true, children: [
+                entry("撤销", "⌘Z", enabled: false), entry("重做", "⇧⌘Z", enabled: false), entry("剪切", "⌘X"), entry("拷贝", "⌘C"),
+                entry("粘贴", "⌘V"), entry("全选", "⌘A"),
+                MenuShortcuts.Node(title: "查找", shortcut: nil, enabled: true, children: [entry("查找…", "⌘F"), entry("查找下一个", "⌘G")]),
+            ]),
+            MenuShortcuts.Node(title: "格式", shortcut: nil, enabled: true, children: [
+                entry("标题", "⇧⌘T"), entry("正文", "⇧⌘B"), entry("核对清单", "⇧⌘L"), entry("表格", "⌥⌘T"), entry("粗体", "⌘B"),
+            ]),
+        ]
+    }
 }
