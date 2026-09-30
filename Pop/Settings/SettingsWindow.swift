@@ -14,6 +14,36 @@ enum SettingsTab: String, CaseIterable, Identifiable, Hashable {
     case update
 
     var id: String { rawValue }
+
+    var title: String {
+        switch self {
+        case .general: return "通用"
+        case .ring: return "圆盘"
+        case .plugins: return "功能"
+        case .rules: return "直达规则"
+        case .hotKeys: return "快捷键"
+        case .clipboard: return "剪贴板"
+        case .translation: return "翻译"
+        case .ai: return "AI"
+        case .sync: return "同步"
+        case .update: return "更新"
+        }
+    }
+
+    var symbol: String {
+        switch self {
+        case .general: return "gearshape"
+        case .ring: return "circle.circle"
+        case .plugins: return "square.grid.2x2"
+        case .rules: return "arrow.turn.down.right"
+        case .hotKeys: return "keyboard"
+        case .clipboard: return "list.clipboard"
+        case .translation: return "character.bubble"
+        case .ai: return "sparkles"
+        case .sync: return "icloud"
+        case .update: return "arrow.down.circle"
+        }
+    }
 }
 
 @MainActor
@@ -82,40 +112,77 @@ struct SettingsRootView: View {
     @EnvironmentObject var registry: PluginRegistry
 
     var body: some View {
-        let catalog = registry.catalog
-        TabView(selection: $navigation.tab) {
-            GeneralSettingsView()
-                .tabItem { Label("通用", systemImage: "gearshape") }
-                .tag(SettingsTab.general)
-            RingSettingsView(catalog: catalog)
-                .tabItem { Label("圆盘", systemImage: "circle.circle") }
-                .tag(SettingsTab.ring)
-            PluginsSettingsView(catalog: catalog)
-                .tabItem { Label("功能", systemImage: "square.grid.2x2") }
-                .tag(SettingsTab.plugins)
-            RulesSettingsView(catalog: catalog)
-                .tabItem { Label("直达规则", systemImage: "arrow.turn.down.right") }
-                .tag(SettingsTab.rules)
-            HotKeySettingsView(catalog: catalog)
-                .tabItem { Label("快捷键", systemImage: "keyboard") }
-                .tag(SettingsTab.hotKeys)
-            ClipboardSettingsView()
-                .tabItem { Label("剪贴板", systemImage: "list.clipboard") }
-                .tag(SettingsTab.clipboard)
-            TranslationSettingsView()
-                .tabItem { Label("翻译", systemImage: "character.bubble") }
-                .tag(SettingsTab.translation)
-            AISettingsView()
-                .tabItem { Label("AI", systemImage: "sparkles") }
-                .tag(SettingsTab.ai)
-            SyncSettingsView()
-                .tabItem { Label("同步", systemImage: "icloud") }
-                .tag(SettingsTab.sync)
-            UpdateSettingsView()
-                .tabItem { Label("更新", systemImage: "arrow.down.circle") }
-                .tag(SettingsTab.update)
+        VStack(spacing: 0) {
+            SettingsTabBar(selection: $navigation.tab)
+            Divider()
+            page(navigation.tab)
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
         .frame(width: Self.size.width, height: Self.size.height)
+    }
+
+    @ViewBuilder
+    private func page(_ tab: SettingsTab) -> some View {
+        let catalog = registry.catalog
+        switch tab {
+        case .general: GeneralSettingsView()
+        case .ring: RingSettingsView(catalog: catalog)
+        case .plugins: PluginsSettingsView(catalog: catalog)
+        case .rules: RulesSettingsView(catalog: catalog)
+        case .hotKeys: HotKeySettingsView(catalog: catalog)
+        case .clipboard: ClipboardSettingsView()
+        case .translation: TranslationSettingsView()
+        case .ai: AISettingsView()
+        case .sync: SyncSettingsView()
+        case .update: UpdateSettingsView()
+        }
+    }
+}
+
+/// 设置窗口顶上的一排页面：图标下面写名字，选中的那一个衬一块圆角底色、图标用强调色。
+/// 自己画而不用 TabView 的分段标签：系统的分段标签在一些系统版本上选中的底色画不满。
+struct SettingsTabBar: View {
+    @Binding var selection: SettingsTab
+
+    var body: some View {
+        HStack(spacing: 2) {
+            ForEach(SettingsTab.allCases) { tab in
+                SettingsTabButton(tab: tab, isSelected: tab == selection) {
+                    selection = tab
+                }
+            }
+        }
+        .padding(.vertical, 6)
+        .frame(maxWidth: .infinity)
+    }
+}
+
+private struct SettingsTabButton: View {
+    let tab: SettingsTab
+    let isSelected: Bool
+    let action: () -> Void
+    @State private var hovering = false
+
+    var body: some View {
+        let fill = isSelected ? Color.primary.opacity(0.1) : (hovering ? Color.primary.opacity(0.05) : Color.clear)
+        Button(action: action) {
+            VStack(spacing: 3) {
+                Image(systemName: tab.symbol)
+                    .font(.system(size: 17))
+                    .frame(height: 21)
+                Text(tab.title)
+                    .font(.system(size: 11))
+                    .lineLimit(1)
+            }
+            .foregroundStyle(isSelected ? Color.accentColor : Color.primary)
+            .frame(width: 70, height: 48)
+            .background(RoundedRectangle(cornerRadius: 8, style: .continuous).fill(fill))
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .onHover { hovering = $0 }
+        .accessibilityLabel(tab.title)
+        .accessibilityAddTraits(isSelected ? AccessibilityTraits.isSelected : AccessibilityTraits())
     }
 }
 
