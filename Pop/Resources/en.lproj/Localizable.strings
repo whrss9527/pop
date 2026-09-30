@@ -338,6 +338,11 @@
 "大号文字" = "Large text";
 "对白色 %@，对黑色 %@" = "On white %@, on black %@";
 
+/* ContactSheet.swift */
+"缩略图太大了，画不出来" = "The contact sheet is too large to draw";
+"时长 %@" = "Duration %@";
+"存储缩略图失败" = "Couldn’t save the contact sheet";
+
 /* CountdownTimer.swift */
 "%@的计时到了" = "Your %@ timer is done";
 "时间到" = "Time’s Up";
@@ -761,7 +766,7 @@
 "说的是哪种话？" = "Which language is spoken?";
 "识别完，文字（.txt）和字幕（.srt）存在原文件旁边；长录音要等一会儿" = "When done, the text (.txt) and subtitles (.srt) are saved next to the original. Long recordings take a while.";
 "视频转换" = "Convert Video";
-"把选中的视频转成 GIF、转成 MP4、压缩到 720p，或者提取音频；结果存在原视频旁边" = "Convert the selected videos to GIF or MP4, compress to 720p, or extract audio; results are saved next to the originals";
+"把选中的视频转成 GIF、转成 MP4、压缩到 720p、提取音频，或者均匀取 16 帧拼成一张缩略图；结果存在原视频旁边" = "Convert the selected videos to GIF or MP4, compress to 720p, extract audio, or make a contact sheet of 16 evenly spaced frames; results are saved next to the originals";
 "没有选中视频文件" = "No video files selected";
 "GIF 每秒 %lld 帧、宽度不超过 %lld，最多转前 %lld 秒" = "GIFs are %lld fps, at most %lld wide, and cover up to the first %lld seconds";
 "截取一段…" = "Trim…";
@@ -1222,6 +1227,13 @@
 "复制表达式" = "Copy Expression";
 "复制替换结果" = "Copy Replaced Text";
 
+/* RegionPicker.swift */
+"拖出要录的区域 · 单击录窗口 · 回车录整个屏幕 · Esc 取消" = "Drag to choose an area · Click a window · Return for the whole screen · Esc to cancel";
+"录上电脑里的声音" = "Record the Mac’s sound";
+"显示鼠标点击" = "Show clicks";
+"单击录这个窗口 · %@" = "Click to record this window · %@";
+"单击或按回车录整个屏幕" = "Click or press Return to record the whole screen";
+
 /* ReminderCardView.swift */
 " · 今天" = " · today";
 " · 明天" = " · tomorrow";
@@ -1280,6 +1292,20 @@
 "要先选中带单位的数" = "Select a measurement first";
 "要先选中一个词" = "Select a word first";
 "要先选中内容" = "Select something first";
+
+/* ScreenRecorder.swift */
+"找不到要录的屏幕" = "Can’t find the screen to record";
+"录屏没能开始：%@" = "Couldn’t start recording: %@";
+"录屏失败：%@" = "Recording failed: %@";
+"没有录下来" = "Nothing was recorded";
+"正在保存…" = "Saving…";
+
+/* ScreenRecording.swift */
+"要先在「系统设置 → 隐私与安全性 → 录屏与系统录音」里允许 Pop，允许后重新打开 Pop" = "Allow Pop in System Settings → Privacy & Security → Screen & System Audio Recording first, then reopen Pop";
+"录屏 %@" = "Screen Recording %@";
+"录好了" = "Recording Finished";
+"%@ · %@ × %@ · 存在「%@」" = "%@ · %@ × %@ · saved in “%@”";
+"打开" = "Open";
 
 /* ScreenRuler.swift */
 "找不到屏幕" = "No screen found";
@@ -1482,6 +1508,7 @@
 "暂停 Pop" = "Pause Pop";
 "设置…" = "Settings…";
 "检查更新…" = "Check for Updates…";
+"停止录屏（%@）" = "Stop Recording (%@)";
 
 /* SystemPlugins.swift */
 "保持唤醒" = "Keep Awake";
@@ -1495,6 +1522,8 @@
 "倒计时：选一个时长，或者选中「25 分钟」「1:30」这样的文字直接开始；到点时响一声、发通知" = "Countdown: choose a duration, or select text such as “25 min” or “1:30” to start right away. Plays a sound and sends a notification when time’s up.";
 "取消计时" = "Cancel Timer";
 "选一个时长开始倒计时；到点时响一声、发一条通知。也可以选中「25 分钟」「1:30」这样的文字再用它。" = "Choose a duration to start a countdown. When time’s up, Pop plays a sound and sends a notification. You can also select text such as “25 min” or “1:30” and use the timer.";
+"录屏" = "Record Screen";
+"拖出一块区域、单击选一个窗口或者按回车录整个屏幕，存成 MP4；可以录上电脑里的声音、显示鼠标点击，录好能接着转成 GIF。正在录的时候再用一次就停止" = "Drag out an area, click a window or press Return to record the whole screen as MP4; can include the Mac’s sound and show clicks, and the recording can then be turned into a GIF. Use it again while recording to stop";
 
 /* TableConverter.swift */
 "制表符分隔" = "Tab-Separated";
@@ -1865,6 +1894,10 @@
 "没能从视频里取出画面" = "Couldn’t get frames from the video";
 "存储 GIF 失败" = "Couldn’t save the GIF";
 "视频比较长，只转了前 %lld 秒" = "The video is long; only the first %lld seconds were converted";
+"拼缩略图" = "Contact Sheet";
+"正在拼缩略图…" = "Making a contact sheet…";
+"已拼成缩略图" = "Contact sheet saved";
+" 缩略图" = " contact sheet";
 
 /* Vocabulary.swift */
 "CSV（表格软件）" = "CSV (spreadsheets)";

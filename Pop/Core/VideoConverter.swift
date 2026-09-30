@@ -10,6 +10,7 @@ enum VideoConverter {
         case mp4
         case compress
         case audio
+        case contactSheet
 
         var id: String { rawValue }
 
@@ -19,6 +20,7 @@ enum VideoConverter {
             case .mp4: return String(localized: "转成 MP4")
             case .compress: return String(localized: "压缩到 720p")
             case .audio: return String(localized: "提取音频")
+            case .contactSheet: return String(localized: "拼缩略图")
             }
         }
 
@@ -29,6 +31,7 @@ enum VideoConverter {
             case .mp4: return String(localized: "正在转成 MP4…")
             case .compress: return String(localized: "正在压缩视频…")
             case .audio: return String(localized: "正在提取音频…")
+            case .contactSheet: return String(localized: "正在拼缩略图…")
             }
         }
 
@@ -39,6 +42,7 @@ enum VideoConverter {
             case .mp4: return String(localized: "已转成 MP4")
             case .compress: return String(localized: "已压缩到 720p")
             case .audio: return String(localized: "已提取音频")
+            case .contactSheet: return String(localized: "已拼成缩略图")
             }
         }
 
@@ -47,6 +51,7 @@ enum VideoConverter {
             case .gif: return "gif"
             case .mp4, .compress: return "mp4"
             case .audio: return "m4a"
+            case .contactSheet: return "jpg"
             }
         }
     }
@@ -66,12 +71,15 @@ enum VideoConverter {
         UTType(filenameExtension: url.pathExtension)?.conforms(to: .movie) == true
     }
 
-    /// 新文件名：「原名.gif」；压缩的叫「原名 720p.mp4」，原来就是 MP4 的叫「原名 转换.mp4」；已经有同名文件时再加编号
+    /// 新文件名：「原名.gif」；压缩的叫「原名 720p.mp4」，缩略图叫「原名 缩略图.jpg」，原来就是 MP4 的叫「原名 转换.mp4」；
+    /// 已经有同名文件时再加编号
     static func outputURL(for url: URL, operation: Operation) -> URL {
         var base = url.deletingPathExtension().lastPathComponent
         switch operation {
         case .compress:
             base += " 720p"
+        case .contactSheet:
+            base += String(localized: " 缩略图")
         case .mp4 where url.pathExtension.lowercased() == operation.fileExtension:
             base += String(localized: " 转换")
         default:
@@ -97,6 +105,9 @@ enum VideoConverter {
                 let tracks = try await asset.loadTracks(withMediaType: .audio)
                 guard !tracks.isEmpty else { throw Failure(message: String(localized: "「\(url.lastPathComponent)」没有声音")) }
                 try await export(asset, preset: AVAssetExportPresetAppleM4A, to: output, as: .m4a)
+            case .contactSheet:
+                let bytes = try? url.resourceValues(forKeys: [.fileSizeKey]).fileSize
+                try await ContactSheet.make(from: asset, name: url.lastPathComponent, fileSize: bytes, to: output)
             }
             return (output, note)
         } catch let failure as Failure {

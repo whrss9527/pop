@@ -94,7 +94,7 @@ struct TranscribePlugin: PopPlugin {
 
 struct VideoConvertPlugin: PopPlugin {
     let info = PluginInfo(id: BuiltinPluginID.videoConvert, name: String(localized: "视频转换"), symbol: "film",
-                          summary: String(localized: "把选中的视频转成 GIF、转成 MP4、压缩到 720p，或者提取音频；结果存在原视频旁边"),
+                          summary: String(localized: "把选中的视频转成 GIF、转成 MP4、压缩到 720p、提取音频，或者均匀取 16 帧拼成一张缩略图；结果存在原视频旁边"),
                           accepts: [.files], pattern: #"(?im)\.(mov|mp4|m4v|3gp)$"#)
 
     @MainActor func run(_ content: ClassifiedContent, context: PluginContext) async -> PluginOutcome {
