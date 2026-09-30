@@ -1,0 +1,18 @@
+{
+  "format": 1,
+  "id": "douban",
+  "name": "豆瓣",
+  "symbol": "film",
+  "summary": "在豆瓣上搜书、电影和音乐",
+  "match": {
+    "kinds": [
+      "text"
+    ],
+    "maxLength": 200
+  },
+  "action": {
+    "type": "url",
+    "template": "https://www.douban.com/search?q={text}"
+  },
+  "output": "none"
+}

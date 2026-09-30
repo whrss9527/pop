@@ -74,6 +74,9 @@ final class AppController {
         coordinator.openSettings = { [weak self] tab in
             self?.settingsWindow.show(tab: tab)
         }
+        coordinator.openPluginLibrary = { [weak self] in
+            self?.settingsWindow.showPluginLibrary()
+        }
         trigger.delegate = coordinator
         PinBoard.shared.onToast = { [weak self] message, point in
             self?.coordinator.showToast(message, at: point)

@@ -1,0 +1,18 @@
+{
+  "format": 1,
+  "id": "bilibili",
+  "name": "哔哩哔哩",
+  "symbol": "play.tv",
+  "summary": "在哔哩哔哩上搜视频",
+  "match": {
+    "kinds": [
+      "text"
+    ],
+    "maxLength": 200
+  },
+  "action": {
+    "type": "url",
+    "template": "https://search.bilibili.com/all?keyword={text}"
+  },
+  "output": "none"
+}

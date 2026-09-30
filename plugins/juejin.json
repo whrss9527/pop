@@ -1,0 +1,18 @@
+{
+  "format": 1,
+  "id": "juejin",
+  "name": "掘金",
+  "symbol": "doc.text.magnifyingglass",
+  "summary": "在掘金上搜技术文章",
+  "match": {
+    "kinds": [
+      "text"
+    ],
+    "maxLength": 200
+  },
+  "action": {
+    "type": "url",
+    "template": "https://juejin.cn/search?query={text}"
+  },
+  "output": "none"
+}

@@ -1,0 +1,18 @@
+{
+  "format": 1,
+  "id": "mdn",
+  "name": "MDN",
+  "symbol": "globe",
+  "summary": "在 MDN 上查 HTML、CSS、JavaScript 和 Web API 的文档",
+  "match": {
+    "kinds": [
+      "text"
+    ],
+    "maxLength": 200
+  },
+  "action": {
+    "type": "url",
+    "template": "https://developer.mozilla.org/zh-CN/search?q={text}"
+  },
+  "output": "none"
+}

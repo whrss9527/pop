@@ -1,0 +1,105 @@
+{
+  "format": 1,
+  "plugins": [
+    {
+      "id": "github-search",
+      "name": "GitHub 搜索",
+      "summary": "在 GitHub 上搜索选中的文字，找相关的仓库",
+      "author": "Pop",
+      "symbol": "chevron.left.forwardslash.chevron.right",
+      "type": "url",
+      "url": "github-search.json",
+      "sha256": "bf93a89caf2ec118bf097848b119fa1e25c40faf69be1578ae7ada171c7e5697"
+    },
+    {
+      "id": "douban",
+      "name": "豆瓣",
+      "summary": "在豆瓣上搜书、电影和音乐",
+      "author": "Pop",
+      "symbol": "film",
+      "type": "url",
+      "url": "douban.json",
+      "sha256": "d47ea1ccf79da3279678aa85cd8791a1c89b6eb8ef2b89b568e5c5d6b793815d"
+    },
+    {
+      "id": "juejin",
+      "name": "掘金",
+      "summary": "在掘金上搜技术文章",
+      "author": "Pop",
+      "symbol": "doc.text.magnifyingglass",
+      "type": "url",
+      "url": "juejin.json",
+      "sha256": "d03747738615b987f5f926cb0c7de03f263149ef909b7ad839c8d949c99393aa"
+    },
+    {
+      "id": "mdn",
+      "name": "MDN",
+      "summary": "在 MDN 上查 HTML、CSS、JavaScript 和 Web API 的文档",
+      "author": "Pop",
+      "symbol": "globe",
+      "type": "url",
+      "url": "mdn.json",
+      "sha256": "b54b2e8400b67f99c61d85770699825fab8e6722bf00f8263dd98e67ed2c5ebb"
+    },
+    {
+      "id": "stack-overflow",
+      "name": "Stack Overflow",
+      "summary": "在 Stack Overflow 上搜编程问题，报错信息可以直接选中来搜",
+      "author": "Pop",
+      "symbol": "questionmark.bubble",
+      "type": "url",
+      "url": "stack-overflow.json",
+      "sha256": "a87d3ca1fe1084bf1e04d336b88391016c65167b96361f1b0614ccdacd21d2ff"
+    },
+    {
+      "id": "zhihu",
+      "name": "知乎",
+      "summary": "在知乎上搜问题和回答",
+      "author": "Pop",
+      "symbol": "bubble.left.and.bubble.right",
+      "type": "url",
+      "url": "zhihu.json",
+      "sha256": "1f177b04dd296ef26a463511913f27de84ac99a6bba3404a14dbac8568680d20"
+    },
+    {
+      "id": "bilibili",
+      "name": "哔哩哔哩",
+      "summary": "在哔哩哔哩上搜视频",
+      "author": "Pop",
+      "symbol": "play.tv",
+      "type": "url",
+      "url": "bilibili.json",
+      "sha256": "2888e81858cb848896a98b27a7e779fb3091caebae720fb29bf608b98e7ae889"
+    },
+    {
+      "id": "wikipedia",
+      "name": "维基百科",
+      "summary": "在中文维基百科里查词条",
+      "author": "Pop",
+      "symbol": "book",
+      "type": "url",
+      "url": "wikipedia.json",
+      "sha256": "1c099ef9d26458d55abdbfb8618234571a0ec2c42e3152348a0b1c2c86d80cf1"
+    },
+    {
+      "id": "npm",
+      "name": "npm",
+      "summary": "在 npm 上搜 JavaScript 包",
+      "author": "Pop",
+      "symbol": "shippingbox",
+      "type": "url",
+      "url": "npm.json",
+      "sha256": "908def2b49c454f8c5eb45f2087ff5b8f3523f4295a9ea3771d666172f553bb1"
+    },
+    {
+      "id": "can-i-use",
+      "name": "Can I use",
+      "summary": "查一个网页特性在各个浏览器里能不能用",
+      "author": "Pop",
+      "symbol": "checkmark.seal",
+      "type": "url",
+      "url": "can-i-use.json",
+      "sha256": "5d310e46b971ee8d6346c01b83e8752d2840adb54f139235d1e942c3c4e23abb"
+    }
+  ]
+}

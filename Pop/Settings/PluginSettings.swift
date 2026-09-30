@@ -8,6 +8,8 @@ struct PluginsSettingsView: View {
     @EnvironmentObject var store: SettingsStore
     @EnvironmentObject var pluginStore: PluginStore
     let catalog: [PluginInfo]
+    /// 打开插件库
+    @Binding var showsLibrary: Bool
     @State var editing: PluginDraft? = nil
     @State var errorMessage: String? = nil
     /// 搜索内置功能
@@ -17,7 +19,7 @@ struct PluginsSettingsView: View {
         Form {
             Section {
                 if pluginStore.manifests.isEmpty {
-                    Text("还没有自己的插件。可以从模板新建：用网址模板接入任何网站的搜索，用 Shell 或 JavaScript 脚本处理选中的文字，或者交给快捷指令。")
+                    Text("还没有自己的插件。可以到「插件库」里挑现成的装上，也可以从模板新建：用网址模板接入任何网站的搜索，用 Shell 或 JavaScript 脚本处理选中的文字，或者交给快捷指令。")
                         .font(.callout)
                         .foregroundStyle(.secondary)
                 }
@@ -35,6 +37,9 @@ struct PluginsSettingsView: View {
                         .foregroundStyle(Color.orange)
                 }
                 HStack {
+                    Button("插件库…") {
+                        showsLibrary = true
+                    }
                     Menu("新建插件") {
                         ForEach(PluginManifest.templates) { template in
                             Button(template.title) {
@@ -110,6 +115,9 @@ struct PluginsSettingsView: View {
             }
         }
         .formStyle(.grouped)
+        .sheet(isPresented: $showsLibrary) {
+            PluginLibraryView(store: store, pluginStore: pluginStore, onClose: { showsLibrary = false })
+        }
         .sheet(item: $editing) { draft in
             PluginEditorView(draft: draft, ai: store.settings.ai, onSave: { manifest in
                 save(manifest, isNew: draft.isNew)

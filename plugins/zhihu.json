@@ -1,0 +1,18 @@
+{
+  "format": 1,
+  "id": "zhihu",
+  "name": "知乎",
+  "symbol": "bubble.left.and.bubble.right",
+  "summary": "在知乎上搜问题和回答",
+  "match": {
+    "kinds": [
+      "text"
+    ],
+    "maxLength": 200
+  },
+  "action": {
+    "type": "url",
+    "template": "https://www.zhihu.com/search?type=content&q={text}"
+  },
+  "output": "none"
+}

@@ -1,0 +1,2 @@
+# 插件文件和 index.json 里的 sha256 要逐字节对得上，不做换行符转换
+*.json -text

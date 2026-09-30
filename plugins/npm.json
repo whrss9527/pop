@@ -1,0 +1,18 @@
+{
+  "format": 1,
+  "id": "npm",
+  "name": "npm",
+  "symbol": "shippingbox",
+  "summary": "在 npm 上搜 JavaScript 包",
+  "match": {
+    "kinds": [
+      "text"
+    ],
+    "maxLength": 200
+  },
+  "action": {
+    "type": "url",
+    "template": "https://www.npmjs.com/search?q={text}"
+  },
+  "output": "none"
+}

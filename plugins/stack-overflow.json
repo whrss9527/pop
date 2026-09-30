@@ -1,0 +1,18 @@
+{
+  "format": 1,
+  "id": "stack-overflow",
+  "name": "Stack Overflow",
+  "symbol": "questionmark.bubble",
+  "summary": "在 Stack Overflow 上搜编程问题，报错信息可以直接选中来搜",
+  "match": {
+    "kinds": [
+      "text"
+    ],
+    "maxLength": 300
+  },
+  "action": {
+    "type": "url",
+    "template": "https://stackoverflow.com/search?q={text}"
+  },
+  "output": "none"
+}
