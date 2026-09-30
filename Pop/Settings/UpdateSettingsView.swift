@@ -70,6 +70,18 @@ struct UpdateSettingsView: View {
                         .foregroundStyle(Color.orange)
                 }
             }
+
+            if let image = DonateCard.image {
+                Section {
+                    DonateCard(image: image)
+                } header: {
+                    Text("请我喝杯咖啡")
+                } footer: {
+                    Text("Pop 免费开源。觉得好用的话，可以用微信扫一扫请我喝杯咖啡 ☕")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+            }
         }
         .formStyle(.grouped)
     }
@@ -203,5 +215,41 @@ struct ReleaseDetails: View {
         let markdown = lines.joined(separator: "\n").trimmingCharacters(in: .whitespacesAndNewlines)
         let options = AttributedString.MarkdownParsingOptions(interpretedSyntax: .inlineOnlyPreservingWhitespace)
         return (try? AttributedString(markdown: markdown, options: options)) ?? AttributedString(markdown)
+    }
+}
+
+/// 微信赞赏码：点一下放大，方便手机扫。图片不在（开发时单独运行）就不显示。
+struct DonateCard: View {
+    @MainActor static let image: NSImage? = Bundle.main.url(forResource: "donate-wechat", withExtension: "png")
+        .flatMap { NSImage(contentsOf: $0) }
+
+    let image: NSImage
+    @State private var enlarged = false
+
+    var body: some View {
+        HStack {
+            Spacer()
+            Button {
+                enlarged = true
+            } label: {
+                Image(nsImage: image)
+                    .resizable()
+                    .interpolation(.high)
+                    .aspectRatio(contentMode: .fit)
+                    .frame(width: 150)
+            }
+            .buttonStyle(.plain)
+            .help("点一下放大")
+            .accessibilityLabel("微信赞赏码：请我喝杯咖啡")
+            .popover(isPresented: $enlarged) {
+                Image(nsImage: image)
+                    .resizable()
+                    .interpolation(.high)
+                    .aspectRatio(contentMode: .fit)
+                    .frame(width: 330)
+                    .padding(12)
+            }
+            Spacer()
+        }
     }
 }

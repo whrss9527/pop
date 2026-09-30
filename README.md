@@ -297,6 +297,12 @@ struct UppercasePlugin: PopPlugin {
 - 剪贴板没有变化通知，Pop 每 0.5 秒检查一次，极短时间内连续复制多次只会记下最后一次；
 - 系统离线翻译译长段落比较生硬，这时可以在翻译卡片上换成 AI 翻译或 DeepL（要先设置好 AI 或者填上 DeepL 的 API Key）。
 
+## 请我喝杯咖啡
+
+Pop 免费开源。觉得好用的话，可以用微信扫一扫请我喝杯咖啡 ☕（程序里「设置 → 更新」也有这张码，点一下能放大）。
+
+<p align="center"><img src="Pop/Resources/donate-wechat.png" width="300" alt="微信赞赏码：请我喝杯咖啡"></p>
+
 ## 许可证
 
 Copyright © 2026 whrss9527
