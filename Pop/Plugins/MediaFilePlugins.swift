@@ -43,6 +43,37 @@ struct WatermarkPlugin: PopPlugin {
 
 // MARK: - 视频转换
 
+struct IDPhotoPlugin: PopPlugin {
+    let info = PluginInfo(id: BuiltinPluginID.idPhoto, name: "证件照", symbol: "person.crop.rectangle",
+                          summary: "把人像照片换成白底、蓝底或红底，按人脸位置裁成一寸、二寸（300 dpi）；在本机处理，另存一份放在原图旁边",
+                          accepts: [.imageFile])
+
+    @MainActor func run(_ content: ClassifiedContent, context: PluginContext) async -> PluginOutcome {
+        guard let file = content.files.first(where: IDPhoto.isImage) else { return .failure("没有选中照片") }
+        return .idPhoto(file)
+    }
+}
+
+struct TranscribePlugin: PopPlugin {
+    let info = PluginInfo(id: BuiltinPluginID.transcribe, name: "语音转文字", symbol: "captions.bubble",
+                          summary: "把录音、视频里说的话转成文字和 SRT 字幕，存在原文件旁边；普通话、英语、粤语、日语，这台 Mac 支持时在本机识别",
+                          accepts: [.files], pattern: Transcriber.pattern)
+
+    @MainActor func run(_ content: ClassifiedContent, context: PluginContext) async -> PluginOutcome {
+        guard let file = content.files.first(where: Transcriber.isMedia) else { return .failure("没有选中录音或视频") }
+        let languages = Transcriber.languages()
+        guard !languages.isEmpty else { return .failure("这台 Mac 上用不了语音识别") }
+        var rows = [ResultCard.Row(label: "文件", value: file.lastPathComponent)]
+        if let duration = await Transcriber.duration(of: file) {
+            rows.append(ResultCard.Row(label: "时长", value: CountdownTimer.clock(Int(duration.rounded()))))
+        }
+        return .card(ResultCard(title: "语音转文字", body: "说的是哪种话？",
+                                detail: "识别完，文字（.txt）和字幕（.srt）存在原文件旁边；长录音要等一会儿",
+                                rows: rows,
+                                buttons: languages.map { CardButton(title: $0.title, action: .transcribe(file, language: $0.identifier)) }))
+    }
+}
+
 struct VideoConvertPlugin: PopPlugin {
     let info = PluginInfo(id: BuiltinPluginID.videoConvert, name: "视频转换", symbol: "film",
                           summary: "把选中的视频转成 GIF、转成 MP4、压缩到 720p，或者提取音频；结果存在原视频旁边",

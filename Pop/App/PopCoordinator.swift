@@ -573,6 +573,8 @@ final class PopCoordinator: MouseTriggerDelegate {
             presentWatermark(files)
         case .trimMedia(let file):
             presentTrim(file)
+        case .idPhoto(let file):
+            presentIDPhoto(file)
         case .failure(let message):
             overlay.showCard(ResultCardView(card: ResultCard(title: "没能完成", body: message),
                                             onAction: { [weak self] action in self?.perform(action) },
@@ -665,6 +667,8 @@ final class PopCoordinator: MouseTriggerDelegate {
         case .stopPhoneShare:
             PhoneShare.shared.stop()
             finish(toast: "已停止传到手机")
+        case .transcribe(let file, let language):
+            transcribe(file, language: language)
         }
     }
 
@@ -1015,6 +1019,55 @@ final class PopCoordinator: MouseTriggerDelegate {
             // 转换要一会儿：这期间又唤起了 Pop 的话不去打断，结果在访达里已经选中了
             if self.session == nil {
                 self.showToast(message, at: NSEvent.mouseLocation)
+            }
+        }
+    }
+
+    /// 证件照：抠图、预览都在卡片里做，确认后另存一份放在原图旁边
+    private func presentIDPhoto(_ file: URL) {
+        guard let current = session else { return }
+        stopPointerTracking()
+        let model = IDPhotoModel(file: file)
+        overlay.showCard(IDPhotoView(model: model,
+                                     onSave: { [weak self] in self?.saveIDPhoto(model) },
+                                     onClose: { [weak self] in self?.endSession() }),
+                         anchor: current.anchor)
+    }
+
+    private func saveIDPhoto(_ model: IDPhotoModel) {
+        let anchor = session?.anchor ?? NSEvent.mouseLocation
+        endSession()
+        Task { [weak self] in
+            do {
+                let output = try await model.save()
+                NSWorkspace.shared.activateFileViewerSelecting([output])
+                self?.showToast("已存成「\(output.lastPathComponent)」", at: anchor)
+            } catch {
+                self?.showToast((error as? IDPhoto.Failure)?.message ?? error.localizedDescription, at: anchor)
+            }
+        }
+    }
+
+    /// 语音转文字：要一会儿，先收起卡片；识别完存好文字和字幕，在访达里选中，没在用 Pop 的话再弹出结果卡片
+    private func transcribe(_ file: URL, language: String) {
+        let anchor = session?.anchor ?? NSEvent.mouseLocation
+        endSession()
+        Task { [weak self] in
+            guard await Transcriber.authorize() else {
+                self?.showToast("要先在「系统设置 → 隐私与安全性 → 语音识别」里允许 Pop", at: anchor)
+                return
+            }
+            self?.showToast("正在识别「\(file.lastPathComponent)」里说的话…", at: anchor)
+            do {
+                let transcript = try await Transcriber.transcribe(file, language: language)
+                let saved = try Transcriber.save(transcript, beside: file, language: language)
+                NSWorkspace.shared.activateFileViewerSelecting([saved.text, saved.subtitles])
+                guard let self, self.session == nil else { return }
+                let point = NSEvent.mouseLocation
+                self.session = Session(anchor: point, pid: nil, sourceAppName: nil, buttonHeld: false, content: .empty)
+                self.present(.card(Transcriber.card(transcript, file: file, language: language)))
+            } catch {
+                self?.showToast(Transcriber.describe(error), at: NSEvent.mouseLocation)
             }
         }
     }
