@@ -2145,6 +2145,28 @@
 "没有匹配的菜单项" = "No matching menu items";
 "现在用不了" = "Not available right now";
 
+/* 0.37.0：滚动截图 */
+"滚动截图" = "Scrolling Screenshot";
+"框选一块区域，一边往下滚动一边截，拼成一张长图；网页、聊天记录、长文档都能截全，还能接着识别文字。正在截的时候再用一次就是完成" = "Select an area, then scroll down while Pop captures it into one long image: whole web pages, chat histories and long documents, with text recognition afterwards if you like. Use it again while capturing to finish";
+"拖出要滚动截取的区域 · 单击截窗口 · Esc 取消" = "Drag over the area to capture · Click to capture a window · Esc to cancel";
+"只框住会滚动的那一块最好；选好以后一边往下滚动一边截" = "Selecting only the part that scrolls works best; then scroll down while Pop captures";
+"单击截这个窗口 · %@" = "Click to capture this window · %@";
+"单击或按回车截整个屏幕" = "Click or press Return to capture the whole screen";
+"找不到要截的屏幕" = "Can’t find the screen to capture";
+"滚动截图没能开始：%@" = "Couldn’t start the scrolling screenshot: %@";
+"滚动截图中断了：%@" = "The scrolling screenshot stopped: %@";
+"正在准备…" = "Getting ready…";
+"正在拼图…" = "Stitching…";
+"滚动截图 · 已截 %@ 像素高，约 %@ 屏" = "Scrolling Screenshot · %@ px tall, about %@ screens";
+"长图到上限了，正在拼好" = "Reached the maximum length; stitching now";
+"对不上了：往回滚一点，接上以后再慢慢往下滚" = "Lost track: scroll back up a little, then continue down slowly";
+"往下滚动要截的内容，滚到底点「完成」；Esc 取消" = "Scroll down through the content and click Done at the end; Esc cancels";
+"拼好了一张 %@ 像素的长图，约 %@ 屏高；按住拖动预览图也能拖到别的 App 里" = "Stitched a %@ px image, about %@ screens tall; you can drag the preview into another app";
+"没有滚动，只截了一屏（%@ 像素）；按住拖动预览图也能拖到别的 App 里" = "Nothing scrolled, so this is one screen (%@ px); you can drag the preview into another app";
+"Pop 滚动截图" = "Pop Scrolling Screenshot";
+"正在识别图片里的文字…" = "Recognizing the text in the image…";
+"识别文字失败：%@" = "Couldn’t recognize the text: %@";
+
 /* 界面语言设置 */
 "界面语言" = "Language";
 "跟随系统" = "Follow System";

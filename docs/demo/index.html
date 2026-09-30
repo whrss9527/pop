@@ -355,6 +355,17 @@ button { font: inherit; color: inherit; }
 .rec-hud .tiny { font-size: 11.5px; color: var(--label-2); }
 .rec-frame { position: absolute; border: 2px dashed var(--rec); border-radius: 2px; z-index: 25; }
 .rec-panel { position: absolute; border-radius: 10px; padding: 5px 6px 5px 10px; display: flex; align-items: center; gap: 8px; font: 12px/1 var(--mono); z-index: 26; }
+.win .content.scroll { overflow-y: auto; overscroll-behavior: contain; scrollbar-width: thin; }
+.scroll-frame { position: absolute; border: 2px dashed var(--accent); border-radius: 2px; z-index: 25; pointer-events: none; }
+.scroll-panel { position: absolute; z-index: 26; width: min(400px, calc(100% - 16px)); border-radius: 12px; padding: 7px 8px 7px 12px; display: flex; flex-direction: column; gap: 3px; font-size: 12px; }
+.scroll-panel .row { display: flex; align-items: center; gap: 8px; }
+.scroll-panel .row svg { width: 15px; height: 15px; flex: none; }
+.scroll-panel .st { font-weight: 600; font-variant-numeric: tabular-nums; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+.scroll-panel .hint { font-size: 11px; color: var(--label-2); }
+.scroll-panel .hint.warn { color: #ff9f0a; }
+.shot-box { height: 260px; overflow: auto; overscroll-behavior: contain; border-radius: 8px; background: var(--fill-2); }
+.shot-box .sizer { position: relative; overflow: hidden; }
+.shot-box .shot { position: absolute; left: 0; top: 0; overflow: hidden; transform-origin: 0 0; pointer-events: none; }
 .rec-panel .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--rec); animation: blink 1s steps(2, start) infinite; }
 @keyframes blink { 50% { opacity: .25; } }
 .click-dot { position: absolute; width: 36px; height: 36px; margin: -18px; border-radius: 50%; border: 2px solid rgba(255, 204, 0, .95); background: rgba(255, 204, 0, .25); animation: ripple .5s ease-out forwards; z-index: 27; }
@@ -468,6 +479,7 @@ const ICONS = {
   sendToPhone: '<rect x="8" y="3.5" width="8" height="17" rx="2"/><path d="M11 17.4h2"/><path d="M4.6 9a6.4 6.4 0 0 0 0 6M19.4 9a6.4 6.4 0 0 1 0 6"/>',
   pin: '<path d="M9 3.6h6l-1.2 5.2 3.2 3v1.6H7v-1.6l3.2-3z"/><path d="M12 13.4v7.2"/>',
   screenRecord: '<circle cx="12" cy="12" r="8.6"/><circle cx="12" cy="12" r="3.9" fill="currentColor" stroke="none"/>',
+  scrollCapture: '<rect x="6" y="3.5" width="12" height="17" rx="2"/><path d="M9 7.5h6M9 10.5h6"/><path d="M12 13.5v4.2M10 15.9l2 1.9 2-1.9"/>',
   systemActions: '<rect x="3.5" y="5" width="17" height="6" rx="3"/><circle cx="17.5" cy="8" r="1.6" fill="currentColor"/><rect x="3.5" y="13" width="17" height="6" rx="3"/><circle cx="6.5" cy="16" r="1.6" fill="currentColor"/>',
   shelf: '<path d="M3.6 13.6l2.2-7.4a2 2 0 0 1 1.9-1.4h8.6a2 2 0 0 1 1.9 1.4l2.2 7.4v4.4a2 2 0 0 1-2 2h-12.8a2 2 0 0 1-2-2z"/><path d="M3.6 13.6h5l1 2h4.8l1-2h5"/><path d="M7.9 8.2h8.2M7.2 11h9.6"/>',
   annotate: '<path d="M4 20l1.1-4.6L15.6 4.9a2 2 0 0 1 2.8 0l.7.7a2 2 0 0 1 0 2.8L8.6 18.9z"/><path d="M13.6 6.9l3.5 3.5"/>',
@@ -598,6 +610,7 @@ const P = {
   airDrop: { icon: 'airDrop', accepts: ['text', 'files'], keys: 'gekongtousong gkts airdrop', name: { zh: '隔空投送', en: 'AirDrop' }, summary: { zh: '用隔空投送把选中的文件、图片、链接或文字发到附近的 iPhone、iPad 或 Mac', en: 'Send the selected files, images, links or text to a nearby iPhone, iPad or Mac with AirDrop' } },
   sendToPhone: { icon: 'sendToPhone', accepts: [], keys: 'chuandaoshouji cdsj', name: { zh: '传到手机', en: 'Send to Phone' }, summary: { zh: '手机扫码下载选中的文件、图片（文件夹先打包成 zip）或者拿到选中的文字，也能从手机传文件到「下载」文件夹；手机和 Mac 连同一个 Wi-Fi 就行，安卓手机也能用', en: 'Scan a QR code with your phone to download the selected files or images (folders are zipped first) or get the selected text, and upload files from the phone to Downloads. The phone and Mac just need to be on the same Wi-Fi; Android works too.' } },
   pin: { icon: 'pin', accepts: [], keys: 'tietu tt', name: { zh: '贴图', en: 'Pin' }, summary: { zh: '把选中的图片或文字贴在屏幕最前面；什么都没选中时先框选一块屏幕', en: 'Pin the selected image or text on top of all windows; with nothing selected, select an area of the screen first' } },
+  scrollCapture: { icon: 'scrollCapture', accepts: [], keys: 'gundongjietu gdjt changjietu cjt', name: { zh: '滚动截图', en: 'Scrolling Screenshot' }, summary: { zh: '框选一块区域，一边往下滚动一边截，拼成一张长图；网页、聊天记录、长文档都能截全，还能接着识别文字。正在截的时候再用一次就是完成', en: 'Select an area, then scroll down while Pop captures it into one long image: whole web pages, chat histories and long documents, with text recognition afterwards if you like. Use it again while capturing to finish' } },
   screenRecord: { icon: 'screenRecord', accepts: [], keys: 'luping lp', name: { zh: '录屏', en: 'Record Screen' }, summary: { zh: '拖出一块区域、单击选一个窗口或者按回车录整个屏幕，存成 MP4；可以录上电脑里的声音或者麦克风、显示鼠标点击，录好能接着转成 GIF。正在录的时候再用一次就停止', en: 'Drag out an area, click a window or press Return to record the whole screen as MP4; can include the Mac’s sound or the microphone and show clicks, and the recording can then be turned into a GIF. Use it again while recording to stop' } },
   annotate: { icon: 'annotate', accepts: [], keys: 'jietubiaozhu jtbz', name: { zh: '截图标注', en: 'Annotate Screenshot' }, summary: { zh: '框选屏幕上的一块区域（或者用选中的图片），画箭头、方框、文字、马赛克、序号，再复制、存储或贴到屏幕上', en: 'Select an area of the screen (or use the selected image), draw arrows, boxes, text, pixelation and numbered markers, then copy, save or pin it' } },
   shelf: { icon: 'shelf', accepts: [], keys: 'zancunjia zcj', name: { zh: '暂存架', en: 'Shelf' }, summary: { zh: '把选中的文件放到暂存架上，之后再一起拖到别的地方；没选中文件时打开暂存架', en: 'Put the selected files on the Shelf to drag them elsewhere later; with no files selected, open the Shelf' } },
@@ -611,7 +624,7 @@ const LAYOUT = ['translate', 'search', 'dictionary', 'openURL', 'allPlugins', 'c
 // 「全部功能」里的顺序
 const ORDER = ['translate', 'textImage', 'search', 'dictionary', 'speak', 'textStats', 'changeCase', 'openURL', 'webCapture', 'linkInspect', 'qrCode',
   'fileInfo', 'imageConvert', 'cropImage', 'redact', 'ocr', 'removeBackground', 'videoConvert', 'transcribe', 'trimMedia', 'pdf', 'compareFiles', 'zip',
-  'airDrop', 'sendToPhone', 'screenRecord', 'screenshotOCR', 'annotate', 'pin', 'colorPicker', 'clipboard', 'shelf', 'menuShortcuts', 'systemActions'];
+  'airDrop', 'sendToPhone', 'screenRecord', 'scrollCapture', 'screenshotOCR', 'annotate', 'pin', 'colorPicker', 'clipboard', 'shelf', 'menuShortcuts', 'systemActions'];
 
 function canHandle(info, content) {
   if (!info) return false;
@@ -637,6 +650,19 @@ const ARTICLE = {
     selected: 'A single gesture should be enough to reach the action you want, and the result should appear right where your eyes already are.',
     after: ' Everything else is noise.',
     last: 'When a tool respects your attention, you stop noticing it, and that is the highest compliment it can get.',
+    more: [
+      'Most of what we do on a computer is small: look up a word, copy a link, turn a screenshot into text. Each of these takes a few seconds, yet getting to the tool often takes longer than the task itself.',
+      'That is why the best shortcuts are the ones you never have to learn. A ring that opens under the pointer puts every action one flick away, in the same place every time.',
+      'Muscle memory does the rest. After a day you stop reading the labels; after a week you stop thinking about the gesture at all.',
+      'Good defaults matter just as much. The first slot should do the obvious thing for what you selected: translate foreign text, open a link, show the size of a file.',
+      'And when the result appears, it should stay out of the way: a small card next to the pointer, gone the moment you click elsewhere.',
+      'Calm software is not about doing less. It is about asking less of the person using it.',
+      'Think about how often you copy something only to paste it into another app that does one thing to it. Every one of those trips breaks your concentration a little.',
+      'Bringing the action to the text, instead of the text to the action, keeps you in the document you were reading. The context stays on screen, and so does your train of thought.',
+      'The same goes for files. Selecting a photo and asking for its size, or a folder and asking what takes up the space, should not require opening a new window.',
+      'None of this needs to be clever. It needs to be predictable: the same gesture, the same place, the same result, whether you are in a browser, a chat or a spreadsheet.',
+      'When that happens, the tool fades into the background, which is exactly where a tool belongs.',
+    ],
     source: 'English',
     targets: [['zh-Hans', '简体中文'], ['zh-Hant', '繁體中文'], ['ja', '日本語']],
     results: {
@@ -654,6 +680,19 @@ const ARTICLE = {
     selected: '一个手势就该够你找到想用的功能，结果就出现在你正看着的地方。',
     after: '其余的都是噪音。',
     last: '当一个工具尊重你的注意力，你就不再注意到它，这是对它最高的评价。',
+    more: [
+      '我们在电脑上做的事，大多很小：查一个词、复制一个链接、把截图里的字认出来。每件事只要几秒，可找到那个工具常常比事情本身还费时间。',
+      '所以最好的快捷方式，是不用专门去学的那种。圆盘在指针下面弹出来，每个功能都只要往一个方向划一下，每次都在同一个位置。',
+      '剩下的交给肌肉记忆。用上一天，就不再看格子上的字；用上一周，连手势本身都不用想了。',
+      '默认值也一样重要。第一格应该做最顺手的那件事：选中外文就翻译，选中链接就打开，选中文件就看大小。',
+      '结果出来时也别挡路：指针旁边一张小卡片，点到别处就消失。',
+      '安静的软件不是做得更少，而是对用它的人要求得更少。',
+      '想想有多少次，你复制一段内容，只是为了粘到另一个只做一件事的 App 里。每跑一趟，注意力就被打断一点。',
+      '把功能带到文字旁边，而不是把文字搬到功能那里，你就一直留在正在读的文档里。上下文还在屏幕上，思路也还在。',
+      '文件也一样。选中一张照片想看看多大，选中一个文件夹想知道什么最占地方，都不该再打开一个新窗口。',
+      '这些都不需要多聪明，只需要可以预期：同样的手势，同样的位置，同样的结果，不管你在浏览器里、聊天里还是表格里。',
+      '做到了这一点，工具就退到了背景里，而那正是工具该待的地方。',
+    ],
     source: '简体中文',
     targets: [['en', 'English'], ['ja', '日本語'], ['fr', 'Français']],
     results: {
@@ -973,11 +1012,12 @@ function renderWindow() {
     const a = ARTICLE[lang];
     win = h('div', { class: 'win' },
       h('div', { class: 'bar' }, trafficLights(), h('div', { class: 'nav' }, icon('sidebar'), icon('back'), icon('forward')), h('div', { class: 'addr' }, h('span', null, a.address))),
-      h('div', { class: 'content' }, h('article', { class: 'article' },
+      h('div', { class: 'content scroll' }, h('article', { class: 'article' },
         h('h2', null, a.title), h('div', { class: 'meta' }, a.meta),
         h('p', null, a.before),
         h('p', null, h('span', { class: 'sel', 'data-selection': '' }, a.selected), a.after),
-        h('p', null, a.last))));
+        h('p', null, a.last),
+        a.more.map((text) => h('p', null, text)))));
   } else if (state.scene === 'link') {
     const n = LINK.note[lang];
     win = h('div', { class: 'win' },
@@ -1538,6 +1578,7 @@ const RUN = {
   sendToPhone: (content, anchor) => showSendToPhone(content, anchor),
   pin: (content, anchor) => content.text ? pinToScreen({ text: content.text }, anchor) : startRegionPicker('pin', anchor),
   screenRecord: (content, anchor) => startRecordPicker(anchor),
+  scrollCapture: (content, anchor) => scrolling ? scrolling.finish() : startRecordPicker(anchor, 'scroll'),
   systemActions: (content, anchor) => showSystemActions(anchor),
   menuShortcuts: (content, anchor) => showMenuShortcuts(anchor),
 };
@@ -2391,7 +2432,8 @@ function startColorPicker(anchor) {
 }
 
 // 录屏：先选区域（拖出一块、单击一个窗口、回车整个屏幕），再录，停止后弹出结果卡片
-function startRecordPicker(anchor) {
+function startRecordPicker(anchor, mode = 'record') {
+  const scroll = mode === 'scroll';
   closeRing(false);
   dismissCard(false);
   const options = { audio: 'off', clicks: false };
@@ -2403,9 +2445,13 @@ function startRecordPicker(anchor) {
   const drawAudio = () => audio.replaceChildren(...[['off', { zh: '不录声音', en: 'No sound' }], ['system', { zh: '电脑里的声音', en: 'Mac’s sound' }], ['mic', { zh: '麦克风', en: 'Microphone' }]].map(([id, label]) => h('button', { type: 'button', 'aria-pressed': String(options.audio === id), onclick: (event) => { event.stopPropagation(); options.audio = id; drawAudio(); } }, L(label))));
   drawAudio();
   const clicks = h('input', { type: 'checkbox', id: 'rec-clicks', onchange: () => { options.clicks = clicks.checked; } });
-  const hud = h('div', { class: 'rec-hud glass', onpointerdown: (event) => event.stopPropagation() },
-    h('div', null, lang === 'zh' ? '拖出要录的区域 · 单击录窗口 · 回车录整个屏幕 · Esc 取消' : 'Drag to choose an area · Click a window · Return for the whole screen · Esc to cancel'),
-    h('div', { class: 'opts' }, h('span', { class: 'tiny' }, lang === 'zh' ? '声音' : 'Sound'), audio, h('label', { for: 'rec-clicks' }, clicks, lang === 'zh' ? '显示鼠标点击' : 'Show clicks')));
+  const hud = scroll
+    ? h('div', { class: 'rec-hud glass', onpointerdown: (event) => event.stopPropagation() },
+      h('div', null, lang === 'zh' ? '拖出要滚动截取的区域 · 单击截窗口 · Esc 取消' : 'Drag over the area to capture · Click to capture a window · Esc to cancel'),
+      h('div', { class: 'tiny' }, lang === 'zh' ? '只框住会滚动的那一块最好；选好以后一边往下滚动一边截' : 'Selecting only the part that scrolls works best; then scroll down while Pop captures'))
+    : h('div', { class: 'rec-hud glass', onpointerdown: (event) => event.stopPropagation() },
+      h('div', null, lang === 'zh' ? '拖出要录的区域 · 单击录窗口 · 回车录整个屏幕 · Esc 取消' : 'Drag to choose an area · Click a window · Return for the whole screen · Esc to cancel'),
+      h('div', { class: 'opts' }, h('span', { class: 'tiny' }, lang === 'zh' ? '声音' : 'Sound'), audio, h('label', { for: 'rec-clicks' }, clicks, lang === 'zh' ? '显示鼠标点击' : 'Show clicks')));
   el.append(winhl, area, size, hud);
   stage.append(el);
   const winEl = () => stage.querySelector('.win');
@@ -2418,7 +2464,7 @@ function startRecordPicker(anchor) {
   const inside = (p, r) => r && p.x >= r.x && p.x <= r.x + r.w && p.y >= r.y && p.y <= r.y + r.h;
   const pixels = (r) => { let w = Math.round(r.w * 2), hh = Math.round(r.h * 2); const k = Math.min(1, 3840 / w, 2160 / hh); w = Math.round(w * k / 2) * 2; hh = Math.round(hh * k / 2) * 2; return [w, hh]; };
   let start = null;
-  const done = (rect) => { el.remove(); picker = null; if (rect) startRecording(rect, options); };
+  const done = (rect) => { el.remove(); picker = null; if (rect) { if (scroll) startScrollCapture(rect); else startRecording(rect, options); } };
   el.addEventListener('pointermove', (event) => {
     const p = stagePoint(event);
     if (start) {
@@ -2435,10 +2481,10 @@ function startRecordPicker(anchor) {
       Object.assign(winhl.style, { left: `${r.x}px`, top: `${r.y}px`, width: `${r.w}px`, height: `${r.h}px` });
       winhl.hidden = false;
       const [pw, ph] = pixels(r);
-      size.textContent = L({ zh: `单击录这个窗口 · ${pw} × ${ph}`, en: `Click to record this window · ${pw} × ${ph}` });
+      size.textContent = scroll ? L({ zh: `单击截这个窗口 · ${pw} × ${ph}`, en: `Click to capture this window · ${pw} × ${ph}` }) : L({ zh: `单击录这个窗口 · ${pw} × ${ph}`, en: `Click to record this window · ${pw} × ${ph}` });
     } else {
       winhl.hidden = true;
-      size.textContent = lang === 'zh' ? '单击或按回车录整个屏幕' : 'Click or press Return to record the whole screen';
+      size.textContent = scroll ? (lang === 'zh' ? '单击或按回车截整个屏幕' : 'Click or press Return to capture the whole screen') : (lang === 'zh' ? '单击或按回车录整个屏幕' : 'Click or press Return to record the whole screen');
     }
     size.hidden = false;
     Object.assign(size.style, { left: `${Math.min(p.x + 14, stage.clientWidth - 260)}px`, top: `${p.y + 16}px` });
@@ -2506,6 +2552,130 @@ function startRecordPicker(anchor) {
 
 let recording = null;
 
+// 滚动截图：框好的区域外面一圈蓝色虚线，旁边的面板显示截了多长。在区域里往下滚动，每 50 毫秒看一次滚到了哪里，
+// 一下滚得比区域还远就接不上（和 App 里一样提示往回滚一点）；点「完成」拼成长图
+let scrolling = null;
+
+function screensText(total, frame) {
+  const value = total / Math.max(frame, 1);
+  if (value >= 10) return String(Math.round(value));
+  const tenths = Math.round(value * 10);
+  return tenths % 10 === 0 ? String(tenths / 10) : (tenths / 10).toFixed(1);
+}
+
+function startScrollCapture(rect) {
+  const scroller = stage.querySelector('.win .content.scroll');
+  const box = stage.getBoundingClientRect();
+  const sr = scroller ? scroller.getBoundingClientRect() : null;
+  // 区域里会滚动的那一段有多高
+  const band = sr ? Math.max(Math.min(rect.y + rect.h, sr.bottom - box.top) - Math.max(rect.y, sr.top - box.top), 0) : 0;
+  const startTop = scroller ? scroller.scrollTop : 0;
+  let accepted = startTop;
+  let lost = false;
+  const frameEl = h('div', { class: 'scroll-frame', style: `left:${rect.x - 2}px;top:${rect.y - 2}px;width:${rect.w + 4}px;height:${rect.h + 4}px` });
+  const status = h('span', { class: 'st' });
+  const hint = h('div', { class: 'hint' });
+  const panel = h('div', { class: 'scroll-panel glass' },
+    h('div', { class: 'row' }, icon('scrollCapture'), status, h('span', { style: 'flex:1' }),
+      button(lang === 'zh' ? '取消' : 'Cancel', () => stop(false)), button(lang === 'zh' ? '完成' : 'Done', () => stop(true))),
+    hint);
+  layer.append(frameEl, panel);
+  const px = clamp(rect.x + rect.w - panel.offsetWidth, 8, stage.clientWidth - panel.offsetWidth - 8);
+  const below = rect.y + rect.h + 10 + panel.offsetHeight < stage.clientHeight - 4;
+  const above = rect.y - 10 - panel.offsetHeight > MENUBAR + 4;
+  const py = below ? rect.y + rect.h + 10 : above ? rect.y - 10 - panel.offsetHeight : clamp(rect.y + rect.h - panel.offsetHeight - 12, MENUBAR + 6, stage.clientHeight - panel.offsetHeight - 6);
+  Object.assign(panel.style, { left: `${px}px`, top: `${py}px` });
+
+  function update() {
+    const total = rect.h + accepted - startTop;
+    const screens = screensText(total, rect.h);
+    status.textContent = L({ zh: `滚动截图 · 已截 ${Math.round(total * 2)} 像素高，约 ${screens} 屏`, en: `Scrolling Screenshot · ${Math.round(total * 2)} px tall, about ${screens} ${screens === '1' ? 'screen' : 'screens'}` });
+    hint.textContent = lost
+      ? (lang === 'zh' ? '对不上了：往回滚一点，接上以后再慢慢往下滚' : 'Lost track: scroll back up a little, then continue down slowly')
+      : (lang === 'zh' ? '往下滚动要截的内容，滚到底点「完成」；Esc 取消' : 'Scroll down through the content and click Done at the end; Esc cancels');
+    hint.classList.toggle('warn', lost);
+  }
+
+  const timer = setInterval(() => {
+    if (!scroller) return;
+    const top = scroller.scrollTop;
+    if (top <= accepted) {
+      lost = false;
+    } else if (top - accepted < band * 0.85) {
+      accepted = top;
+      lost = false;
+    } else {
+      lost = true;
+    }
+    update();
+  }, 50);
+  update();
+  scrolling = { finish: () => stop(true), cancel: () => stop(false) };
+
+  function stop(keep) {
+    clearInterval(timer);
+    frameEl.remove();
+    panel.remove();
+    scrolling = null;
+    if (keep) showScrollShot(rect, scroller, startTop, accepted);
+  }
+}
+
+// 拼好的长图：把区域里的窗口复制一份、让滚动的内容整段展开，按区域裁出来缩到卡片宽度，在卡片里上下滚着看
+function showScrollShot(rect, scroller, startTop, accepted) {
+  const extra = Math.max(accepted - startTop, 0);
+  const total = rect.h + extra;
+  const [pw, ph] = [Math.round(rect.w * 2), Math.round(total * 2)];
+  const anchor = { x: clamp(rect.x + rect.w / 2, 40, stage.clientWidth - 40), y: clamp(rect.y + Math.min(rect.h, 200), MENUBAR + 20, stage.clientHeight - 40) };
+  const width = Math.min(348, stage.clientWidth - 64);
+  const scale = width / rect.w;
+  const shot = h('div', { class: 'shot', style: `width:${rect.w}px;height:${total}px;transform:scale(${scale})` });
+  // 桌面：从壁纸画布上裁一块，往下接的部分用最下面一行的颜色
+  const ratio = wall.width / Math.max(stage.clientWidth, 1);
+  const desk = document.createElement('canvas');
+  desk.width = Math.max(1, Math.round(rect.w)); desk.height = Math.max(1, Math.round(total));
+  const ctx = desk.getContext('2d');
+  const [r, g, b] = wallColorAt(rect.x + rect.w / 2, rect.y + rect.h - 1);
+  ctx.fillStyle = `rgb(${r}, ${g}, ${b})`;
+  ctx.fillRect(0, 0, desk.width, desk.height);
+  ctx.drawImage(wall, rect.x * ratio, rect.y * ratio, rect.w * ratio, rect.h * ratio, 0, 0, rect.w, rect.h);
+  Object.assign(desk.style, { position: 'absolute', left: '0', top: '0', width: `${rect.w}px`, height: `${total}px` });
+  shot.append(desk);
+  const win = stage.querySelector('.win');
+  if (win) {
+    const box = stage.getBoundingClientRect(), wr = win.getBoundingClientRect();
+    const copy = win.cloneNode(true);
+    Object.assign(copy.style, { left: `${wr.left - box.left - rect.x}px`, top: `${wr.top - box.top - rect.y}px`, width: `${wr.width}px`, height: `${wr.height + extra}px`, right: 'auto', bottom: 'auto' });
+    for (const el of copy.querySelectorAll('[data-selection]')) el.removeAttribute('data-selection');
+    const content = scroller ? copy.querySelector('.content.scroll') : null;
+    if (content) {
+      content.style.overflow = 'hidden';
+      content.firstElementChild.style.transform = `translateY(${-startTop}px)`;
+    }
+    shot.append(copy);
+  }
+  const sizer = h('div', { class: 'sizer', style: `width:${width}px;height:${total * scale}px` }, shot);
+  const preview = h('div', { class: 'shot-box', style: `height:${Math.min(260, Math.max(total * scale, 80))}px` }, sizer);
+  // 截到的那几段文字（识别文字用）
+  const text = () => {
+    if (!scroller) return '';
+    const top = startTop, bottom = accepted + scroller.clientHeight;
+    return [...scroller.querySelectorAll('h2, p')].filter((el) => el.offsetTop + el.offsetHeight > top && el.offsetTop < bottom).map((el) => el.textContent.trim()).join('\n\n');
+  };
+  const detail = extra > 0
+    ? L({ zh: `拼好了一张 ${pw} × ${ph} 像素的长图，约 ${screensText(total, rect.h)} 屏高；按住拖动预览图也能拖到别的 App 里`, en: `Stitched a ${pw} × ${ph} px image, about ${screensText(total, rect.h)} ${screensText(total, rect.h) === '1' ? 'screen' : 'screens'} tall; you can drag the preview into another app` })
+    : L({ zh: `没有滚动，只截了一屏（${pw} × ${ph} 像素）；按住拖动预览图也能拖到别的 App 里`, en: `Nothing scrolled, so this is one screen (${pw} × ${ph} px); you can drag the preview into another app` });
+  presentCard(cardShell({ title: L(P.scrollCapture.name), children: [preview], detail, buttons: [
+    button(lang === 'zh' ? '复制图片' : 'Copy Image', () => showToast(lang === 'zh' ? '已复制图片' : 'Image copied', anchor)),
+    button(lang === 'zh' ? '存储' : 'Save', () => showToast(L({ zh: '已存到「下载」：Pop 滚动截图.png', en: 'Saved to Downloads: Pop Scrolling Screenshot.png' }), anchor)),
+    button(lang === 'zh' ? '识别文字' : 'Recognize Text', () => {
+      const words = text();
+      if (words) showOCRResult(words, anchor, lang === 'zh' ? '识别文字' : 'Recognize Text');
+      else showToast(lang === 'zh' ? '图片里没有识别到文字' : 'No text found in the image', anchor);
+    }),
+  ] }), anchor);
+}
+
 // ---------- 指针和键盘 ----------
 let press = null;
 
@@ -2534,7 +2704,7 @@ function selectFileAt(event) {
 stage.addEventListener('contextmenu', (event) => event.preventDefault());
 
 stage.addEventListener('pointerdown', (event) => {
-  if (picker || event.target.closest('.card, .toast, .pin, .rec-panel, .fx, .picker')) return;
+  if (picker || scrolling || event.target.closest('.card, .toast, .pin, .rec-panel, .scroll-panel, .fx, .picker')) return;
   if (event.button > 2) return;
   // 按住 ⌘、Ctrl 或 Shift 点文件是多选，不弹圆盘
   if (state.scene === 'files' && (event.metaKey || event.ctrlKey || event.shiftKey) && event.target.closest('[data-file]')) {
@@ -2603,6 +2773,10 @@ window.addEventListener('pointercancel', (event) => {
 stage.addEventListener('touchmove', (event) => { if ((press && press.held) || picker) event.preventDefault(); }, { passive: false });
 
 document.addEventListener('keydown', (event) => {
+  if (scrolling) {
+    if (event.key === 'Escape') { scrolling.cancel(); event.preventDefault(); }
+    return;
+  }
   if (picker) {
     if (event.key === 'Escape') { picker.cancel(); event.preventDefault(); return; }
     if (picker.key(event)) event.preventDefault();
@@ -2678,6 +2852,7 @@ function resetOverlays() {
   dismissToast(false);
   picker?.cancel();
   recording?.abort();
+  scrolling?.cancel();
   for (const el of stage.querySelectorAll('.pin, .fx')) el.remove();
 }
 

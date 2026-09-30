@@ -168,6 +168,9 @@ final class AppController {
         ScreenRecorder.shared.onFinish = { [weak self] result in
             self?.coordinator.recordingFinished(result)
         }
+        ScrollCapture.shared.onFinish = { [weak self] result in
+            self?.coordinator.scrollCaptureFinished(result)
+        }
         PhoneShare.shared.onMessage = { [weak self] message in
             self?.coordinator.showToast(message, at: NSEvent.mouseLocation)
         }
