@@ -64,8 +64,10 @@ struct PluginsSettingsView: View {
             }
 
             Section {
-                TextField("搜索内置功能，支持拼音首字母", text: $query)
+                // 不显示标签：表单里的标签会占掉左半边，框里反而是空的
+                TextField("搜索内置功能", text: $query, prompt: Text("搜索内置功能，支持拼音首字母"))
                     .textFieldStyle(.roundedBorder)
+                    .labelsHidden()
             }
 
             let builtins = catalog.filter { $0.source == .builtin && matchesQuery($0) }
