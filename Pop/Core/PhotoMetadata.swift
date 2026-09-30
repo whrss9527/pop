@@ -134,7 +134,7 @@ struct PhotoMetadata: Equatable {
     /// 快门：不到一秒写成 1/120 秒
     static func shutter(_ seconds: Double) -> String {
         if seconds < 1 {
-            return String(localized: "1/\(Int((1 / seconds).rounded())) 秒")
+            return String(localized: "1/\(String(Int((1 / seconds).rounded()))) 秒")
         }
         return String(localized: "\(trimmed(seconds)) 秒")
     }

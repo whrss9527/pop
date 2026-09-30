@@ -5,6 +5,8 @@ import Foundation
 /// 界面文字直接用中文原文作 key（开发语言是简体中文），英文翻译在 Resources/en.lproj/Localizable.strings。
 /// 写在代码里的文字用 `String(localized: "中文")`；SwiftUI 的 `Text("中文")`、`Button("中文")` 这类会自动查翻译。
 /// 运行时才知道的文字用 `Localization.string(_:)` 查。加了新文字后跑一遍 scripts/check-localization.py。
+///
+/// 注意：插在 `String(localized:)` 里的整数会按区域加千分位（1949 变成 1,949），年份、编号这类要先转成字符串再插进去。
 enum Localization {
     /// 界面现在用的是不是中文
     static var isChinese: Bool {

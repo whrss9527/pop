@@ -126,7 +126,7 @@ enum IDNumber {
     private static func personRows(birth: Date, genderDigit: Character, today: Date) -> [ResultCard.Row] {
         let calendar = Self.calendar
         let parts = calendar.dateComponents([.year, .month, .day], from: birth)
-        var rows = [ResultCard.Row(label: String(localized: "出生日期"), value: String(localized: "\(parts.year ?? 0) 年 \(parts.month ?? 0) 月 \(parts.day ?? 0) 日"))]
+        var rows = [ResultCard.Row(label: String(localized: "出生日期"), value: String(localized: "\(String(parts.year ?? 0)) 年 \(String(parts.month ?? 0)) 月 \(String(parts.day ?? 0)) 日"))]
         if birth <= today, let age = calendar.dateComponents([.year], from: birth, to: today).year {
             rows.append(ResultCard.Row(label: String(localized: "年龄"), value: String(localized: "\(age) 岁")))
         }
