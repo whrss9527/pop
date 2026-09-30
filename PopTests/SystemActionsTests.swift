@@ -2,9 +2,9 @@ import XCTest
 @testable import Pop
 
 final class SystemActionsTests: XCTestCase {
-    private func volume(internal: Bool = true, ejectable: Bool = false, removable: Bool = false, local: Bool = true,
+    private func volume(builtIn: Bool = true, ejectable: Bool = false, removable: Bool = false, local: Bool = true,
                         root: Bool = false) -> SystemActions.Volume {
-        SystemActions.Volume(url: URL(fileURLWithPath: "/Volumes/磁盘"), isInternal: internal, isEjectable: ejectable,
+        SystemActions.Volume(url: URL(fileURLWithPath: "/Volumes/磁盘"), isInternal: builtIn, isEjectable: ejectable,
                              isRemovable: removable, isLocal: local, isRoot: root)
     }
 
@@ -13,8 +13,8 @@ final class SystemActionsTests: XCTestCase {
         XCTAssertFalse(SystemActions.isEjectable(volume(root: true)))
         XCTAssertFalse(SystemActions.isEjectable(volume()))
         // U 盘、移动硬盘、磁盘映像、网络磁盘
-        XCTAssertTrue(SystemActions.isEjectable(volume(internal: false, ejectable: true, removable: true)))
-        XCTAssertTrue(SystemActions.isEjectable(volume(internal: false)))
+        XCTAssertTrue(SystemActions.isEjectable(volume(builtIn: false, ejectable: true, removable: true)))
+        XCTAssertTrue(SystemActions.isEjectable(volume(builtIn: false)))
         XCTAssertTrue(SystemActions.isEjectable(volume(ejectable: true)))
         XCTAssertTrue(SystemActions.isEjectable(volume(local: false)))
     }
