@@ -33,16 +33,22 @@ final class SystemActionsTests: XCTestCase {
     }
 
     func testCardButtons() {
-        let card = SystemActions.card(desktopIconsVisible: true, ejectable: 0)
+        let card = SystemActions.card(desktopIconsVisible: true, darkMode: false, ejectable: 0)
         XCTAssertEqual(card.title, "系统操作")
-        XCTAssertEqual(card.buttons.map(\.title), ["锁屏", "熄屏", "睡眠", "屏幕保护程序", "隐藏桌面图标"])
+        XCTAssertEqual(card.buttons.map(\.title), ["锁屏", "熄屏", "睡眠", "屏幕保护程序", "换成深色模式", "隐藏桌面图标"])
         XCTAssertEqual(card.buttons.map(\.action), [.system(.lockScreen), .system(.displaySleep), .system(.sleep),
-                                                    .system(.screenSaver), .system(.toggleDesktopIcons)])
-        // 桌面图标藏起来了、插着磁盘
-        let withDisks = SystemActions.card(desktopIconsVisible: false, ejectable: 2)
-        XCTAssertEqual(withDisks.buttons.map(\.title), ["锁屏", "熄屏", "睡眠", "屏幕保护程序", "显示桌面图标", "推出 2 个磁盘"])
+                                                    .system(.screenSaver), .system(.toggleDarkMode), .system(.toggleDesktopIcons)])
+        // 深色模式、桌面图标藏起来了、插着磁盘
+        let withDisks = SystemActions.card(desktopIconsVisible: false, darkMode: true, ejectable: 2)
+        XCTAssertEqual(withDisks.buttons.map(\.title), ["锁屏", "熄屏", "睡眠", "屏幕保护程序", "换成浅色模式", "显示桌面图标", "推出 2 个磁盘"])
         XCTAssertEqual(withDisks.buttons.last?.action, .system(.ejectAll))
-        XCTAssertEqual(SystemActions.card(desktopIconsVisible: true, ejectable: 1).buttons.last?.title, "推出磁盘")
+        XCTAssertEqual(SystemActions.card(desktopIconsVisible: true, darkMode: false, ejectable: 1).buttons.last?.title, "推出磁盘")
+    }
+
+    func testReadsTheAppearance() {
+        XCTAssertTrue(SystemActions.isDarkMode(style: "Dark"))
+        XCTAssertFalse(SystemActions.isDarkMode(style: nil))
+        XCTAssertFalse(SystemActions.isDarkMode(style: "Light"))
     }
 
     @MainActor

@@ -355,6 +355,14 @@ button { font: inherit; color: inherit; }
 .rec-hud .tiny { font-size: 11.5px; color: var(--label-2); }
 .rec-frame { position: absolute; border: 2px dashed var(--rec); border-radius: 2px; z-index: 25; }
 .rec-panel { position: absolute; border-radius: 10px; padding: 5px 6px 5px 10px; display: flex; align-items: center; gap: 8px; font: 12px/1 var(--mono); z-index: 26; }
+.large-type { position: absolute; inset: 0; z-index: 40; display: grid; place-items: center; background: rgba(0, 0, 0, .82); color: #fff; cursor: default; padding: 40px 60px 70px; text-align: center; font-weight: 600; line-height: 1.15; overflow-wrap: anywhere; }
+.large-type .cap { position: absolute; left: 0; right: 0; bottom: 26px; font-size: 12.5px; font-weight: 500; color: rgba(255, 255, 255, .6); }
+.kb-clean { position: absolute; inset: 0; z-index: 40; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; background: rgba(0, 0, 0, .55); color: #fff; text-align: center; padding: 20px; }
+.kb-clean svg { width: 58px; height: 58px; }
+.kb-clean b { font-size: 22px; }
+.kb-clean .sub { font-size: 13.5px; color: rgba(255, 255, 255, .75); font-variant-numeric: tabular-nums; }
+.kb-clean button { appearance: none; border: 0; margin-top: 6px; padding: 8px 22px; border-radius: 999px; background: rgba(255, 255, 255, .18); color: #fff; font: 600 14px/1 var(--font); cursor: pointer; }
+.kb-clean button:hover { background: rgba(255, 255, 255, .26); }
 .win .content.scroll { overflow-y: auto; overscroll-behavior: contain; scrollbar-width: thin; }
 .scroll-frame { position: absolute; border: 2px dashed var(--accent); border-radius: 2px; z-index: 25; pointer-events: none; }
 .scroll-panel { position: absolute; z-index: 26; width: min(400px, calc(100% - 16px)); border-radius: 12px; padding: 7px 8px 7px 12px; display: flex; flex-direction: column; gap: 3px; font-size: 12px; }
@@ -479,6 +487,8 @@ const ICONS = {
   sendToPhone: '<rect x="8" y="3.5" width="8" height="17" rx="2"/><path d="M11 17.4h2"/><path d="M4.6 9a6.4 6.4 0 0 0 0 6M19.4 9a6.4 6.4 0 0 1 0 6"/>',
   pin: '<path d="M9 3.6h6l-1.2 5.2 3.2 3v1.6H7v-1.6l3.2-3z"/><path d="M12 13.4v7.2"/>',
   screenRecord: '<circle cx="12" cy="12" r="8.6"/><circle cx="12" cy="12" r="3.9" fill="currentColor" stroke="none"/>',
+  largeType: '<path d="M3.5 18.5l5-13 5 13M5.4 13.7h6.2"/><path d="M14.5 18.5l3.2-8.3 3.2 8.3M15.7 15.4h4"/>',
+  cleanKeyboard: '<rect x="2.8" y="6.5" width="18.4" height="11" rx="2"/><path d="M6.5 10h.01M9.5 10h.01M12.5 10h.01M15.5 10h.01M17.5 10h.01M7.5 14h9"/>',
   scrollCapture: '<rect x="6" y="3.5" width="12" height="17" rx="2"/><path d="M9 7.5h6M9 10.5h6"/><path d="M12 13.5v4.2M10 15.9l2 1.9 2-1.9"/>',
   systemActions: '<rect x="3.5" y="5" width="17" height="6" rx="3"/><circle cx="17.5" cy="8" r="1.6" fill="currentColor"/><rect x="3.5" y="13" width="17" height="6" rx="3"/><circle cx="6.5" cy="16" r="1.6" fill="currentColor"/>',
   shelf: '<path d="M3.6 13.6l2.2-7.4a2 2 0 0 1 1.9-1.4h8.6a2 2 0 0 1 1.9 1.4l2.2 7.4v4.4a2 2 0 0 1-2 2h-12.8a2 2 0 0 1-2-2z"/><path d="M3.6 13.6h5l1 2h4.8l1-2h5"/><path d="M7.9 8.2h8.2M7.2 11h9.6"/>',
@@ -610,21 +620,23 @@ const P = {
   airDrop: { icon: 'airDrop', accepts: ['text', 'files'], keys: 'gekongtousong gkts airdrop', name: { zh: '隔空投送', en: 'AirDrop' }, summary: { zh: '用隔空投送把选中的文件、图片、链接或文字发到附近的 iPhone、iPad 或 Mac', en: 'Send the selected files, images, links or text to a nearby iPhone, iPad or Mac with AirDrop' } },
   sendToPhone: { icon: 'sendToPhone', accepts: [], keys: 'chuandaoshouji cdsj', name: { zh: '传到手机', en: 'Send to Phone' }, summary: { zh: '手机扫码下载选中的文件、图片（文件夹先打包成 zip）或者拿到选中的文字，也能从手机传文件到「下载」文件夹；手机和 Mac 连同一个 Wi-Fi 就行，安卓手机也能用', en: 'Scan a QR code with your phone to download the selected files or images (folders are zipped first) or get the selected text, and upload files from the phone to Downloads. The phone and Mac just need to be on the same Wi-Fi; Android works too.' } },
   pin: { icon: 'pin', accepts: [], keys: 'tietu tt', name: { zh: '贴图', en: 'Pin' }, summary: { zh: '把选中的图片或文字贴在屏幕最前面；什么都没选中时先框选一块屏幕', en: 'Pin the selected image or text on top of all windows; with nothing selected, select an area of the screen first' } },
+  largeType: { icon: 'largeType', accepts: ['text'], maxLength: 300, keys: 'dazixianshi dzxs', name: { zh: '大字显示', en: 'Large Type' }, summary: { zh: '把选中的文字铺满整个屏幕，给别人看电话号码、Wi-Fi 密码、取件码都方便；点一下或按任意键关闭', en: 'Show the selected text across the whole screen, handy for showing someone a phone number, Wi-Fi password or pickup code; click or press any key to close' } },
+  cleanKeyboard: { icon: 'cleanKeyboard', accepts: [], keys: 'qingjiejianpan qjjp', name: { zh: '清洁键盘', en: 'Clean Keyboard' }, summary: { zh: '锁住键盘一分钟，擦键盘时不会误触；亮度、音量键也不起作用，用鼠标点「结束清洁」随时恢复', en: 'Lock the keyboard for a minute so you can wipe it without typing anything; brightness and volume keys are blocked too. Click End Cleaning with the mouse to stop any time' } },
   scrollCapture: { icon: 'scrollCapture', accepts: [], keys: 'gundongjietu gdjt changjietu cjt', name: { zh: '滚动截图', en: 'Scrolling Screenshot' }, summary: { zh: '框选一块区域，一边往下滚动一边截，拼成一张长图；网页、聊天记录、长文档都能截全，还能接着识别文字。正在截的时候再用一次就是完成', en: 'Select an area, then scroll down while Pop captures it into one long image: whole web pages, chat histories and long documents, with text recognition afterwards if you like. Use it again while capturing to finish' } },
   screenRecord: { icon: 'screenRecord', accepts: [], keys: 'luping lp', name: { zh: '录屏', en: 'Record Screen' }, summary: { zh: '拖出一块区域、单击选一个窗口或者按回车录整个屏幕，存成 MP4；可以录上电脑里的声音或者麦克风、显示鼠标点击，录好能接着转成 GIF。正在录的时候再用一次就停止', en: 'Drag out an area, click a window or press Return to record the whole screen as MP4; can include the Mac’s sound or the microphone and show clicks, and the recording can then be turned into a GIF. Use it again while recording to stop' } },
   annotate: { icon: 'annotate', accepts: [], keys: 'jietubiaozhu jtbz', name: { zh: '截图标注', en: 'Annotate Screenshot' }, summary: { zh: '框选屏幕上的一块区域（或者用选中的图片），画箭头、方框、文字、马赛克、序号，再复制、存储或贴到屏幕上', en: 'Select an area of the screen (or use the selected image), draw arrows, boxes, text, pixelation and numbered markers, then copy, save or pin it' } },
   shelf: { icon: 'shelf', accepts: [], keys: 'zancunjia zcj', name: { zh: '暂存架', en: 'Shelf' }, summary: { zh: '把选中的文件放到暂存架上，之后再一起拖到别的地方；没选中文件时打开暂存架', en: 'Put the selected files on the Shelf to drag them elsewhere later; with no files selected, open the Shelf' } },
   menuShortcuts: { icon: 'menuShortcuts', accepts: [], keys: 'kuaijiejianyilan kjjyl kuaijiejian kjj caidan cd shortcuts menu', name: { zh: '快捷键一览', en: 'Keyboard Shortcuts' }, summary: { zh: '列出当前 App 菜单里的所有快捷键，可以搜索，点一项直接执行', en: 'List every keyboard shortcut in the current app’s menus; search them and click one to run it' } },
-  systemActions: { icon: 'systemActions', accepts: [], keys: 'xitongcaozuo xtcz suoping', name: { zh: '系统操作', en: 'System Actions' }, summary: { zh: '锁屏、熄屏、睡眠、打开屏幕保护程序、隐藏或显示桌面图标、推出所有磁盘', en: 'Lock the screen, turn off the display, sleep, start the screen saver, hide or show desktop icons, or eject all disks' } },
+  systemActions: { icon: 'systemActions', accepts: [], keys: 'xitongcaozuo xtcz suoping', name: { zh: '系统操作', en: 'System Actions' }, summary: { zh: '锁屏、熄屏、睡眠、打开屏幕保护程序、切换深色和浅色模式、隐藏或显示桌面图标、推出所有磁盘', en: 'Lock the screen, turn off the display, sleep, start the screen saver, switch between Dark and Light Mode, hide or show desktop icons, or eject all disks' } },
 };
 for (const [id, info] of Object.entries(P)) info.id = id;
 
 // 圆盘的默认布局：上半圈处理选中的文字，下半圈什么都没选时也能用
 const LAYOUT = ['translate', 'search', 'dictionary', 'openURL', 'allPlugins', 'clipboard', 'screenshotOCR', 'colorPicker'];
 // 「全部功能」里的顺序
-const ORDER = ['translate', 'textImage', 'search', 'dictionary', 'speak', 'textStats', 'changeCase', 'openURL', 'webCapture', 'linkInspect', 'qrCode',
+const ORDER = ['translate', 'textImage', 'largeType', 'search', 'dictionary', 'speak', 'textStats', 'changeCase', 'openURL', 'webCapture', 'linkInspect', 'qrCode',
   'fileInfo', 'imageConvert', 'cropImage', 'redact', 'ocr', 'removeBackground', 'videoConvert', 'transcribe', 'trimMedia', 'pdf', 'compareFiles', 'zip',
-  'airDrop', 'sendToPhone', 'screenRecord', 'scrollCapture', 'screenshotOCR', 'annotate', 'pin', 'colorPicker', 'clipboard', 'shelf', 'menuShortcuts', 'systemActions'];
+  'airDrop', 'sendToPhone', 'screenRecord', 'scrollCapture', 'screenshotOCR', 'annotate', 'pin', 'colorPicker', 'clipboard', 'shelf', 'menuShortcuts', 'systemActions', 'cleanKeyboard'];
 
 function canHandle(info, content) {
   if (!info) return false;
@@ -918,6 +930,11 @@ const MENUS = {
 // 每个场景里前台的 App
 function appKey() {
   return { foreign: 'safari', link: 'notes', files: 'finder', none: 'finder' }[state.scene] || 'finder';
+}
+
+// 系统操作里的「换成深色/浅色模式」：演示里换的是这个页面
+function setTheme(mode) {
+  document.documentElement.setAttribute('data-theme', mode);
 }
 
 function isDark() {
@@ -1581,6 +1598,8 @@ const RUN = {
   scrollCapture: (content, anchor) => scrolling ? scrolling.finish() : startRecordPicker(anchor, 'scroll'),
   systemActions: (content, anchor) => showSystemActions(anchor),
   menuShortcuts: (content, anchor) => showMenuShortcuts(anchor),
+  largeType: (content) => showLargeType(content.text),
+  cleanKeyboard: () => startKeyboardCleaning(),
 };
 
 // 翻译卡片：换目标语言、换引擎、几家对比；联网的引擎一边收一边显示
@@ -2269,6 +2288,11 @@ function showSystemActions(anchor) {
     button(lang === 'zh' ? '熄屏' : 'Turn Off Display', () => systemEffect('black')),
     button(lang === 'zh' ? '睡眠' : 'Sleep', () => systemEffect('black')),
     button(lang === 'zh' ? '屏幕保护程序' : 'Screen Saver', () => systemEffect('saver')),
+    button(isDark() ? (lang === 'zh' ? '换成浅色模式' : 'Switch to Light Mode') : (lang === 'zh' ? '换成深色模式' : 'Switch to Dark Mode'), () => {
+      // 演示里换的是这个页面的外观
+      dismissCard();
+      setTheme(isDark() ? 'light' : 'dark');
+    }),
     button(state.desktopIcons ? (lang === 'zh' ? '隐藏桌面图标' : 'Hide Desktop Icons') : (lang === 'zh' ? '显示桌面图标' : 'Show Desktop Icons'), () => {
       state.desktopIcons = !state.desktopIcons;
       dismissCard();
@@ -2552,6 +2576,51 @@ function startRecordPicker(anchor, mode = 'record') {
 
 let recording = null;
 
+// 大字显示：选中的文字铺满桌面，字号按桌面大小算；点一下或按任意键关闭
+let largeType = null;
+
+function showLargeType(text) {
+  closeRing(false);
+  dismissCard(false);
+  const words = (text || '').trim();
+  if (!words) return;
+  const el = h('div', { class: 'large-type', role: 'dialog', 'aria-label': L(P.largeType.name) }, h('div', { class: 'big' }, words),
+    h('div', { class: 'cap' }, lang === 'zh' ? '点一下或按任意键关闭 · ⌘C 复制' : 'Click or press any key to close · ⌘C to copy'));
+  stage.append(el);
+  const big = el.querySelector('.big');
+  // 二分找放得下的最大字号
+  let low = 12, high = 220;
+  for (let i = 0; i < 14; i++) {
+    const middle = (low + high) / 2;
+    big.style.fontSize = `${middle}px`;
+    if (big.scrollWidth <= el.clientWidth - 120 && big.offsetHeight <= el.clientHeight - 130) low = middle; else high = middle;
+  }
+  big.style.fontSize = `${Math.floor(low)}px`;
+  const close = () => { el.remove(); largeType = null; };
+  el.addEventListener('pointerdown', (event) => { event.stopPropagation(); close(); });
+  largeType = { key(event) { if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'c') { try { navigator.clipboard?.writeText(words).catch(() => {}); } catch (error) { /* 不让写剪贴板就算了 */ } } close(); } };
+}
+
+// 清洁键盘：盖一层提示和倒计时，这期间按键都不管用；用鼠标点「结束清洁」或者等时间到
+let cleaning = null;
+
+function startKeyboardCleaning() {
+  closeRing(false);
+  dismissCard(false);
+  let left = 60;
+  const sub = h('div', { class: 'sub' });
+  const draw = () => { sub.textContent = L({ zh: `按键、亮度和音量键都不起作用；0:${String(left).padStart(2, '0')} 后自动恢复`, en: `Keys, brightness and volume don’t respond; unlocks by itself in 0:${String(left).padStart(2, '0')}` }).replace('0:60', '1:00'); };
+  const end = h('button', { type: 'button' }, lang === 'zh' ? '结束清洁' : 'End Cleaning');
+  const el = h('div', { class: 'kb-clean', role: 'dialog' }, icon('cleanKeyboard', { 'stroke-width': '1.3' }), h('b', null, lang === 'zh' ? '键盘已经锁住，可以放心擦了' : 'The keyboard is locked. Go ahead and wipe it'), sub, end);
+  draw();
+  stage.append(el);
+  const timer = setInterval(() => { left -= 1; if (left <= 0) stop(); else draw(); }, 1000);
+  function stop() { clearInterval(timer); el.remove(); cleaning = null; }
+  end.addEventListener('click', stop);
+  el.addEventListener('pointerdown', (event) => event.stopPropagation());
+  cleaning = { stop };
+}
+
 // 滚动截图：框好的区域外面一圈蓝色虚线，旁边的面板显示截了多长。在区域里往下滚动，每 50 毫秒看一次滚到了哪里，
 // 一下滚得比区域还远就接不上（和 App 里一样提示往回滚一点）；点「完成」拼成长图
 let scrolling = null;
@@ -2773,6 +2842,9 @@ window.addEventListener('pointercancel', (event) => {
 stage.addEventListener('touchmove', (event) => { if ((press && press.held) || picker) event.preventDefault(); }, { passive: false });
 
 document.addEventListener('keydown', (event) => {
+  // 清洁键盘的时候按键都不管用
+  if (cleaning) { event.preventDefault(); return; }
+  if (largeType) { largeType.key(event); event.preventDefault(); return; }
   if (scrolling) {
     if (event.key === 'Escape') { scrolling.cancel(); event.preventDefault(); }
     return;
@@ -2853,6 +2925,8 @@ function resetOverlays() {
   picker?.cancel();
   recording?.abort();
   scrolling?.cancel();
+  cleaning?.stop();
+  if (largeType) { stage.querySelector('.large-type')?.remove(); largeType = null; }
   for (const el of stage.querySelectorAll('.pin, .fx')) el.remove();
 }
 

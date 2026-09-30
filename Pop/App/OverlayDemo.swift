@@ -457,7 +457,7 @@ enum OverlayDemo {
 
             // 系统操作：插着一个移动硬盘时的样子
             await pause(1.4 * unit)
-            overlay.showCard(ResultCardView(card: SystemActions.card(desktopIconsVisible: true, ejectable: 1),
+            overlay.showCard(ResultCardView(card: SystemActions.card(desktopIconsVisible: true, darkMode: false, ejectable: 1),
                                             onAction: { _ in }, onMore: {}, onClose: {}),
                              anchor: center)
             step("systemActions")

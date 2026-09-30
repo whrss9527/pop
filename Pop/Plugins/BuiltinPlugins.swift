@@ -14,6 +14,7 @@ enum BuiltinPlugins {
             LinkInspectPlugin(),
             WebCapturePlugin(),
             TextImagePlugin(),
+            LargeTypePlugin(),
             CalculatorPlugin(),
             NumberStatsPlugin(),
             UnitConvertPlugin(),
@@ -99,6 +100,7 @@ enum BuiltinPlugins {
             OpenInTerminalPlugin(),
             KeepAwakePlugin(),
             SystemActionsPlugin(),
+            KeyboardCleanerPlugin(),
             TimerPlugin(),
             ClipboardHistoryPlugin(),
             SnippetsPlugin(),
@@ -136,7 +138,7 @@ enum BuiltinCategory: CaseIterable, Identifiable {
     private static let members: [BuiltinCategory: [String]] = [
         .text: [BuiltinPluginID.translate, BuiltinPluginID.screenshotTranslate, BuiltinPluginID.search,
                 BuiltinPluginID.dictionary, BuiltinPluginID.vocabulary, BuiltinPluginID.speak, BuiltinPluginID.openURL,
-                BuiltinPluginID.webCapture, BuiltinPluginID.textImage,
+                BuiltinPluginID.webCapture, BuiltinPluginID.textImage, BuiltinPluginID.largeType,
                 BuiltinPluginID.copyPlain,
                 BuiltinPluginID.textCleanup, BuiltinPluginID.extractInfo, BuiltinPluginID.idNumber, BuiltinPluginID.lineTools,
                 BuiltinPluginID.reminder,
@@ -172,7 +174,7 @@ enum BuiltinCategory: CaseIterable, Identifiable {
                  BuiltinPluginID.transcribe,
                  BuiltinPluginID.shelf, BuiltinPluginID.airDrop, BuiltinPluginID.sendToPhone,
                  BuiltinPluginID.windowLayout, BuiltinPluginID.menuShortcuts,
-                 BuiltinPluginID.keepAwake, BuiltinPluginID.systemActions, BuiltinPluginID.timer],
+                 BuiltinPluginID.keepAwake, BuiltinPluginID.systemActions, BuiltinPluginID.cleanKeyboard, BuiltinPluginID.timer],
     ]
 
     /// 没有列出来的（剪贴板、全部功能、设置）都算「其他」

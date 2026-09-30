@@ -1,12 +1,13 @@
 import AppKit
 import Carbon.HIToolbox
 
-/// 系统操作：锁屏、熄屏、睡眠、屏幕保护程序、隐藏或显示桌面图标、推出所有磁盘
+/// 系统操作：锁屏、熄屏、睡眠、屏幕保护程序、切换深色和浅色模式、隐藏或显示桌面图标、推出所有磁盘
 enum SystemAction: String, CaseIterable, Equatable {
     case lockScreen
     case displaySleep
     case sleep
     case screenSaver
+    case toggleDarkMode
     case toggleDesktopIcons
     case ejectAll
 }
@@ -24,6 +25,13 @@ enum SystemActions {
 
     static let finderDomain = "com.apple.finder"
     static let desktopIconsKey = "CreateDesktop"
+    /// 系统外观：深色模式时是 Dark，浅色模式时没有
+    static let appearanceKey = "AppleInterfaceStyle"
+
+    /// 系统现在是深色模式
+    static func isDarkMode(style: String? = UserDefaults.standard.string(forKey: appearanceKey)) -> Bool {
+        style?.lowercased() == "dark"
+    }
 
     /// 桌面上现在显示图标（访达的 CreateDesktop 没设成否）
     static func desktopIconsVisible(in defaults: UserDefaults? = UserDefaults(suiteName: finderDomain)) -> Bool {
@@ -50,24 +58,27 @@ enum SystemActions {
         }
     }
 
-    static func title(_ action: SystemAction, desktopIconsVisible: Bool, ejectable: Int) -> String {
+    static func title(_ action: SystemAction, desktopIconsVisible: Bool, darkMode: Bool, ejectable: Int) -> String {
         switch action {
         case .lockScreen: return String(localized: "锁屏")
         case .displaySleep: return String(localized: "熄屏")
         case .sleep: return String(localized: "睡眠")
         case .screenSaver: return String(localized: "屏幕保护程序")
+        case .toggleDarkMode: return darkMode ? String(localized: "换成浅色模式") : String(localized: "换成深色模式")
         case .toggleDesktopIcons: return desktopIconsVisible ? String(localized: "隐藏桌面图标") : String(localized: "显示桌面图标")
         case .ejectAll: return ejectable > 1 ? String(localized: "推出 \(ejectable) 个磁盘") : String(localized: "推出磁盘")
         }
     }
 
     /// 「系统操作」卡片：没有能推出的磁盘时不显示推出
-    static func card(desktopIconsVisible: Bool, ejectable: Int) -> ResultCard {
+    static func card(desktopIconsVisible: Bool, darkMode: Bool, ejectable: Int) -> ResultCard {
         let actions = SystemAction.allCases.filter { $0 != .ejectAll || ejectable > 0 }
         return ResultCard(title: String(localized: "系统操作"), body: "",
                           detail: String(localized: "隐藏桌面图标会重新打开访达；推出前请先关掉磁盘上打开的文件"),
-                          buttons: actions.map { CardButton(title: title($0, desktopIconsVisible: desktopIconsVisible, ejectable: ejectable),
-                                                            action: .system($0)) })
+                          buttons: actions.map { action in
+                              CardButton(title: title(action, desktopIconsVisible: desktopIconsVisible, darkMode: darkMode, ejectable: ejectable),
+                                         action: .system(action))
+                          })
     }
 
     /// 执行操作，返回要提示的话（锁屏、睡眠这些不用提示）
@@ -92,6 +103,15 @@ enum SystemActions {
             } catch {
                 return String(localized: "打不开屏幕保护程序：\(error.localizedDescription)")
             }
+        case .toggleDarkMode:
+            // 让 System Events 改系统外观；第一次会问能不能控制 System Events
+            let dark = !isDarkMode()
+            let script = "tell application \"System Events\" to tell appearance preferences to set dark mode to \(dark)"
+            guard let reason = await command("/usr/bin/osascript", ["-e", script]) else { return nil }
+            if reason.contains("-1743") {
+                return String(localized: "要先在「系统设置 → 隐私与安全性 → 自动化」里允许 Pop 控制「System Events」")
+            }
+            return reason.isEmpty ? String(localized: "没能切换深浅色") : String(localized: "没能切换深浅色：\(reason)")
         case .toggleDesktopIcons:
             let show = !desktopIconsVisible()
             if let reason = await command("/usr/bin/defaults", ["write", finderDomain, desktopIconsKey, "-bool", show ? "true" : "false"]) {
