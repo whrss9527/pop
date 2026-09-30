@@ -371,6 +371,18 @@ enum OverlayDemo {
             await pause(1.4 * unit)
             coordinator.hideToolbar()
 
+            // 加水印：示例截图上铺一层「仅供办理业务使用」
+            await pause(0.6 * unit)
+            if let capture = sampleScreenshot() {
+                let image = FileManager.default.temporaryDirectory.appending(path: "pop-demo/证件照片.png")
+                try? FileManager.default.createDirectory(at: image.deletingLastPathComponent(), withIntermediateDirectories: true)
+                if (try? capture.png.write(to: image)) != nil {
+                    let watermark = WatermarkModel(files: [image], text: ImageWatermark.defaultText, opacity: 0.35)
+                    overlay.showCard(WatermarkView(model: watermark, onApply: {}, onClose: {}), anchor: center)
+                }
+            }
+            step("watermark")
+
             // 截图标注窗口：拿一张画好的示例图，标上方框、箭头、文字、马赛克和序号；截图区域换成标注窗口
             await pause(1.4 * unit)
             overlay.hide()

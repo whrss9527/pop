@@ -77,6 +77,8 @@ enum ContentCheck: Hashable {
     case twoDates
     /// 选中的是文件夹
     case folder
+    /// 正好选中了两个文件夹
+    case twoFolders
     /// Markdown 里至少有两个标题
     case markdownHeadings
 
@@ -108,6 +110,9 @@ enum ContentCheck: Hashable {
             return DateSpan.find(in: subject) != nil
         case .folder:
             return FolderTree.isFolder(subject.components(separatedBy: "\n").first ?? "")
+        case .twoFolders:
+            let paths = subject.components(separatedBy: "\n").filter { !$0.isEmpty }
+            return paths.count == 2 && paths.allSatisfy(FolderTree.isFolder)
         case .markdownHeadings:
             return MarkdownTOC.headings(in: subject).count >= 2
         }
@@ -151,6 +156,8 @@ enum CardAction: Equatable {
     case pdfPassword(URL)
     /// 把几张图片按顺序合成动图
     case animateImages([URL])
+    /// 打开压缩到指定大小的卡片
+    case imageSizeLimit([URL])
     /// 打开截取片段卡片
     case trimMedia(URL)
     /// 保持唤醒一段时间（分钟）；nil 表示一直保持
@@ -250,6 +257,8 @@ enum PluginOutcome: Equatable {
     case findDuplicates([URL])
     /// 看这个文件夹里各部分占了多少空间
     case diskUsage(URL)
+    /// 打开加水印的卡片
+    case watermark([URL])
     /// 打开截取片段卡片
     case trimMedia(URL)
     case failure(String)

@@ -569,6 +569,8 @@ final class PopCoordinator: MouseTriggerDelegate {
             presentDuplicates(folders)
         case .diskUsage(let folder):
             presentDiskUsage(folder)
+        case .watermark(let files):
+            presentWatermark(files)
         case .trimMedia(let file):
             presentTrim(file)
         case .failure(let message):
@@ -635,6 +637,8 @@ final class PopCoordinator: MouseTriggerDelegate {
             presentPDFPassword(pdf)
         case .animateImages(let files):
             animateImages(files)
+        case .imageSizeLimit(let files):
+            presentImageSizeLimit(files)
         case .trimMedia(let file):
             presentTrim(file)
         case .keepAwake(let minutes):
@@ -1169,6 +1173,93 @@ final class PopCoordinator: MouseTriggerDelegate {
             NSWorkspace.shared.activateFileViewerSelecting([url])
         } catch {
             showToast("导出失败：\(error.localizedDescription)", at: NSEvent.mouseLocation)
+        }
+    }
+
+    /// 加水印：改文字和浓淡时看预览，确认后每张图另存一份
+    private func presentWatermark(_ files: [URL]) {
+        guard let current = session else { return }
+        stopPointerTracking()
+        let model = WatermarkModel(files: files)
+        overlay.showCard(WatermarkView(model: model,
+                                       onApply: { [weak self] in self?.applyWatermark(model) },
+                                       onClose: { [weak self] in self?.endSession() }),
+                         anchor: current.anchor)
+    }
+
+    private func applyWatermark(_ model: WatermarkModel) {
+        let files = model.files
+        let text = model.text
+        let opacity = model.opacity
+        model.remember()
+        let anchor = session?.anchor ?? NSEvent.mouseLocation
+        endSession()
+        Task { [weak self] in
+            let result = await runInBackground { () -> (outputs: [URL], failures: [String]) in
+                var outputs: [URL] = []
+                var failures: [String] = []
+                for file in files {
+                    do {
+                        outputs.append(try ImageWatermark.watermark(file, text: text, opacity: opacity))
+                    } catch {
+                        failures.append((error as? ImageWatermark.Failure)?.message ?? error.localizedDescription)
+                    }
+                }
+                return (outputs, failures)
+            }
+            guard let self else { return }
+            if !result.outputs.isEmpty {
+                NSWorkspace.shared.activateFileViewerSelecting(result.outputs)
+            }
+            let message: String
+            if let failure = result.failures.first {
+                message = result.outputs.isEmpty ? failure : "加好了 \(result.outputs.count) 张，\(result.failures.count) 张失败：\(failure)"
+            } else {
+                message = "已给 \(result.outputs.count) 张图片加上水印"
+            }
+            self.showToast(message, at: anchor)
+        }
+    }
+
+    /// 压缩到指定大小：选一档，每张图另存一份不超过这个大小的 JPEG
+    private func presentImageSizeLimit(_ files: [URL]) {
+        guard let current = session else { return }
+        stopPointerTracking()
+        overlay.showCard(ImageSizeLimitView(files: files,
+                                            onCompress: { [weak self] limit in self?.compressImages(files, toBytes: limit) },
+                                            onClose: { [weak self] in self?.endSession() }),
+                         anchor: current.anchor)
+    }
+
+    private func compressImages(_ files: [URL], toBytes limit: Int) {
+        let anchor = session?.anchor ?? NSEvent.mouseLocation
+        endSession()
+        Task { [weak self] in
+            let result = await runInBackground { () -> (outputs: [(url: URL, bytes: Int)], failures: [String]) in
+                var outputs: [(url: URL, bytes: Int)] = []
+                var failures: [String] = []
+                for file in files {
+                    do {
+                        outputs.append(try ImageConverter.compress(file, toBytes: limit))
+                    } catch {
+                        failures.append((error as? ImageConverter.Failure)?.message ?? error.localizedDescription)
+                    }
+                }
+                return (outputs, failures)
+            }
+            guard let self else { return }
+            if !result.outputs.isEmpty {
+                NSWorkspace.shared.activateFileViewerSelecting(result.outputs.map { $0.url })
+            }
+            let message: String
+            if let failure = result.failures.first {
+                message = result.outputs.isEmpty ? failure : "压好了 \(result.outputs.count) 张，\(result.failures.count) 张失败：\(failure)"
+            } else if result.outputs.count == 1 {
+                message = "已压缩到 \(FileInfo.shortSize(Int64(result.outputs[0].bytes)))"
+            } else {
+                message = "已压缩 \(result.outputs.count) 张，都在 \(ImageConverter.sizeLabel(limit)) 以内"
+            }
+            self.showToast(message, at: anchor)
         }
     }
 

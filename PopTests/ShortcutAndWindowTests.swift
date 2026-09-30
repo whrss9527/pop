@@ -198,7 +198,7 @@ final class ImageConverterTests: XCTestCase {
         // 截图里没有位置和拍摄信息，不给去掉的按钮；一张小图可以复制成 data URI
         XCTAssertEqual(card.buttons.map(\.title), ImageConverter.Operation.allCases.filter {
             $0 != .removeLocation && $0 != .removeMetadata
-        }.map(\.title) + ["复制为 data URI"])
+        }.map(\.title) + ["压缩到指定大小…", "复制为 data URI"])
         XCTAssertEqual(card.buttons.first?.action, .convertImages([original], .png))
         guard case .copy(let uri) = card.buttons.last?.action else { return XCTFail("最后一个按钮应该是复制 data URI") }
         XCTAssertTrue(uri.hasPrefix("data:image/png;base64,iVBORw0KGgo"), String(uri.prefix(40)))
