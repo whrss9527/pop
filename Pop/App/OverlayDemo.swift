@@ -421,6 +421,21 @@ enum OverlayDemo {
             }
             step("idPhoto")
 
+            // 网页存档：选中一个网址
+            await pause(1.4 * unit)
+            if let page = URL(string: "https://github.com/whrss9527/pop/releases") {
+                overlay.showCard(ResultCardView(card: WebCapturePlugin.card(page), onAction: { _ in }, onMore: {}, onClose: {}),
+                                 anchor: center)
+            }
+            step("webCapture")
+
+            // 裁剪图片：五种比例
+            await pause(1.4 * unit)
+            let beach = FileManager.default.temporaryDirectory.appending(path: "pop-demo/海边.jpg")
+            overlay.showCard(ResultCardView(card: CropImagePlugin.card([beach]), onAction: { _ in }, onMore: {}, onClose: {}),
+                             anchor: center)
+            step("cropImage")
+
             // 截图标注窗口：拿一张画好的示例图，标上方框、箭头、文字、马赛克和序号；截图区域换成标注窗口
             await pause(1.4 * unit)
             overlay.hide()

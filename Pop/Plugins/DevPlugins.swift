@@ -2,6 +2,24 @@ import AppKit
 
 // MARK: - 链接解析
 
+struct WebCapturePlugin: PopPlugin {
+    let info = PluginInfo(id: BuiltinPluginID.webCapture, name: "网页存档", symbol: "arrow.down.doc",
+                          summary: "把选中的网址整页存成一页长 PDF（文字能选、能搜）或者一张长图，放在「下载」里", accepts: [.url])
+
+    @MainActor func run(_ content: ClassifiedContent, context: PluginContext) async -> PluginOutcome {
+        guard let url = content.url, ["http", "https"].contains(url.scheme?.lowercased() ?? "") else {
+            return .failure("只能存网页（http、https 开头的链接）")
+        }
+        return .card(Self.card(url))
+    }
+
+    static func card(_ url: URL) -> ResultCard {
+        ResultCard(title: "网页存档", body: url.absoluteString,
+                   detail: "在后台打开这个网页，整页存到「下载」；要登录才能看的页面存下来是登录页",
+                   buttons: WebCapture.Format.allCases.map { CardButton(title: $0.title, action: .captureWeb(url, $0)) })
+    }
+}
+
 struct LinkInspectPlugin: PopPlugin {
     let info = PluginInfo(id: BuiltinPluginID.linkInspect, name: "链接解析", symbol: "link",
                           summary: "拆开链接的协议、主机、路径和每个参数（解码后），去掉 utm_source 这类跟踪参数", accepts: [.url])
