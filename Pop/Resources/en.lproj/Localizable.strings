@@ -257,6 +257,7 @@
 "没有看不见的字符" = "No invisible characters";
 "复制码点" = "Copy Code Points";
 "字符信息" = "Character Info";
+"%@ · %@ · %lld 处" = "%@ · %@ · %lld times";
 
 /* ClipboardHistoryView.swift */
 "全部" = "All";
@@ -327,6 +328,7 @@
 "汇编" = "Assembly";
 "| 语言 | 文件 | 行数 | 空行 | 代码行 |" = "| Language | Files | Lines | Blank | Code |";
 "| 合计 | %lld | %@ | %@ | %@ |" = "| Total | %lld | %@ | %@ | %@ |";
+"| 合计 | %lld | %lld | %lld | %lld |" = "| Total | %lld | %lld | %lld | %lld |";
 
 /* ColorContrast.swift */
 "通过" = "Pass";
@@ -443,6 +445,7 @@
 "%lld 个，每个 %@" = "%lld files, %@ each";
 "只留一个" = "Keep One";
 "留" = "Keep";
+"正在比较内容：%lld / %lld" = "Comparing contents: %lld / %lld";
 
 /* FileInfo.swift */
 "类型" = "Type";
@@ -499,6 +502,10 @@
 "文件的类型、大小（文件夹算上里面所有文件）、创建和修改时间，图片尺寸和拍摄信息（相机、参数、拍摄地点）、PDF 页数、音视频时长" = "Type, size (including everything in folders), creation and modification dates, image dimensions and capture info (camera, exposure, location), PDF page count, audio and video duration";
 "读不到「%@」的信息" = "Can’t read info for “%@”";
 "在地图中打开" = "Open in Maps";
+"%lld 行 × %lld 列（第一行当作表头）" = "%lld rows × %lld columns (first row as header)";
+"%lld 页，%lld 个字" = "%lld pages, %lld characters";
+"%lld 页，没有文字层（扫描件可以先存成图片，再用「识别文字」）" = "%lld pages, no text layer (for scans, save pages as images and use Recognize Text)";
+"已合成 %lld 页的 PDF" = "Created a %lld-page PDF";
 
 /* FileShelf.swift */
 "清空暂存架（不会删除文件）" = "Clear the Shelf (files aren’t deleted)";
@@ -520,6 +527,8 @@
 "，文件太多只比了前 %lld 个" = "; too many files, only the first %lld were compared";
 "两个文件夹里的 %@ 个文件完全一样" = "The %@ files in both folders are identical";
 "比较文件夹" = "Compare Folders";
+"一样的 %lld 个，内容不同 %lld 个，只在一边有的 %lld 个；隐藏文件和 App 这类包里面的文件不比较" = "%lld identical, %lld different, %lld on one side only; hidden files and files inside packages such as apps aren’t compared";
+"两个文件夹里的 %lld 个文件完全一样" = "The %lld files in both folders are identical";
 
 /* FormatPlugins.swift */
 "YAML 和 JSON" = "YAML ↔ JSON";
@@ -587,6 +596,8 @@
 "校验不通过：按前面的数字，最后一位应该是 %@，可能输错了" = "Invalid check digit: based on the other digits, the last one should be %@. It may be mistyped.";
 "校验不通过，可能输错了（也有少数卡号不用这种校验）" = "Invalid check digit; it may be mistyped (a few card numbers don’t use this check)";
 "只根据号码本身推算，不联网查询" = "Derived from the number itself; nothing is looked up online";
+"%lld 岁" = "%lld years";
+"%lld 年 %lld 月 %lld 日" = "%lld-%lld-%lld";
 
 /* IDPhoto.swift */
 "白底" = "White";
@@ -644,6 +655,7 @@
 
 /* ImageSizeLimit.swift */
 "「%@」压不到 %lld 以内" = "“%@” can’t be compressed under %lld";
+"「%@」压不到 %@ 以内" = "“%@” can’t be compressed under %@";
 
 /* ImageSizeLimitView.swift */
 "存成 JPEG：先降低画质，还不够就缩小尺寸，另存一份，原图不动。" = "Saves a JPEG copy, lowering the quality first and then the size if needed. The original stays unchanged.";
@@ -706,6 +718,7 @@
 
 /* LunarCalendar.swift */
 "第 %@ 周 · 全年第 %@ 天" = "Week %@ · Day %@ of the year";
+"第 %lld 周 · 全年第 %lld 天" = "Week %lld · Day %lld of the year";
 
 /* ManifestPlugin.swift */
 "未命名插件" = "Untitled Plugin";
@@ -727,6 +740,7 @@
 "无法创建 JavaScript 运行环境" = "Couldn’t create a JavaScript environment";
 "未知错误" = "Unknown error";
 "第 %lld 行：%@" = "Line %lld: %@";
+"脚本退出码 %d" = "Script exit code %d";
 
 /* MediaFilePlugins.swift */
 "拼接图片" = "Stitch Images";
@@ -758,6 +772,7 @@
 "没有选中音频或视频文件" = "No audio or video files selected";
 "批量重命名" = "Batch Rename";
 "给选中的文件统一改名：编号、替换文字、加前后缀、按照片的拍摄时间、改大小写，先看预览再改，改完可以撤销" = "Rename the selected files together: numbering, find and replace, prefix and suffix, photo capture date, case. Preview first and undo afterwards.";
+"%lld 张图片按上面的顺序拼接；宽度（横着拼时是高度）不一样时按最小的那张缩放。合成动图时每张停 %lld 秒，画面大小按第一张" = "%lld images are stitched in the order above; if widths (heights when horizontal) differ, they’re scaled to the smallest. Animated images show each frame for %lld s at the size of the first image.";
 
 /* MediaPlugins.swift */
 "文字识别失败：%@" = "Text recognition failed: %@";
@@ -955,6 +970,7 @@
 "等效 %lld mm" = "%lld mm equivalent";
 "1/%lld 秒" = "1/%lld s";
 "%lld 秒" = "%lld s";
+"等效 %@ mm" = "%@ mm equivalent";
 
 /* PinBoard.swift */
 "Pop 贴图" = "Pop Pin";
@@ -1421,6 +1437,9 @@
 "%lld 天（周一到周五，不算节假日）" = "%lld days (Monday to Friday, not counting holidays)";
 "…（太多了，没有全部列出）" = "… (too many to list)";
 "- …（太多了，没有全部列出）" = "- … (too many to list)";
+" %lld 天" = " %lld days";
+"%lld 个月 " = "%lld months ";
+"%lld 年 " = "%lld years ";
 
 /* SnippetPickerView.swift */
 "↑↓ 选择 · ⏎ 粘贴" = "↑↓ Choose · ⏎ Paste";
@@ -1483,6 +1502,8 @@
 /* TableOCR.swift */
 "%lld 行 × %@ 列" = "%lld rows × %@ columns";
 "；图片里还有 %@ 个表格，这里只显示第一个" = "; the image has %@ more tables, only the first is shown";
+"%lld 行 × %lld 列" = "%lld rows × %lld columns";
+"；图片里还有 %lld 个表格，这里只显示第一个" = "; the image has %lld more tables, only the first is shown";
 
 /* TablePlugins.swift */
 "识别截图或图片里的表格，转成 Markdown 表格、CSV 或者制表符分隔（macOS 26；更早的系统按普通文字识别）" = "Recognize a table in a screenshot or image as a Markdown table, CSV or tab-separated text (macOS 26; earlier versions recognize plain text)";
@@ -1653,6 +1674,8 @@
 "%@ 行，%@ 个文件" = "%@ lines, %@ files";
 "比较选中的两个文件夹：哪些文件只在一边有，哪些两边都有但内容不一样" = "Compare the two selected folders: which files are only on one side, and which differ";
 "选中两个文件夹才能比较" = "Select two folders to compare";
+"%lld 个文件夹，%lld 个文件；最多展开 3 层，隐藏文件不列出" = "%lld folders, %lld files; up to 3 levels deep, hidden files not listed";
+"，跳过 %lld 个太大或不是文字的文件" = "; skipped %lld files that are too large or not text";
 
 /* Transcriber.swift */
 "普通话" = "Mandarin";
@@ -1778,6 +1801,7 @@
 "版本是 %@，不是 %@" = "Version is %@, not %@";
 "签名校验失败：%@" = "Signature check failed: %@";
 "超时" = "Timed out";
+"退出码 %d" = "Exit code %d";
 
 /* UpdateSettingsView.swift */
 "版本" = "Version";
@@ -1878,6 +1902,7 @@
 "斜着铺满整张图（PDF 每一页都铺），另存一份「原名 水印」放在原文件旁边，原文件不动" = "Tiled diagonally across the image (every page of a PDF) and saved as a copy named “Name Watermark” next to the original, which stays unchanged";
 "给 %lld 个文件加水印" = "Watermark %lld Files";
 "给 %lld 张图片加水印" = "Watermark %lld Images";
+"给 %lld %@加水印" = "Watermark %lld %@";
 
 /* WindowLayout.swift */
 "左半屏" = "Left Half";

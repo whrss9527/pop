@@ -176,7 +176,7 @@ struct PluginsSettingsView: View {
                 let imported = try pluginStore.importFile(at: url)
                 store.update { $0.setInstalled(imported.id, true) }
             } catch {
-                failures.append("\(url.lastPathComponent)：\(error.localizedDescription)")
+                failures.append(String(localized: "\(url.lastPathComponent)：\(error.localizedDescription)"))
             }
         }
         if !failures.isEmpty {
