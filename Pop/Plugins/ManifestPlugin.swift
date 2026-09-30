@@ -172,7 +172,7 @@ enum ManifestRunner {
         }
         guard output.status == 0 else {
             let message = output.stderr.trimmingCharacters(in: .whitespacesAndNewlines)
-            return .failure(PluginRunError(message.isEmpty ? String(localized: "脚本退出码 \(output.status)") : String(message.prefix(500))))
+            return .failure(PluginRunError(message.isEmpty ? String(localized: "脚本退出码 \(Int(output.status))") : String(message.prefix(500))))
         }
         return .success(trimTrailingNewlines(output.stdout))
     }

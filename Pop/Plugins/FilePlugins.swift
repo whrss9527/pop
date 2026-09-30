@@ -68,7 +68,7 @@ struct ZipPlugin: PopPlugin {
             }
             guard output.status == 0 else {
                 let message = output.stderr.trimmingCharacters(in: .whitespacesAndNewlines)
-                return message.isEmpty ? String(localized: "退出码 \(output.status)") : String(message.prefix(300))
+                return message.isEmpty ? String(localized: "退出码 \(Int(output.status))") : String(message.prefix(300))
             }
             return nil
         }

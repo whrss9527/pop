@@ -355,7 +355,7 @@ enum UpdateInstaller {
     private static func message(_ output: ProcessRunner.Output) -> String {
         if output.timedOut { return String(localized: "超时") }
         let text = (output.stderr + "\n" + output.stdout).trimmingCharacters(in: .whitespacesAndNewlines)
-        return text.isEmpty ? String(localized: "退出码 \(output.status)") : String(text.prefix(300))
+        return text.isEmpty ? String(localized: "退出码 \(Int(output.status))") : String(text.prefix(300))
     }
 
     static func shellQuote(_ text: String) -> String {
