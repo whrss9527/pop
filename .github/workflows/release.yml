@@ -9,7 +9,7 @@ name: Release
 #   - 手动：在 Actions 页面运行，填版本号，可以选择发成测试版（预发布）。
 # Release 先建成草稿，附件都传完才公开，已安装的 Pop 不会看到一个没有安装包的新版本。
 #
-# 签名（都是可选的，配在仓库的 Secrets 里，见 README「签名与公证」）：
+# 签名（都是可选的，配在仓库的 Secrets 里，见 docs/development.zh-CN.md「签名与公证」）：
 #   MACOS_CERTIFICATE_P12 + MACOS_CERTIFICATE_PASSWORD：用证书签名。证书固定不变，更新后辅助功能授权不会丢。
 #     可以是苹果的 Developer ID Application 证书，也可以是 scripts/create-signing-certificate.sh 生成的自签名证书。
 #   NOTARY_*：证书是 Developer ID 时提交苹果公证，用户下载后双击就能打开。
@@ -105,7 +105,7 @@ jobs:
           CERTIFICATE_PASSWORD: ${{ secrets.MACOS_CERTIFICATE_PASSWORD }}
         run: |
           if [ -z "$CERTIFICATE_P12_BASE64" ]; then
-            echo "::warning::没有配置 MACOS_CERTIFICATE_P12：这次用本地签名（ad-hoc），用户一键更新后需要重新授权辅助功能。配置方法见 README「签名与公证」"
+            echo "::warning::没有配置 MACOS_CERTIFICATE_P12：这次用本地签名（ad-hoc），用户一键更新后需要重新授权辅助功能。配置方法见 docs/development.zh-CN.md「签名与公证」"
             exit 0
           fi
           scripts/import-certificate.sh

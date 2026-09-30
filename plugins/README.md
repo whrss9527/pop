@@ -41,4 +41,4 @@
 | `sha256` | 插件文件的 SHA-256，小写十六进制 |
 | `localized` | 可选，其他语言的名称和说明，和插件文件里的 `localized` 一样，比如 `{"en": {"name": "Douban", "summary": "Search Douban for books, movies and music"}}` |
 
-插件文件的格式见 [README 里的「自定义插件」](../README.md#自定义插件)。运行 Shell 脚本的插件，安装前 Pop 会先把脚本给用户看，同意了才装。
+插件文件的格式见 [使用指南里的「自定义插件」](../docs/guide.zh-CN.md#自定义插件)。运行 Shell 脚本的插件，安装前 Pop 会先把脚本给用户看，同意了才装。

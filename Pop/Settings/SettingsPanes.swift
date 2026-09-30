@@ -10,6 +10,7 @@ struct GeneralSettingsView: View {
     @EnvironmentObject private var permissions: PermissionMonitor
     @State private var launchAtLogin = LaunchAtLogin.isEnabled
     @State private var launchError: String? = nil
+    @State private var interfaceLanguage = InterfaceLanguage.stored()
 
     var body: some View {
         Form {
@@ -125,6 +126,25 @@ struct GeneralSettingsView: View {
             }
 
             Section("其他") {
+                Picker("界面语言", selection: $interfaceLanguage) {
+                    ForEach(InterfaceLanguage.allCases) { language in
+                        Text(language.title).tag(language)
+                    }
+                }
+                .onChange(of: interfaceLanguage) { _, newValue in
+                    InterfaceLanguage.store(newValue)
+                }
+                if interfaceLanguage != InterfaceLanguage.atLaunch {
+                    HStack(alignment: .firstTextBaseline, spacing: 10) {
+                        Text("重新启动 Pop 后生效")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                        Spacer()
+                        Button("立即重新启动") {
+                            AppRelauncher.relaunch()
+                        }
+                    }
+                }
                 Toggle("登录时自动启动", isOn: $launchAtLogin)
                     .onChange(of: launchAtLogin) { _, newValue in
                         guard newValue != LaunchAtLogin.isEnabled else { return }
