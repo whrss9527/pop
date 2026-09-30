@@ -94,7 +94,21 @@ struct ResultCardView: View {
             if !card.palette.isEmpty {
                 PaletteStrip(hexes: card.palette) { onAction(.copy($0)) }
             }
-            if let data = card.image, let image = NSImage(data: data) {
+            if let data = card.image, let preview = card.imagePreview.flatMap({ NSImage(data: $0) }) {
+                // 长图：缩到卡片宽度，在卡片里上下滚动着看；拖出去的是完整的图
+                ScrollView {
+                    Image(nsImage: preview)
+                        .resizable()
+                        .scaledToFit()
+                        .frame(maxWidth: .infinity)
+                }
+                .frame(height: 260)
+                .background(RoundedRectangle(cornerRadius: 8, style: .continuous).fill(Color.primary.opacity(0.05)))
+                .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+                .onDrag {
+                    NSItemProvider(item: data as NSData, typeIdentifier: UTType.png.identifier)
+                }
+            } else if let data = card.image, let image = NSImage(data: data) {
                 // 按住拖动可以把图片拖到聊天、邮件、文稿里
                 Image(nsImage: image)
                     .resizable()

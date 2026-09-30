@@ -84,7 +84,7 @@ final class RouterTests: XCTestCase {
             BuiltinPluginID.snippets, BuiltinPluginID.annotate, BuiltinPluginID.scanCode, BuiltinPluginID.keepAwake,
             BuiltinPluginID.shelf, BuiltinPluginID.ruler, BuiltinPluginID.timer, BuiltinPluginID.tableOCR,
             BuiltinPluginID.vocabulary, BuiltinPluginID.sendToPhone, BuiltinPluginID.screenRecord,
-            BuiltinPluginID.systemActions, BuiltinPluginID.menuShortcuts,
+            BuiltinPluginID.systemActions, BuiltinPluginID.menuShortcuts, BuiltinPluginID.scrollCapture,
         ])
     }
 

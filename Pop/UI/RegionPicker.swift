@@ -2,10 +2,16 @@ import AppKit
 import Carbon.HIToolbox
 import SwiftUI
 
-/// 录屏前选要录的地方：拖出一块区域，单击录指针下面的窗口（没有窗口就录整个屏幕），回车录整个屏幕，Esc 或右键取消。
-/// 屏幕上方的提示条里可以勾选「录上电脑里的声音」「显示鼠标点击」，下次还记得。
+/// 录屏、滚动截图前选地方：拖出一块区域，单击选指针下面的窗口（没有窗口就是整个屏幕），回车选整个屏幕，Esc 或右键取消。
+/// 录屏时屏幕上方的提示条里可以勾选「录上电脑里的声音」「显示鼠标点击」，下次还记得。
 @MainActor
 final class RegionPicker {
+    /// 选来做什么：提示和标签的说法不一样
+    enum Purpose {
+        case recording
+        case scrollCapture
+    }
+
     struct Selection {
         let screen: NSScreen
         /// 全局坐标，左下角为原点
@@ -22,13 +28,13 @@ final class RegionPicker {
     private var continuation: CheckedContinuation<Selection?, Never>?
 
     /// 在指针所在的屏幕上选；选好了返回选中的地方，取消了返回 nil
-    static func pick() async -> Selection? {
+    static func pick(for purpose: Purpose = .recording) async -> Selection? {
         current?.finish(nil)
         let point = NSEvent.mouseLocation
         guard let screen = NSScreen.screens.first(where: { NSMouseInRect(point, $0.frame, false) }) ?? NSScreen.main else {
             return nil
         }
-        let picker = RegionPicker(screen: screen)
+        let picker = RegionPicker(screen: screen, purpose: purpose)
         current = picker
         return await withCheckedContinuation { (continuation: CheckedContinuation<Selection?, Never>) in
             picker.continuation = continuation
@@ -42,15 +48,15 @@ final class RegionPicker {
         current?.finish(nil)
     }
 
-    private init(screen: NSScreen) {
+    private init(screen: NSScreen, purpose: Purpose) {
         self.screen = screen
         previousApp = NSWorkspace.shared.frontmostApplication
         model = PickerOptionsModel(options: .saved())
-        let view = PickerView(frame: CGRect(origin: .zero, size: screen.frame.size), screenFrame: screen.frame)
+        let view = PickerView(frame: CGRect(origin: .zero, size: screen.frame.size), screenFrame: screen.frame, purpose: purpose)
         window = PickerWindow(screen: screen, view: view)
 
         // 提示条放在屏幕上方居中，菜单栏下面
-        let hud = NSHostingView(rootView: PickerHUD(model: model))
+        let hud = NSHostingView(rootView: purpose == .recording ? AnyView(PickerHUD(model: model)) : AnyView(ScrollPickerHUD()))
         let size = hud.fittingSize
         let top = max(screen.safeAreaInsets.top, NSStatusBar.system.thickness) + 24
         hud.frame = CGRect(x: ((view.bounds.width - size.width) / 2).rounded(), y: (view.bounds.height - top - size.height).rounded(),
@@ -84,6 +90,25 @@ private final class PickerOptionsModel: ObservableObject {
 
     init(options: ScreenRecording.Options) {
         self.options = options
+    }
+}
+
+/// 滚动截图时屏幕上方的操作提示
+private struct ScrollPickerHUD: View {
+    var body: some View {
+        VStack(spacing: 4) {
+            Text("拖出要滚动截取的区域 · 单击截窗口 · Esc 取消")
+                .font(.system(size: 12, weight: .medium))
+            Text("只框住会滚动的那一块最好；选好以后一边往下滚动一边截")
+                .font(.system(size: 11))
+                .foregroundStyle(.white.opacity(0.75))
+        }
+        .foregroundStyle(.white)
+        .padding(.horizontal, 16)
+        .padding(.vertical, 9)
+        .background(RoundedRectangle(cornerRadius: 11, style: .continuous).fill(Color.black.opacity(0.78)))
+        .environment(\.colorScheme, .dark)
+        .fixedSize()
     }
 }
 
@@ -148,6 +173,7 @@ private final class PickerView: NSView {
     var onFinish: (CGRect?) -> Void = { _ in }
 
     private let screenFrame: CGRect
+    private let purpose: RegionPicker.Purpose
     /// 选区域的窗口出来之前屏幕上的窗口，从前到后
     private let windows: [ScreenRecording.WindowInfo]
     /// 按下鼠标的位置
@@ -158,8 +184,9 @@ private final class PickerView: NSView {
     private var hovered: CGRect?
     private var hoveringWindow = false
 
-    init(frame: CGRect, screenFrame: CGRect) {
+    init(frame: CGRect, screenFrame: CGRect, purpose: RegionPicker.Purpose) {
         self.screenFrame = screenFrame
+        self.purpose = purpose
         windows = PickerView.onScreenWindows()
         super.init(frame: frame)
     }
@@ -301,9 +328,9 @@ private final class PickerView: NSView {
         if dragRect != nil {
             label = size
         } else if hoveringWindow {
-            label = String(localized: "单击录这个窗口 · \(size)")
+            label = purpose == .recording ? String(localized: "单击录这个窗口 · \(size)") : String(localized: "单击截这个窗口 · \(size)")
         } else {
-            label = String(localized: "单击或按回车录整个屏幕")
+            label = purpose == .recording ? String(localized: "单击或按回车录整个屏幕") : String(localized: "单击或按回车截整个屏幕")
         }
         drawLabel(label, below: hole)
     }

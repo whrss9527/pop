@@ -477,6 +477,23 @@ enum OverlayDemo {
             overlay.showCard(MenuShortcutsView(model: shortcuts, onClose: {}), anchor: center)
             step("menuShortcuts")
 
+            // 滚动截图：截的时候的边框和面板，然后是拼好的长图卡片（示例长图用文字转图片画一篇长文）
+            await pause(1.4 * unit)
+            overlay.hide()
+            let hideScrollIndicators = ScrollCapture.shared.showIndicatorsForDemo(
+                region: CGRect(x: center.x - 150, y: center.y - 380, width: 560, height: 320), screen: screen,
+                progress: ScrollCaptureProgress(height: 4280, frameHeight: 640))
+            step("scrollCapture-capturing")
+            await pause(1.4 * unit)
+            hideScrollIndicators()
+            let article = (1...6).map { "第 \($0) 段：长按右键弹出圆盘，往一个方向划一下再松开，就能翻译、搜索、识别文字、截图。选中文件时换成处理文件的功能。" }
+                .joined(separator: "\n\n")
+            if let png = TextImage.render(article), let image = TextRecognizer.cgImage(from: png),
+               let scrollCard = ScrollStitcher.card(image, frameHeight: 640) {
+                overlay.showCard(ResultCardView(card: scrollCard, onAction: { _ in }, onMore: {}, onClose: {}), anchor: center)
+            }
+            step("scrollCapture")
+
             // 截图标注窗口：拿一张画好的示例图，标上方框、箭头、文字、马赛克和序号；截图区域换成标注窗口
             await pause(1.4 * unit)
             overlay.hide()

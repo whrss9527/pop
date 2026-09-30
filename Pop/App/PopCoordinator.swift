@@ -396,6 +396,19 @@ final class PopCoordinator: MouseTriggerDelegate {
         }
     }
 
+    /// 滚动截图拼好了：在指针旁边弹出卡片（正在用 Pop 的话先收起）
+    func scrollCaptureFinished(_ result: Result<ResultCard, ScrollCapture.Failure>) {
+        let point = NSEvent.mouseLocation
+        switch result {
+        case .failure(let failure):
+            showToast(failure.message, at: point)
+        case .success(let card):
+            endSession()
+            session = Session(anchor: point, pid: nil, sourceAppName: nil, buttonHeld: false, content: .empty)
+            present(.card(card))
+        }
+    }
+
     /// 在 point 处显示识别出的文字（贴图上的「识别文字」），可以接着复制、翻译
     func showRecognizedText(_ text: String, at point: CGPoint) {
         endSession()
@@ -707,6 +720,29 @@ final class PopCoordinator: MouseTriggerDelegate {
                                                               action: .saveImage(png, name: ImageFiles.timestampedName(String(localized: "Pop 条形码"))))])))
             } else {
                 present(.failure(String(localized: "只有英文字母、数字和常见符号能生成条形码，最多 80 个字")))
+            }
+        case .recognizeImageText(let png):
+            recognizeImageText(png)
+        }
+    }
+
+    /// 识别图片里的文字：先换成「正在识别」的卡片，识别好了换成文字卡片
+    private func recognizeImageText(_ png: Data) {
+        guard let current = session else { return }
+        let sessionID = current.id
+        present(.card(ResultCard(title: String(localized: "识别文字"), body: String(localized: "正在识别图片里的文字…"))))
+        Task { [weak self] in
+            let text = await runInBackground { () -> Result<String, Error> in
+                Result { try ScrollStitcher.recognizeText(png) }
+            }
+            guard let self, self.session?.id == sessionID else { return }
+            switch text {
+            case .success(let text) where !text.isEmpty:
+                self.present(.card(TextRecognizer.card(title: String(localized: "识别文字"), text: text)))
+            case .success:
+                self.present(.failure(String(localized: "图片里没有识别到文字")))
+            case .failure(let error):
+                self.present(.failure(String(localized: "识别文字失败：\(error.localizedDescription)")))
             }
         }
     }
