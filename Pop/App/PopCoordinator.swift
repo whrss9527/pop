@@ -1247,6 +1247,7 @@ final class PopCoordinator: MouseTriggerDelegate {
         let files = model.files
         let text = model.text
         let opacity = model.opacity
+        let unit = model.unit
         model.remember()
         let anchor = session?.anchor ?? NSEvent.mouseLocation
         endSession()
@@ -1269,9 +1270,9 @@ final class PopCoordinator: MouseTriggerDelegate {
             }
             let message: String
             if let failure = result.failures.first {
-                message = result.outputs.isEmpty ? failure : "加好了 \(result.outputs.count) 张，\(result.failures.count) 张失败：\(failure)"
+                message = result.outputs.isEmpty ? failure : "加好了 \(result.outputs.count) 个，\(result.failures.count) 个失败：\(failure)"
             } else {
-                message = "已给 \(result.outputs.count) 张图片加上水印"
+                message = "已给 \(result.outputs.count) \(unit)加上水印"
             }
             self.showToast(message, at: anchor)
         }
