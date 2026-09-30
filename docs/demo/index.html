@@ -363,6 +363,22 @@ button { font: inherit; color: inherit; }
 .kb-clean .sub { font-size: 13.5px; color: rgba(255, 255, 255, .75); font-variant-numeric: tabular-nums; }
 .kb-clean button { appearance: none; border: 0; margin-top: 6px; padding: 8px 22px; border-radius: 999px; background: rgba(255, 255, 255, .18); color: #fff; font: 600 14px/1 var(--font); cursor: pointer; }
 .kb-clean button:hover { background: rgba(255, 255, 255, .26); }
+.keycaps { position: absolute; left: 50%; top: 0; transform: translateX(-50%); z-index: 38; padding: 7px 18px; border-radius: 999px; background: rgba(0, 0, 0, .72); box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .18); color: #fff; font: 600 22px/1.2 ui-rounded, var(--font); white-space: nowrap; pointer-events: none; transition: opacity .25s; }
+.keycaps.gone { opacity: 0; }
+.pen-canvas { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 36; cursor: crosshair; touch-action: none; }
+.pen-canvas.through { pointer-events: none; }
+.pen-bar { position: absolute; left: 50%; top: 34px; transform: translateX(-50%); z-index: 39; display: flex; align-items: center; justify-content: center; flex-wrap: wrap; gap: 8px; padding: 5px 8px; border-radius: 20px; background: rgba(0, 0, 0, .8); color: #fff; box-shadow: 0 8px 24px rgba(0, 0, 0, .28); max-width: calc(100% - 16px); cursor: default; }
+.pen-bar .grp { display: flex; align-items: center; gap: 2px; }
+.pen-bar .tool { appearance: none; border: 0; background: transparent; color: #fff; width: 30px; height: 26px; border-radius: 7px; display: grid; place-items: center; cursor: pointer; padding: 0; }
+.pen-bar .tool svg { width: 16px; height: 16px; }
+.pen-bar .tool[aria-pressed="true"] { background: rgba(255, 255, 255, .24); }
+.pen-bar .tool:disabled { opacity: .35; cursor: default; }
+.pen-bar .dots { display: flex; align-items: center; gap: 5px; }
+.pen-bar .dot { appearance: none; width: 16px; height: 16px; padding: 0; border-radius: 50%; border: 1px solid rgba(255, 255, 255, .25); cursor: pointer; }
+.pen-bar .dot[aria-pressed="true"] { border: 2px solid rgba(255, 255, 255, .95); }
+.pen-bar .sep { width: 1px; height: 18px; background: rgba(255, 255, 255, .25); }
+.pen-bar .done { appearance: none; border: 0; border-radius: 6px; padding: 5px 11px; background: rgba(255, 255, 255, .18); color: #fff; font: 500 12px/1 var(--font); cursor: pointer; }
+.pen-bar .done:hover { background: rgba(255, 255, 255, .26); }
 .win .content.scroll { overflow-y: auto; overscroll-behavior: contain; scrollbar-width: thin; }
 .scroll-frame { position: absolute; border: 2px dashed var(--accent); border-radius: 2px; z-index: 25; pointer-events: none; }
 .scroll-panel { position: absolute; z-index: 26; width: min(400px, calc(100% - 16px)); border-radius: 12px; padding: 7px 8px 7px 12px; display: flex; flex-direction: column; gap: 3px; font-size: 12px; }
@@ -489,6 +505,17 @@ const ICONS = {
   screenRecord: '<circle cx="12" cy="12" r="8.6"/><circle cx="12" cy="12" r="3.9" fill="currentColor" stroke="none"/>',
   largeType: '<path d="M3.5 18.5l5-13 5 13M5.4 13.7h6.2"/><path d="M14.5 18.5l3.2-8.3 3.2 8.3M15.7 15.4h4"/>',
   cleanKeyboard: '<rect x="2.8" y="6.5" width="18.4" height="11" rx="2"/><path d="M6.5 10h.01M9.5 10h.01M12.5 10h.01M15.5 10h.01M17.5 10h.01M7.5 14h9"/>',
+  showKeystrokes: '<rect x="3" y="3" width="18" height="18" rx="4.5"/><path d="M14 8v8a2 2 0 1 0 2-2H8a2 2 0 1 0 2 2V8a2 2 0 1 0-2 2h8a2 2 0 1 0-2-2"/>',
+  screenPen: '<path d="M14.8 4.8l3.9 3.9-8.6 8.6-4.5.6.6-4.5z"/><path d="M3.5 20.5c2.6-1.4 4.6-1.1 6.6-.1s4 .9 6.4-.6"/>',
+  penScribble: '<path d="M4 15.5c1.8-3.8 3.8-8.4 5.8-7.6 2 .8-2.2 7.4-.2 8.3 2 .9 4.7-7.6 7-6.6 2.1.9-1.4 5.9.6 6.4 1.2.3 2.3-.9 2.8-1.6"/>',
+  highlighter: '<path d="M15.2 4.2l4.6 4.6-7.6 7.6H7.6v-4.6z"/><path d="M7.6 16.4L5 19h5.2"/>',
+  arrowTool: '<path d="M6 18L18 6M9.6 6H18v8.4"/>',
+  rectTool: '<rect x="4.5" y="6" width="15" height="12" rx="2"/>',
+  ellipseTool: '<circle cx="12" cy="12" r="7.6"/>',
+  pointer: '<path d="M6.5 4.2l11.2 7.3-5 1.1-2.6 4.9z"/>',
+  timer: '<circle cx="12" cy="13.4" r="7"/><path d="M12 13.4V9.6M10 3.6h4"/>',
+  undo: '<path d="M9 7.4l-4 4 4 4"/><path d="M5.4 11.4H15a4.6 4.6 0 0 1 0 9.2h-3"/>',
+  trash: '<path d="M5 7h14M10 7V5h4v2M7 7l1 13h8l1-13"/>',
   scrollCapture: '<rect x="6" y="3.5" width="12" height="17" rx="2"/><path d="M9 7.5h6M9 10.5h6"/><path d="M12 13.5v4.2M10 15.9l2 1.9 2-1.9"/>',
   systemActions: '<rect x="3.5" y="5" width="17" height="6" rx="3"/><circle cx="17.5" cy="8" r="1.6" fill="currentColor"/><rect x="3.5" y="13" width="17" height="6" rx="3"/><circle cx="6.5" cy="16" r="1.6" fill="currentColor"/>',
   shelf: '<path d="M3.6 13.6l2.2-7.4a2 2 0 0 1 1.9-1.4h8.6a2 2 0 0 1 1.9 1.4l2.2 7.4v4.4a2 2 0 0 1-2 2h-12.8a2 2 0 0 1-2-2z"/><path d="M3.6 13.6h5l1 2h4.8l1-2h5"/><path d="M7.9 8.2h8.2M7.2 11h9.6"/>',
@@ -623,7 +650,9 @@ const P = {
   largeType: { icon: 'largeType', accepts: ['text'], maxLength: 300, keys: 'dazixianshi dzxs', name: { zh: '大字显示', en: 'Large Type' }, summary: { zh: '把选中的文字铺满整个屏幕，给别人看电话号码、Wi-Fi 密码、取件码都方便；点一下或按任意键关闭', en: 'Show the selected text across the whole screen, handy for showing someone a phone number, Wi-Fi password or pickup code; click or press any key to close' } },
   cleanKeyboard: { icon: 'cleanKeyboard', accepts: [], keys: 'qingjiejianpan qjjp', name: { zh: '清洁键盘', en: 'Clean Keyboard' }, summary: { zh: '锁住键盘一分钟，擦键盘时不会误触；亮度、音量键也不起作用，用鼠标点「结束清洁」随时恢复', en: 'Lock the keyboard for a minute so you can wipe it without typing anything; brightness and volume keys are blocked too. Click End Cleaning with the mouse to stop any time' } },
   scrollCapture: { icon: 'scrollCapture', accepts: [], keys: 'gundongjietu gdjt changjietu cjt', name: { zh: '滚动截图', en: 'Scrolling Screenshot' }, summary: { zh: '框选一块区域，一边往下滚动一边截，拼成一张长图；网页、聊天记录、长文档都能截全，还能接着识别文字。正在截的时候再用一次就是完成', en: 'Select an area, then scroll down while Pop captures it into one long image: whole web pages, chat histories and long documents, with text recognition afterwards if you like. Use it again while capturing to finish' } },
-  screenRecord: { icon: 'screenRecord', accepts: [], keys: 'luping lp', name: { zh: '录屏', en: 'Record Screen' }, summary: { zh: '拖出一块区域、单击选一个窗口或者按回车录整个屏幕，存成 MP4；可以录上电脑里的声音或者麦克风、显示鼠标点击，录好能接着转成 GIF。正在录的时候再用一次就停止', en: 'Drag out an area, click a window or press Return to record the whole screen as MP4; can include the Mac’s sound or the microphone and show clicks, and the recording can then be turned into a GIF. Use it again while recording to stop' } },
+  screenRecord: { icon: 'screenRecord', accepts: [], keys: 'luping lp', name: { zh: '录屏', en: 'Record Screen' }, summary: { zh: '拖出一块区域、单击选一个窗口或者按回车录整个屏幕，存成 MP4；可以录上电脑里的声音或者麦克风、显示鼠标点击和按下的键，录好能接着转成 GIF。正在录的时候再用一次就停止', en: 'Drag out an area, click a window or press Return to record the whole screen as MP4; can include the Mac’s sound or the microphone and show clicks and keystrokes, and the recording can then be turned into a GIF. Use it again while recording to stop' } },
+  screenPen: { icon: 'screenPen', accepts: [], keys: 'pingmuhuabi pmhb', name: { zh: '屏幕画笔', en: 'Draw on Screen' }, summary: { zh: '演示、录教程时直接在屏幕上画：画笔、荧光笔、箭头、方框、椭圆，笔迹可以几秒后自动消失，也可以留着去操作下面的窗口，录屏时一起录进去；Esc 或再用一次结束', en: 'Draw right on the screen for demos and tutorials: pen, highlighter, arrow, rectangle and ellipse. Strokes can fade after a few seconds or stay while you use the windows underneath, and screen recordings include them. Press Esc or use it again to finish' } },
+  showKeystrokes: { icon: 'showKeystrokes', accepts: [], keys: 'xianshianjian xsaj', name: { zh: '显示按键', en: 'Show Keystrokes' }, summary: { zh: '演示、录教程时在屏幕下方显示按下的组合键（⌘C、⇧⌘4、方向键这些），普通打字不显示；再用一次关闭。录屏时也可以勾选一起录进去', en: 'Show the shortcuts you press (⌘C, ⇧⌘4, arrow keys and so on) at the bottom of the screen for demos and tutorials; ordinary typing isn’t shown. Use it again to turn it off. Screen recordings can include them too' } },
   annotate: { icon: 'annotate', accepts: [], keys: 'jietubiaozhu jtbz', name: { zh: '截图标注', en: 'Annotate Screenshot' }, summary: { zh: '框选屏幕上的一块区域（或者用选中的图片），画箭头、方框、文字、马赛克、序号，再复制、存储或贴到屏幕上', en: 'Select an area of the screen (or use the selected image), draw arrows, boxes, text, pixelation and numbered markers, then copy, save or pin it' } },
   shelf: { icon: 'shelf', accepts: [], keys: 'zancunjia zcj', name: { zh: '暂存架', en: 'Shelf' }, summary: { zh: '把选中的文件放到暂存架上，之后再一起拖到别的地方；没选中文件时打开暂存架', en: 'Put the selected files on the Shelf to drag them elsewhere later; with no files selected, open the Shelf' } },
   menuShortcuts: { icon: 'menuShortcuts', accepts: [], keys: 'kuaijiejianyilan kjjyl kuaijiejian kjj caidan cd shortcuts menu', name: { zh: '快捷键一览', en: 'Keyboard Shortcuts' }, summary: { zh: '列出当前 App 菜单里的所有快捷键，可以搜索，点一项直接执行', en: 'List every keyboard shortcut in the current app’s menus; search them and click one to run it' } },
@@ -636,7 +665,7 @@ const LAYOUT = ['translate', 'search', 'dictionary', 'openURL', 'allPlugins', 'c
 // 「全部功能」里的顺序
 const ORDER = ['translate', 'textImage', 'largeType', 'search', 'dictionary', 'speak', 'textStats', 'changeCase', 'openURL', 'webCapture', 'linkInspect', 'qrCode',
   'fileInfo', 'imageConvert', 'cropImage', 'redact', 'ocr', 'removeBackground', 'videoConvert', 'transcribe', 'trimMedia', 'pdf', 'compareFiles', 'zip',
-  'airDrop', 'sendToPhone', 'screenRecord', 'scrollCapture', 'screenshotOCR', 'annotate', 'pin', 'colorPicker', 'clipboard', 'shelf', 'menuShortcuts', 'systemActions', 'cleanKeyboard'];
+  'airDrop', 'sendToPhone', 'screenRecord', 'scrollCapture', 'showKeystrokes', 'screenPen', 'screenshotOCR', 'annotate', 'pin', 'colorPicker', 'clipboard', 'shelf', 'menuShortcuts', 'systemActions', 'cleanKeyboard'];
 
 function canHandle(info, content) {
   if (!info) return false;
@@ -1600,6 +1629,8 @@ const RUN = {
   menuShortcuts: (content, anchor) => showMenuShortcuts(anchor),
   largeType: (content) => showLargeType(content.text),
   cleanKeyboard: () => startKeyboardCleaning(),
+  showKeystrokes: (content, anchor) => toggleKeystrokes(anchor),
+  screenPen: () => togglePen(),
 };
 
 // 翻译卡片：换目标语言、换引擎、几家对比；联网的引擎一边收一边显示
@@ -2460,7 +2491,7 @@ function startRecordPicker(anchor, mode = 'record') {
   const scroll = mode === 'scroll';
   closeRing(false);
   dismissCard(false);
-  const options = { audio: 'off', clicks: false };
+  const options = { audio: 'off', clicks: false, keys: false };
   const el = h('div', { class: 'picker dim' });
   const winhl = h('div', { class: 'winhl', hidden: true });
   const area = h('div', { class: 'area', hidden: true });
@@ -2469,13 +2500,15 @@ function startRecordPicker(anchor, mode = 'record') {
   const drawAudio = () => audio.replaceChildren(...[['off', { zh: '不录声音', en: 'No sound' }], ['system', { zh: '电脑里的声音', en: 'Mac’s sound' }], ['mic', { zh: '麦克风', en: 'Microphone' }]].map(([id, label]) => h('button', { type: 'button', 'aria-pressed': String(options.audio === id), onclick: (event) => { event.stopPropagation(); options.audio = id; drawAudio(); } }, L(label))));
   drawAudio();
   const clicks = h('input', { type: 'checkbox', id: 'rec-clicks', onchange: () => { options.clicks = clicks.checked; } });
+  const keys = h('input', { type: 'checkbox', id: 'rec-keys', onchange: () => { options.keys = keys.checked; } });
   const hud = scroll
     ? h('div', { class: 'rec-hud glass', onpointerdown: (event) => event.stopPropagation() },
       h('div', null, lang === 'zh' ? '拖出要滚动截取的区域 · 单击截窗口 · Esc 取消' : 'Drag over the area to capture · Click to capture a window · Esc to cancel'),
       h('div', { class: 'tiny' }, lang === 'zh' ? '只框住会滚动的那一块最好；选好以后一边往下滚动一边截' : 'Selecting only the part that scrolls works best; then scroll down while Pop captures'))
     : h('div', { class: 'rec-hud glass', onpointerdown: (event) => event.stopPropagation() },
       h('div', null, lang === 'zh' ? '拖出要录的区域 · 单击录窗口 · 回车录整个屏幕 · Esc 取消' : 'Drag to choose an area · Click a window · Return for the whole screen · Esc to cancel'),
-      h('div', { class: 'opts' }, h('span', { class: 'tiny' }, lang === 'zh' ? '声音' : 'Sound'), audio, h('label', { for: 'rec-clicks' }, clicks, lang === 'zh' ? '显示鼠标点击' : 'Show clicks')));
+      h('div', { class: 'opts' }, h('span', { class: 'tiny' }, lang === 'zh' ? '声音' : 'Sound'), audio, h('label', { for: 'rec-clicks' }, clicks, lang === 'zh' ? '显示鼠标点击' : 'Show clicks'),
+        h('label', { for: 'rec-keys', title: lang === 'zh' ? '按下 ⌘、⌃ 组合键和回车、方向键这些特殊键时，在录的区域下边显示出来；普通打字不显示' : 'Shows ⌘ and ⌃ shortcuts and special keys such as Return and the arrow keys at the bottom of the recorded area; ordinary typing isn’t shown' }, keys, lang === 'zh' ? '显示按下的键' : 'Show keystrokes')));
   el.append(winhl, area, size, hud);
   stage.append(el);
   const winEl = () => stage.querySelector('.win');
@@ -2547,7 +2580,14 @@ function startRecordPicker(anchor, mode = 'record') {
       setTimeout(() => dot.remove(), 520);
     };
     stage.addEventListener('pointerdown', showClick, true);
-    const abort = () => { clearInterval(timer); stage.removeEventListener('pointerdown', showClick, true); frameEl.remove(); panel.remove(); recording = null; };
+    // 按键显示放在录的区域下边；单独开着的先挪过来，录完放回去
+    const keysBefore = keycaps ? { area: keycaps.area } : null;
+    if (opts.keys) startKeycaps(rect);
+    const restoreKeys = () => {
+      if (!opts.keys || !keycaps) return;
+      if (keysBefore) keycaps.move(keysBefore.area); else keycaps.stop();
+    };
+    const abort = () => { clearInterval(timer); stage.removeEventListener('pointerdown', showClick, true); frameEl.remove(); panel.remove(); restoreKeys(); recording = null; };
     recording = { stop: finish, abort };
     function finish() {
       const where = { x: px + panel.offsetWidth / 2, y: py };
@@ -2555,6 +2595,7 @@ function startRecordPicker(anchor, mode = 'record') {
       stage.removeEventListener('pointerdown', showClick, true);
       frameEl.remove();
       panel.remove();
+      restoreKeys();
       recording = null;
       const duration = `0:${String(Math.max(seconds, 1)).padStart(2, '0')}`;
       const now = new Date();
@@ -2599,6 +2640,252 @@ function showLargeType(text) {
   const close = () => { el.remove(); largeType = null; };
   el.addEventListener('pointerdown', (event) => { event.stopPropagation(); close(); });
   largeType = { key(event) { if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'c') { try { navigator.clipboard?.writeText(words).catch(() => {}); } catch (error) { /* 不让写剪贴板就算了 */ } } close(); } };
+}
+
+// 显示按键：按下带 ⌘、⌃ 的组合键和回车、方向键这些特殊键时，在桌面下方（录屏时在录的区域下边）显示出来；
+// 连着按同一个组合显示「⌘Z ×3」，停一会儿淡出。普通打字（字母、数字、只带 ⇧ 或 ⌥ 的符号）不显示
+let keycaps = null;
+const SPECIAL_KEYS = { Enter: '↩', Tab: '⇥', ' ': '␣', Backspace: '⌫', Delete: '⌦', Escape: '⎋', ArrowLeft: '←', ArrowRight: '→', ArrowDown: '↓', ArrowUp: '↑', Home: '↖', End: '↘', PageUp: '⇞', PageDown: '⇟' };
+const CODE_KEYS = { Minus: '-', Equal: '=', BracketLeft: '[', BracketRight: ']', Backslash: '\\', Semicolon: ';', Quote: "'", Comma: ',', Period: '.', Slash: '/', Backquote: '`' };
+
+function keystrokeText(event) {
+  const special = SPECIAL_KEYS[event.key] || (/^F([1-9]|1[0-2])$/.test(event.key) ? event.key : null);
+  const command = event.metaKey, control = event.ctrlKey, option = event.altKey, shift = event.shiftKey;
+  if (!special && !command && !control) return null;
+  if (event.key === ' ' && !command && !control && !option) return null;
+  // 按的是哪个键（不管 ⇧ 打出的是什么）：⇧⌘4 写成「⇧⌘4」不写成「⇧⌘$」
+  const code = event.code || '';
+  const key = special || (/^Key[A-Z]$/.test(code) ? code.slice(3) : /^(Digit|Numpad)[0-9]$/.test(code) ? code.slice(-1) : CODE_KEYS[code])
+    || (event.key.length === 1 ? event.key.toUpperCase() : null);
+  if (!key) return null;
+  return (control ? '⌃' : '') + (option ? '⌥' : '') + (shift ? '⇧' : '') + (command ? '⌘' : '') + key;
+}
+
+// 开始显示；已经在显示的换到 area 下边（area 为空就是整个桌面）
+function startKeycaps(area) {
+  if (keycaps) { keycaps.move(area); return; }
+  const el = h('div', { class: 'keycaps gone', 'aria-hidden': 'true' });
+  stage.append(el);
+  let last = null;
+  let hideTimer = 0;
+  const hide = () => { el.classList.add('gone'); last = null; };
+  const place = () => {
+    const a = keycaps.area || { x: 0, y: 0, w: stage.clientWidth, h: stage.clientHeight };
+    el.style.left = `${a.x + a.w / 2}px`;
+    el.style.top = `${a.y + a.h - el.offsetHeight - 22}px`;
+  };
+  keycaps = {
+    area,
+    key(event) {
+      // 按住不放的重复只让它多显示一会儿
+      if (event.repeat) {
+        if (last) { clearTimeout(hideTimer); hideTimer = setTimeout(hide, 1600); }
+        return;
+      }
+      const text = keystrokeText(event);
+      if (!text) return;
+      const now = performance.now();
+      last = last && last.text === text && now - last.time <= 1500 ? { text, count: last.count + 1, time: now } : { text, count: 1, time: now };
+      el.textContent = last.count > 1 ? `${text} ×${last.count}` : text;
+      el.classList.remove('gone');
+      place();
+      clearTimeout(hideTimer);
+      hideTimer = setTimeout(hide, 1600);
+    },
+    move(next) { keycaps.area = next; place(); },
+    stop() { clearTimeout(hideTimer); el.remove(); keycaps = null; },
+  };
+}
+
+function toggleKeystrokes(anchor) {
+  if (keycaps) {
+    keycaps.stop();
+    showToast(lang === 'zh' ? '不再显示按键' : 'Stopped showing keystrokes', anchor);
+    return;
+  }
+  startKeycaps(null);
+  showToast(lang === 'zh' ? '开始显示按下的组合键，再用一次就关闭' : 'Showing the shortcuts you press; use it again to turn it off', anchor);
+}
+
+// 屏幕画笔：桌面上盖一层画布，上方一条工具栏。按住 ⇧ 画直线、正方形、正圆和 45° 的箭头；
+// 可以让笔迹几秒后自动消失，也可以让鼠标穿过画布去点下面的东西。Esc 或再用一次结束
+let pen = null;
+const PEN_TOOLS = [
+  ['pen', 'penScribble', { zh: '画笔', en: 'Pen' }, 'p'],
+  ['highlighter', 'highlighter', { zh: '荧光笔', en: 'Highlighter' }, 'h'],
+  ['arrow', 'arrowTool', { zh: '箭头', en: 'Arrow' }, 'a'],
+  ['rectangle', 'rectTool', { zh: '方框', en: 'Rectangle' }, 'r'],
+  ['ellipse', 'ellipseTool', { zh: '椭圆', en: 'Ellipse' }, 'o'],
+];
+const PEN_COLORS = ['#ee3833', '#ffd60a', '#33c759', '#007aff', '#ffffff'];
+const PEN_FADE_DELAY = 2500;
+const PEN_FADE = 600;
+
+// 按住 ⇧ 时的终点：方框、椭圆取长的一边画成正的，箭头转到最近的 45° 方向
+function penConstrain(start, point, tool) {
+  const dx = point.x - start.x, dy = point.y - start.y;
+  if (tool === 'rectangle' || tool === 'ellipse') {
+    const side = Math.max(Math.abs(dx), Math.abs(dy));
+    return { x: start.x + (dx < 0 ? -side : side), y: start.y + (dy < 0 ? -side : side) };
+  }
+  if (tool === 'arrow') {
+    const length = Math.hypot(dx, dy), step = Math.PI / 4, angle = Math.round(Math.atan2(dy, dx) / step) * step;
+    return { x: start.x + Math.cos(angle) * length, y: start.y + Math.sin(angle) * length };
+  }
+  return point;
+}
+
+function togglePen() {
+  if (pen) { pen.stop(); return; }
+  closeRing(false);
+  dismissCard(false);
+  const model = { tool: 'pen', color: 0, strokes: [], current: null, fades: false, through: false };
+  const canvas = h('canvas', { class: 'pen-canvas' });
+  const bar = h('div', { class: 'pen-bar', role: 'toolbar', 'aria-label': L(P.screenPen.name), onpointerdown: (event) => event.stopPropagation() });
+  stage.append(canvas, bar);
+  const ctx = canvas.getContext('2d');
+  let frame = 0;
+  const alphaOf = (stroke, now) => {
+    if (!model.fades || stroke.done == null) return 1;
+    const t = now - stroke.done - PEN_FADE_DELAY;
+    return t <= 0 ? 1 : Math.max(0, 1 - t / PEN_FADE);
+  };
+  const meaningful = (stroke) => {
+    const a = stroke.points[0], b = stroke.points[stroke.points.length - 1];
+    if (stroke.tool === 'pen' || stroke.tool === 'highlighter') return stroke.points.length > 1;
+    if (stroke.tool === 'arrow') return Math.hypot(b.x - a.x, b.y - a.y) >= 4;
+    return Math.abs(b.x - a.x) >= 3 && Math.abs(b.y - a.y) >= 3;
+  };
+  function drawStroke(stroke, alpha) {
+    const points = stroke.points, a = points[0], b = points[points.length - 1];
+    const highlight = stroke.tool === 'highlighter';
+    const width = highlight ? 22 : 5;
+    ctx.save();
+    ctx.globalAlpha = alpha * (highlight ? 0.4 : 1);
+    ctx.strokeStyle = PEN_COLORS[stroke.color];
+    ctx.lineWidth = width;
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+    if (!highlight) { ctx.shadowColor = 'rgba(0, 0, 0, .35)'; ctx.shadowBlur = 4; ctx.shadowOffsetY = 1; }
+    ctx.beginPath();
+    if (stroke.tool === 'pen' || highlight) {
+      ctx.moveTo(a.x, a.y);
+      for (const point of points.slice(1)) ctx.lineTo(point.x, point.y);
+    } else if (stroke.tool === 'rectangle') {
+      const x = Math.min(a.x, b.x), y = Math.min(a.y, b.y), w = Math.abs(b.x - a.x), hh = Math.abs(b.y - a.y);
+      if (ctx.roundRect) ctx.roundRect(x, y, w, hh, width); else ctx.rect(x, y, w, hh);
+    } else if (stroke.tool === 'ellipse') {
+      ctx.ellipse((a.x + b.x) / 2, (a.y + b.y) / 2, Math.abs(b.x - a.x) / 2, Math.abs(b.y - a.y) / 2, 0, 0, Math.PI * 2);
+    } else {
+      // 箭头：一条线加上终点处的两撇
+      const angle = Math.atan2(b.y - a.y, b.x - a.x), head = Math.max(width * 4, 12);
+      ctx.moveTo(a.x, a.y);
+      ctx.lineTo(b.x, b.y);
+      for (const offset of [Math.PI * 5 / 6, -Math.PI * 5 / 6]) {
+        ctx.moveTo(b.x, b.y);
+        ctx.lineTo(b.x + Math.cos(angle + offset) * head, b.y + Math.sin(angle + offset) * head);
+      }
+    }
+    ctx.stroke();
+    ctx.restore();
+  }
+  function draw() {
+    const ratio = window.devicePixelRatio || 1;
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
+    const now = performance.now();
+    for (const stroke of model.strokes) drawStroke(stroke, alphaOf(stroke, now));
+    if (model.current) drawStroke(model.current, 1);
+  }
+  const resize = () => {
+    const ratio = window.devicePixelRatio || 1;
+    canvas.width = Math.round(stage.clientWidth * ratio);
+    canvas.height = Math.round(stage.clientHeight * ratio);
+    draw();
+  };
+  // 自动消失：一直重画，淡没了的去掉
+  function tick() {
+    frame = 0;
+    if (!model.fades || !model.strokes.length) return;
+    const now = performance.now(), before = model.strokes.length;
+    model.strokes = model.strokes.filter((stroke) => alphaOf(stroke, now) > 0);
+    if (model.strokes.length !== before) render();
+    draw();
+    frame = requestAnimationFrame(tick);
+  }
+  const kick = () => { if (!frame && model.fades && model.strokes.length) frame = requestAnimationFrame(tick); };
+  canvas.addEventListener('pointerdown', (event) => {
+    event.stopPropagation();
+    event.preventDefault();
+    canvas.setPointerCapture(event.pointerId);
+    model.current = { tool: model.tool, color: model.color, points: [stagePoint(event)] };
+  });
+  canvas.addEventListener('pointermove', (event) => {
+    const current = model.current;
+    if (!current) return;
+    const point = stagePoint(event), start = current.points[0];
+    if (current.tool === 'pen' || current.tool === 'highlighter') {
+      if (event.shiftKey) current.points = [start, point];
+      else {
+        const last = current.points[current.points.length - 1];
+        if (Math.hypot(point.x - last.x, point.y - last.y) < 1.5) return;
+        current.points.push(point);
+      }
+    } else current.points = [start, event.shiftKey ? penConstrain(start, point, current.tool) : point];
+    draw();
+  });
+  canvas.addEventListener('pointerup', () => {
+    const current = model.current;
+    model.current = null;
+    if (current && meaningful(current)) { current.done = performance.now(); model.strokes.push(current); render(); kick(); }
+    draw();
+  });
+  canvas.addEventListener('pointercancel', () => { model.current = null; draw(); });
+  const choose = (tool) => { model.tool = tool; model.through = false; render(); };
+  const undo = () => { if (model.current) model.current = null; else model.strokes.pop(); render(); draw(); };
+  const clear = () => { model.strokes = []; model.current = null; render(); draw(); };
+  const tool = (iconName, title, pressed, onclick, disabled) => h('button', { type: 'button', class: 'tool', title, 'aria-label': title, 'aria-pressed': String(pressed), disabled, onclick }, icon(iconName));
+  function render() {
+    canvas.classList.toggle('through', model.through);
+    const empty = !model.strokes.length;
+    bar.replaceChildren(
+      h('div', { class: 'grp' }, PEN_TOOLS.map(([id, iconName, title, key]) => tool(iconName, `${L(title)}${lang === 'zh' ? `（${key.toUpperCase()}）` : ` (${key.toUpperCase()})`}`, !model.through && model.tool === id, () => choose(id)))),
+      h('div', { class: 'dots' }, PEN_COLORS.map((color, index) => h('button', { type: 'button', class: 'dot', style: `background:${color}`, title: L({ zh: `颜色（${index + 1}）`, en: `Color (${index + 1})` }), 'aria-pressed': String(model.color === index), onclick: () => { model.color = index; render(); } }))),
+      h('span', { class: 'sep' }),
+      h('div', { class: 'grp' },
+        tool('pointer', L({ zh: '鼠标穿过去操作下面的窗口，画好的留着；再点一次接着画', en: 'Use the windows underneath with the mouse and keep the drawing; click again to go on drawing' }), model.through, () => { model.through = !model.through; render(); }),
+        tool('timer', L({ zh: '笔迹几秒后自动消失', en: 'Fade strokes after a few seconds' }), model.fades, () => { model.fades = !model.fades; if (model.fades) { const now = performance.now(); for (const stroke of model.strokes) stroke.done = now; kick(); } render(); draw(); }),
+        tool('undo', L({ zh: '撤销（⌘Z）', en: 'Undo (⌘Z)' }), false, undo, empty),
+        tool('trash', L({ zh: '全部擦掉（⌫）', en: 'Erase everything (⌫)' }), false, clear, empty)),
+      h('button', { type: 'button', class: 'done', title: L({ zh: '结束屏幕画笔（Esc）', en: 'Stop drawing (Esc)' }), onclick: () => stop() }, lang === 'zh' ? '完成' : 'Done'));
+  }
+  const observer = new ResizeObserver(resize);
+  observer.observe(stage);
+  function stop() {
+    cancelAnimationFrame(frame);
+    observer.disconnect();
+    canvas.remove();
+    bar.remove();
+    pen = null;
+  }
+  pen = {
+    stop,
+    // 画的时候的快捷键：Esc 结束、⌘Z 撤销、⌫ 擦掉、P H A R O 换笔、1～5 换颜色
+    key(event) {
+      if (event.key === 'Escape') { stop(); return true; }
+      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'z') { undo(); return true; }
+      if (event.metaKey || event.ctrlKey || event.altKey) return false;
+      if (event.key === 'Backspace' || event.key === 'Delete') { clear(); return true; }
+      const found = PEN_TOOLS.find(([, , , key]) => key === event.key.toLowerCase());
+      if (found) { choose(found[0]); return true; }
+      const number = Number(event.key);
+      if (Number.isInteger(number) && number >= 1 && number <= PEN_COLORS.length) { model.color = number - 1; render(); return true; }
+      return false;
+    },
+  };
+  render();
+  resize();
 }
 
 // 清洁键盘：盖一层提示和倒计时，这期间按键都不管用；用鼠标点「结束清洁」或者等时间到
@@ -2844,6 +3131,8 @@ stage.addEventListener('touchmove', (event) => { if ((press && press.held) || pi
 document.addEventListener('keydown', (event) => {
   // 清洁键盘的时候按键都不管用
   if (cleaning) { event.preventDefault(); return; }
+  keycaps?.key(event);
+  if (pen && pen.key(event)) { event.preventDefault(); return; }
   if (largeType) { largeType.key(event); event.preventDefault(); return; }
   if (scrolling) {
     if (event.key === 'Escape') { scrolling.cancel(); event.preventDefault(); }

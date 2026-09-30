@@ -24,22 +24,26 @@ enum ScreenRecording {
         var audio = Audio.off
         /// 显示鼠标点击
         var showClicks = false
+        /// 在录的区域下边显示按下的组合键
+        var showKeys = false
 
         static let audioKey = "pop.screenRecord.audio"
         /// 0.30.0 的「录上电脑里的声音」勾选，读旧设置用
         static let systemAudioKey = "pop.screenRecord.systemAudio"
         static let showClicksKey = "pop.screenRecord.showClicks"
+        static let showKeysKey = "pop.screenRecord.showKeys"
 
         /// 上次选的
         static func saved(in defaults: UserDefaults = .standard) -> Options {
             let audio = defaults.string(forKey: audioKey).flatMap(Audio.init(rawValue:))
                 ?? (defaults.bool(forKey: systemAudioKey) ? .system : .off)
-            return Options(audio: audio, showClicks: defaults.bool(forKey: showClicksKey))
+            return Options(audio: audio, showClicks: defaults.bool(forKey: showClicksKey), showKeys: defaults.bool(forKey: showKeysKey))
         }
 
         func save(in defaults: UserDefaults = .standard) {
             defaults.set(audio.rawValue, forKey: Self.audioKey)
             defaults.set(showClicks, forKey: Self.showClicksKey)
+            defaults.set(showKeys, forKey: Self.showKeysKey)
         }
     }
 

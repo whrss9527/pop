@@ -61,7 +61,7 @@ struct RulerPlugin: PopPlugin {
 
 struct ScreenRecordPlugin: PopPlugin {
     let info = PluginInfo(id: BuiltinPluginID.screenRecord, name: String(localized: "录屏"), symbol: "record.circle",
-                          summary: String(localized: "拖出一块区域、单击选一个窗口或者按回车录整个屏幕，存成 MP4；可以录上电脑里的声音或者麦克风、显示鼠标点击，录好能接着转成 GIF。正在录的时候再用一次就停止"),
+                          summary: String(localized: "拖出一块区域、单击选一个窗口或者按回车录整个屏幕，存成 MP4；可以录上电脑里的声音或者麦克风、显示鼠标点击和按下的键，录好能接着转成 GIF。正在录的时候再用一次就停止"),
                           accepts: [], hidesOverlay: true)
 
     @MainActor func run(_ content: ClassifiedContent, context: PluginContext) async -> PluginOutcome {
@@ -82,6 +82,46 @@ struct ScreenRecordPlugin: PopPlugin {
         } catch {
             return .failure((error as? ScreenRecording.Failure)?.message ?? error.localizedDescription)
         }
+    }
+}
+
+// MARK: - 显示按键
+
+struct ShowKeystrokesPlugin: PopPlugin {
+    let info = PluginInfo(id: BuiltinPluginID.showKeystrokes, name: String(localized: "显示按键"), symbol: "command.square",
+                          summary: String(localized: "演示、录教程时在屏幕下方显示按下的组合键（⌘C、⇧⌘4、方向键这些），普通打字不显示；再用一次关闭。录屏时也可以勾选一起录进去"),
+                          accepts: [])
+
+    @MainActor func run(_ content: ClassifiedContent, context: PluginContext) async -> PluginOutcome {
+        let overlay = KeystrokeOverlay.shared
+        if overlay.isActive {
+            overlay.stop()
+            return .done(toast: String(localized: "不再显示按键"))
+        }
+        let point = context.anchor ?? NSEvent.mouseLocation
+        let screen = NSScreen.screens.first { NSMouseInRect(point, $0.frame, false) } ?? NSScreen.main
+        if let problem = overlay.start(in: screen?.visibleFrame ?? .zero) {
+            return .failure(problem)
+        }
+        return .done(toast: String(localized: "开始显示按下的组合键，再用一次就关闭"))
+    }
+}
+
+// MARK: - 屏幕画笔
+
+struct ScreenPenPlugin: PopPlugin {
+    let info = PluginInfo(id: BuiltinPluginID.screenPen, name: String(localized: "屏幕画笔"), symbol: "scribble.variable",
+                          summary: String(localized: "演示、录教程时直接在屏幕上画：画笔、荧光笔、箭头、方框、椭圆，笔迹可以几秒后自动消失，也可以留着去操作下面的窗口，录屏时一起录进去；Esc 或再用一次结束"),
+                          accepts: [], hidesOverlay: true)
+
+    @MainActor func run(_ content: ClassifiedContent, context: PluginContext) async -> PluginOutcome {
+        let pen = ScreenPen.shared
+        if pen.isActive {
+            pen.stop()
+        } else {
+            pen.start(near: context.anchor ?? NSEvent.mouseLocation)
+        }
+        return .done(toast: nil)
     }
 }
 

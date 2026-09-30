@@ -433,7 +433,7 @@ enum OverlayDemo {
                              anchor: center)
             step("cropImage")
 
-            // 录屏：先是选区域的界面（截屏幕上方的提示条），再是录的时候的边框和控制面板，最后是录好的卡片
+            // 录屏：先是选区域的界面（截屏幕上方的提示条），再是录的时候的边框、控制面板和按键显示，最后是录好的卡片
             await pause(1.4 * unit)
             overlay.hide()
             Task { @MainActor in
@@ -445,11 +445,13 @@ enum OverlayDemo {
             await pause(1.4 * unit)
             RegionPicker.cancel()
             logRegion(cardRegion, screen: screen)
-            let hideIndicators = ScreenRecorder.shared.showIndicatorsForDemo(
-                region: CGRect(x: center.x - 150, y: center.y - 380, width: 560, height: 320), screen: screen, elapsed: "00:12")
+            let recordRegion = CGRect(x: center.x - 150, y: center.y - 380, width: 560, height: 320)
+            let hideIndicators = ScreenRecorder.shared.showIndicatorsForDemo(region: recordRegion, screen: screen, elapsed: "00:12")
+            KeystrokeOverlay.shared.showForDemo("⌘Z ×3", in: recordRegion)
             step("screenRecord-recording")
             await pause(1.4 * unit)
             hideIndicators()
+            KeystrokeOverlay.shared.stop()
             let clip = ScreenRecording.Clip(url: FileManager.default.temporaryDirectory.appending(path: "pop-demo/录屏 2026-09-30 15.30.12.mp4"),
                                             duration: 12, width: 1280, height: 720)
             overlay.showCard(ResultCardView(card: ScreenRecording.card(clip), onAction: { _ in }, onMore: {}, onClose: {}), anchor: center)
@@ -493,6 +495,32 @@ enum OverlayDemo {
                 overlay.showCard(ResultCardView(card: scrollCard, onAction: { _ in }, onMore: {}, onClose: {}), anchor: center)
             }
             step("scrollCapture")
+
+            // 屏幕画笔：贴一张示例截图当作屏幕上的内容，荧光笔划出邮箱、画笔在手机号下面画波浪线、椭圆圈出按钮、箭头指过去；
+            // 截图区域包括屏幕上方的工具栏
+            await pause(1.4 * unit)
+            overlay.hide()
+            let pinCenter = CGPoint(x: visible.midX.rounded(), y: (visible.maxY - 260).rounded())
+            if let capture = sampleScreenshot() {
+                PinBoard.shared.pin(image: NSImage(cgImage: capture.image, size: CGSize(width: 480, height: 300)), around: pinCenter)
+                let pinFrame = CGRect(x: pinCenter.x - 240, y: pinCenter.y - 150, width: 480, height: 300)
+                // 示例图上的点（左上角为原点）换成画布上的点
+                func onScreen(_ x: CGFloat, _ y: CGFloat) -> CGPoint {
+                    CGPoint(x: pinFrame.minX - screen.frame.minX + x, y: screen.frame.maxY - pinFrame.maxY + y)
+                }
+                let toolbar = ScreenPen.shared.showForDemo(on: screen, strokes: [
+                    (.highlighter, .yellow, [onScreen(62, 111), onScreen(224, 111)]),
+                    (.pen, .blue, [onScreen(64, 148), onScreen(88, 152), onScreen(112, 146), onScreen(136, 152),
+                                   onScreen(160, 146), onScreen(184, 151)]),
+                    (.ellipse, .red, [onScreen(286, 192), onScreen(430, 252)]),
+                    (.arrow, .red, [onScreen(150, 262), onScreen(280, 232)]),
+                ])
+                logRegion(pinFrame.union(toolbar ?? pinFrame).insetBy(dx: -24, dy: -20), screen: screen)
+            }
+            step("screenPen")
+            await pause(1.4 * unit)
+            ScreenPen.shared.stop()
+            PinBoard.shared.closeAll()
 
             // 截图标注窗口：拿一张画好的示例图，标上方框、箭头、文字、马赛克和序号；截图区域换成标注窗口
             await pause(1.4 * unit)

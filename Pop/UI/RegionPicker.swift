@@ -3,7 +3,7 @@ import Carbon.HIToolbox
 import SwiftUI
 
 /// 录屏、滚动截图前选地方：拖出一块区域，单击选指针下面的窗口（没有窗口就是整个屏幕），回车选整个屏幕，Esc 或右键取消。
-/// 录屏时屏幕上方的提示条里可以勾选「录上电脑里的声音」「显示鼠标点击」，下次还记得。
+/// 录屏时屏幕上方的提示条里可以选录不录声音、勾选「显示鼠标点击」「显示按下的键」，下次还记得。
 @MainActor
 final class RegionPicker {
     /// 选来做什么：提示和标签的说法不一样
@@ -112,7 +112,7 @@ private struct ScrollPickerHUD: View {
     }
 }
 
-/// 屏幕上方的操作提示和两个勾选项
+/// 屏幕上方的操作提示和录制选项
 private struct PickerHUD: View {
     @ObservedObject var model: PickerOptionsModel
 
@@ -130,6 +130,9 @@ private struct PickerHUD: View {
                 .fixedSize()
                 Toggle("显示鼠标点击", isOn: $model.options.showClicks)
                     .toggleStyle(.checkbox)
+                Toggle("显示按下的键", isOn: $model.options.showKeys)
+                    .toggleStyle(.checkbox)
+                    .help("按下 ⌘、⌃ 组合键和回车、方向键这些特殊键时，在录的区域下边显示出来；普通打字不显示")
             }
             .font(.system(size: 12))
         }

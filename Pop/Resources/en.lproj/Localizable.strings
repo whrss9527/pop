@@ -1564,7 +1564,7 @@
 "取消计时" = "Cancel Timer";
 "选一个时长开始倒计时；到点时响一声、发一条通知。也可以选中「25 分钟」「1:30」这样的文字再用它。" = "Choose a duration to start a countdown. When time’s up, Pop plays a sound and sends a notification. You can also select text such as “25 min” or “1:30” and use the timer.";
 "录屏" = "Record Screen";
-"拖出一块区域、单击选一个窗口或者按回车录整个屏幕，存成 MP4；可以录上电脑里的声音或者麦克风、显示鼠标点击，录好能接着转成 GIF。正在录的时候再用一次就停止" = "Drag out an area, click a window or press Return to record the whole screen as MP4; can include the Mac’s sound or the microphone and show clicks, and the recording can then be turned into a GIF. Use it again while recording to stop";
+"拖出一块区域、单击选一个窗口或者按回车录整个屏幕，存成 MP4；可以录上电脑里的声音或者麦克风、显示鼠标点击和按下的键，录好能接着转成 GIF。正在录的时候再用一次就停止" = "Drag out an area, click a window or press Return to record the whole screen as MP4; can include the Mac’s sound or the microphone and show clicks and keystrokes, and the recording can then be turned into a GIF. Use it again while recording to stop";
 "锁屏、熄屏、睡眠、打开屏幕保护程序、切换深色和浅色模式、隐藏或显示桌面图标、推出所有磁盘" = "Lock the screen, turn off the display, sleep, start the screen saver, switch between Dark and Light Mode, hide or show desktop icons, or eject all disks";
 
 /* TableConverter.swift */
@@ -2167,7 +2167,7 @@
 "正在识别图片里的文字…" = "Recognizing the text in the image…";
 "识别文字失败：%@" = "Couldn’t recognize the text: %@";
 
-/* 0.38.0：深浅色、大字显示、清洁键盘 */
+/* 0.39.0：深浅色、大字显示、清洁键盘 */
 "换成深色模式" = "Switch to Dark Mode";
 "换成浅色模式" = "Switch to Light Mode";
 "要先在「系统设置 → 隐私与安全性 → 自动化」里允许 Pop 控制「System Events」" = "Allow Pop to control System Events in System Settings → Privacy & Security → Automation first";
@@ -2188,3 +2188,22 @@
 "跟随系统" = "Follow System";
 "重新启动 Pop 后生效" = "Takes effect after Pop relaunches";
 "立即重新启动" = "Relaunch Now";
+
+/* 0.40.0：显示按键 */
+"显示按键" = "Show Keystrokes";
+"演示、录教程时在屏幕下方显示按下的组合键（⌘C、⇧⌘4、方向键这些），普通打字不显示；再用一次关闭。录屏时也可以勾选一起录进去" = "Show the shortcuts you press (⌘C, ⇧⌘4, arrow keys and so on) at the bottom of the screen for demos and tutorials; ordinary typing isn’t shown. Use it again to turn it off. Screen recordings can include them too";
+"不再显示按键" = "Stopped showing keystrokes";
+"开始显示按下的组合键，再用一次就关闭" = "Showing the shortcuts you press; use it again to turn it off";
+"要先在「系统设置 → 隐私与安全性 → 辅助功能」里允许 Pop，才能显示按键" = "To show keystrokes, allow Pop in System Settings → Privacy & Security → Accessibility";
+"显示按下的键" = "Show keystrokes";
+"按下 ⌘、⌃ 组合键和回车、方向键这些特殊键时，在录的区域下边显示出来；普通打字不显示" = "Shows ⌘ and ⌃ shortcuts and special keys such as Return and the arrow keys at the bottom of the recorded area; ordinary typing isn’t shown";
+
+/* 0.40.0：屏幕画笔 */
+"屏幕画笔" = "Draw on Screen";
+"演示、录教程时直接在屏幕上画：画笔、荧光笔、箭头、方框、椭圆，笔迹可以几秒后自动消失，也可以留着去操作下面的窗口，录屏时一起录进去；Esc 或再用一次结束" = "Draw right on the screen for demos and tutorials: pen, highlighter, arrow, rectangle and ellipse. Strokes can fade after a few seconds or stay while you use the windows underneath, and screen recordings include them. Press Esc or use it again to finish";
+"荧光笔" = "Highlighter";
+"颜色（%lld）" = "Color (%lld)";
+"鼠标穿过去操作下面的窗口，画好的留着；再点一次接着画" = "Use the windows underneath with the mouse and keep the drawing; click again to go on drawing";
+"笔迹几秒后自动消失" = "Fade strokes after a few seconds";
+"全部擦掉（⌫）" = "Erase everything (⌫)";
+"结束屏幕画笔（Esc）" = "Stop drawing (Esc)";
