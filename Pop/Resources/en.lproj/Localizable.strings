@@ -342,13 +342,13 @@
 "%@的计时到了" = "Your %@ timer is done";
 "时间到" = "Time’s Up";
 "时间到：%@" = "Time’s up: %@";
-"计时还剩 %lld（到 %@）" = "Timer: %lld left (until %@)";
+"计时还剩 %@（到 %@）" = "Timer: %@ left (until %@)";
 "%@ 秒" = "%@ s";
 "%lld 分钟" = "%lld min";
-"%lld 分 %@ 秒" = "%lld min %@ s";
+"%lld 分 %lld 秒" = "%lld min %lld s";
 "%lld 小时" = "%lld hr";
 "%lld 小时 %lld 分钟" = "%lld hr %lld min";
-"%lld 小时 %lld 分 %@ 秒" = "%lld hr %lld min %@ s";
+"%lld 小时 %lld 分 %lld 秒" = "%lld hr %lld min %lld s";
 
 /* DataFormats.swift */
 "第 %@ 行：%@" = "Line %@: %@";
@@ -1190,7 +1190,7 @@
 "已给 %lld 张图片加上水印" = "Watermarked %lld images";
 "压好了 %lld 张，%lld 张失败：%@" = "Compressed %lld images, %lld failed: %@";
 "已压缩到 %@" = "Compressed to %@";
-"已压缩 %lld 张，都在 %lld 以内" = "Compressed %lld images, all under %lld";
+"已压缩 %lld 张，都在 %@ 以内" = "Compressed %lld images, all under %@";
 "无法读取这张图片" = "Can’t read this image";
 "已存为常用短语" = "Saved as a snippet";
 "图片里没有识别到文字" = "No text found in the image";
@@ -1243,7 +1243,7 @@
 "没有找到可以添加日程的日历" = "No calendar that accepts new events was found";
 
 /* RenameCardView.swift */
-"%@ 个名字不能用：%@" = "%@ names can’t be used: %@";
+"%lld 个名字不能用：%@" = "%lld names can’t be used: %@";
 "名字都没有变" = "No names change";
 "会改 %lld 个文件的名字" = "Renames %lld files";
 "方式" = "Method";
@@ -1878,7 +1878,7 @@
 "翻译卡片上加进来的单词和释义：搜索、朗读、一个个复习，也能导出成表格或者 Anki 能导入的文件" = "Words and definitions added from translation cards: search, listen, review one by one, or export as a spreadsheet or a file Anki can import";
 
 /* VocabularyView.swift */
-"%lld 个，%@ 个还没记住" = "%lld words, %@ not learned yet";
+"%lld 个，%lld 个还没记住" = "%lld words, %lld not learned yet";
 "搜索单词或释义" = "Search words or definitions";
 "复习" = "Review";
 "一个个看还没记住的词，想一想再看释义" = "Go through the words you haven’t learned yet; think first, then reveal the definition";
