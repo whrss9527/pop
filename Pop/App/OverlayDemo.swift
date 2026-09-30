@@ -336,6 +336,23 @@ enum OverlayDemo {
             overlay.showCard(PDFPagesView(model: pdfPages, onExtract: { _ in }, onSplit: {}, onClose: {}), anchor: center)
             step("pdfPages")
 
+            // 占用空间：查找重复文件用的示例文件夹，看每一项占了多少
+            await pause(1.4 * unit)
+            if let folder = sampleDuplicates() {
+                let usage = DiskUsageModel(root: folder)
+                usage.start()
+                overlay.showCard(DiskUsageView(model: usage, onReveal: { _ in }, onClose: {}), anchor: center)
+            }
+            step("diskUsage")
+
+            // 给 PDF 加密码：两次输入的密码一样
+            await pause(1.4 * unit)
+            let password = PDFPasswordModel(pdf: FileManager.default.temporaryDirectory.appending(path: "合同.pdf"), mode: .add)
+            password.password = "pop-2026"
+            password.confirmation = "pop-2026"
+            overlay.showCard(PDFPasswordView(model: password, onSubmit: { _ in }, onClose: {}), anchor: center)
+            step("pdfPassword")
+
             // 截图标注窗口：拿一张画好的示例图，标上方框、箭头、文字、马赛克和序号；截图区域换成标注窗口
             await pause(1.4 * unit)
             overlay.hide()

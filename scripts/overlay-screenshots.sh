@@ -87,6 +87,8 @@ plan = [
     ("vocabulary", [3.0]),
     ("duplicates", [3.0]),
     ("pdfPages", [3.0]),
+    ("diskUsage", [3.0]),
+    ("pdfPassword", [3.0]),
     ("annotate", [1.5]),
     ("settings-plugins", [0.5]),
     ("settings-ai", [0.5]),
@@ -100,7 +102,8 @@ if appearance == "dark":
             ("shelf", [3.0]), ("openWith", [3.0]), ("markdown", [3.0]), ("extract", [3.0]), ("jsonTypes", [3.0]),
             ("toMarkdown", [3.0]), ("regex", [3.0]), ("history", [3.0]), ("history-search", [3.0]),
             ("reminder", [3.0]), ("table", [3.0]), ("photo", [3.0]), ("rename", [3.0]), ("sql", [3.0]), ("vocabulary", [3.0]),
-            ("duplicates", [3.0]), ("pdfPages", [3.0]), ("annotate", [1.5]),
+            ("duplicates", [3.0]), ("pdfPages", [3.0]), ("diskUsage", [3.0]), ("pdfPassword", [3.0]),
+            ("annotate", [1.5]),
             ("settings-plugins", [0.5]), ("settings-ai", [0.5]), ("settings-hotKeys", [0.5])]
 factor = scale / 6.0
 

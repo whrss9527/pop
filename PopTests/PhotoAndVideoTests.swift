@@ -219,8 +219,41 @@ final class ImageStitcherTests: XCTestCase {
         let outcome = await StitchImagesPlugin().run(ContentClassifier.classify(.files(files)), context: context)
         guard case .card(let card) = outcome else { return XCTFail("应该返回结果卡片") }
         XCTAssertEqual(card.body, "a.png\nb.png")
-        XCTAssertEqual(card.buttons.map(\.title), ["竖着拼接", "横着拼接"])
+        XCTAssertEqual(card.buttons.map(\.title), ["竖着拼接", "横着拼接", "合成动图"])
         XCTAssertEqual(card.buttons.first?.action, .stitchImages(Array(files.reversed()), .vertical))
+        XCTAssertEqual(card.buttons.last?.action, .animateImages(Array(files.reversed())))
+    }
+
+    func testAnimatesImagesIntoALoopingGIF() throws {
+        let folder = try Samples.folder()
+        defer { try? FileManager.default.removeItem(at: folder) }
+        let first = folder.appending(path: "步骤 1.png")
+        let second = folder.appending(path: "步骤 2.png")
+        let third = folder.appending(path: "步骤 3.png")
+        XCTAssertTrue(Samples.write(try XCTUnwrap(Samples.image(width: 80, height: 40, red: 1, green: 0, blue: 0)), to: first, type: .png))
+        XCTAssertTrue(Samples.write(try XCTUnwrap(Samples.image(width: 40, height: 80, red: 0, green: 1, blue: 0)), to: second, type: .png))
+        XCTAssertTrue(Samples.write(try XCTUnwrap(Samples.image(width: 160, height: 80, red: 0, green: 0, blue: 1)), to: third, type: .png))
+
+        let output = try ImageStitcher.animate([first, second, third])
+        XCTAssertEqual(output.lastPathComponent, "步骤 1 动图.gif")
+        let source = try XCTUnwrap(CGImageSourceCreateWithURL(output as CFURL, nil))
+        XCTAssertEqual(CGImageSourceGetCount(source), 3)
+        // 画面大小按第一张；竖着的第二张缩小后放在正中，两边是白色
+        let frame = try XCTUnwrap(CGImageSourceCreateImageAtIndex(source, 1, nil))
+        XCTAssertEqual(frame.width, 80)
+        XCTAssertEqual(frame.height, 40)
+        let middle = try XCTUnwrap(Samples.pixel(frame, x: 40, y: 20))
+        let side = try XCTUnwrap(Samples.pixel(frame, x: 3, y: 20))
+        XCTAssertTrue(middle.green > 200 && middle.red < 60, "\(middle)")
+        XCTAssertTrue(side.red > 230 && side.green > 230 && side.blue > 230, "\(side)")
+        let properties = CGImageSourceCopyPropertiesAtIndex(source, 0, nil) as? [CFString: Any]
+        let gif = properties?[kCGImagePropertyGIFDictionary] as? [CFString: Any]
+        XCTAssertEqual(gif?[kCGImagePropertyGIFDelayTime] as? Double, 1)
+
+        XCTAssertThrowsError(try ImageStitcher.animate([first]))
+        XCTAssertEqual(ImageStitcher.fitted(CGSize(width: 1600, height: 900), maxSide: 800), CGSize(width: 800, height: 450))
+        XCTAssertEqual(ImageStitcher.aspectFit(CGSize(width: 40, height: 80), in: CGSize(width: 80, height: 40)),
+                       CGRect(x: 30, y: 0, width: 20, height: 40))
     }
 }
 
@@ -249,8 +282,49 @@ final class VideoConverterTests: XCTestCase {
         let mp4 = URL(fileURLWithPath: "/tmp/pop-missing-\(UUID().uuidString).mp4")
         let outcome = await VideoConvertPlugin().run(ContentClassifier.classify(.files([mp4])), context: context)
         guard case .card(let card) = outcome else { return XCTFail("应该返回结果卡片") }
-        XCTAssertEqual(card.buttons.map(\.title), ["转成 GIF", "压缩到 720p", "提取音频"])
+        XCTAssertEqual(card.buttons.map(\.title), ["转成 GIF", "压缩到 720p", "提取音频", "截取一段…"])
         XCTAssertEqual(card.buttons.first?.action, .convertVideos([mp4], .gif))
+        XCTAssertEqual(card.buttons.last?.action, .trimMedia(mp4))
+    }
+
+    func testTimeRanges() {
+        XCTAssertEqual(MediaTrim.seconds("1:05.5"), 65.5)
+        XCTAssertEqual(MediaTrim.seconds("1:02:03"), 3723)
+        XCTAssertEqual(MediaTrim.seconds(" 85 "), 85)
+        for wrong in ["1:75", "1.5:00", "abc", "", "1:2:3:4", "-5"] {
+            XCTAssertNil(MediaTrim.seconds(wrong), wrong)
+        }
+        XCTAssertEqual(MediaTrim.range("0:10-1:25", duration: 100), 10...85)
+        XCTAssertEqual(MediaTrim.range("1:00-", duration: 100), 60...100)
+        XCTAssertEqual(MediaTrim.range("-0:30", duration: 100), 0...30)
+        XCTAssertEqual(MediaTrim.range("10到20", duration: 100), 10...20)
+        XCTAssertEqual(MediaTrim.range("0：10 – 0：20", duration: 100), 10...20)
+        // 显示的时长是四舍五入的，多写了不到一秒也算到结尾
+        XCTAssertEqual(MediaTrim.range("90-100.6", duration: 100), 90...100)
+        for wrong in ["", "0:10", "20-10", "90-120", "a-b", "1-2-3", "10-10"] {
+            XCTAssertNil(MediaTrim.range(wrong, duration: 100), wrong)
+        }
+        XCTAssertEqual(MediaTrim.label(65.5), "1:05.5")
+        XCTAssertEqual(MediaTrim.label(3725), "1:02:05")
+        XCTAssertTrue(MediaTrim.isMedia(URL(fileURLWithPath: "/tmp/歌.mp3")))
+        XCTAssertTrue(MediaTrim.isMedia(URL(fileURLWithPath: "/tmp/录屏.mov")))
+        XCTAssertFalse(MediaTrim.isMedia(URL(fileURLWithPath: "/tmp/笔记.txt")))
+        XCTAssertEqual(MediaTrim.plan(for: URL(fileURLWithPath: "/tmp/pop-missing/歌.mp3")).url.lastPathComponent, "歌 片段.m4a")
+        XCTAssertEqual(MediaTrim.plan(for: URL(fileURLWithPath: "/tmp/pop-missing/录屏.mp4")).type, .mp4)
+    }
+
+    func testTrimsAVideo() async throws {
+        let folder = try Samples.folder()
+        defer { try? FileManager.default.removeItem(at: folder) }
+        let video = folder.appending(path: "录屏.mov")
+        try await writeVideo(to: video, frames: 30)
+        let length = await MediaTrim.duration(of: video)
+        XCTAssertEqual(try XCTUnwrap(length), 3, accuracy: 0.05)
+
+        let output = try await MediaTrim.trim(video, range: 1...2)
+        XCTAssertEqual(output.lastPathComponent, "录屏 片段.mov")
+        let trimmed = await MediaTrim.duration(of: output)
+        XCTAssertEqual(try XCTUnwrap(trimmed), 1, accuracy: 0.15)
     }
 
     func testMakesALoopingGIF() async throws {

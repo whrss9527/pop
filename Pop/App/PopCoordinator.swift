@@ -382,6 +382,10 @@ final class PopCoordinator: MouseTriggerDelegate {
             presentVocabulary()
         case .findDuplicates(let folders):
             presentDuplicates(folders)
+        case .diskUsage(let folder):
+            presentDiskUsage(folder)
+        case .trimMedia(let file):
+            presentTrim(file)
         case .failure(let message):
             overlay.showCard(ResultCardView(card: ResultCard(title: "没能完成", body: message),
                                             onAction: { [weak self] action in self?.perform(action) },
@@ -442,6 +446,12 @@ final class PopCoordinator: MouseTriggerDelegate {
             compressPDF(pdf)
         case .pdfPages(let pdf):
             presentPDFPages(pdf)
+        case .pdfPassword(let pdf):
+            presentPDFPassword(pdf)
+        case .animateImages(let files):
+            animateImages(files)
+        case .trimMedia(let file):
+            presentTrim(file)
         case .keepAwake(let minutes):
             let started = KeepAwake.shared.start(minutes: minutes)
             finish(toast: started ? (minutes.map { "保持唤醒 \(KeepAwake.title(minutes: $0))" } ?? "一直保持唤醒") : "没能保持唤醒")
@@ -580,6 +590,50 @@ final class PopCoordinator: MouseTriggerDelegate {
         }
     }
 
+    /// PDF 密码：没有密码的加上密码，有密码的输入密码去掉；另存一份，原文件不动
+    private func presentPDFPassword(_ pdf: URL) {
+        guard let current = session else { return }
+        stopPointerTracking()
+        let model = PDFPasswordModel(pdf: pdf, mode: PDFTools.isLocked(pdf) ? .remove : .add)
+        overlay.showCard(PDFPasswordView(model: model,
+                                         onSubmit: { [weak self] password in self?.savePDFPassword(model, password) },
+                                         onClose: { [weak self] in self?.endSession() }),
+                         anchor: current.anchor)
+    }
+
+    private func savePDFPassword(_ model: PDFPasswordModel, _ password: String) {
+        let pdf = model.pdf
+        let adding = model.mode == .add
+        let destination = FileNames.available(in: pdf.deletingLastPathComponent(),
+                                              base: pdf.deletingPathExtension().lastPathComponent + (adding ? " 加密" : " 无密码"),
+                                              extension: "pdf")
+        Task { [weak self] in
+            let failure = await runInBackground { () -> String? in
+                do {
+                    if adding {
+                        try PDFTools.encrypt(pdf, password: password, to: destination)
+                    } else {
+                        try PDFTools.removePassword(pdf, password: password, to: destination)
+                    }
+                    return nil
+                } catch {
+                    try? FileManager.default.removeItem(at: destination)
+                    return (error as? PDFTools.Failure)?.message ?? error.localizedDescription
+                }
+            }
+            guard let self else { return }
+            // 密码不对这类问题留在卡片上，改了再试
+            if let failure {
+                model.error = failure
+                return
+            }
+            let anchor = self.session?.anchor ?? NSEvent.mouseLocation
+            self.endSession()
+            NSWorkspace.shared.activateFileViewerSelecting([destination])
+            self.showToast(adding ? "已另存一份加了密码的 PDF" : "已另存一份没有密码的 PDF", at: anchor)
+        }
+    }
+
     /// 在后台压缩 PDF；小了才留下，在访达里选中
     private func compressPDF(_ pdf: URL) {
         let anchor = session?.anchor ?? NSEvent.mouseLocation
@@ -667,6 +721,69 @@ final class PopCoordinator: MouseTriggerDelegate {
             case .failure(let failure):
                 self.showToast(failure.message, at: anchor)
             }
+        }
+    }
+
+    /// 几张图片合成动图，存在第一张旁边
+    private func animateImages(_ files: [URL]) {
+        let anchor = session?.anchor ?? NSEvent.mouseLocation
+        endSession()
+        Task { [weak self] in
+            let result = await runInBackground { () -> Result<URL, ImageStitcher.Failure> in
+                do {
+                    return .success(try ImageStitcher.animate(files))
+                } catch let failure as ImageStitcher.Failure {
+                    return .failure(failure)
+                } catch {
+                    return .failure(ImageStitcher.Failure(message: error.localizedDescription))
+                }
+            }
+            guard let self else { return }
+            switch result {
+            case .success(let output):
+                NSWorkspace.shared.activateFileViewerSelecting([output])
+                self.showToast("已合成动图，存在第一张旁边", at: anchor)
+            case .failure(let failure):
+                self.showToast(failure.message, at: anchor)
+            }
+        }
+    }
+
+    /// 截取片段：先读出时长，写好时间后在后台截取，好了在访达里选中新文件
+    private func presentTrim(_ file: URL) {
+        guard let current = session else { return }
+        stopPointerTracking()
+        Task { [weak self] in
+            let duration = await MediaTrim.duration(of: file)
+            guard let self, self.session?.id == current.id else { return }
+            guard let duration else {
+                self.present(.failure("读不到「\(file.lastPathComponent)」的时长"))
+                return
+            }
+            let model = MediaTrimModel(file: file, duration: duration)
+            self.overlay.showCard(MediaTrimView(model: model,
+                                                onTrim: { [weak self] range in self?.trim(file, range) },
+                                                onClose: { [weak self] in self?.endSession() }),
+                                  anchor: current.anchor)
+        }
+    }
+
+    private func trim(_ file: URL, _ range: ClosedRange<Double>) {
+        let anchor = session?.anchor ?? NSEvent.mouseLocation
+        endSession()
+        showToast("正在截取…", at: anchor)
+        Task { [weak self] in
+            let message: String
+            do {
+                let output = try await MediaTrim.trim(file, range: range)
+                NSWorkspace.shared.activateFileViewerSelecting([output])
+                message = "已截取 \(MediaTrim.label(range.upperBound - range.lowerBound))"
+            } catch {
+                message = (error as? MediaTrim.Failure)?.message ?? error.localizedDescription
+            }
+            // 截取要一会儿：这期间又唤起了 Pop 的话不去打断
+            guard let self, self.session == nil else { return }
+            self.showToast(message, at: anchor)
         }
     }
 
@@ -868,6 +985,17 @@ final class PopCoordinator: MouseTriggerDelegate {
         } catch {
             showToast("导出失败：\(error.localizedDescription)", at: NSEvent.mouseLocation)
         }
+    }
+
+    /// 占用空间：后台扫描，扫完一层层点进去看，不要的移到废纸篓
+    private func presentDiskUsage(_ folder: URL) {
+        guard let current = session else { return }
+        stopPointerTracking()
+        let model = DiskUsageModel(root: folder)
+        overlay.showCard(DiskUsageView(model: model,
+                                       onReveal: { urls in NSWorkspace.shared.activateFileViewerSelecting(urls) },
+                                       onClose: { [weak self] in self?.endSession() }),
+                         anchor: current.anchor)
     }
 
     /// 查找重复文件：后台扫描，扫完可以每组只留一个

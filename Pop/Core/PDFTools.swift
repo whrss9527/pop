@@ -184,6 +184,44 @@ enum PDFTools {
         return outputs
     }
 
+    /// 打开时要输入密码
+    static func isLocked(_ pdf: URL) -> Bool {
+        PDFDocument(url: pdf)?.isLocked == true
+    }
+
+    /// 加上打开密码（修改权限也用同一个密码），另存一份
+    static func encrypt(_ pdf: URL, password: String, to destination: URL) throws {
+        guard !password.isEmpty else { throw Failure(message: "密码不能是空的") }
+        let document = try open(pdf)
+        let options: [PDFDocumentWriteOption: Any] = [.userPasswordOption: password, .ownerPasswordOption: password]
+        guard document.write(to: destination, withOptions: options) else {
+            throw Failure(message: "写不进「\(destination.lastPathComponent)」")
+        }
+    }
+
+    /// 用密码打开，另存一份没有密码的。只知道打开密码、PDF 还限制了打印复制这些的，不去掉
+    static func removePassword(_ pdf: URL, password: String, to destination: URL) throws {
+        guard let document = PDFDocument(url: pdf) else { throw Failure(message: "读不了「\(pdf.lastPathComponent)」") }
+        guard document.isEncrypted else { throw Failure(message: "「\(pdf.lastPathComponent)」没有密码") }
+        guard document.unlock(withPassword: password) else { throw Failure(message: "密码不对") }
+        let permissions = [document.allowsPrinting, document.allowsCopying, document.allowsDocumentChanges,
+                           document.allowsContentAccessibility, document.allowsCommenting, document.allowsFormFieldEntry,
+                           document.allowsDocumentAssembly]
+        guard document.permissionsStatus == .owner || !permissions.contains(false) else {
+            throw Failure(message: "这份 PDF 还限制了打印、复制这些操作，要输入所有者密码才能去掉")
+        }
+        // 解开之后另存出来的就没有加密；万一还带着密码，就把每一页拷到新文件里
+        if document.write(to: destination), PDFDocument(url: destination)?.isEncrypted == false {
+            return
+        }
+        try? FileManager.default.removeItem(at: destination)
+        try write(Array(0..<document.pageCount), of: document, to: destination)
+        guard PDFDocument(url: destination)?.isEncrypted == false else {
+            try? FileManager.default.removeItem(at: destination)
+            throw Failure(message: "没能去掉密码")
+        }
+    }
+
     /// 页码写法的简短说明：「第 1–3、5 页」
     static func describe(_ pages: [Int]) -> String {
         var ranges: [String] = []
