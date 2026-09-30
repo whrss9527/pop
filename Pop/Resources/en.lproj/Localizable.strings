@@ -120,6 +120,9 @@
 "去下载语言包…" = "Download Languages…";
 "去设置…" = "Open Settings…";
 
+/* CharacterInspector.swift */
+"%@ · %@ · %lld 处" = "%@ · %@ · %lld times";
+
 /* ClipboardHistoryView.swift */
 "搜索" = "Search";
 "剪贴板历史已关闭，打开后 Pop 会在本机记录你复制过的内容。" = "Clipboard history is off. Turn it on and Pop keeps what you copy on this Mac.";
@@ -134,6 +137,14 @@
 "删除" = "Delete";
 "图片 · %@" = "Image · %@";
 "图里有「%@」" = "Image contains “%@”";
+"⏎ 粘贴 · ⌘1–9 快速粘贴 · ⌘ 点选多条 · ⌘P 固定 · ⌘⌫ 删除 · 右键更多" = "⏎ Paste · ⌘1–9 Quick paste · ⌘-click to select several · ⌘P Pin · ⌘⌫ Delete · Right-click for more";
+"加入多选" = "Add to Selection";
+"取消固定" = "Unpin";
+"固定" = "Pin";
+"已选 %lld 条 · ⏎ 按顺序合在一起粘贴 · ⌘C 合在一起复制 · Esc 取消" = "%lld selected · ⏎ Paste together in order · ⌘C Copy together · Esc Cancel";
+"没有匹配的记录" = "No matching items";
+"移出多选" = "Remove from Selection";
+"还没有记录，复制点什么试试" = "Nothing here yet. Copy something to try it.";
 
 /* ClipboardSettingsView.swift */
 "记录剪贴板历史" = "Keep clipboard history";
@@ -171,12 +182,17 @@
 "iCloud 账号已退出" = "Signed out of iCloud";
 "iCloud 账号已切换" = "iCloud account changed";
 
+/* CodeStats.swift */
+"| 合计 | %lld | %lld | %lld | %lld |" = "| Total | %lld | %lld | %lld | %lld |";
+
 /* DiskUsageView.swift */
 "%@，%lld 个文件" = "%@, %lld files";
 "上一层" = "Up One Level";
 "这里是空的" = "This folder is empty";
 "……还有 %lld 项" = "…and %lld more";
 "移到废纸篓" = "Move to Trash";
+"已经看了 %lld 个文件，一共 %@…" = "Checked %lld files, %@ so far…";
+"正在看里面有什么…" = "Looking inside…";
 
 /* DuplicatesView.swift */
 "看了 %lld 个文件，没有内容完全一样的。%@" = "Checked %lld files; none are identical.%@";
@@ -185,6 +201,15 @@
 "每组留下最早的那个，其余的移到废纸篓（可以从废纸篓放回）" = "Keeps the oldest file in each group and moves the rest to the Trash (you can put them back)";
 "%lld 个，每个 %@" = "%lld files, %@ each";
 "只留一个" = "Keep One";
+"正在列出文件，已经找到 %lld 个…" = "Listing files, %lld found so far…";
+"正在比较内容：%lld / %lld" = "Comparing contents: %lld / %lld";
+"留" = "Keep";
+
+/* FilePlugins.swift */
+"%lld 行 × %lld 列（第一行当作表头）" = "%lld rows × %lld columns (first row as header)";
+"%lld 页，%lld 个字" = "%lld pages, %lld characters";
+"%lld 页，没有文字层（扫描件可以先存成图片，再用「识别文字」）" = "%lld pages, no text layer (for scans, save pages as images and use Recognize Text)";
+"已合成 %lld 页的 PDF" = "Created a %lld-page PDF";
 
 /* FileShelf.swift */
 "暂存架" = "Shelf";
@@ -194,6 +219,12 @@
 "拖到访达、邮件或者聊天窗口里" = "Drag to Finder, Mail or a chat window";
 "按住拖到别的地方" = "Drag to move elsewhere";
 "从架子上拿掉" = "Remove from Shelf";
+"拖走全部 %lld 个文件" = "Drag all %lld files";
+"拖走这个文件" = "Drag this file";
+
+/* FolderCompare.swift */
+"一样的 %lld 个，内容不同 %lld 个，只在一边有的 %lld 个；隐藏文件和 App 这类包里面的文件不比较" = "%lld identical, %lld different, %lld on one side only; hidden files and files inside packages such as apps aren’t compared";
+"两个文件夹里的 %lld 个文件完全一样" = "The %lld files in both folders are identical";
 
 /* HotKeySettingsView.swift */
 "给常用的功能设置全局快捷键" = "Global shortcuts for frequently used actions";
@@ -203,15 +234,31 @@
 "按下快捷键…" = "Press shortcut…";
 "设置快捷键" = "Set Shortcut";
 
+/* IDNumber.swift */
+"%lld 岁" = "%lld years";
+"%lld 年 %lld 月 %lld 日" = "%lld-%lld-%lld";
+
 /* IDPhotoView.swift */
 "正在抠图…" = "Removing background…";
 "底色" = "Background";
 "尺寸" = "Dimensions";
 "存到原图旁边" = "Save Next to Original";
 
+/* ImageSizeLimit.swift */
+"「%@」压不到 %@ 以内" = "“%@” can’t be compressed under %@";
+
 /* ImageSizeLimitView.swift */
 "其他大小" = "Other size";
 "压缩" = "Compress";
+
+/* LunarCalendar.swift */
+"第 %lld 周 · 全年第 %lld 天" = "Week %lld · Day %lld of the year";
+
+/* ManifestPlugin.swift */
+"脚本退出码 %d" = "Script exit code %d";
+
+/* MediaFilePlugins.swift */
+"%lld 张图片按上面的顺序拼接；宽度（横着拼时是高度）不一样时按最小的那张缩放。合成动图时每张停 %lld 秒，画面大小按第一张" = "%lld images are stitched in the order above; if widths (heights when horizontal) differ, they’re scaled to the smallest. Animated images show each frame for %lld s at the size of the first image.";
 
 /* MediaTrimView.swift */
 "开始-结束，比如 0:10-1:25" = "Start–end, e.g. 0:10-1:25";
@@ -239,6 +286,12 @@
 /* PDFPasswordView.swift */
 "密码" = "Password";
 "再输一次" = "Confirm";
+"存一份加密的" = "Save Encrypted Copy";
+"存一份没有密码的" = "Save Copy Without Password";
+
+/* PhotoMetadata.swift */
+"%@ 秒" = "%@ s";
+"等效 %@ mm" = "%@ mm equivalent";
 
 /* PluginChooserView.swift */
 "搜索功能，比如 fy 找到翻译" = "Search actions";
@@ -403,6 +456,12 @@
 "照片按拍摄时间命名，比如 2026-09-27 17.42.18；没有拍摄时间的按修改时间，同一秒的后面加编号。" = "Photos are named by when they were taken, e.g. 2026-09-27 17.42.18. Files without a capture date use the modification date; files from the same second get a number.";
 "大小写" = "Case";
 "已重命名 %lld 个文件" = "Renamed %lld files";
+"撤销" = "Undo";
+"替换为" = "Replace with";
+"替换为（$1 是第一个分组）" = "Replace with ($1 is the first group)";
+"正在撤销…" = "Undoing…";
+"正在改名…" = "Renaming…";
+"重命名" = "Rename";
 
 /* SelectionContent.swift */
 "文本" = "Text";
@@ -548,6 +607,11 @@
 "剪贴板" = "Clipboard";
 "同步" = "Sync";
 
+/* SmallTools.swift */
+" %lld 天" = " %lld days";
+"%lld 个月 " = "%lld months ";
+"%lld 年 " = "%lld years ";
+
 /* SnippetPickerView.swift */
 "还没有常用短语。在「设置 → 剪贴板」里添加，写一次就能反复粘贴，还可以用 {date}、{clipboard} 这样的占位符。" = "No snippets yet. Add them in Settings → Clipboard: write once, paste any time, with placeholders such as {date} and {clipboard}.";
 "去添加" = "Add Snippets";
@@ -593,8 +657,16 @@
 "检查更新…" = "Check for Updates…";
 "退出 Pop" = "Quit Pop";
 
+/* TableOCR.swift */
+"%lld 行 × %lld 列" = "%lld rows × %lld columns";
+"；图片里还有 %lld 个表格，这里只显示第一个" = "; the image has %lld more tables, only the first is shown";
+
 /* TextDiffView.swift */
 "⋯ %lld 行相同 ⋯" = "⋯ %lld identical lines ⋯";
+
+/* ToolPlugins.swift */
+"%lld 个文件夹，%lld 个文件；最多展开 3 层，隐藏文件不列出" = "%lld folders, %lld files; up to 3 levels deep, hidden files not listed";
+"，跳过 %lld 个太大或不是文字的文件" = "; skipped %lld files that are too large or not text";
 
 /* TranslationEngines.swift */
 "系统" = "System";
@@ -640,6 +712,7 @@
 "签名校验失败：%@" = "Signature check failed: %@";
 "超时" = "Timed out";
 "退出码 %lld" = "Exit code %lld";
+"退出码 %d" = "Exit code %d";
 
 /* UpdateSettingsView.swift */
 "版本" = "Version";
@@ -695,12 +768,16 @@
 "还不熟" = "Not Yet";
 "记住了" = "Got It";
 "结束" = "Finish";
+"标记为已经记住" = "Mark as Learned";
+"标记为还没记住" = "Mark as Not Learned";
 
 /* WatermarkView.swift */
 "水印文字" = "Watermark text";
 "淡" = "Light";
 "浓" = "Strong";
 "斜着铺满整张图（PDF 每一页都铺），另存一份「原名 水印」放在原文件旁边，原文件不动" = "Tiled diagonally across the image (every page of a PDF) and saved as a copy named “Name Watermark” next to the original, which stays unchanged";
+"加水印" = "Watermark";
+"给 %lld %@加水印" = "Watermark %lld %@";
 
 /* 共用的文字和格式 */
 "Pop 功能" = "Pop Action";
