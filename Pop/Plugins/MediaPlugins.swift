@@ -449,6 +449,49 @@ enum QRCode {
         return NSBitmapImageRep(cgImage: cgImage).representation(using: .png, properties: [:])
     }
 
+    /// 能画成条形码（Code 128）的内容：只有英文字母、数字和常见符号，不超过 80 个字
+    static func canMakeBarcode(_ text: String) -> Bool {
+        !text.isEmpty && text.count <= 80 && text.unicodeScalars.allSatisfy { $0.value >= 32 && $0.value < 127 }
+    }
+
+    /// 生成 Code 128 条形码 PNG：白底，条码下面写上内容；内容不合适时返回 nil
+    static func barcode(_ text: String, scale: CGFloat = 3) -> Data? {
+        guard canMakeBarcode(text) else { return nil }
+        let filter = CIFilter.code128BarcodeGenerator()
+        filter.message = Data(text.utf8)
+        filter.quietSpace = 0
+        filter.barcodeHeight = 40
+        guard let output = filter.outputImage else { return nil }
+        let scaled = output.transformed(by: CGAffineTransform(scaleX: scale, y: scale))
+        guard let bars = CIContext().createCGImage(scaled, from: scaled.extent) else { return nil }
+
+        let font = CTFontCreateWithName("Menlo" as CFString, 11 * scale, nil)
+        let attributes: [NSAttributedString.Key: Any] = [
+            NSAttributedString.Key(kCTFontAttributeName as String): font,
+            NSAttributedString.Key(kCTForegroundColorAttributeName as String): CGColor(gray: 0, alpha: 1),
+        ]
+        let line = CTLineCreateWithAttributedString(NSAttributedString(string: text, attributes: attributes))
+        let textBounds = CTLineGetBoundsWithOptions(line, [])
+        let margin = 12 * scale
+        let gap = 4 * scale
+        let width = Int(max(CGFloat(bars.width), ceil(textBounds.width)) + margin * 2)
+        let height = Int(CGFloat(bars.height) + gap + ceil(textBounds.height) + margin * 2)
+        guard let context = CGContext(data: nil, width: width, height: height, bitsPerComponent: 8, bytesPerRow: 0,
+                                      space: CGColorSpace(name: CGColorSpace.sRGB) ?? CGColorSpaceCreateDeviceRGB(),
+                                      bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue) else { return nil }
+        context.setFillColor(CGColor(gray: 1, alpha: 1))
+        context.fill(CGRect(x: 0, y: 0, width: width, height: height))
+        // 条码在上面、文字在下面（CGContext 的原点在左下角），都左右居中
+        let barsRect = CGRect(x: (CGFloat(width) - CGFloat(bars.width)) / 2, y: CGFloat(height) - margin - CGFloat(bars.height),
+                              width: CGFloat(bars.width), height: CGFloat(bars.height))
+        context.interpolationQuality = .none
+        context.draw(bars, in: barsRect)
+        context.textPosition = CGPoint(x: (CGFloat(width) - textBounds.width) / 2 - textBounds.minX, y: margin - textBounds.minY)
+        CTLineDraw(line, context)
+        guard let image = context.makeImage() else { return nil }
+        return NSBitmapImageRep(cgImage: image).representation(using: .png, properties: [:])
+    }
+
     /// 识别图片里的二维码和条形码（Vision 认不出来时再用 Core Image 找一遍二维码），同样的内容只留一个
     static func decode(_ image: CGImage) -> [String] {
         let request = VNDetectBarcodesRequest()
@@ -488,7 +531,8 @@ enum QRCode {
 
 struct QRCodePlugin: PopPlugin {
     let info = PluginInfo(id: BuiltinPluginID.qrCode, name: String(localized: "二维码"), symbol: "qrcode",
-                          summary: String(localized: "把文字或链接生成二维码；选中图片时识别里面的二维码和条形码"), accepts: [.text, .image, .imageFile])
+                          summary: String(localized: "把文字或链接生成二维码（英文字母和数字还能生成条形码）；选中图片时识别里面的二维码和条形码"),
+                          accepts: [.text, .image, .imageFile])
 
     @MainActor func run(_ content: ClassifiedContent, context: PluginContext) async -> PluginOutcome {
         if content.kinds.contains(.image) || content.kinds.contains(.imageFile) {
@@ -498,8 +542,13 @@ struct QRCodePlugin: PopPlugin {
         guard let png = await runInBackground({ QRCode.generate(text) }) else {
             return .failure(String(localized: "内容太长，放不进一个二维码"))
         }
+        var buttons = [CardButton(title: String(localized: "复制图片"), action: .copyImage(png))]
+        // 英文字母、数字这类内容还能生成条形码
+        if QRCode.canMakeBarcode(text) {
+            buttons.append(CardButton(title: String(localized: "条形码"), action: .barcode(text)))
+        }
         return .card(ResultCard(title: String(localized: "二维码"), detail: String(localized: "\(text.count) 个字符"), image: png,
-                                buttons: [CardButton(title: String(localized: "复制图片"), action: .copyImage(png))]))
+                                buttons: buttons))
     }
 
     @MainActor private func decode(_ content: ClassifiedContent) -> PluginOutcome {

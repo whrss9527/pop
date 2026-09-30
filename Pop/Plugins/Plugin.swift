@@ -184,6 +184,10 @@ enum CardAction: Equatable {
     case cropImages([URL], SmartCrop.Ratio)
     /// 锁屏、熄屏、隐藏桌面图标这类系统操作
     case system(SystemAction)
+    /// 把文字排成图片（换一种底色）
+    case textImage(String, TextImage.Style)
+    /// 把内容生成条形码
+    case barcode(String)
 }
 
 struct CardButton: Equatable, Identifiable {
