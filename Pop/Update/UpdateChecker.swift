@@ -39,19 +39,19 @@ enum UpdateError: LocalizedError, Equatable {
 
     var errorDescription: String? {
         switch self {
-        case .server(let code): return "GitHub 返回了 \(code)"
-        case .badResponse: return "读不懂 GitHub 返回的内容"
-        case .noArchive: return "这个版本没有可以直接安装的附件，请到发布页手动下载"
-        case .checksumsMissing: return "校验文件里没有这个附件的校验和"
-        case .checksumMismatch: return "下载的文件校验和不对，可能没下载完整或者被篡改了"
-        case .extract(let text): return "解压失败：\(text)"
-        case .appNotFound: return "压缩包里没有 Pop.app"
-        case .wrongApp(let text): return "下载的程序不对：\(text)"
+        case .server(let code): return String(localized: "GitHub 返回了 \(code)")
+        case .badResponse: return String(localized: "读不懂 GitHub 返回的内容")
+        case .noArchive: return String(localized: "这个版本没有可以直接安装的附件，请到发布页手动下载")
+        case .checksumsMissing: return String(localized: "校验文件里没有这个附件的校验和")
+        case .checksumMismatch: return String(localized: "下载的文件校验和不对，可能没下载完整或者被篡改了")
+        case .extract(let text): return String(localized: "解压失败：\(text)")
+        case .appNotFound: return String(localized: "压缩包里没有 Pop.app")
+        case .wrongApp(let text): return String(localized: "下载的程序不对：\(text)")
         case .notInstallable(let text): return text
-        case .install(let text): return "替换程序失败：\(text)"
-        case .cancelledByUser: return "已取消授权，Pop 没有改动"
-        case .appManagement: return "macOS 不允许 Pop 替换自己：到「系统设置 → 隐私与安全性 → App 管理」里打开 Pop，再点重试"
-        case .wrongSigner: return "新版本和当前版本不是用同一个证书签名的，为了安全没有安装。可以到发布页确认后手动下载"
+        case .install(let text): return String(localized: "替换程序失败：\(text)")
+        case .cancelledByUser: return String(localized: "已取消授权，Pop 没有改动")
+        case .appManagement: return String(localized: "macOS 不允许 Pop 替换自己：到「系统设置 → 隐私与安全性 → App 管理」里打开 Pop，再点重试")
+        case .wrongSigner: return String(localized: "新版本和当前版本不是用同一个证书签名的，为了安全没有安装。可以到发布页确认后手动下载")
         }
     }
 }

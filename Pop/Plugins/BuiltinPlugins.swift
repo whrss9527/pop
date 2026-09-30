@@ -112,13 +112,13 @@ enum BuiltinCategory: CaseIterable, Identifiable {
 
     var title: String {
         switch self {
-        case .text: return "文字"
+        case .text: return String(localized: "文字")
         case .ai: return "AI"
-        case .convert: return "转换"
-        case .developer: return "开发"
-        case .screen: return "屏幕与图片"
-        case .files: return "文件和系统"
-        case .other: return "其他"
+        case .convert: return String(localized: "转换")
+        case .developer: return String(localized: "开发")
+        case .screen: return String(localized: "屏幕与图片")
+        case .files: return String(localized: "文件和系统")
+        case .other: return String(localized: "其他")
         }
     }
 

@@ -91,7 +91,9 @@ final class Updater: ObservableObject {
     var relocationNote: String? {
         guard let plan = InstallLocation.current(), plan.relocating else { return nil }
         let folder = InstallLocation.displayName(of: plan.target.deletingLastPathComponent())
-        return "现在是从临时位置运行的，这次会装进\(folder)" + (plan.trashAfter == nil ? "" : "，旧的那份移到废纸篓")
+        return plan.trashAfter == nil
+            ? String(localized: "现在是从临时位置运行的，这次会装进\(folder)")
+            : String(localized: "现在是从临时位置运行的，这次会装进\(folder)，旧的那份移到废纸篓")
     }
 
     private var skippedVersion: String? {
@@ -176,7 +178,7 @@ final class Updater: ObservableObject {
             UpdateLog.info("检查失败：\(error.localizedDescription)")
             phase = previous == .checking ? .idle : previous
             if manual {
-                checkError = "检查更新失败：\(error.localizedDescription)"
+                checkError = String(localized: "检查更新失败：\(error.localizedDescription)")
             }
             return nil
         }
@@ -242,7 +244,7 @@ final class Updater: ObservableObject {
 
     private func perform(_ release: ReleaseInfo) async throws {
         guard let plan = InstallLocation.current() else {
-            throw UpdateError.notInstallable("不是从 Pop.app 运行的，没法在程序里更新")
+            throw UpdateError.notInstallable(String(localized: "不是从 Pop.app 运行的，没法在程序里更新"))
         }
         guard let archiveURL = release.archiveURL, let checksumsURL = release.checksumsURL else {
             throw UpdateError.noArchive

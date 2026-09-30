@@ -21,7 +21,7 @@ struct UpdateSettingsView: View {
             }
 
             if let release = updater.release {
-                Section(release.isPrerelease ? "新版本（测试版）" : "新版本") {
+                Section(release.isPrerelease ? String(localized: "新版本（测试版）") : String(localized: "新版本")) {
                     ReleaseDetails(release: release)
                     actions(for: release)
                     if let note = updater.relocationNote {
@@ -87,15 +87,15 @@ struct UpdateSettingsView: View {
     }
 
     private var signatureDescription: String {
-        if CodeSignature.isAdHoc { return "本地签名（ad-hoc）" }
-        return CodeSignature.signerName ?? "证书签名"
+        if CodeSignature.isAdHoc { return String(localized: "本地签名（ad-hoc）") }
+        return CodeSignature.signerName ?? String(localized: "证书签名")
     }
 
     @ViewBuilder
     private var statusRow: some View {
         switch updater.phase {
         case .idle:
-            LabeledContent("状态") { Text(updater.lastChecked == nil ? "还没有检查过" : "—").foregroundStyle(.secondary) }
+            LabeledContent("状态") { Text(updater.lastChecked == nil ? String(localized: "还没有检查过") : "—").foregroundStyle(.secondary) }
         case .checking:
             LabeledContent("状态") { Text("正在检查…").foregroundStyle(.secondary) }
         case .upToDate:
@@ -116,7 +116,7 @@ struct UpdateSettingsView: View {
                 HStack {
                     ProgressView(value: fraction)
                         .frame(width: 160)
-                    Text(fraction.map { "正在下载 \(Int($0 * 100))%" } ?? "正在下载…")
+                    Text(fraction.map { String(localized: "正在下载 \(Int($0 * 100))%") } ?? String(localized: "正在下载…"))
                         .monospacedDigit()
                         .foregroundStyle(.secondary)
                 }

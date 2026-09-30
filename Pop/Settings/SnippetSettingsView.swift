@@ -92,7 +92,7 @@ private struct SnippetEditor: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text(snippet.text.isEmpty && snippet.title.isEmpty ? "添加短语" : "编辑短语")
+            Text(snippet.text.isEmpty && snippet.title.isEmpty ? String(localized: "添加短语") : String(localized: "编辑短语"))
                 .font(.headline)
             TextField("标题（可选）", text: $snippet.title)
             TextEditor(text: $snippet.text)

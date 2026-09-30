@@ -12,7 +12,7 @@ enum TranslationEngine: String, Codable, CaseIterable, Identifiable {
     /// 翻译卡片上的短名字
     var title: String {
         switch self {
-        case .system: return "系统"
+        case .system: return String(localized: "系统")
         case .ai: return "AI"
         case .deepL: return "DeepL"
         }
@@ -21,8 +21,8 @@ enum TranslationEngine: String, Codable, CaseIterable, Identifiable {
     /// 设置里的名字
     var longTitle: String {
         switch self {
-        case .system: return "系统翻译（离线）"
-        case .ai: return "AI 翻译"
+        case .system: return String(localized: "系统翻译（离线）")
+        case .ai: return String(localized: "AI 翻译")
         case .deepL: return "DeepL"
         }
     }
@@ -48,7 +48,7 @@ enum SystemTranslation {
             do {
                 status = try await availability.status(for: text, to: targetLanguage)
             } catch {
-                return .failed("无法识别原文的语言")
+                return .failed(String(localized: "无法识别原文的语言"))
             }
         }
         switch status {
@@ -59,7 +59,7 @@ enum SystemTranslation {
         case .unsupported:
             return .unsupported
         @unknown default:
-            return .failed("无法确认语言包状态")
+            return .failed(String(localized: "无法确认语言包状态"))
         }
     }
 }
@@ -123,10 +123,10 @@ enum DeepLClient {
     static func makeRequest(text: String, target: String, key: String) throws -> URLRequest {
         let trimmedKey = key.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmedKey.isEmpty else {
-            throw Failure("先在「设置 → 翻译」里填上 DeepL 的 API Key")
+            throw Failure(String(localized: "先在「设置 → 翻译」里填上 DeepL 的 API Key"))
         }
         guard let code = targetCode(for: target) else {
-            throw Failure("DeepL 不能译成\(LanguageOption.name(for: target))")
+            throw Failure(String(localized: "DeepL 不能译成\(LanguageOption.name(for: target))"))
         }
         var request = URLRequest(url: endpoint(for: trimmedKey))
         request.httpMethod = "POST"
@@ -151,20 +151,20 @@ enum DeepLClient {
     static func describe(status: Int, data: Data) -> String {
         switch status {
         case 401, 403:
-            return "DeepL 的 API Key 不对，到「设置 → 翻译」里检查一下"
+            return String(localized: "DeepL 的 API Key 不对，到「设置 → 翻译」里检查一下")
         case 413:
-            return "文字太长，DeepL 一次翻不了"
+            return String(localized: "文字太长，DeepL 一次翻不了")
         case 429:
-            return "DeepL 请求太频繁了，稍后再试"
+            return String(localized: "DeepL 请求太频繁了，稍后再试")
         case 456:
-            return "DeepL 这个月的字数额度用完了"
+            return String(localized: "DeepL 这个月的字数额度用完了")
         case 500...:
-            return "DeepL 暂时出了问题（\(status)），稍后再试"
+            return String(localized: "DeepL 暂时出了问题（\(status)），稍后再试")
         default:
             if let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any], let message = json["message"] as? String {
-                return "DeepL 返回了错误：\(message)"
+                return String(localized: "DeepL 返回了错误：\(message)")
             }
-            return "DeepL 返回了错误（\(status)）"
+            return String(localized: "DeepL 返回了错误（\(status)）")
         }
     }
 
@@ -174,14 +174,14 @@ enum DeepLClient {
         do {
             result = try await session.data(for: request)
         } catch {
-            throw Failure("连不上 DeepL：\(error.localizedDescription)")
+            throw Failure(String(localized: "连不上 DeepL：\(error.localizedDescription)"))
         }
         let status = (result.1 as? HTTPURLResponse)?.statusCode ?? 200
         guard (200..<300).contains(status) else {
             throw Failure(describe(status: status, data: result.0))
         }
         guard let translated = parse(result.0) else {
-            throw Failure("DeepL 返回的内容读不出来")
+            throw Failure(String(localized: "DeepL 返回的内容读不出来"))
         }
         return translated
     }
@@ -221,10 +221,10 @@ struct TranslationServices {
     static var systemOnly: TranslationServices {
         TranslationServices(
             unavailableReason: { engine in
-                engine == .system ? nil : "先在「设置 → 翻译」里设置好\(engine.longTitle)"
+                engine == .system ? nil : String(localized: "先在「设置 → 翻译」里设置好\(engine.longTitle)")
             },
             translate: { _, _, _ in
-                throw DeepLClient.Failure("没有设置联网的翻译引擎")
+                throw DeepLClient.Failure(String(localized: "没有设置联网的翻译引擎"))
             },
             checkSystem: { text, source, target in
                 await SystemTranslation.status(text: text, source: source, target: target)
@@ -244,7 +244,7 @@ struct TranslationServices {
                     guard AIService.backend(for: ai, onDevice: onDevice) == .unavailable else { return nil }
                     return AIService.unavailableMessage(for: ai, onDevice: onDevice)
                 case .deepL:
-                    return DeepLKeyStore.hasKey ? nil : "先在「设置 → 翻译」里填上 DeepL 的 API Key"
+                    return DeepLKeyStore.hasKey ? nil : String(localized: "先在「设置 → 翻译」里填上 DeepL 的 API Key")
                 }
             },
             translate: { engine, text, target in
@@ -260,7 +260,7 @@ struct TranslationServices {
                         continuation.finish()
                     }
                 case .system:
-                    throw DeepLClient.Failure("系统翻译在卡片上直接进行")
+                    throw DeepLClient.Failure(String(localized: "系统翻译在卡片上直接进行"))
                 }
             },
             checkSystem: { text, source, target in

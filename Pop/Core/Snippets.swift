@@ -23,13 +23,13 @@ struct Snippet: Codable, Equatable, Identifiable {
     var displayTitle: String {
         let trimmed = title.trimmingCharacters(in: .whitespacesAndNewlines)
         if !trimmed.isEmpty { return trimmed }
-        return text.split(whereSeparator: \.isNewline).first.map { String($0.prefix(40)) } ?? "（空）"
+        return text.split(whereSeparator: \.isNewline).first.map { String($0.prefix(40)) } ?? String(localized: "（空）")
     }
 
     /// 新装的 Pop 里带的两个例子，演示占位符怎么用
     static let examples = [
-        Snippet(id: "example-date", title: "今天的日期", text: "{date}"),
-        Snippet(id: "example-signature", title: "邮件结尾", text: "祝好！\n\n{date}"),
+        Snippet(id: "example-date", title: String(localized: "今天的日期"), text: "{date}"),
+        Snippet(id: "example-signature", title: String(localized: "邮件结尾"), text: String(localized: "祝好！\n\n{date}")),
     ]
 }
 
@@ -43,12 +43,12 @@ enum SnippetExpander {
     }
 
     static let placeholders = [
-        Placeholder(token: "{date}", meaning: "今天的日期，比如 2026-09-29"),
-        Placeholder(token: "{time}", meaning: "现在的时间，比如 14:30"),
-        Placeholder(token: "{datetime}", meaning: "日期和时间"),
-        Placeholder(token: "{weekday}", meaning: "星期几"),
-        Placeholder(token: "{clipboard}", meaning: "剪贴板里的文字"),
-        Placeholder(token: "{selection}", meaning: "唤起时选中的文字"),
+        Placeholder(token: "{date}", meaning: String(localized: "今天的日期，比如 2026-09-29")),
+        Placeholder(token: "{time}", meaning: String(localized: "现在的时间，比如 14:30")),
+        Placeholder(token: "{datetime}", meaning: String(localized: "日期和时间")),
+        Placeholder(token: "{weekday}", meaning: String(localized: "星期几")),
+        Placeholder(token: "{clipboard}", meaning: String(localized: "剪贴板里的文字")),
+        Placeholder(token: "{selection}", meaning: String(localized: "唤起时选中的文字")),
     ]
 
     static func expand(_ text: String, date: Date = Date(), timeZone: TimeZone = .current,

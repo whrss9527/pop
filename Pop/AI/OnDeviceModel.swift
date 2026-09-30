@@ -24,9 +24,9 @@ enum OnDeviceModel {
         var errorDescription: String? {
             switch self {
             case .unsupported:
-                return "这台 Mac 上用不了系统内置的模型，可以在「设置 → AI」里改用自己填的接口。"
+                return String(localized: "这台 Mac 上用不了系统内置的模型，可以在「设置 → AI」里改用自己填的接口。")
             case .generation(let message):
-                return "系统内置的模型出错了：\(message)"
+                return String(localized: "系统内置的模型出错了：\(message)")
             }
         }
     }
@@ -42,12 +42,12 @@ enum OnDeviceModel {
                 return .unsupported
             }
             if case .unavailable(.appleIntelligenceNotEnabled) = availability {
-                return .unavailable("要先在「系统设置 → Apple 智能与 Siri」里打开 Apple 智能")
+                return .unavailable(String(localized: "要先在「系统设置 → Apple 智能与 Siri」里打开 Apple 智能"))
             }
             if case .unavailable(.modelNotReady) = availability {
-                return .unavailable("系统模型还在下载，稍后再试")
+                return .unavailable(String(localized: "系统模型还在下载，稍后再试"))
             }
-            return .unavailable("系统模型现在用不了")
+            return .unavailable(String(localized: "系统模型现在用不了"))
         }
         #endif
         return .unsupported
@@ -82,7 +82,7 @@ enum OnDeviceModel {
                             }
                         }
                         if request.truncated {
-                            continuation.yield("\n\n（原文太长，只处理了前 \(OnDeviceModel.maxInputLength) 个字）")
+                            continuation.yield(String(localized: "\n\n（原文太长，只处理了前 \(OnDeviceModel.maxInputLength) 个字）"))
                         }
                         continuation.finish()
                     } catch is CancellationError {

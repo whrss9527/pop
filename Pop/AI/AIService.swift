@@ -30,7 +30,7 @@ enum AIService {
     /// 没法用时给用户看的说明
     static func unavailableMessage(for settings: AISettings, onDevice: OnDeviceModel.Status) -> String {
         if settings.provider == .onDevice, case .unavailable(let reason) = onDevice {
-            return "系统内置的模型现在用不了：\(reason)。也可以在「设置 → AI」里改用自己填的接口。"
+            return String(localized: "系统内置的模型现在用不了：\(reason)。也可以在「设置 → AI」里改用自己填的接口。")
         }
         return AIClient.describe(AIClient.Failure.notConfigured)
     }

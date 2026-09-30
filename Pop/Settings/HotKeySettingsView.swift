@@ -51,10 +51,10 @@ struct HotKeySettingsView: View {
     private func warning(for pluginID: String, in settings: AppSettings) -> String? {
         guard let key = settings.hotKey(for: pluginID) else { return nil }
         if settings.trigger.hotKey.keyCombo == key {
-            return "和唤起圆盘的快捷键重复了"
+            return String(localized: "和唤起圆盘的快捷键重复了")
         }
         if settings.clipboard.enabled, settings.clipboard.hotKey.keyCombo == key {
-            return "和剪贴板历史的快捷键重复了"
+            return String(localized: "和剪贴板历史的快捷键重复了")
         }
         return nil
     }
@@ -68,7 +68,7 @@ struct ShortcutRecorder: View {
 
     var body: some View {
         Button(action: toggle) {
-            Text(recording ? "按下快捷键…" : (combo?.display ?? "设置快捷键"))
+            Text(recording ? String(localized: "按下快捷键…") : (combo?.display ?? String(localized: "设置快捷键")))
                 .monospacedDigit()
                 .foregroundStyle(combo == nil && !recording ? Color.secondary : Color.primary)
                 .frame(minWidth: 96)

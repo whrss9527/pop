@@ -33,7 +33,7 @@ struct PluginLibraryView: View {
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
             Divider()
             HStack(spacing: 12) {
-                Text(notice ?? "下载后先核对 sha256，对得上才装。装好的插件在「我的插件」里，可以编辑、停用或者删除。")
+                Text(notice ?? String(localized: "下载后先核对 sha256，对得上才装。装好的插件在「我的插件」里，可以编辑、停用或者删除。"))
                     .font(.caption)
                     .foregroundStyle(.secondary)
                     .lineLimit(2)
@@ -79,7 +79,7 @@ struct PluginLibraryView: View {
         case .loaded(let catalog):
             let entries = catalog.index.entries(matching: query)
             if entries.isEmpty {
-                Text(catalog.index.plugins.isEmpty ? "插件库里还没有插件" : "没有匹配的插件")
+                Text(catalog.index.plugins.isEmpty ? String(localized: "插件库里还没有插件") : String(localized: "没有匹配的插件"))
                     .foregroundStyle(.secondary)
             } else {
                 let installedIDs = Set(pluginStore.manifests.map(\.id))
@@ -107,8 +107,8 @@ struct PluginLibraryView: View {
                     store.update { $0.setInstalled(saved.id, true) }
                 }
                 notice = isUpdate
-                    ? "「\(saved.name)」已经更新"
-                    : "装好了「\(saved.name)」：在圆盘的「全部功能」里能找到，也可以到「圆盘」里拖到想要的位置"
+                    ? String(localized: "「\(saved.name)」已经更新")
+                    : String(localized: "装好了「\(saved.name)」：在圆盘的「全部功能」里能找到，也可以到「圆盘」里拖到想要的位置")
             } catch {
                 errorMessage = (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
             }
@@ -118,8 +118,8 @@ struct PluginLibraryView: View {
     /// 运行 Shell 脚本的插件，装之前先给用户看一眼脚本
     private func confirmScript(_ manifest: PluginManifest) -> Bool {
         let alert = NSAlert()
-        alert.messageText = "「\(manifest.name)」会在这台 Mac 上运行 Shell 脚本"
-        alert.informativeText = "每次用它都会运行下面这段脚本，脚本能读写你的文件。只装信得过的插件。"
+        alert.messageText = String(localized: "「\(manifest.name)」会在这台 Mac 上运行 Shell 脚本")
+        alert.informativeText = String(localized: "每次用它都会运行下面这段脚本，脚本能读写你的文件。只装信得过的插件。")
         alert.alertStyle = .warning
         let scroll = NSTextView.scrollableTextView()
         scroll.frame = NSRect(x: 0, y: 0, width: 420, height: 160)
@@ -130,8 +130,8 @@ struct PluginLibraryView: View {
             textView.font = .monospacedSystemFont(ofSize: 11, weight: .regular)
         }
         alert.accessoryView = scroll
-        alert.addButton(withTitle: "安装")
-        alert.addButton(withTitle: "取消")
+        alert.addButton(withTitle: String(localized: "安装"))
+        alert.addButton(withTitle: String(localized: "取消"))
         return alert.runModal() == .alertFirstButtonReturn
     }
 }
@@ -179,14 +179,14 @@ struct PluginLibraryRow: View {
         var parts: [String] = []
         switch entry.kind {
         case .shell?:
-            parts.append("Shell 脚本，会在这台 Mac 上运行命令")
+            parts.append(String(localized: "Shell 脚本，会在这台 Mac 上运行命令"))
         case let kind?:
             parts.append(kind.title)
         case nil:
-            parts.append("新类型的插件")
+            parts.append(String(localized: "新类型的插件"))
         }
         if !entry.author.isEmpty {
-            parts.append("作者：\(entry.author)")
+            parts.append(String(localized: "作者：\(entry.author)"))
         }
         return parts.joined(separator: " · ")
     }

@@ -419,7 +419,7 @@ enum OverlayDemo {
             for tab in [SettingsTab.plugins, .ai, .hotKeys] {
                 coordinator.openSettings(tab)
                 await pause(0.6 * unit)
-                if let window = NSApp.windows.first(where: { $0.isVisible && $0.title == "Pop 设置" }) {
+                if let window = NSApp.windows.first(where: { $0.isVisible && $0.title == String(localized: "Pop 设置") }) {
                     logRegion(window.frame, screen: screen)
                 }
                 step("settings-\(tab.rawValue)")
@@ -429,7 +429,7 @@ enum OverlayDemo {
             // 插件库：截图脚本用 POP_PLUGIN_INDEX_URL 指向仓库里的 plugins/index.json，不联网
             coordinator.openPluginLibrary()
             await pause(1.0 * unit)
-            if let window = NSApp.windows.first(where: { $0.isVisible && $0.title == "Pop 设置" }) {
+            if let window = NSApp.windows.first(where: { $0.isVisible && $0.title == String(localized: "Pop 设置") }) {
                 logRegion(window.frame, screen: screen)
             }
             step("settings-pluginLibrary")
