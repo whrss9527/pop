@@ -75,8 +75,9 @@ enum TextImage {
 
     static func attributed(_ text: String, style: Style) -> NSAttributedString {
         let paragraph = NSMutableParagraphStyle()
+        // 空行本身就隔开了段落，段后只留一点，不然空行加段后距会隔得太开
         paragraph.lineSpacing = fontSize * 0.55
-        paragraph.paragraphSpacing = fontSize * 0.7
+        paragraph.paragraphSpacing = fontSize * 0.3
         paragraph.lineBreakMode = .byWordWrapping
         return NSAttributedString(string: text, attributes: [
             .font: NSFont.systemFont(ofSize: fontSize),

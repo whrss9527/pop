@@ -3,24 +3,48 @@ import Foundation
 
 /// 录屏用到的计算：选区域、换算坐标、输出尺寸、文件名和存放位置
 enum ScreenRecording {
+    /// 录什么声音。电脑里的声音和麦克风一次只录一种：两种一起录会存成两条音轨，有的播放器只放第一条
+    enum Audio: String, CaseIterable, Identifiable {
+        case off
+        case system
+        case microphone
+
+        var id: String { rawValue }
+
+        var title: String {
+            switch self {
+            case .off: return String(localized: "不录声音")
+            case .system: return String(localized: "电脑里的声音")
+            case .microphone: return String(localized: "麦克风")
+            }
+        }
+    }
+
     struct Options: Equatable {
-        /// 录上电脑里的声音
-        var systemAudio = false
+        var audio = Audio.off
         /// 显示鼠标点击
         var showClicks = false
 
+        static let audioKey = "pop.screenRecord.audio"
+        /// 0.30.0 的「录上电脑里的声音」勾选，读旧设置用
         static let systemAudioKey = "pop.screenRecord.systemAudio"
         static let showClicksKey = "pop.screenRecord.showClicks"
 
         /// 上次选的
         static func saved(in defaults: UserDefaults = .standard) -> Options {
-            Options(systemAudio: defaults.bool(forKey: systemAudioKey), showClicks: defaults.bool(forKey: showClicksKey))
+            let audio = defaults.string(forKey: audioKey).flatMap(Audio.init(rawValue:))
+                ?? (defaults.bool(forKey: systemAudioKey) ? .system : .off)
+            return Options(audio: audio, showClicks: defaults.bool(forKey: showClicksKey))
         }
 
         func save(in defaults: UserDefaults = .standard) {
-            defaults.set(systemAudio, forKey: Self.systemAudioKey)
+            defaults.set(audio.rawValue, forKey: Self.audioKey)
             defaults.set(showClicks, forKey: Self.showClicksKey)
         }
+    }
+
+    static var microphoneHint: String {
+        String(localized: "要先在「系统设置 → 隐私与安全性 → 麦克风」里允许 Pop")
     }
 
     /// 录好的视频

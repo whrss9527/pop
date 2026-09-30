@@ -45,6 +45,11 @@ final class ScreenRecorder: NSObject {
     /// 开始录 selection 选中的地方
     func start(_ selection: RegionPicker.Selection) async throws {
         guard stream == nil else { return }
+        let audio = selection.options.audio
+        // 要录麦克风：没问过先问一次，不让就不录
+        if audio == .microphone, !(await Self.microphoneAllowed()) {
+            throw ScreenRecording.Failure(message: ScreenRecording.microphoneHint)
+        }
         let screen = selection.screen
         let whole = selection.rect.insetBy(dx: -1, dy: -1).contains(screen.frame)
         // 边框和控制面板先放上屏幕，才能在要录的内容里把它们排除掉
@@ -74,7 +79,8 @@ final class ScreenRecorder: NSObject {
             configuration.minimumFrameInterval = CMTime(value: 1, timescale: 30)
             configuration.showsCursor = true
             configuration.showMouseClicks = selection.options.showClicks
-            configuration.capturesAudio = selection.options.systemAudio
+            configuration.capturesAudio = audio == .system
+            configuration.captureMicrophone = audio == .microphone
             configuration.excludesCurrentProcessAudio = true
 
             let folder = ScreenRecording.folder(screenshotLocation: ScreenRecording.screenshotLocation)
@@ -87,8 +93,11 @@ final class ScreenRecorder: NSObject {
 
             let stream = SCStream(filter: filter, configuration: configuration, delegate: self)
             try stream.addStreamOutput(sink, type: .screen, sampleHandlerQueue: sink.queue)
-            if selection.options.systemAudio {
+            if audio == .system {
                 try stream.addStreamOutput(sink, type: .audio, sampleHandlerQueue: sink.queue)
+            }
+            if audio == .microphone {
+                try stream.addStreamOutput(sink, type: .microphone, sampleHandlerQueue: sink.queue)
             }
             try stream.addRecordingOutput(output)
             try await stream.startCapture()
@@ -115,6 +124,18 @@ final class ScreenRecorder: NSObject {
                 throw failure
             }
             throw ScreenRecording.Failure(message: String(localized: "录屏没能开始：\(error.localizedDescription)"))
+        }
+    }
+
+    /// 麦克风权限：没问过就问一次
+    private static func microphoneAllowed() async -> Bool {
+        switch AVCaptureDevice.authorizationStatus(for: .audio) {
+        case .authorized:
+            return true
+        case .notDetermined:
+            return await AVCaptureDevice.requestAccess(for: .audio)
+        default:
+            return false
         }
     }
 
