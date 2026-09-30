@@ -697,6 +697,22 @@
 "斜着铺满整张图，另存一份「原名 水印」放在原图旁边，原图不动" = "Tiled diagonally across the image and saved as a copy named “Name Watermark” next to the original, which stays unchanged";
 
 /* 共用的文字和格式 */
+"Pop 功能" = "Pop Action";
+"用 Pop 处理文字" = "Process Text with Pop";
+"用 Pop 的一个功能处理一段文字，把结果交给下一个操作：计算、格式化 JSON、转换大小写、AI 润色……" = "Process text with one of Pop’s actions and pass the result to the next step: calculate, format JSON, change case, AI polish…";
+"用 ${function} 处理 ${text}" = "Process ${text} with ${function}";
+"语言" = "Language";
+"简体中文" = "简体中文";
+"繁體中文" = "繁體中文";
+"日本語" = "日本語";
+"用 Pop 翻译" = "Translate with Pop";
+"用 AI 或 DeepL 翻译一段文字，把译文交给下一个操作。没选引擎时用「设置 → 翻译」里的默认引擎。" = "Translate text with AI or DeepL and pass the translation to the next step. Without an engine, the default one in Settings → Translate is used.";
+"译成" = "To";
+"引擎" = "Engine";
+"用 Pop 翻译 ${text}" = "Translate ${text} with Pop";
+"处理文字" = "Process Text";
+"{name}（{reason}）" = "{name} ({reason})";
+"，" = ", ";
 "%@（⌘%@）" = "%@ (⌘%@)";
 "%@（%lld）" = "%@ (%lld)";
 "%@（%lld）：%@" = "%@ (%lld): %@";
