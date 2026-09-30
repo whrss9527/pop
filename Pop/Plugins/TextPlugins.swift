@@ -95,6 +95,22 @@ struct SpeakPlugin: PopPlugin {
     }
 }
 
+struct TextImagePlugin: PopPlugin {
+    let info = PluginInfo(id: BuiltinPluginID.textImage, name: String(localized: "文字转图片"), symbol: "text.below.photo",
+                          summary: String(localized: "把选中的文字排成一张手机上看着舒服的长图（宽 1080 像素），白底、米黄、深色三种底色，可以复制、存储或贴到屏幕上"),
+                          accepts: [.text], maxLength: 50_000)
+
+    @MainActor func run(_ content: ClassifiedContent, context: PluginContext) async -> PluginOutcome {
+        guard let text = content.text else { return .failure(String(localized: "没有文字")) }
+        return Self.outcome(text, style: .paper)
+    }
+
+    @MainActor static func outcome(_ text: String, style: TextImage.Style) -> PluginOutcome {
+        guard let png = TextImage.render(text, style: style) else { return .failure(String(localized: "没能把这段文字画成图片")) }
+        return .card(TextImage.card(text, style: style, png: png))
+    }
+}
+
 struct ChangeCasePlugin: PopPlugin {
     let info = PluginInfo(id: BuiltinPluginID.changeCase, name: String(localized: "大小写"), symbol: "textformat",
                           summary: String(localized: "大写、小写、驼峰、下划线等写法互相转换"), accepts: [.text],
