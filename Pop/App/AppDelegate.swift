@@ -3,6 +3,8 @@ import AppKit
 @MainActor
 final class AppDelegate: NSObject, NSApplicationDelegate {
     private var controller: AppController?
+    /// 启动完成前收到的 pop:// 链接，准备好之后再处理
+    private var pendingURLs: [URL] = []
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         // 跑单元测试时 App 只是测试宿主，不做事件拦截、权限申请这些系统层面的初始化。
@@ -10,6 +12,21 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let controller = AppController()
         self.controller = controller
         controller.start()
+        for url in pendingURLs {
+            controller.open(url)
+        }
+        pendingURLs = []
+    }
+
+    /// 打开 pop:// 链接（快捷指令、终端里的 open、启动器）
+    func application(_ application: NSApplication, open urls: [URL]) {
+        guard let controller else {
+            pendingURLs += urls
+            return
+        }
+        for url in urls {
+            controller.open(url)
+        }
     }
 
     func applicationWillTerminate(_ notification: Notification) {
