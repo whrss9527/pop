@@ -29,6 +29,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
     }
 
+    /// 正在录屏时退出（包括更新后重新启动）：先停下来把视频存好再退出
+    func applicationShouldTerminate(_ sender: NSApplication) -> NSApplication.TerminateReply {
+        guard ScreenRecorder.shared.isRecording else { return .terminateNow }
+        ScreenRecorder.shared.stop {
+            sender.reply(toApplicationShouldTerminate: true)
+        }
+        return .terminateLater
+    }
+
     func applicationWillTerminate(_ notification: Notification) {
         controller?.stop()
     }

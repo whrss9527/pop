@@ -27,7 +27,8 @@ enum OverlayDemo {
         // 唤起点放在屏幕中间偏左上，右下方留出卡片和列表的位置
         let center = CGPoint(x: (visible.midX - 150).rounded(), y: (visible.midY + 150).rounded())
         // 宽一些，放得下文本对比那样的宽卡片
-        logRegion(CGRect(x: center.x - 190, y: center.y - 480, width: 760, height: 680), screen: screen)
+        let cardRegion = CGRect(x: center.x - 190, y: center.y - 480, width: 760, height: 680)
+        logRegion(cardRegion, screen: screen)
 
         let installed = Set(settings.installedPlugins)
         let text = ContentClassifier.classify(.text("Liquid glass"))
@@ -435,6 +436,28 @@ enum OverlayDemo {
             overlay.showCard(ResultCardView(card: CropImagePlugin.card([beach]), onAction: { _ in }, onMore: {}, onClose: {}),
                              anchor: center)
             step("cropImage")
+
+            // 录屏：先是选区域的界面（截屏幕上方的提示条），再是录的时候的边框和控制面板，最后是录好的卡片
+            await pause(1.4 * unit)
+            overlay.hide()
+            Task { @MainActor in
+                _ = await RegionPicker.pick()
+            }
+            await pause(0.4 * unit)
+            logRegion(CGRect(x: screen.frame.midX - 380, y: screen.frame.maxY - 300, width: 760, height: 300), screen: screen)
+            step("screenRecord-picker")
+            await pause(1.4 * unit)
+            RegionPicker.cancel()
+            logRegion(cardRegion, screen: screen)
+            let hideIndicators = ScreenRecorder.shared.showIndicatorsForDemo(
+                region: CGRect(x: center.x - 150, y: center.y - 380, width: 560, height: 320), screen: screen, elapsed: "00:12")
+            step("screenRecord-recording")
+            await pause(1.4 * unit)
+            hideIndicators()
+            let clip = ScreenRecording.Clip(url: FileManager.default.temporaryDirectory.appending(path: "pop-demo/录屏 2026-09-30 15.30.12.mp4"),
+                                            duration: 12, width: 1280, height: 720)
+            overlay.showCard(ResultCardView(card: ScreenRecording.card(clip), onAction: { _ in }, onMore: {}, onClose: {}), anchor: center)
+            step("screenRecord")
 
             // 截图标注窗口：拿一张画好的示例图，标上方框、箭头、文字、马赛克和序号；截图区域换成标注窗口
             await pause(1.4 * unit)

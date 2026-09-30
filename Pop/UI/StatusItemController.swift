@@ -17,6 +17,8 @@ final class StatusItemController: NSObject, NSMenuDelegate {
         var timerStatus: String?
         /// 「传到手机」的状态说明；没在共享时为 nil
         var phoneShareStatus: String?
+        /// 录屏录了多久；没在录时为 nil
+        var recordingElapsed: String?
     }
 
     var stateProvider: () -> State = { State() }
@@ -31,6 +33,7 @@ final class StatusItemController: NSObject, NSMenuDelegate {
     var onShowShelf: () -> Void = {}
     var onCancelTimer: () -> Void = {}
     var onStopPhoneShare: () -> Void = {}
+    var onStopRecording: () -> Void = {}
 
     private let statusItem: NSStatusItem
 
@@ -46,7 +49,9 @@ final class StatusItemController: NSObject, NSMenuDelegate {
     func refresh() {
         let state = stateProvider()
         let symbol: String
-        if state.pendingUpdateVersion != nil {
+        if state.recordingElapsed != nil {
+            symbol = "record.circle"
+        } else if state.pendingUpdateVersion != nil {
             symbol = "arrow.down.circle"
         } else if !state.isTrusted {
             symbol = "exclamationmark.circle"
@@ -58,12 +63,23 @@ final class StatusItemController: NSObject, NSMenuDelegate {
         let image = NSImage(systemSymbolName: symbol, accessibilityDescription: "Pop")
         image?.isTemplate = true
         statusItem.button?.image = image
-        statusItem.button?.title = image == nil ? "Pop" : ""
+        if let elapsed = state.recordingElapsed {
+            // 录屏的时候在图标旁边显示录了多久
+            statusItem.button?.font = .monospacedDigitSystemFont(ofSize: NSFont.systemFontSize, weight: .regular)
+            statusItem.button?.imagePosition = .imageLeading
+            statusItem.button?.title = " " + elapsed
+        } else {
+            statusItem.button?.title = image == nil ? "Pop" : ""
+        }
     }
 
     func menuNeedsUpdate(_ menu: NSMenu) {
         menu.removeAllItems()
         let state = stateProvider()
+        if let elapsed = state.recordingElapsed {
+            addItem(to: menu, title: "停止录屏（\(elapsed)）", action: #selector(stopRecording))
+            menu.addItem(.separator())
+        }
         if let version = state.pendingUpdateVersion {
             addItem(to: menu, title: "安装新版本 \(version)…", action: #selector(installUpdate))
             menu.addItem(.separator())
@@ -127,4 +143,5 @@ final class StatusItemController: NSObject, NSMenuDelegate {
     @objc private func showShelf() { onShowShelf() }
     @objc private func cancelTimer() { onCancelTimer() }
     @objc private func stopPhoneShare() { onStopPhoneShare() }
+    @objc private func stopRecording() { onStopRecording() }
 }

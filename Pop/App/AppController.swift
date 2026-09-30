@@ -141,7 +141,8 @@ final class AppController {
                                               keepAwakeStatus: KeepAwake.shared.statusText(),
                                               shelfCount: FileShelf.shared.files.count,
                                               timerStatus: CountdownTimer.shared.statusText(),
-                                              phoneShareStatus: PhoneShare.shared.statusText())
+                                              phoneShareStatus: PhoneShare.shared.statusText(),
+                                              recordingElapsed: ScreenRecorder.shared.elapsedText())
         }
         statusItem.onCloseAllPins = {
             PinBoard.shared.closeAll()
@@ -157,6 +158,15 @@ final class AppController {
         }
         statusItem.onStopPhoneShare = {
             PhoneShare.shared.stop()
+        }
+        statusItem.onStopRecording = {
+            ScreenRecorder.shared.stop()
+        }
+        ScreenRecorder.shared.onTick = { [weak self] in
+            self?.statusItem.refresh()
+        }
+        ScreenRecorder.shared.onFinish = { [weak self] result in
+            self?.coordinator.recordingFinished(result)
         }
         PhoneShare.shared.onMessage = { [weak self] message in
             self?.coordinator.showToast(message, at: NSEvent.mouseLocation)

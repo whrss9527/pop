@@ -379,6 +379,23 @@ final class PopCoordinator: MouseTriggerDelegate {
         overlay.showToast(message, anchor: point)
     }
 
+    /// 录屏录好了：没在用 Pop 的话在指针旁边弹出卡片，可以接着转成 GIF、截取一段；正在用就只在访达里选中
+    func recordingFinished(_ result: Result<ScreenRecording.Clip, ScreenRecording.Failure>) {
+        switch result {
+        case .failure(let failure):
+            guard session == nil else { return }
+            showToast(failure.message, at: NSEvent.mouseLocation)
+        case .success(let clip):
+            guard session == nil else {
+                NSWorkspace.shared.activateFileViewerSelecting([clip.url])
+                return
+            }
+            let point = NSEvent.mouseLocation
+            session = Session(anchor: point, pid: nil, sourceAppName: nil, buttonHeld: false, content: .empty)
+            present(.card(ScreenRecording.card(clip)))
+        }
+    }
+
     /// 在 point 处显示识别出的文字（贴图上的「识别文字」），可以接着复制、翻译
     func showRecognizedText(_ text: String, at point: CGPoint) {
         endSession()

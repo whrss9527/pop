@@ -282,7 +282,7 @@ final class VideoConverterTests: XCTestCase {
         let mp4 = URL(fileURLWithPath: "/tmp/pop-missing-\(UUID().uuidString).mp4")
         let outcome = await VideoConvertPlugin().run(ContentClassifier.classify(.files([mp4])), context: context)
         guard case .card(let card) = outcome else { return XCTFail("应该返回结果卡片") }
-        XCTAssertEqual(card.buttons.map(\.title), ["转成 GIF", "压缩到 720p", "提取音频", "截取一段…"])
+        XCTAssertEqual(card.buttons.map(\.title), ["转成 GIF", "压缩到 720p", "提取音频", "拼缩略图", "截取一段…"])
         XCTAssertEqual(card.buttons.first?.action, .convertVideos([mp4], .gif))
         XCTAssertEqual(card.buttons.last?.action, .trimMedia(mp4))
     }
@@ -349,6 +349,39 @@ final class VideoConverterTests: XCTestCase {
             XCTAssertEqual(failure.message, "「录屏.mov」没有声音")
         }
         XCTAssertFalse(FileManager.default.fileExists(atPath: folder.appending(path: "录屏.m4a").path(percentEncoded: false)))
+    }
+
+    func testContactSheetLayout() {
+        // 横的 1920×1080：每格 480×270，4 列 4 行
+        let wide = ContactSheet.layout(videoSize: CGSize(width: 1920, height: 1080))
+        XCTAssertEqual(wide.thumbnail, CGSize(width: 480, height: 270))
+        XCTAssertEqual(wide.size, CGSize(width: 24 * 2 + 480 * 4 + 12 * 3, height: 24 * 2 + 64 + 270 * 4 + 12 * 3))
+        // 第一格在左上角，第六格在第二行第二列
+        XCTAssertEqual(wide.frame(at: 0), CGRect(x: 24, y: wide.size.height - 24 - 64 - 270, width: 480, height: 270))
+        XCTAssertEqual(wide.frame(at: 5).minX, 24 + 480 + 12)
+        XCTAssertEqual(wide.frame(at: 5).maxY, wide.size.height - 24 - 64 - 270 - 12)
+        // 竖的每格 300 宽；很小的视频每格也有 160 宽
+        XCTAssertEqual(ContactSheet.layout(videoSize: CGSize(width: 1080, height: 1920)).thumbnail, CGSize(width: 300, height: 533))
+        XCTAssertEqual(ContactSheet.layout(videoSize: CGSize(width: 64, height: 48)).thumbnail, CGSize(width: 160, height: 120))
+        XCTAssertEqual(ContactSheet.times(duration: 16), (0..<16).map { Double($0) + 0.5 })
+        XCTAssertEqual(ContactSheet.times(duration: 0), [])
+        XCTAssertEqual(ContactSheet.fit(CGSize(width: 100, height: 50), in: CGRect(x: 0, y: 0, width: 200, height: 200)),
+                       CGRect(x: 0, y: 50, width: 200, height: 100))
+    }
+
+    func testMakesAContactSheet() async throws {
+        let folder = try Samples.folder()
+        defer { try? FileManager.default.removeItem(at: folder) }
+        let video = folder.appending(path: "录屏.mov")
+        try await writeVideo(to: video, frames: 30)
+
+        let result = try await VideoConverter.convert(video, .contactSheet)
+        XCTAssertEqual(result.url.lastPathComponent, "录屏 缩略图.jpg")
+        let source = try XCTUnwrap(CGImageSourceCreateWithURL(result.url as CFURL, nil))
+        let properties = try XCTUnwrap(CGImageSourceCopyPropertiesAtIndex(source, 0, nil) as? [CFString: Any])
+        let size = ContactSheet.layout(videoSize: CGSize(width: 64, height: 48)).size
+        XCTAssertEqual(properties[kCGImagePropertyPixelWidth] as? Int, Int(size.width))
+        XCTAssertEqual(properties[kCGImagePropertyPixelHeight] as? Int, Int(size.height))
     }
 
     /// 写一段 1 秒、每秒 10 帧、64 × 48 的视频（Motion JPEG，不依赖硬件编码），每一帧换一个灰度
