@@ -14,7 +14,7 @@ configFiles:
 settings:
   base:
     SWIFT_VERSION: "5.0"
-    MARKETING_VERSION: "0.30.0"
+    MARKETING_VERSION: "0.31.0"
     CURRENT_PROJECT_VERSION: "1"
     CODE_SIGN_STYLE: Automatic
     DEAD_CODE_STRIPPING: YES
@@ -28,6 +28,9 @@ targets:
       Release: Config/Pop.xcconfig
     sources:
       - path: Pop
+      # 更新记录也打进 App：更新后告诉用户这一版新增了什么
+      - path: CHANGELOG.md
+        buildPhase: resources
     settings:
       base:
         INFOPLIST_FILE: Pop/Resources/Info.plist

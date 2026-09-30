@@ -691,6 +691,8 @@ final class PopCoordinator: MouseTriggerDelegate {
             captureWeb(url, format: format)
         case .cropImages(let files, let ratio):
             cropImages(files, ratio)
+        case .system(let action):
+            runSystemAction(action)
         }
     }
 
@@ -932,6 +934,16 @@ final class PopCoordinator: MouseTriggerDelegate {
             }
             guard let self, self.session == nil else { return }
             self.showToast(message, at: NSEvent.mouseLocation)
+        }
+    }
+
+    /// 系统操作：先收起浮窗（锁屏、熄屏前不留着卡片），做完需要的话提示一句
+    private func runSystemAction(_ action: SystemAction) {
+        let anchor = session?.anchor ?? NSEvent.mouseLocation
+        endSession()
+        Task { [weak self] in
+            guard let message = await SystemActions.run(action) else { return }
+            self?.showToast(message, at: anchor)
         }
     }
 

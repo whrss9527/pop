@@ -19,6 +19,18 @@ struct KeepAwakePlugin: PopPlugin {
     }
 }
 
+// MARK: - 系统操作
+
+struct SystemActionsPlugin: PopPlugin {
+    let info = PluginInfo(id: BuiltinPluginID.systemActions, name: String(localized: "系统操作"), symbol: "switch.2",
+                          summary: String(localized: "锁屏、熄屏、睡眠、打开屏幕保护程序、隐藏或显示桌面图标、推出所有磁盘"), accepts: [])
+
+    @MainActor func run(_ content: ClassifiedContent, context: PluginContext) async -> PluginOutcome {
+        .card(SystemActions.card(desktopIconsVisible: SystemActions.desktopIconsVisible(),
+                                 ejectable: SystemActions.ejectableVolumes().count))
+    }
+}
+
 // MARK: - 屏幕标尺
 
 struct RulerPlugin: PopPlugin {
