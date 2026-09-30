@@ -170,7 +170,7 @@ func runInBackground<T>(_ work: @escaping () -> T) async -> T {
 
 struct TranslatePlugin: PopPlugin {
     let info = PluginInfo(id: BuiltinPluginID.translate, name: "翻译", symbol: "character.bubble",
-                          summary: "用系统离线翻译翻译选中的文字", accepts: [.text])
+                          summary: "翻译选中的文字：默认用系统离线翻译，卡片上可以换成 AI 或 DeepL，或者几家一起对比", accepts: [.text])
 
     @MainActor func run(_ content: ClassifiedContent, context: PluginContext) async -> PluginOutcome {
         guard let text = content.text else { return .failure("没有可翻译的文字") }

@@ -456,6 +456,8 @@ struct TranslationSettings: Codable, Equatable {
     var foreignTarget = "zh-Hans"
     /// 中文译为
     var chineseTarget = "en"
+    /// 翻译卡片默认用的引擎
+    var engine: TranslationEngine = .system
 
     init() {}
 
@@ -464,6 +466,7 @@ struct TranslationSettings: Codable, Equatable {
         let d = TranslationSettings()
         foreignTarget = c.lenient(.foreignTarget, default: d.foreignTarget)
         chineseTarget = c.lenient(.chineseTarget, default: d.chineseTarget)
+        engine = c.lenient(.engine, default: d.engine)
     }
 }
 
