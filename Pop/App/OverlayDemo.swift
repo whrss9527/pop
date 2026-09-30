@@ -395,6 +395,28 @@ enum OverlayDemo {
             }
             step("idNumber")
 
+            // 语音转文字的结果：示例录音的文字和字幕
+            await pause(1.4 * unit)
+            let meeting = FileManager.default.temporaryDirectory.appending(path: "pop-demo/周会录音.m4a")
+            let spoken: [(String, TimeInterval, TimeInterval)] = [("大家好", 0.4, 0.8), ("。", 1.2, 0.1), ("今天先确认", 1.6, 1.0),
+                                                                   ("发布时间", 2.6, 0.8), ("，", 3.4, 0.1), ("再看一下截图", 3.6, 1.2),
+                                                                   ("。", 4.8, 0.1)]
+            let transcript = Transcriber.Transcript(text: "大家好。今天先确认发布时间，再看一下截图。",
+                                                    segments: spoken.map { Transcriber.Segment(text: $0.0, start: $0.1, duration: $0.2) },
+                                                    onDevice: true)
+            overlay.showCard(ResultCardView(card: Transcriber.card(transcript, file: meeting, language: "zh-CN"),
+                                            onAction: { _ in }, onMore: {}, onClose: {}),
+                             anchor: center)
+            step("transcribe")
+
+            // 证件照：画一个简单的人像，换成蓝底一寸
+            await pause(1.4 * unit)
+            if let portrait = samplePortrait() {
+                let photo = FileManager.default.temporaryDirectory.appending(path: "pop-demo/证件照.jpg")
+                overlay.showCard(IDPhotoView(model: IDPhotoModel(file: photo, cutout: portrait), onSave: {}, onClose: {}), anchor: center)
+            }
+            step("idPhoto")
+
             // 截图标注窗口：拿一张画好的示例图，标上方框、箭头、文字、马赛克和序号；截图区域换成标注窗口
             await pause(1.4 * unit)
             overlay.hide()
@@ -512,6 +534,24 @@ enum OverlayDemo {
     }
 
     /// 暂存架演示用的几个文件：一个 PDF、一张图、一个文字文件（放在临时文件夹里）
+    /// 演示用的人像：透明背景上画肩膀、脖子、头发和脸（Core Graphics 的原点在左下角）
+    private static func samplePortrait() -> IDPhoto.Cutout? {
+        guard let context = CGContext(data: nil, width: 600, height: 800, bitsPerComponent: 8, bytesPerRow: 0,
+                                      space: CGColorSpace(name: CGColorSpace.sRGB) ?? CGColorSpaceCreateDeviceRGB(),
+                                      bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue) else { return nil }
+        context.setFillColor(CGColor(srgbRed: 0.16, green: 0.2, blue: 0.3, alpha: 1))
+        context.fillEllipse(in: CGRect(x: 90, y: -220, width: 420, height: 420))
+        context.setFillColor(CGColor(srgbRed: 0.93, green: 0.78, blue: 0.66, alpha: 1))
+        context.fill(CGRect(x: 262, y: 170, width: 76, height: 90))
+        context.setFillColor(CGColor(srgbRed: 0.12, green: 0.1, blue: 0.09, alpha: 1))
+        context.fillEllipse(in: CGRect(x: 195, y: 300, width: 210, height: 260))
+        context.setFillColor(CGColor(srgbRed: 0.95, green: 0.8, blue: 0.68, alpha: 1))
+        context.fillEllipse(in: CGRect(x: 212, y: 250, width: 176, height: 230))
+        guard let image = context.makeImage() else { return nil }
+        // 脸的位置（左上角为原点）
+        return IDPhoto.Cutout(image: image, face: CGRect(x: 215, y: 330, width: 170, height: 190))
+    }
+
     private static func sampleFiles() -> [URL] {
         let folder = FileManager.default.temporaryDirectory.appending(path: "pop-demo")
         try? FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)

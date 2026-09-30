@@ -3,3 +3,4 @@
 "NSRemindersUsageDescription" = "Pop needs this to add the selected text to Reminders. It only adds a reminder when you click Add to Reminders.";
 "NSCalendarsWriteOnlyAccessUsageDescription" = "Pop needs this to add the selected text to Calendar. It only adds events and never reads your calendars.";
 "NSCalendarsUsageDescription" = "Pop needs this to add the selected text to Calendar. It only adds events and never reads your calendars.";
+"NSSpeechRecognitionUsageDescription" = "Pop needs speech recognition to turn speech in recordings and videos into text. When this Mac supports it, recognition happens on the Mac and no audio is uploaded.";

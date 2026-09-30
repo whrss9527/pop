@@ -18,9 +18,9 @@ enum Motion {
         value * timeScale
     }
 
-    /// 圆盘展开：从中心弹出来，带一点回弹
+    /// 圆盘展开：从中心往外展开。不回弹（临界阻尼）：回弹会让圆盘和格子冲过头再往回缩，看起来像从外往里收
     static var ringOpen: Animation {
-        .spring(response: seconds(0.36), dampingFraction: 0.72)
+        .spring(response: seconds(0.32), dampingFraction: 1)
     }
 
     /// 格子从圆心依次飞出的间隔
