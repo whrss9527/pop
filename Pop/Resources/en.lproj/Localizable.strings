@@ -2182,3 +2182,9 @@
 "键盘已经锁住，可以放心擦了" = "The keyboard is locked. Go ahead and wipe it";
 "按键、亮度和音量键都不起作用；%@ 后自动恢复" = "Keys, brightness and volume don’t respond; unlocks by itself in %@";
 "结束清洁" = "End Cleaning";
+
+/* 界面语言设置 */
+"界面语言" = "Language";
+"跟随系统" = "Follow System";
+"重新启动 Pop 后生效" = "Takes effect after Pop relaunches";
+"立即重新启动" = "Relaunch Now";

@@ -56,4 +56,46 @@ final class LocalizationTests: XCTestCase {
         assertTranslated(UnitConverter.units.map(\.name), in: bundle)
         assertTranslated(ContentKind.allCases.map(\.title), in: bundle)
     }
+
+    /// 设置里的界面语言：用单独的 UserDefaults，不改测试进程自己的语言
+    func testInterfaceLanguageSetting() throws {
+        let suite = "pop.tests.language.\(UUID().uuidString)"
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
+        defer { defaults.removePersistentDomain(forName: suite) }
+
+        XCTAssertEqual(InterfaceLanguage.stored(in: defaults, domain: suite), .system)
+
+        InterfaceLanguage.store(.english, in: defaults)
+        XCTAssertEqual(defaults.persistentDomain(forName: suite)?["AppleLanguages"] as? [String], ["en"])
+        XCTAssertEqual(InterfaceLanguage.stored(in: defaults, domain: suite), .english)
+
+        InterfaceLanguage.store(.simplifiedChinese, in: defaults)
+        XCTAssertEqual(defaults.persistentDomain(forName: suite)?["AppleLanguages"] as? [String], ["zh-Hans"])
+        XCTAssertEqual(InterfaceLanguage.stored(in: defaults, domain: suite), .simplifiedChinese)
+
+        InterfaceLanguage.store(.system, in: defaults)
+        XCTAssertNil(defaults.persistentDomain(forName: suite)?["AppleLanguages"])
+        XCTAssertEqual(InterfaceLanguage.stored(in: defaults, domain: suite), .system)
+
+        // 系统设置里给 Pop 单独选的其他语言、带地区的写法
+        defaults.set(["zh-Hans-CN", "en"], forKey: "AppleLanguages")
+        XCTAssertEqual(InterfaceLanguage.stored(in: defaults, domain: suite), .simplifiedChinese)
+        defaults.set(["ja"], forKey: "AppleLanguages")
+        XCTAssertEqual(InterfaceLanguage.stored(in: defaults, domain: suite), .system)
+        XCTAssertEqual(InterfaceLanguage.stored(in: defaults, domain: nil), .system)
+    }
+
+    /// 系统语言既不是中文也不是英文（比如只有日语）时用英文界面
+    func testOtherSystemLanguagesFallBackToEnglish() {
+        XCTAssertEqual(Bundle.main.object(forInfoDictionaryKey: "CFBundleDevelopmentRegion") as? String, "en")
+        XCTAssertEqual(Bundle.preferredLocalizations(from: Bundle.main.localizations, forPreferences: ["ja"]).first, "en")
+        XCTAssertEqual(Bundle.preferredLocalizations(from: Bundle.main.localizations, forPreferences: ["zh-Hans-CN"]).first, "zh-Hans")
+    }
+
+    /// 测试进程用启动参数指定中文界面，Pop 自己的偏好设置里没有选语言
+    func testLaunchArgumentsAreNotAChosenLanguage() {
+        XCTAssertEqual(InterfaceLanguage.atLaunch, InterfaceLanguage.stored())
+        XCTAssertEqual(InterfaceLanguage.english.title, "English")
+        XCTAssertEqual(InterfaceLanguage.system.title, "跟随系统")
+    }
 }
