@@ -31,17 +31,48 @@ struct StitchImagesPlugin: PopPlugin {
 
 struct WatermarkPlugin: PopPlugin {
     let info = PluginInfo(id: BuiltinPluginID.watermark, name: "加水印", symbol: "signature",
-                          summary: "给选中的图片斜着铺满一层半透明的文字（比如「仅供办理业务使用」），另存一份放在原图旁边",
-                          accepts: [.imageFile])
+                          summary: "给选中的图片或 PDF 斜着铺满一层半透明的文字（比如「仅供办理业务使用」），另存一份放在原文件旁边",
+                          accepts: [.files], pattern: #"(?im)\.(pdf|jpe?g|png|heic|heif|tiff?|gif|bmp|webp)$"#)
 
     @MainActor func run(_ content: ClassifiedContent, context: PluginContext) async -> PluginOutcome {
-        let images = content.files.filter(ContentClassifier.isImageFile)
-        guard !images.isEmpty else { return .failure("没有选中图片") }
-        return .watermark(images)
+        let files = content.files.filter { ContentClassifier.isImageFile($0) || ImageWatermark.isPDF($0) }
+        guard !files.isEmpty else { return .failure("没有选中图片或 PDF") }
+        return .watermark(files)
     }
 }
 
 // MARK: - 视频转换
+
+struct IDPhotoPlugin: PopPlugin {
+    let info = PluginInfo(id: BuiltinPluginID.idPhoto, name: "证件照", symbol: "person.crop.rectangle",
+                          summary: "把人像照片换成白底、蓝底或红底，按人脸位置裁成一寸、二寸（300 dpi）；在本机处理，另存一份放在原图旁边",
+                          accepts: [.imageFile])
+
+    @MainActor func run(_ content: ClassifiedContent, context: PluginContext) async -> PluginOutcome {
+        guard let file = content.files.first(where: IDPhoto.isImage) else { return .failure("没有选中照片") }
+        return .idPhoto(file)
+    }
+}
+
+struct TranscribePlugin: PopPlugin {
+    let info = PluginInfo(id: BuiltinPluginID.transcribe, name: "语音转文字", symbol: "captions.bubble",
+                          summary: "把录音、视频里说的话转成文字和 SRT 字幕，存在原文件旁边；普通话、英语、粤语、日语，这台 Mac 支持时在本机识别",
+                          accepts: [.files], pattern: Transcriber.pattern)
+
+    @MainActor func run(_ content: ClassifiedContent, context: PluginContext) async -> PluginOutcome {
+        guard let file = content.files.first(where: Transcriber.isMedia) else { return .failure("没有选中录音或视频") }
+        let languages = Transcriber.languages()
+        guard !languages.isEmpty else { return .failure("这台 Mac 上用不了语音识别") }
+        var rows = [ResultCard.Row(label: "文件", value: file.lastPathComponent)]
+        if let duration = await Transcriber.duration(of: file) {
+            rows.append(ResultCard.Row(label: "时长", value: CountdownTimer.clock(Int(duration.rounded()))))
+        }
+        return .card(ResultCard(title: "语音转文字", body: "说的是哪种话？",
+                                detail: "识别完，文字（.txt）和字幕（.srt）存在原文件旁边；长录音要等一会儿",
+                                rows: rows,
+                                buttons: languages.map { CardButton(title: $0.title, action: .transcribe(file, language: $0.identifier)) }))
+    }
+}
 
 struct VideoConvertPlugin: PopPlugin {
     let info = PluginInfo(id: BuiltinPluginID.videoConvert, name: "视频转换", symbol: "film",
