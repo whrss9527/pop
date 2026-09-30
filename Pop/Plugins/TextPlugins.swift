@@ -366,6 +366,19 @@ struct ExtractInfoPlugin: PopPlugin {
     }
 }
 
+struct IDNumberPlugin: PopPlugin {
+    let info = PluginInfo(id: BuiltinPluginID.idNumber, name: "证件号码", symbol: "person.text.rectangle",
+                          summary: "身份证号、统一社会信用代码、银行卡号：检查校验位，读出出生日期、年龄、性别、地区和登记管理部门，不联网",
+                          accepts: [.text, .number], maxLength: 40, check: .idNumber)
+
+    @MainActor func run(_ content: ClassifiedContent, context: PluginContext) async -> PluginOutcome {
+        guard let text = content.text, let info = IDNumber.parse(text) else {
+            return .failure("没有认出身份证号、统一社会信用代码或银行卡号")
+        }
+        return .card(IDNumber.card(info))
+    }
+}
+
 struct LineToolsPlugin: PopPlugin {
     let info = PluginInfo(id: BuiltinPluginID.lineTools, name: "按行处理", symbol: "list.bullet.rectangle",
                           summary: "一列文字加引号和逗号（SQL 的 IN 列表）、转 JSON 数组、加减序号、倒序、打乱；一行用逗号隔开的拆成多行",

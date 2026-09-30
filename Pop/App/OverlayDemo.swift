@@ -383,6 +383,22 @@ enum OverlayDemo {
             }
             step("watermark")
 
+            // 传到手机：二维码和能下载的文件（演示时不开网页服务，网址是示例）
+            await pause(1.4 * unit)
+            if let address = URL(string: "http://192.168.1.23:52731/k7m2p9qx4t/") {
+                overlay.showCard(ResultCardView(card: PhoneShare.card(address: address, files: sampleFiles()),
+                                                onAction: { _ in }, onMore: {}, onClose: {}),
+                                 anchor: center)
+            }
+            step("sendToPhone")
+
+            // 证件号码：国家标准里的示例身份证号
+            await pause(1.4 * unit)
+            if let info = IDNumber.parse("11010519491231002X") {
+                overlay.showCard(ResultCardView(card: IDNumber.card(info), onAction: { _ in }, onMore: {}, onClose: {}), anchor: center)
+            }
+            step("idNumber")
+
             // 截图标注窗口：拿一张画好的示例图，标上方框、箭头、文字、马赛克和序号；截图区域换成标注窗口
             await pause(1.4 * unit)
             overlay.hide()

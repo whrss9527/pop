@@ -662,6 +662,9 @@ final class PopCoordinator: MouseTriggerDelegate {
         case .cancelTimer:
             CountdownTimer.shared.cancel()
             finish(toast: "已取消计时")
+        case .stopPhoneShare:
+            PhoneShare.shared.stop()
+            finish(toast: "已停止传到手机")
         }
     }
 

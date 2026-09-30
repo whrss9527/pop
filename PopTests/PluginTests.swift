@@ -1,3 +1,4 @@
+import AppKit
 import XCTest
 @testable import Pop
 
@@ -82,7 +83,7 @@ final class RouterTests: XCTestCase {
             BuiltinPluginID.screenshotTranslate, BuiltinPluginID.pin, BuiltinPluginID.windowLayout,
             BuiltinPluginID.snippets, BuiltinPluginID.annotate, BuiltinPluginID.scanCode, BuiltinPluginID.keepAwake,
             BuiltinPluginID.shelf, BuiltinPluginID.ruler, BuiltinPluginID.timer, BuiltinPluginID.tableOCR,
-            BuiltinPluginID.vocabulary,
+            BuiltinPluginID.vocabulary, BuiltinPluginID.sendToPhone,
         ])
     }
 
@@ -104,6 +105,13 @@ final class RouterTests: XCTestCase {
         XCTAssertEqual(Set(others), [BuiltinPluginID.clipboardHistory, BuiltinPluginID.allPlugins, BuiltinPluginID.settings])
         for category in BuiltinCategory.allCases {
             XCTAssertTrue(catalog.contains { BuiltinCategory.of($0.id) == category }, category.title)
+        }
+    }
+
+    /// 每个内置功能的图标在这个系统上都有：新系统才有的图标在 macOS 15 上会显示成空白
+    func testEveryBuiltinSymbolExists() {
+        for info in catalog {
+            XCTAssertNotNil(NSImage(systemSymbolName: info.symbol, accessibilityDescription: nil), "\(info.id)：没有 \(info.symbol) 这个图标")
         }
     }
 
