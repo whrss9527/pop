@@ -5,3 +5,4 @@
 "NSCalendarsUsageDescription" = "Pop needs this to add the selected text to Calendar. It only adds events and never reads your calendars.";
 "NSSpeechRecognitionUsageDescription" = "Pop needs speech recognition to turn speech in recordings and videos into text. When this Mac supports it, recognition happens on the Mac and no audio is uploaded.";
 "NSMicrophoneUsageDescription" = "Pop uses the microphone only when you choose Microphone for a screen recording, to record what you say along with the video.";
+"NSAppleEventsUsageDescription" = "When you switch between Dark and Light Mode in System Actions, Pop asks System Events to change the system appearance.";

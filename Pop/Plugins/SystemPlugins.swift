@@ -26,7 +26,7 @@ struct SystemActionsPlugin: PopPlugin {
                           summary: String(localized: "锁屏、熄屏、睡眠、打开屏幕保护程序、隐藏或显示桌面图标、推出所有磁盘"), accepts: [])
 
     @MainActor func run(_ content: ClassifiedContent, context: PluginContext) async -> PluginOutcome {
-        .card(SystemActions.card(desktopIconsVisible: SystemActions.desktopIconsVisible(),
+        .card(SystemActions.card(desktopIconsVisible: SystemActions.desktopIconsVisible(), darkMode: SystemActions.isDarkMode(),
                                  ejectable: SystemActions.ejectableVolumes().count))
     }
 }
@@ -82,6 +82,26 @@ struct ScreenRecordPlugin: PopPlugin {
         } catch {
             return .failure((error as? ScreenRecording.Failure)?.message ?? error.localizedDescription)
         }
+    }
+}
+
+// MARK: - 清洁键盘
+
+struct KeyboardCleanerPlugin: PopPlugin {
+    let info = PluginInfo(id: BuiltinPluginID.cleanKeyboard, name: String(localized: "清洁键盘"), symbol: "keyboard",
+                          summary: String(localized: "锁住键盘一分钟，擦键盘时不会误触；亮度、音量键也不起作用，用鼠标点「结束清洁」随时恢复"),
+                          accepts: [], hidesOverlay: true)
+
+    @MainActor func run(_ content: ClassifiedContent, context: PluginContext) async -> PluginOutcome {
+        let cleaner = KeyboardCleaner.shared
+        if cleaner.isActive {
+            cleaner.stop()
+            return .done(toast: nil)
+        }
+        if let problem = cleaner.start() {
+            return .failure(problem)
+        }
+        return .done(toast: nil)
     }
 }
 
