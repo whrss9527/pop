@@ -66,6 +66,7 @@ jobs:
       # 编译时抽出来的界面文字（.stringsdata）和 en.lproj 对一遍：带中文的每一条都要有英文翻译，
       # 两种语言的 key 和占位符一致。缺的 key 会按 .strings 的格式列在日志里
       - name: Check translations
+        if: always()
         run: python3 scripts/check-localization.py --stringsdata ~/Library/Developer/Xcode/DerivedData --list-missing
 
       - name: Upload build log
