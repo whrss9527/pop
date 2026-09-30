@@ -266,6 +266,8 @@ enum PluginOutcome: Equatable {
     case ai(AIRequestSpec)
     /// 打开窗口布局卡片
     case showWindowLayouts
+    /// 列出唤起时前台 App 菜单里的快捷键
+    case showMenuShortcuts
     /// 打开常用短语列表
     case showSnippets
     /// 选一个 App 打开文件或链接

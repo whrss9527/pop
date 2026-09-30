@@ -328,6 +328,11 @@ button { font: inherit; color: inherit; }
 .lrow .pin-mark { color: #ff9f0a; }
 .empty-list { padding: 40px 0; text-align: center; color: var(--label-2); }
 .caption2 { font-size: 10px; color: var(--label-2); }
+.lhead { font-size: 10.5px; font-weight: 600; color: var(--label-2); padding: 8px 8px 2px; }
+.sel-bg + .lhead { padding-top: 2px; }
+.lrow .keycap { font: 500 11.5px/1 ui-rounded, -apple-system, BlinkMacSystemFont, system-ui, sans-serif; padding: 3px 6px; border-radius: 5px; background: var(--fill-2); color: var(--label); flex: none; letter-spacing: .04em; white-space: nowrap; }
+.lrow.off { opacity: .45; }
+.menubar .flash { background: var(--accent); color: #fff; border-radius: 3px; box-shadow: 0 0 0 4px var(--accent); }
 
 .toast { position: absolute; left: 0; top: 0; border-radius: 999px; padding: 10px 18px; font-size: 13px; font-weight: 500; line-height: 1.3; white-space: nowrap; max-width: calc(100% - 24px); overflow: hidden; text-overflow: ellipsis; }
 
@@ -443,6 +448,7 @@ function s(tag, attrs) {
 
 // 图标：24×24 的线条图标，照着 App 里用的系统符号画的简化版
 const ICONS = {
+  menuShortcuts: '<path d="M9 9h6v6H9z"/><path d="M9 9V6.5A2.5 2.5 0 1 0 6.5 9H9"/><path d="M15 9V6.5A2.5 2.5 0 1 1 17.5 9H15"/><path d="M15 15h2.5a2.5 2.5 0 1 1-2.5 2.5V15"/><path d="M9 15v2.5A2.5 2.5 0 1 1 6.5 15H9"/>',
   translate: '<path d="M5 4.5h14a2 2 0 0 1 2 2v8.5a2 2 0 0 1-2 2h-6.5L8 20.5V17H5a2 2 0 0 1-2-2V6.5a2 2 0 0 1 2-2z"/><path d="M9 14l3-7 3 7M10.2 11.4h3.6"/>',
   search: '<circle cx="10.5" cy="10.5" r="6.2"/><path d="M15.2 15.2L20.5 20.5"/>',
   dictionary: '<path d="M6 3.5h12v17H6a2 2 0 0 1-2-2v-13a2 2 0 0 1 2-2z"/><path d="M4 18.5a2 2 0 0 1 2-2h12"/><path d="M8.6 13.2l2.4-6 2.4 6M9.5 11.2h3"/>',
@@ -595,6 +601,7 @@ const P = {
   screenRecord: { icon: 'screenRecord', accepts: [], keys: 'luping lp', name: { zh: '录屏', en: 'Record Screen' }, summary: { zh: '拖出一块区域、单击选一个窗口或者按回车录整个屏幕，存成 MP4；可以录上电脑里的声音或者麦克风、显示鼠标点击，录好能接着转成 GIF。正在录的时候再用一次就停止', en: 'Drag out an area, click a window or press Return to record the whole screen as MP4; can include the Mac’s sound or the microphone and show clicks, and the recording can then be turned into a GIF. Use it again while recording to stop' } },
   annotate: { icon: 'annotate', accepts: [], keys: 'jietubiaozhu jtbz', name: { zh: '截图标注', en: 'Annotate Screenshot' }, summary: { zh: '框选屏幕上的一块区域（或者用选中的图片），画箭头、方框、文字、马赛克、序号，再复制、存储或贴到屏幕上', en: 'Select an area of the screen (or use the selected image), draw arrows, boxes, text, pixelation and numbered markers, then copy, save or pin it' } },
   shelf: { icon: 'shelf', accepts: [], keys: 'zancunjia zcj', name: { zh: '暂存架', en: 'Shelf' }, summary: { zh: '把选中的文件放到暂存架上，之后再一起拖到别的地方；没选中文件时打开暂存架', en: 'Put the selected files on the Shelf to drag them elsewhere later; with no files selected, open the Shelf' } },
+  menuShortcuts: { icon: 'menuShortcuts', accepts: [], keys: 'kuaijiejianyilan kjjyl kuaijiejian kjj caidan cd shortcuts menu', name: { zh: '快捷键一览', en: 'Keyboard Shortcuts' }, summary: { zh: '列出当前 App 菜单里的所有快捷键，可以搜索，点一项直接执行', en: 'List every keyboard shortcut in the current app’s menus; search them and click one to run it' } },
   systemActions: { icon: 'systemActions', accepts: [], keys: 'xitongcaozuo xtcz suoping', name: { zh: '系统操作', en: 'System Actions' }, summary: { zh: '锁屏、熄屏、睡眠、打开屏幕保护程序、隐藏或显示桌面图标、推出所有磁盘', en: 'Lock the screen, turn off the display, sleep, start the screen saver, hide or show desktop icons, or eject all disks' } },
 };
 for (const [id, info] of Object.entries(P)) info.id = id;
@@ -604,7 +611,7 @@ const LAYOUT = ['translate', 'search', 'dictionary', 'openURL', 'allPlugins', 'c
 // 「全部功能」里的顺序
 const ORDER = ['translate', 'textImage', 'search', 'dictionary', 'speak', 'textStats', 'changeCase', 'openURL', 'webCapture', 'linkInspect', 'qrCode',
   'fileInfo', 'imageConvert', 'cropImage', 'redact', 'ocr', 'removeBackground', 'videoConvert', 'transcribe', 'trimMedia', 'pdf', 'compareFiles', 'zip',
-  'airDrop', 'sendToPhone', 'screenRecord', 'screenshotOCR', 'annotate', 'pin', 'colorPicker', 'clipboard', 'shelf', 'systemActions'];
+  'airDrop', 'sendToPhone', 'screenRecord', 'screenshotOCR', 'annotate', 'pin', 'colorPicker', 'clipboard', 'shelf', 'menuShortcuts', 'systemActions'];
 
 function canHandle(info, content) {
   if (!info) return false;
@@ -803,6 +810,77 @@ const state = {
   desktopExtras: [],
 };
 
+// 三个示例 App 的菜单（「快捷键一览」列出来的就是这些）：[标题, 快捷键, false 表示现在是灰的 / 子菜单]
+const MENUS = {
+  safari: {
+    zh: [
+      ['Safari 浏览器', [['关于 Safari 浏览器'], ['设置…', '⌘,'], ['清除历史记录…'], ['隐藏 Safari 浏览器', '⌘H'], ['隐藏其他', '⌥⌘H'], ['退出 Safari 浏览器', '⌘Q']]],
+      ['文件', [['新建窗口', '⌘N'], ['新建无痕浏览窗口', '⇧⌘N'], ['新建标签页', '⌘T'], ['打开文件…', '⌘O'], ['打开位置…', '⌘L'], ['关闭窗口', '⇧⌘W'], ['关闭标签页', '⌘W'], ['存储为…', '⌘S'], ['共享', '', [['邮件'], ['信息'], ['隔空投送']]], ['导出为 PDF…'], ['打印…', '⌘P']]],
+      ['编辑', [['撤销', '⌘Z'], ['重做', '⇧⌘Z', false], ['剪切', '⌘X'], ['拷贝', '⌘C'], ['粘贴', '⌘V'], ['全选', '⌘A'], ['查找', '', [['查找…', '⌘F'], ['查找下一个', '⌘G'], ['查找上一个', '⇧⌘G']]], ['拼写和语法', '', [['显示拼写和语法', '⌘:'], ['立即检查文稿', '⌘;']]], ['自动填充', '', [['联系人'], ['密码…']]], ['表情与符号', '⌃⌘␣']]],
+      ['显示', [['显示标签页概览', '⇧⌘\\'], ['显示边栏', '⇧⌘L'], ['显示阅读器', '⇧⌘R'], ['实际大小', '⌘0'], ['放大', '⌘+'], ['缩小', '⌘-'], ['重新载入页面', '⌘R'], ['进入全屏幕', '⌃⌘F']]],
+      ['历史记录', [['显示所有历史记录', '⌘Y'], ['后退', '⌘['], ['前进', '⌘]'], ['主页', '⇧⌘H'], ['重新打开上次关闭的标签页', '⇧⌘T'], ['清除历史记录…']]],
+      ['书签', [['显示书签', '⌥⌘B'], ['添加书签…', '⌘D'], ['添加到阅读列表', '⇧⌘D']]],
+      ['窗口', [['最小化', '⌘M'], ['缩放'], ['显示上一个标签页', '⌃⇧⇥'], ['显示下一个标签页', '⌃⇥'], ['将标签页移到新窗口'], ['合并所有窗口']]],
+      ['帮助', [['Safari 浏览器帮助']]],
+    ],
+    en: [
+      ['Safari', [['About Safari'], ['Settings…', '⌘,'], ['Clear History…'], ['Hide Safari', '⌘H'], ['Hide Others', '⌥⌘H'], ['Quit Safari', '⌘Q']]],
+      ['File', [['New Window', '⌘N'], ['New Private Window', '⇧⌘N'], ['New Tab', '⌘T'], ['Open File…', '⌘O'], ['Open Location…', '⌘L'], ['Close Window', '⇧⌘W'], ['Close Tab', '⌘W'], ['Save As…', '⌘S'], ['Share', '', [['Mail'], ['Messages'], ['AirDrop']]], ['Export as PDF…'], ['Print…', '⌘P']]],
+      ['Edit', [['Undo', '⌘Z'], ['Redo', '⇧⌘Z', false], ['Cut', '⌘X'], ['Copy', '⌘C'], ['Paste', '⌘V'], ['Select All', '⌘A'], ['Find', '', [['Find…', '⌘F'], ['Find Next', '⌘G'], ['Find Previous', '⇧⌘G']]], ['Spelling and Grammar', '', [['Show Spelling and Grammar', '⌘:'], ['Check Document Now', '⌘;']]], ['AutoFill', '', [['Contacts'], ['Passwords…']]], ['Emoji & Symbols', '⌃⌘␣']]],
+      ['View', [['Show Tab Overview', '⇧⌘\\'], ['Show Sidebar', '⇧⌘L'], ['Show Reader', '⇧⌘R'], ['Actual Size', '⌘0'], ['Zoom In', '⌘+'], ['Zoom Out', '⌘-'], ['Reload Page', '⌘R'], ['Enter Full Screen', '⌃⌘F']]],
+      ['History', [['Show All History', '⌘Y'], ['Back', '⌘['], ['Forward', '⌘]'], ['Home', '⇧⌘H'], ['Reopen Last Closed Tab', '⇧⌘T'], ['Clear History…']]],
+      ['Bookmarks', [['Show Bookmarks', '⌥⌘B'], ['Add Bookmark…', '⌘D'], ['Add to Reading List', '⇧⌘D']]],
+      ['Window', [['Minimize', '⌘M'], ['Zoom'], ['Show Previous Tab', '⌃⇧⇥'], ['Show Next Tab', '⌃⇥'], ['Move Tab to New Window'], ['Merge All Windows']]],
+      ['Help', [['Safari Help']]],
+    ],
+  },
+  notes: {
+    zh: [
+      ['备忘录', [['关于备忘录'], ['设置…', '⌘,'], ['隐藏备忘录', '⌘H'], ['隐藏其他', '⌥⌘H'], ['退出备忘录', '⌘Q']]],
+      ['文件', [['新建备忘录', '⌘N'], ['新建文件夹', '⇧⌘N'], ['新建智能文件夹'], ['关闭', '⌘W'], ['导入到备忘录…'], ['导出为 PDF…'], ['固定备忘录'], ['锁定备忘录'], ['打印…', '⌘P']]],
+      ['编辑', [['撤销', '⌘Z'], ['重做', '⇧⌘Z', false], ['剪切', '⌘X'], ['拷贝', '⌘C'], ['粘贴', '⌘V'], ['粘贴并匹配样式', '⌥⇧⌘V'], ['全选', '⌘A'], ['附加文件…', '⇧⌘A'], ['添加链接…', '⌘K'], ['查找', '', [['查找…', '⌘F'], ['查找下一个', '⌘G'], ['查找上一个', '⇧⌘G']]], ['表情与符号', '⌃⌘␣']]],
+      ['格式', [['标题', '⇧⌘T'], ['小标题', '⇧⌘H'], ['副标题', '⇧⌘J'], ['正文', '⇧⌘B'], ['等宽', '⇧⌘M'], ['项目符号列表', '⇧⌘7'], ['短划线列表', '⇧⌘8'], ['编号列表', '⇧⌘9'], ['核对清单', '⇧⌘L'], ['标记为已勾选', '⇧⌘U'], ['表格', '⌥⌘T'], ['字体', '', [['粗体', '⌘B'], ['斜体', '⌘I'], ['下划线', '⌘U']]]]],
+      ['显示', [['以列表显示', '⌘1'], ['以画廊显示', '⌘2'], ['放大', '⌘+'], ['缩小', '⌘-'], ['进入全屏幕', '⌃⌘F']]],
+      ['窗口', [['最小化', '⌘M'], ['缩放'], ['前置全部窗口']]],
+      ['帮助', [['备忘录帮助']]],
+    ],
+    en: [
+      ['Notes', [['About Notes'], ['Settings…', '⌘,'], ['Hide Notes', '⌘H'], ['Hide Others', '⌥⌘H'], ['Quit Notes', '⌘Q']]],
+      ['File', [['New Note', '⌘N'], ['New Folder', '⇧⌘N'], ['New Smart Folder'], ['Close', '⌘W'], ['Import to Notes…'], ['Export as PDF…'], ['Pin Note'], ['Lock Note'], ['Print…', '⌘P']]],
+      ['Edit', [['Undo', '⌘Z'], ['Redo', '⇧⌘Z', false], ['Cut', '⌘X'], ['Copy', '⌘C'], ['Paste', '⌘V'], ['Paste and Match Style', '⌥⇧⌘V'], ['Select All', '⌘A'], ['Attach File…', '⇧⌘A'], ['Add Link…', '⌘K'], ['Find', '', [['Find…', '⌘F'], ['Find Next', '⌘G'], ['Find Previous', '⇧⌘G']]], ['Emoji & Symbols', '⌃⌘␣']]],
+      ['Format', [['Title', '⇧⌘T'], ['Heading', '⇧⌘H'], ['Subheading', '⇧⌘J'], ['Body', '⇧⌘B'], ['Monostyled', '⇧⌘M'], ['Bulleted List', '⇧⌘7'], ['Dashed List', '⇧⌘8'], ['Numbered List', '⇧⌘9'], ['Checklist', '⇧⌘L'], ['Mark as Checked', '⇧⌘U'], ['Table', '⌥⌘T'], ['Font', '', [['Bold', '⌘B'], ['Italic', '⌘I'], ['Underline', '⌘U']]]]],
+      ['View', [['as List', '⌘1'], ['as Gallery', '⌘2'], ['Zoom In', '⌘+'], ['Zoom Out', '⌘-'], ['Enter Full Screen', '⌃⌘F']]],
+      ['Window', [['Minimize', '⌘M'], ['Zoom'], ['Bring All to Front']]],
+      ['Help', [['Notes Help']]],
+    ],
+  },
+  finder: {
+    zh: [
+      ['访达', [['关于访达'], ['设置…', '⌘,'], ['清倒废纸篓…', '⇧⌘⌫'], ['隐藏访达', '⌘H'], ['隐藏其他', '⌥⌘H']]],
+      ['文件', [['新建访达窗口', '⌘N'], ['新建文件夹', '⇧⌘N'], ['新建智能文件夹', '⌥⌘N'], ['新建标签页', '⌘T'], ['打开', '⌘O'], ['关闭窗口', '⌘W'], ['显示简介', '⌘I'], ['重新命名'], ['压缩'], ['复制', '⌘D'], ['制作替身', '⌃⌘A'], ['快速查看', '⌘Y'], ['共享', '', [['隔空投送'], ['邮件'], ['信息']]], ['移到废纸篓', '⌘⌫'], ['推出', '⌘E'], ['查找', '⌘F']]],
+      ['编辑', [['撤销', '⌘Z'], ['重做', '⇧⌘Z', false], ['剪切', '⌘X', false], ['拷贝', '⌘C'], ['粘贴', '⌘V'], ['全选', '⌘A'], ['显示剪贴板'], ['表情与符号', '⌃⌘␣']]],
+      ['显示', [['为图标', '⌘1'], ['为列表', '⌘2'], ['为分栏', '⌘3'], ['为画廊', '⌘4'], ['使用群组', '⌃⌘0'], ['隐藏边栏', '⌃⌘S'], ['显示预览', '⇧⌘P'], ['显示路径栏', '⌥⌘P'], ['显示状态栏', '⌘/'], ['查看显示选项', '⌘J'], ['进入全屏幕', '⌃⌘F']]],
+      ['前往', [['返回', '⌘['], ['前进', '⌘]'], ['上层文件夹', '⌘↑'], ['最近使用', '⇧⌘F'], ['文稿', '⇧⌘O'], ['桌面', '⇧⌘D'], ['下载', '⌥⌘L'], ['个人', '⇧⌘H'], ['应用程序', '⇧⌘A'], ['实用工具', '⇧⌘U'], ['前往文件夹…', '⇧⌘G'], ['连接服务器…', '⌘K']]],
+      ['窗口', [['最小化', '⌘M'], ['缩放'], ['显示上一个标签页', '⌃⇧⇥'], ['显示下一个标签页', '⌃⇥'], ['合并所有窗口']]],
+      ['帮助', [['macOS 帮助']]],
+    ],
+    en: [
+      ['Finder', [['About Finder'], ['Settings…', '⌘,'], ['Empty Trash…', '⇧⌘⌫'], ['Hide Finder', '⌘H'], ['Hide Others', '⌥⌘H']]],
+      ['File', [['New Finder Window', '⌘N'], ['New Folder', '⇧⌘N'], ['New Smart Folder', '⌥⌘N'], ['New Tab', '⌘T'], ['Open', '⌘O'], ['Close Window', '⌘W'], ['Get Info', '⌘I'], ['Rename'], ['Compress'], ['Duplicate', '⌘D'], ['Make Alias', '⌃⌘A'], ['Quick Look', '⌘Y'], ['Share', '', [['AirDrop'], ['Mail'], ['Messages']]], ['Move to Trash', '⌘⌫'], ['Eject', '⌘E'], ['Find', '⌘F']]],
+      ['Edit', [['Undo', '⌘Z'], ['Redo', '⇧⌘Z', false], ['Cut', '⌘X', false], ['Copy', '⌘C'], ['Paste', '⌘V'], ['Select All', '⌘A'], ['Show Clipboard'], ['Emoji & Symbols', '⌃⌘␣']]],
+      ['View', [['as Icons', '⌘1'], ['as List', '⌘2'], ['as Columns', '⌘3'], ['as Gallery', '⌘4'], ['Use Groups', '⌃⌘0'], ['Hide Sidebar', '⌃⌘S'], ['Show Preview', '⇧⌘P'], ['Show Path Bar', '⌥⌘P'], ['Show Status Bar', '⌘/'], ['Show View Options', '⌘J'], ['Enter Full Screen', '⌃⌘F']]],
+      ['Go', [['Back', '⌘['], ['Forward', '⌘]'], ['Enclosing Folder', '⌘↑'], ['Recents', '⇧⌘F'], ['Documents', '⇧⌘O'], ['Desktop', '⇧⌘D'], ['Downloads', '⌥⌘L'], ['Home', '⇧⌘H'], ['Applications', '⇧⌘A'], ['Utilities', '⇧⌘U'], ['Go to Folder…', '⇧⌘G'], ['Connect to Server…', '⌘K']]],
+      ['Window', [['Minimize', '⌘M'], ['Zoom'], ['Show Previous Tab', '⌃⇧⇥'], ['Show Next Tab', '⌃⇥'], ['Merge All Windows']]],
+      ['Help', [['macOS Help']]],
+    ],
+  },
+};
+
+// 每个场景里前台的 App
+function appKey() {
+  return { foreign: 'safari', link: 'notes', files: 'finder', none: 'finder' }[state.scene] || 'finder';
+}
+
 function isDark() {
   return getComputedStyle(document.documentElement).getPropertyValue('--wall-mode').trim() === 'dark';
 }
@@ -840,8 +918,8 @@ function wallColorAt(x, y) {
 }
 
 function renderMenubar() {
-  const app = { foreign: 'Safari', link: { zh: '备忘录', en: 'Notes' }, files: { zh: '访达', en: 'Finder' }, none: { zh: '访达', en: 'Finder' } }[state.scene];
-  const menus = lang === 'zh' ? ['文件', '编辑', '显示', '窗口', '帮助'] : ['File', 'Edit', 'View', 'Window', 'Help'];
+  const [[app], ...rest] = MENUS[appKey()][lang];
+  const menus = rest.map(([title]) => title);
   const now = new Date();
   const time = lang === 'zh'
     ? `${now.getMonth() + 1}月${now.getDate()}日 周${'日一二三四五六'[now.getDay()]} ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`
@@ -849,7 +927,7 @@ function renderMenubar() {
   const status = s('svg', { viewBox: '0 0 16 16', class: 'pop-status', 'aria-hidden': 'true' });
   status.innerHTML = '<circle cx="8" cy="8" r="6.2" fill="none" stroke="currentColor" stroke-width="1.6"/><circle cx="8" cy="8" r="2" fill="currentColor"/><path d="M8 1.8v3" stroke="currentColor" stroke-width="1.6"/>';
   $('#menubar').replaceChildren(
-    h('span', { class: 'app' }, L(app)),
+    h('span', { class: 'app' }, app),
     h('span', { class: 'menus' }, menus.map((m) => h('span', null, m))),
     h('span', { class: 'right' }, status, icon('wifi'), icon('battery', { 'stroke-width': '1.4' }), h('span', null, time)),
   );
@@ -1461,6 +1539,7 @@ const RUN = {
   pin: (content, anchor) => content.text ? pinToScreen({ text: content.text }, anchor) : startRegionPicker('pin', anchor),
   screenRecord: (content, anchor) => startRecordPicker(anchor),
   systemActions: (content, anchor) => showSystemActions(anchor),
+  menuShortcuts: (content, anchor) => showMenuShortcuts(anchor),
 };
 
 // 翻译卡片：换目标语言、换引擎、几家对比；联网的引擎一边收一边显示
@@ -1633,6 +1712,107 @@ function showChooser(content, anchor) {
     },
   });
   draw();
+}
+
+// 快捷键一览：当前 App 的菜单按顶层菜单分组；可以搜索，⇥ 在「有快捷键」和「全部」之间切换，点一项让那个 App 执行
+function showMenuShortcuts(anchor) {
+  const data = MENUS[appKey()][lang];
+  const appName = data[0][0];
+  const items = [];
+  const walk = (entries, path, top) => {
+    for (const [title, shortcut, extra] of entries) {
+      if (Array.isArray(extra)) walk(extra, path.concat(title), top);
+      else items.push({ title, top, path: path.concat(title), sub: path.slice(1).join(' › '), shortcut: shortcut || '', enabled: extra !== false });
+    }
+  };
+  for (const [top, entries] of data) walk(entries, [top], top);
+  const withShortcut = items.filter((item) => item.shortcut).length;
+  let scope = withShortcut ? 'shortcuts' : 'all';
+  let results = [];
+  let selection = 0;
+  const input = h('input', { class: 'search', type: 'search', placeholder: lang === 'zh' ? '搜索菜单和快捷键' : 'Search menus and shortcuts', 'aria-label': lang === 'zh' ? '搜索菜单和快捷键' : 'Search menus and shortcuts', autocomplete: 'off', spellcheck: 'false', style: 'flex:1 1 170px;min-width:0' });
+  const seg = h('div', { class: 'seg', role: 'group' });
+  const list = h('div', { class: 'list', role: 'listbox', style: `height:${Math.max(Math.min(320, stage.clientHeight - 210), 160)}px` });
+  const highlight = h('div', { class: 'sel-bg' });
+  const hl = { y: new Anim(0, null), hgt: new Anim(0, null) };
+  const hlOwner = { render() { highlight.style.transform = `translateY(${hl.y.value}px)`; highlight.style.height = `${hl.hgt.value}px`; } };
+  hl.y.owner = hlOwner; hl.hgt.owner = hlOwner;
+
+  function run(item) {
+    if (!item.enabled) return;
+    dismissCard();
+    flashMenu(item.top);
+    setTimeout(() => showToast(L({ zh: `已让「${appName}」执行「${item.title}」`, en: `${appName} ran “${item.title}”` }), anchor), 260);
+  }
+
+  function refilter() {
+    const query = input.value.toLowerCase().replace(/\s+/g, '');
+    results = items.filter((item) => (scope === 'all' || item.shortcut) && (!query || [item.title, item.path.join('›'), item.shortcut].some((key) => key.toLowerCase().replace(/\s+/g, '').includes(query))));
+    selection = 0;
+    draw();
+  }
+
+  function setScope(next) { scope = next; refilter(); }
+
+  function draw() {
+    seg.replaceChildren(
+      h('button', { type: 'button', 'aria-pressed': String(scope === 'shortcuts'), onclick: () => setScope('shortcuts') }, lang === 'zh' ? `有快捷键（${withShortcut}）` : `Shortcuts (${withShortcut})`),
+      h('button', { type: 'button', 'aria-pressed': String(scope === 'all'), onclick: () => setScope('all') }, lang === 'zh' ? `全部（${items.length}）` : `All (${items.length})`));
+    const els = [];
+    results.forEach((item, index) => {
+      if (index === 0 || results[index - 1].top !== item.top) els.push(h('div', { class: 'lhead' }, item.top));
+      els.push(h('div', { class: 'lrow' + (item.enabled ? '' : ' off'), role: 'option', 'aria-selected': String(index === selection), 'aria-disabled': item.enabled ? null : 'true',
+        title: item.enabled ? item.path.join(' › ') : (lang === 'zh' ? '现在用不了' : 'Not available right now'), onclick: () => run(item) },
+        h('div', { class: 'tt' }, h('div', { class: 'a' }, item.title), item.sub ? h('div', { class: 'b' }, item.sub) : null),
+        item.shortcut ? h('span', { class: 'keycap' }, item.shortcut) : null));
+    });
+    const empty = input.value.trim() ? (lang === 'zh' ? '没有匹配的菜单项' : 'No matching menu items') : (lang === 'zh' ? '这个 App 的菜单里没有快捷键' : 'This app’s menus have no shortcuts');
+    list.replaceChildren(highlight, ...(els.length ? els : [h('div', { class: 'empty-list' }, empty)]));
+    list.scrollTop = 0;
+    moveHighlight(false);
+  }
+
+  function moveHighlight(animated) {
+    const row = list.querySelectorAll('.lrow')[selection];
+    highlight.style.display = row ? '' : 'none';
+    if (!row) return;
+    if (animated && !reduced()) { hl.y.spring(row.offsetTop, M.selection); hl.hgt.spring(row.offsetHeight, M.selection); }
+    else { hl.y.set(row.offsetTop); hl.hgt.set(row.offsetHeight); hlOwner.render(); }
+    // 第一项上面还有分组标题：滚到最上面时连标题一起露出来
+    const top = selection === 0 ? 0 : row.offsetTop - (row.previousElementSibling?.classList.contains('lhead') ? row.previousElementSibling.offsetHeight : 0);
+    const bottom = row.offsetTop + row.offsetHeight;
+    if (top < list.scrollTop) list.scrollTop = top - 4;
+    else if (bottom > list.scrollTop + list.clientHeight) list.scrollTop = bottom - list.clientHeight + 4;
+  }
+
+  input.addEventListener('input', refilter);
+  const el = cardShell({ title: L(P.menuShortcuts.name), subtitle: appName, width: 420,
+    children: [h('div', { style: 'display:flex;flex-wrap:wrap;gap:8px;align-items:center' }, input, seg), list,
+      h('div', { class: 'caption2' }, lang === 'zh' ? '↑↓ 选择 · ⏎ 执行 · ⇥ 切换' : '↑↓ Choose · ⏎ Run · ⇥ Switch')] });
+  presentCard(el, anchor, {
+    focus: input,
+    onKey(event) {
+      if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+        if (!results.length) return true;
+        selection = clamp(selection + (event.key === 'ArrowDown' ? 1 : -1), 0, results.length - 1);
+        list.querySelectorAll('.lrow').forEach((row, i) => row.setAttribute('aria-selected', String(i === selection)));
+        moveHighlight(true);
+        return true;
+      }
+      if (event.key === 'Enter') { if (results[selection]) run(results[selection]); return true; }
+      if (event.key === 'Tab') { setScope(scope === 'shortcuts' ? 'all' : 'shortcuts'); return true; }
+      return false;
+    },
+  });
+  refilter();
+}
+
+// 菜单栏上对应的菜单闪一下，和按下快捷键时一样
+function flashMenu(title) {
+  const target = [...document.querySelectorAll('#menubar .app, #menubar .menus span')].find((el) => el.textContent === title);
+  if (!target) return;
+  target.classList.add('flash');
+  setTimeout(() => target.classList.remove('flash'), 220);
 }
 
 // 剪贴板历史

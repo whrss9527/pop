@@ -74,6 +74,7 @@ enum BuiltinPlugins {
             RandomPlugin(),
             QuickNotePlugin(),
             WindowLayoutPlugin(),
+            MenuShortcutsPlugin(),
             AirDropPlugin(),
             SendToPhonePlugin(),
             CopyPathPlugin(),
@@ -169,7 +170,7 @@ enum BuiltinCategory: CaseIterable, Identifiable {
                  BuiltinPluginID.unzip, BuiltinPluginID.pdf, BuiltinPluginID.videoConvert, BuiltinPluginID.trimMedia,
                  BuiltinPluginID.transcribe,
                  BuiltinPluginID.shelf, BuiltinPluginID.airDrop, BuiltinPluginID.sendToPhone,
-                 BuiltinPluginID.windowLayout,
+                 BuiltinPluginID.windowLayout, BuiltinPluginID.menuShortcuts,
                  BuiltinPluginID.keepAwake, BuiltinPluginID.systemActions, BuiltinPluginID.timer],
     ]
 

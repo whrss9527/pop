@@ -470,6 +470,13 @@ enum OverlayDemo {
             }
             step("textImage")
 
+            // 快捷键一览：一份写好的示例菜单，不去读真的 App
+            await pause(1.4 * unit)
+            let shortcuts = MenuShortcutsModel(appName: "备忘录")
+            shortcuts.load(sampleMenus)
+            overlay.showCard(MenuShortcutsView(model: shortcuts, onClose: {}), anchor: center)
+            step("menuShortcuts")
+
             // 截图标注窗口：拿一张画好的示例图，标上方框、箭头、文字、马赛克和序号；截图区域换成标注窗口
             await pause(1.4 * unit)
             overlay.hide()
