@@ -83,6 +83,34 @@ final class RingInteractionTests: XCTestCase {
         XCTAssertEqual(ring.hovered, 4, "选中后高亮不再跟着指针变")
     }
 
+    /// 指着哪一格，圆心就显示哪个功能；用不了时说明缺什么，指着空格子时说是空的，没指着时显示读到的内容
+    @MainActor
+    func testCenterShowsTheHoveredFunction() {
+        let catalog = BuiltinPlugins.make().map(\.info)
+        let layout = RingLayout(slots: [BuiltinPluginID.translate, nil, BuiltinPluginID.clipboardHistory, BuiltinPluginID.copyPath])
+        let installed: Set<String> = [BuiltinPluginID.translate, BuiltinPluginID.clipboardHistory, BuiltinPluginID.copyPath]
+        let ring = RingViewModel(layout: layout, catalog: catalog, installed: installed, content: ContentClassifier.classify(.none))
+        XCTAssertEqual(ring.center, RingViewModel.Center(title: "未选中内容"))
+        ring.setHovered(2)
+        XCTAssertEqual(ring.center, RingViewModel.Center(title: "剪贴板", isFunction: true, enabled: true))
+        ring.setHovered(0)
+        XCTAssertEqual(ring.center, RingViewModel.Center(title: "翻译", detail: "要先选中文字", isFunction: true, enabled: false))
+        ring.setHovered(3)
+        XCTAssertEqual(ring.center.detail, "要先选中文件")
+        ring.setHovered(1)
+        XCTAssertEqual(ring.center.title, "空格子")
+        XCTAssertFalse(ring.center.enabled)
+        ring.setHovered(nil)
+        XCTAssertEqual(ring.center, RingViewModel.Center(title: "未选中内容"))
+
+        // 选中了文字：翻译可以用，复制路径还是要选中文件
+        ring.update(content: ContentClassifier.classify(.text("Good morning")))
+        ring.setHovered(0)
+        XCTAssertEqual(ring.center, RingViewModel.Center(title: "翻译", isFunction: true, enabled: true))
+        ring.setHovered(3)
+        XCTAssertEqual(ring.center, RingViewModel.Center(title: "复制路径", detail: "要先选中文件", isFunction: true, enabled: false))
+    }
+
     /// 卡片从离指针最近的那个角长出来（AppKit 坐标，y 向上）
     @MainActor
     func testCardGrowsFromTheCornerNearestThePointer() {
