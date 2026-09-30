@@ -124,10 +124,14 @@ enum Redaction {
             }
         }
         let bounds = CGRect(origin: .zero, size: size)
-        return regions.compactMap { region in
+        var clipped: [Region] = []
+        for region in regions {
             let rect = region.rect.integral.intersection(bounds)
-            return rect.width >= 2 && rect.height >= 2 ? Region(rect: rect, kind: region.kind) : nil
+            if rect.width >= 2, rect.height >= 2 {
+                clipped.append(Region(rect: rect, kind: region.kind))
+            }
         }
+        return clipped
     }
 
     /// Vision 的归一化坐标（左下角为原点）换成像素坐标（左上角为原点）
@@ -246,9 +250,13 @@ enum Redaction {
             (.face, String(localized: "人脸")), (.phone, String(localized: "电话号码")), (.email, String(localized: "邮箱")),
             (.idNumber, String(localized: "证件号和银行卡号")), (.plate, String(localized: "车牌")), (.text, String(localized: "文字")),
         ]
-        return names.compactMap { kind, name in
+        var parts: [String] = []
+        for (kind, name) in names {
             let count = regions.filter { $0.kind == kind }.count
-            return count > 0 ? String(localized: "\(name) \(count) 处") : nil
-        }.joinedAsList()
+            if count > 0 {
+                parts.append(String(localized: "\(name) \(count) 处"))
+            }
+        }
+        return parts.joinedAsList()
     }
 }
