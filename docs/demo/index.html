@@ -1673,7 +1673,7 @@ function showClipboard(anchor) {
 function showWebCapture(anchor) {
   const formats = [[{ zh: '存成 PDF', en: 'Save as PDF' }, 'pdf'], [{ zh: '存成长图', en: 'Save as Long Image' }, 'png'], [{ zh: '存成 Markdown', en: 'Save as Markdown' }, 'md']];
   const el = cardShell({ title: L(P.webCapture.name), children: [h('div', { class: 'body mono', style: 'font-size:12px' }, LINK.url)],
-    detail: lang === 'zh' ? '在后台打开这个网页，存到「下载」：PDF 和长图是整页，Markdown 只取正文；要登录才能看的页面存下来是登录页' : 'Opens the page in the background and saves it to Downloads: the PDF and long image keep the whole page, Markdown keeps just the article text. A page that needs you to sign in is saved as the sign-in page.',
+    detail: lang === 'zh' ? '在后台打开网页存到「下载」：PDF 和长图是整页，Markdown 只取正文；要登录的页面存下来是登录页' : 'Saved to Downloads: PDF and image keep the whole page, Markdown just the article. Pages behind a sign-in save as the sign-in page.',
     buttons: formats.map(([label, ext]) => button(L(label), () => {
       showToast(lang === 'zh' ? '正在打开网页…' : 'Opening the web page…', anchor);
       setTimeout(() => showToast(L({ zh: `已存到「下载」：Releases · whrss9527-pop.${ext}`, en: `Saved to Downloads: Releases · whrss9527-pop.${ext}` }), anchor), 1700);

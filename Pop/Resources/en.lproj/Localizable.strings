@@ -2065,7 +2065,7 @@
 "网页存档" = "Save Web Page";
 "把选中的网址整页存成一页长 PDF（文字能选、能搜）、一张长图，或者只把正文存成 Markdown，放在「下载」里" = "Save the whole page at the selected URL to Downloads as one long PDF (with selectable, searchable text) or a long image, or save just the article text as Markdown";
 "只能存网页（http、https 开头的链接）" = "Only web pages can be saved (links that start with http or https)";
-"在后台打开这个网页，存到「下载」：PDF 和长图是整页，Markdown 只取正文；要登录才能看的页面存下来是登录页" = "Opens the page in the background and saves it to Downloads: the PDF and long image keep the whole page, Markdown keeps just the article text. A page that needs you to sign in is saved as the sign-in page.";
+"在后台打开网页存到「下载」：PDF 和长图是整页，Markdown 只取正文；要登录的页面存下来是登录页" = "Saved to Downloads: PDF and image keep the whole page, Markdown just the article. Pages behind a sign-in save as the sign-in page.";
 "存成 PDF" = "Save as PDF";
 "存成长图" = "Save as Long Image";
 "正在打开网页…" = "Opening the web page…";
