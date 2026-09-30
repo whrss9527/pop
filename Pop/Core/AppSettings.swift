@@ -587,7 +587,26 @@ struct AppRing: Codable, Equatable, Identifiable {
 }
 
 /// AI 功能的设置。接口地址和模型会随设置同步，API Key 只存在这台 Mac 的钥匙串里（见 AIKeyStore）。
+/// AI 功能用哪个模型
+enum AIProvider: String, Codable, CaseIterable, Identifiable {
+    /// macOS 26 自带的模型；这台 Mac 用不了时改用填好的接口
+    case onDevice
+    /// 自己填的兼容 OpenAI 的接口
+    case custom
+
+    var id: String { rawValue }
+
+    var title: String {
+        switch self {
+        case .onDevice: return "系统内置（离线）"
+        case .custom: return "自己填的接口"
+        }
+    }
+}
+
 struct AISettings: Codable, Equatable {
+    /// 新装默认用系统内置的模型（用不了时自动改用接口）；以前填过接口的继续用接口
+    var provider: AIProvider = .onDevice
     /// 兼容 OpenAI Chat Completions 的接口地址，到 /v1 为止
     var baseURL = ""
     var model = ""
@@ -598,6 +617,7 @@ struct AISettings: Codable, Equatable {
         let c = try decoder.container(keyedBy: CodingKeys.self)
         baseURL = c.lenient(.baseURL, default: "")
         model = c.lenient(.model, default: "")
+        provider = c.lenient(.provider, default: isConfigured ? .custom : .onDevice)
     }
 
     var isConfigured: Bool {
