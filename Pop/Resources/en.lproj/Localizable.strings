@@ -1960,3 +1960,16 @@
 "%@（%@）" = "%@ (%@)";
 "；" = "; ";
 "%@（UTC%@）" = "%@ (UTC%@)";
+
+/* 0.28.0：证件照尺寸和冲印排版、macOS 26 的语音转写 */
+"，还有一张 6 寸排版（%lld 张）" = " and a 6-inch print sheet with %lld copies";
+"已存成「%@」%@" = "Saved as “%@”%@";
+"第一次识别这种话，要先下载系统的识别模型，稍等一会儿…" = "Downloading the system's speech model for this language. The first time takes a moment…";
+"小一寸" = "Small 1-inch";
+"大一寸" = "Large 1-inch";
+"小二寸" = "Small 2-inch";
+"排版" = "print sheet";
+"只换底色，大小不变；另存一份放在原图旁边，原图不动" = "Only the background changes and the size stays the same. A copy is saved next to the original, which stays untouched.";
+"%@ %lld×%lld 像素（300 dpi）；另存一份放在原图旁边，原图不动" = "%@: %lld × %lld pixels (300 dpi). A copy is saved next to the original, which stays untouched.";
+"另存 6 寸冲印排版" = "Also save a 6-inch print sheet";
+"在 6 寸相纸上排满这张照片，带裁切线，可以直接拿去冲印" = "Fills a 6-inch photo print with copies of this photo, with cut lines, ready to take to a print shop";

@@ -82,18 +82,33 @@ enum Transcriber {
         }
     }
 
-    static func transcribe(_ url: URL, language identifier: String) async throws -> Transcript {
-        guard let recognizer = SFSpeechRecognizer(locale: Locale(identifier: identifier)) else {
-            throw Failure(message: String(localized: "这台 Mac 认不了这种语言"))
-        }
-        guard recognizer.isAvailable else {
-            throw Failure(message: String(localized: "语音识别现在用不了，稍后再试"))
-        }
+    /// 识别一段录音。macOS 26 上先用系统新的转写（全在本机，缺语言模型时先下载，下载前调用 onDownload），
+    /// 这种话它不支持或者出错了，再用以前的语音识别
+    static func transcribe(_ url: URL, language identifier: String,
+                           onDownload: @escaping @Sendable () -> Void = {}) async throws -> Transcript {
         let audio = try await audioFile(for: url)
         defer {
             if audio != url {
                 try? FileManager.default.removeItem(at: audio)
             }
+        }
+        #if compiler(>=6.2)
+        if #available(macOS 26, *) {
+            if let transcript = try? await AnalyzerTranscription.run(audio, language: identifier, onDownload: onDownload) {
+                return transcript
+            }
+        }
+        #endif
+        return try await recognize(audio, language: identifier)
+    }
+
+    /// 用 SFSpeechRecognizer 识别（macOS 15 上，和 macOS 26 上新的转写用不了时）
+    private static func recognize(_ audio: URL, language identifier: String) async throws -> Transcript {
+        guard let recognizer = SFSpeechRecognizer(locale: Locale(identifier: identifier)) else {
+            throw Failure(message: String(localized: "这台 Mac 认不了这种语言"))
+        }
+        guard recognizer.isAvailable else {
+            throw Failure(message: String(localized: "语音识别现在用不了，稍后再试"))
         }
         let request = SFSpeechURLRecognitionRequest(url: audio)
         request.shouldReportPartialResults = false
@@ -249,3 +264,67 @@ private final class ResumeGate: @unchecked Sendable {
         return true
     }
 }
+
+#if compiler(>=6.2)
+/// macOS 26 新的转写（SpeechAnalyzer + SpeechTranscriber）：全在本机进行，长录音也行，每个词都带时间
+@available(macOS 26, *)
+private enum AnalyzerTranscription {
+    /// 这种话支持的话返回结果；不支持时返回 nil（改用以前的语音识别）
+    static func run(_ audio: URL, language identifier: String, onDownload: @Sendable () -> Void) async throws -> Transcriber.Transcript? {
+        guard SpeechTranscriber.isAvailable,
+              let locale = await SpeechTranscriber.supportedLocale(equivalentTo: Locale(identifier: identifier)) else { return nil }
+        let transcriber = SpeechTranscriber(locale: locale, transcriptionOptions: [], reportingOptions: [],
+                                            attributeOptions: [.audioTimeRange])
+        // 这种话的模型还没装：先下载（第一次要一会儿）
+        if let request = try await AssetInventory.assetInstallationRequest(supporting: [transcriber]) {
+            onDownload()
+            try await request.downloadAndInstall()
+        }
+        let analyzer = SpeechAnalyzer(modules: [transcriber], options: nil)
+        let file = try AVAudioFile(forReading: audio)
+        async let phrases = finalResults(of: transcriber)
+        do {
+            if let end = try await analyzer.analyzeSequence(from: file) {
+                try await analyzer.finalizeAndFinish(through: end)
+            } else {
+                await analyzer.cancelAndFinishNow()
+            }
+        } catch {
+            // 先让分析结束，收结果的那一路才会停下来
+            await analyzer.cancelAndFinishNow()
+            throw error
+        }
+        return transcript(from: try await phrases)
+    }
+
+    private static func finalResults(of transcriber: SpeechTranscriber) async throws -> [SpeechTranscriber.Result] {
+        var results: [SpeechTranscriber.Result] = []
+        for try await result in transcriber.results where result.isFinal {
+            results.append(result)
+        }
+        return results
+    }
+
+    /// 一句句的结果拼成全文；每一段带时间的文字是一个片段，没有时间的整句算一个
+    private static func transcript(from results: [SpeechTranscriber.Result]) -> Transcriber.Transcript {
+        var text = ""
+        var segments: [Transcriber.Segment] = []
+        for result in results {
+            let phrase = result.text
+            text += String(phrase.characters)
+            var timed = false
+            for run in phrase.runs {
+                guard let range = run[AttributeScopes.SpeechAttributes.TimeRangeAttribute.self] else { continue }
+                timed = true
+                segments.append(Transcriber.Segment(text: String(phrase[run.range].characters),
+                                                    start: range.start.seconds, duration: range.duration.seconds))
+            }
+            if !timed {
+                segments.append(Transcriber.Segment(text: String(phrase.characters),
+                                                    start: result.range.start.seconds, duration: result.range.duration.seconds))
+            }
+        }
+        return Transcriber.Transcript(text: text.trimmingCharacters(in: .whitespacesAndNewlines), segments: segments, onDevice: true)
+    }
+}
+#endif

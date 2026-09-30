@@ -1040,9 +1040,10 @@ final class PopCoordinator: MouseTriggerDelegate {
         endSession()
         Task { [weak self] in
             do {
-                let output = try await model.save()
-                NSWorkspace.shared.activateFileViewerSelecting([output])
-                self?.showToast(String(localized: "已存成「\(output.lastPathComponent)」"), at: anchor)
+                let saved = try await model.save()
+                NSWorkspace.shared.activateFileViewerSelecting([saved.photo] + (saved.sheet.map { [$0] } ?? []))
+                let sheet = saved.sheet == nil ? "" : String(localized: "，还有一张 6 寸排版（\(saved.copies) 张）")
+                self?.showToast(String(localized: "已存成「\(saved.photo.lastPathComponent)」\(sheet)"), at: anchor)
             } catch {
                 self?.showToast((error as? IDPhoto.Failure)?.message ?? error.localizedDescription, at: anchor)
             }
@@ -1060,7 +1061,15 @@ final class PopCoordinator: MouseTriggerDelegate {
             }
             self?.showToast(String(localized: "正在识别「\(file.lastPathComponent)」里说的话…"), at: anchor)
             do {
-                let transcript = try await Transcriber.transcribe(file, language: language)
+                let transcript = try await Transcriber.transcribe(file, language: language, onDownload: { [weak self] in
+                    DispatchQueue.main.async { [weak self] in
+                        MainActor.assumeIsolated {
+                            // 正在用 Pop 的话不打断
+                            guard let self, self.session == nil else { return }
+                            self.showToast(String(localized: "第一次识别这种话，要先下载系统的识别模型，稍等一会儿…"), at: NSEvent.mouseLocation)
+                        }
+                    }
+                })
                 let saved = try Transcriber.save(transcript, beside: file, language: language)
                 NSWorkspace.shared.activateFileViewerSelecting([saved.text, saved.subtitles])
                 guard let self, self.session == nil else { return }

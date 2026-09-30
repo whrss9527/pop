@@ -8,7 +8,11 @@ struct IDPhotoView: View {
 
     private var hint: String {
         guard model.cutout != nil else { return String(localized: "抠图在本机进行，不上传照片") }
-        return model.message ?? String(localized: "一寸 295×413、二寸 413×579 像素（300 dpi）；另存一份放在原图旁边，原图不动")
+        if let message = model.message {
+            return message
+        }
+        guard let pixels = model.size.pixels else { return String(localized: "只换底色，大小不变；另存一份放在原图旁边，原图不动") }
+        return String(localized: "\(model.size.title) \(pixels.width)×\(pixels.height) 像素（300 dpi）；另存一份放在原图旁边，原图不动")
     }
 
     var body: some View {
@@ -45,12 +49,19 @@ struct IDPhotoView: View {
                 }
             }
             .pickerStyle(.segmented)
-            Picker("尺寸", selection: $model.size) {
-                ForEach(IDPhoto.Size.allCases) { size in
-                    Text(size.title).tag(size)
+            HStack(spacing: 12) {
+                Picker("尺寸", selection: $model.size) {
+                    ForEach(IDPhoto.Size.allCases) { size in
+                        Text(size.title).tag(size)
+                    }
                 }
+                .pickerStyle(.menu)
+                .fixedSize()
+                Toggle("另存 6 寸冲印排版", isOn: $model.printSheet)
+                    .toggleStyle(.checkbox)
+                    .disabled(model.size == .original)
+                    .help("在 6 寸相纸上排满这张照片，带裁切线，可以直接拿去冲印")
             }
-            .pickerStyle(.segmented)
             Text(hint)
                 .font(.caption)
                 .foregroundStyle(.secondary)
