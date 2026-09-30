@@ -240,7 +240,10 @@ private final class PageLoader: NSObject, WKNavigationDelegate {
     }
     const absolute = (value) => { try { return new URL(value, document.baseURI).href; } catch (error) { return ""; } };
     copy.querySelectorAll("a[href]").forEach((link) => {
-        const href = absolute(link.getAttribute("href"));
+        const raw = link.getAttribute("href") || "";
+        // 页内跳转（标题旁边的 # 链接）留着，转 Markdown 时只留文字
+        if (raw.startsWith("#")) { return; }
+        const href = absolute(raw);
         if (/^(https?|mailto):/i.test(href)) { link.setAttribute("href", href); } else { link.removeAttribute("href"); }
     });
     copy.querySelectorAll("img").forEach((image) => {
