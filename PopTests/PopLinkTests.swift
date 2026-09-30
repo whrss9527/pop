@@ -6,7 +6,7 @@ final class PopLinkTests: XCTestCase {
         URL(string: string).flatMap(PopLink.init(url:))
     }
 
-    func testRun() {
+    func testRunLinks() {
         XCTAssertEqual(link("pop://run?plugin=translate&text=Hello%20world"),
                        .run(pluginID: "translate", text: "Hello world", files: []))
         XCTAssertEqual(link("pop://run/textStats?text=%E4%BD%A0%E5%A5%BD"), .run(pluginID: "textStats", text: "你好", files: []))
