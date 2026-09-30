@@ -2,7 +2,7 @@
 # 把用 Developer ID 签好名的 zip 提交苹果公证，通过后把公证票据钉（staple）到 Pop.app 上，再重新打成同名的 zip。
 # 公证过的包，用户下载后双击就能打开，不用再手动解除隔离。
 #   scripts/notarize.sh dist/Pop-0.3.0.zip
-# 凭据二选一（发布流程从 GitHub Secrets 传进来，见 README「签名与公证」）：
+# 凭据二选一（发布流程从 GitHub Secrets 传进来，见 docs/development.zh-CN.md「签名与公证」）：
 #   App Store Connect API 密钥：NOTARY_KEY_P8（.p8 文件的内容，或者它的 base64）、NOTARY_KEY_ID、NOTARY_ISSUER_ID（个人密钥不填）
 #   Apple ID：NOTARY_APPLE_ID、NOTARY_PASSWORD（App 专用密码）、NOTARY_TEAM_ID
 set -euo pipefail
