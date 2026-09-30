@@ -23,16 +23,21 @@ final class AIChatModel: ObservableObject {
 
     private let settings: AppSettings
     private let keyProvider: () -> String?
+    /// 系统内置的模型能不能用（测试时换掉）
+    private let onDeviceStatus: () -> OnDeviceModel.Status
     private var task: Task<Void, Never>?
     private var lastMessages: [AIClient.Message] = []
 
-    init(source: String, settings: AppSettings, keyProvider: @escaping () -> String? = AIKeyStore.read) {
+    init(source: String, settings: AppSettings, keyProvider: @escaping () -> String? = AIKeyStore.read,
+         onDeviceStatus: @escaping () -> OnDeviceModel.Status = { OnDeviceModel.status }) {
         self.source = source
         self.settings = settings
         self.keyProvider = keyProvider
+        self.onDeviceStatus = onDeviceStatus
     }
 
-    var isConfigured: Bool { settings.ai.isConfigured }
+    /// 系统内置的模型或者填好的接口，有一个能用
+    var isConfigured: Bool { AIService.backend(for: settings.ai, onDevice: onDeviceStatus()) != .unavailable }
     var canRegenerate: Bool { !lastMessages.isEmpty && phase != .running }
 
     func run(_ action: AIAction) {
@@ -88,21 +93,20 @@ final class AIChatModel: ObservableObject {
         self.label = label
         lastMessages = messages
         output = ""
-        guard settings.ai.isConfigured else {
-            phase = .failed(AIClient.describe(AIClient.Failure.notConfigured))
+        let onDevice = onDeviceStatus()
+        guard AIService.backend(for: settings.ai, onDevice: onDevice) != .unavailable else {
+            phase = .failed(AIService.unavailableMessage(for: settings.ai, onDevice: onDevice))
             return
         }
         let ai = settings.ai
         let keyProvider = self.keyProvider
         phase = .running
         task = Task { [weak self] in
-            // 读钥匙串时系统可能弹窗请用户允许，不放在主线程上等
-            let key = await runInBackground { keyProvider() ?? "" }
-            guard !Task.isCancelled else { return }
-            let configuration = AIClient.Configuration(baseURL: ai.baseURL, apiKey: key, model: ai.model)
             do {
-                let request = try AIClient.makeRequest(configuration, messages: messages)
-                for try await piece in AIClient.stream(request) {
+                // 用接口时才读钥匙串（系统可能弹窗请用户允许，在后台读）
+                let stream = try await AIService.stream(messages, settings: ai, onDevice: onDevice, key: keyProvider)
+                guard !Task.isCancelled else { return }
+                for try await piece in stream {
                     guard let self, !Task.isCancelled else { return }
                     self.output += piece
                 }

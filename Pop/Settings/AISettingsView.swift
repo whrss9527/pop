@@ -6,6 +6,8 @@ struct AISettingsView: View {
     @State private var apiKey = ""
     @State private var keyLoaded = false
     @State private var test: TestState = .idle
+    /// 系统内置的模型：不支持的系统上不显示这个选项
+    @State private var onDevice = OnDeviceModel.status
 
     enum TestState: Equatable {
         case idle
@@ -16,6 +18,27 @@ struct AISettingsView: View {
 
     var body: some View {
         Form {
+            if onDevice != .unsupported {
+                Section {
+                    Picker("使用", selection: store.binding(\.ai.provider)) {
+                        ForEach(AIProvider.allCases) { provider in
+                            Text(provider.title).tag(provider)
+                        }
+                    }
+                    .pickerStyle(.segmented)
+                    if store.settings.ai.provider == .onDevice, case .unavailable(let reason) = onDevice {
+                        Label(reason, systemImage: "exclamationmark.triangle.fill")
+                            .foregroundStyle(.orange)
+                    }
+                } header: {
+                    Text("模型")
+                } footer: {
+                    Text("系统内置的模型是 macOS 自带的 Apple 智能，在这台 Mac 上处理，不联网，也不用填接口；能处理的内容比较短，长的只取前面一部分。它用不了的时候自动改用下面填的接口。")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+            }
+
             Section {
                 TextField("接口地址", text: store.binding(\.ai.baseURL), prompt: Text("https://api.openai.com/v1"))
                 SecureField("API Key", text: $apiKey, prompt: Text("本机运行的服务可以不填"))
@@ -23,7 +46,7 @@ struct AISettingsView: View {
                 TextField("模型", text: store.binding(\.ai.model), prompt: Text("比如 gpt-4o-mini"))
                 HStack(spacing: 8) {
                     Button("保存并测试", action: runTest)
-                        .disabled(test == .testing || !store.settings.ai.isConfigured)
+                        .disabled(test == .testing || AIService.backend(for: store.settings.ai, onDevice: onDevice) == .unavailable)
                     testStatus
                     Spacer()
                 }
@@ -52,7 +75,14 @@ struct AISettingsView: View {
             }
         }
         .formStyle(.grouped)
+        .onChange(of: store.settings.ai.isConfigured) { _, configured in
+            // 看不到上面的选项时（不支持系统内置的模型），填好接口就是要用接口
+            if configured, onDevice == .unsupported, store.settings.ai.provider != .custom {
+                store.update { $0.ai.provider = .custom }
+            }
+        }
         .onAppear {
+            onDevice = OnDeviceModel.status
             guard !keyLoaded else { return }
             apiKey = AIKeyStore.read() ?? ""
             keyLoaded = true
@@ -88,10 +118,11 @@ struct AISettingsView: View {
         saveKey()
         test = .testing
         let ai = store.settings.ai
-        let configuration = AIClient.Configuration(baseURL: ai.baseURL, apiKey: apiKey, model: ai.model)
+        let key = apiKey
+        let status = onDevice
         Task {
             do {
-                let reply = try await AIClient.complete(configuration, messages: [.user("只回复「好」这一个字。")])
+                let reply = try await AIService.complete([.user("只回复「好」这一个字。")], settings: ai, onDevice: status, key: { key })
                 test = .succeeded(String(reply.trimmingCharacters(in: .whitespacesAndNewlines).prefix(30)))
             } catch {
                 test = .failed(AIClient.describe(error))

@@ -99,13 +99,16 @@ enum ManifestRunner {
         case .shortcut:
             return await runShortcut(action.shortcut, input: input, timeout: action.timeout)
         case .ai:
-            guard let ai, ai.isConfigured else {
+            guard let ai else {
                 return .failure(PluginRunError(AIClient.describe(AIClient.Failure.notConfigured)))
             }
-            let configuration = AIClient.Configuration(baseURL: ai.baseURL, apiKey: AIKeyStore.read() ?? "", model: ai.model)
+            let onDevice = OnDeviceModel.status
+            guard AIService.backend(for: ai, onDevice: onDevice) != .unavailable else {
+                return .failure(PluginRunError(AIService.unavailableMessage(for: ai, onDevice: onDevice)))
+            }
             let messages: [AIClient.Message] = [.system(AIPrompt.system), .user(AIPrompt.expand(action.prompt, text: input.text))]
             do {
-                let output = try await AIClient.complete(configuration, messages: messages)
+                let output = try await AIService.complete(messages, settings: ai, onDevice: onDevice)
                 return .success(trimTrailingNewlines(output))
             } catch {
                 return .failure(PluginRunError(AIClient.describe(error)))
