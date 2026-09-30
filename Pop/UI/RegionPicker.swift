@@ -96,10 +96,16 @@ private struct PickerHUD: View {
             Text("拖出要录的区域 · 单击录窗口 · 回车录整个屏幕 · Esc 取消")
                 .font(.system(size: 12, weight: .medium))
             HStack(spacing: 16) {
-                Toggle("录上电脑里的声音", isOn: $model.options.systemAudio)
+                Picker("声音", selection: $model.options.audio) {
+                    ForEach(ScreenRecording.Audio.allCases) { audio in
+                        Text(audio.title).tag(audio)
+                    }
+                }
+                .pickerStyle(.segmented)
+                .fixedSize()
                 Toggle("显示鼠标点击", isOn: $model.options.showClicks)
+                    .toggleStyle(.checkbox)
             }
-            .toggleStyle(.checkbox)
             .font(.system(size: 12))
         }
         .foregroundStyle(.white)
