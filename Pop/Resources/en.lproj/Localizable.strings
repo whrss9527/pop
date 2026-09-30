@@ -1565,7 +1565,7 @@
 "选一个时长开始倒计时；到点时响一声、发一条通知。也可以选中「25 分钟」「1:30」这样的文字再用它。" = "Choose a duration to start a countdown. When time’s up, Pop plays a sound and sends a notification. You can also select text such as “25 min” or “1:30” and use the timer.";
 "录屏" = "Record Screen";
 "拖出一块区域、单击选一个窗口或者按回车录整个屏幕，存成 MP4；可以录上电脑里的声音或者麦克风、显示鼠标点击，录好能接着转成 GIF。正在录的时候再用一次就停止" = "Drag out an area, click a window or press Return to record the whole screen as MP4; can include the Mac’s sound or the microphone and show clicks, and the recording can then be turned into a GIF. Use it again while recording to stop";
-"锁屏、熄屏、睡眠、打开屏幕保护程序、隐藏或显示桌面图标、推出所有磁盘" = "Lock the screen, turn off the display, sleep, start the screen saver, hide or show desktop icons, or eject all disks";
+"锁屏、熄屏、睡眠、打开屏幕保护程序、切换深色和浅色模式、隐藏或显示桌面图标、推出所有磁盘" = "Lock the screen, turn off the display, sleep, start the screen saver, switch between Dark and Light Mode, hide or show desktop icons, or eject all disks";
 
 /* TableConverter.swift */
 "制表符分隔" = "Tab-Separated";
@@ -2166,3 +2166,19 @@
 "Pop 滚动截图" = "Pop Scrolling Screenshot";
 "正在识别图片里的文字…" = "Recognizing the text in the image…";
 "识别文字失败：%@" = "Couldn’t recognize the text: %@";
+
+/* 0.38.0：深浅色、大字显示、清洁键盘 */
+"换成深色模式" = "Switch to Dark Mode";
+"换成浅色模式" = "Switch to Light Mode";
+"要先在「系统设置 → 隐私与安全性 → 自动化」里允许 Pop 控制「System Events」" = "Allow Pop to control System Events in System Settings → Privacy & Security → Automation first";
+"没能切换深浅色" = "Couldn’t switch the appearance";
+"没能切换深浅色：%@" = "Couldn’t switch the appearance: %@";
+"大字显示" = "Large Type";
+"把选中的文字铺满整个屏幕，给别人看电话号码、Wi-Fi 密码、取件码都方便；点一下或按任意键关闭" = "Show the selected text across the whole screen, handy for showing someone a phone number, Wi-Fi password or pickup code; click or press any key to close";
+"点一下或按任意键关闭 · ⌘C 复制" = "Click or press any key to close · ⌘C to copy";
+"清洁键盘" = "Clean Keyboard";
+"锁住键盘一分钟，擦键盘时不会误触；亮度、音量键也不起作用，用鼠标点「结束清洁」随时恢复" = "Lock the keyboard for a minute so you can wipe it without typing anything; brightness and volume keys are blocked too. Click End Cleaning with the mouse to stop any time";
+"要先在「系统设置 → 隐私与安全性 → 辅助功能」里允许 Pop，才能锁住键盘" = "To lock the keyboard, allow Pop in System Settings → Privacy & Security → Accessibility";
+"键盘已经锁住，可以放心擦了" = "The keyboard is locked. Go ahead and wipe it";
+"按键、亮度和音量键都不起作用；%@ 后自动恢复" = "Keys, brightness and volume don’t respond; unlocks by itself in %@";
+"结束清洁" = "End Cleaning";

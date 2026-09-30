@@ -47,6 +47,8 @@
 		<key>NSAllowsLocalNetworking</key>
 		<true/>
 	</dict>
+	<key>NSAppleEventsUsageDescription</key>
+	<string>在「系统操作」里切换深色、浅色模式时，要请「System Events」改系统的外观设置。</string>
 	<key>NSMicrophoneUsageDescription</key>
 	<string>录屏时选了「麦克风」才会用到麦克风，把你说的话一起录进视频。</string>
 	<key>NSSpeechRecognitionUsageDescription</key>
