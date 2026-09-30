@@ -78,8 +78,9 @@ final class SettingsWindowController: NSObject, NSWindowDelegate {
             navigation.tab = tab
         }
         let window = self.window ?? makeWindow()
+        let wasVisible = window.isVisible
         // 上次关掉时有一部分在屏幕外面（换了显示器、分辨率变了），这次重新居中
-        if !window.isVisible, let screen = window.screen ?? NSScreen.main, !screen.visibleFrame.contains(window.frame) {
+        if !wasVisible, let screen = window.screen ?? NSScreen.main, !screen.visibleFrame.contains(window.frame) {
             window.center()
         }
         // Pop 平时只在菜单栏（LSUIElement），系统启动它时不会把它切到前台，
@@ -90,6 +91,16 @@ final class SettingsWindowController: NSObject, NSWindowDelegate {
         window.orderFrontRegardless()
         window.makeKey()
         NSApp.activate()
+        if !wasVisible {
+            // 打开了「键盘导航」时，系统会把焦点放到第一个控件上、画一圈蓝色的焦点环；
+            // 刚打开设置时不给任何控件焦点，按 Tab 再出现
+            window.makeFirstResponder(nil)
+            DispatchQueue.main.async { [weak window] in
+                MainActor.assumeIsolated {
+                    _ = window?.makeFirstResponder(nil)
+                }
+            }
+        }
     }
 
     private func makeWindow() -> NSWindow {
@@ -154,8 +165,8 @@ struct SettingsTabBar: View {
 
     var body: some View {
         HStack(spacing: 2) {
-            ForEach(SettingsTab.allCases) { tab in
-                SettingsTabButton(tab: tab, isSelected: tab == selection) {
+            ForEach(Array(SettingsTab.allCases.enumerated()), id: \.element) { index, tab in
+                SettingsTabButton(tab: tab, isSelected: tab == selection, shortcut: Self.shortcut(for: index)) {
                     selection = tab
                 }
             }
@@ -163,11 +174,21 @@ struct SettingsTabBar: View {
         .padding(.vertical, 6)
         .frame(maxWidth: .infinity)
     }
+
+    /// ⌘1–⌘9 切到前九页，⌘0 是第十页
+    static func shortcut(for index: Int) -> Character? {
+        switch index {
+        case 0..<9: return Character(String(index + 1))
+        case 9: return "0"
+        default: return nil
+        }
+    }
 }
 
 private struct SettingsTabButton: View {
     let tab: SettingsTab
     let isSelected: Bool
+    let shortcut: Character?
     let action: () -> Void
     @State private var hovering = false
 
@@ -188,6 +209,11 @@ private struct SettingsTabButton: View {
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
+        // 页面按钮不接收键盘焦点：焦点环会留在打开设置时的第一个按钮上，看起来像两页都选中了
+        .focusable(false)
+        .focusEffectDisabled()
+        .keyboardShortcut(shortcut.map { KeyboardShortcut(KeyEquivalent($0), modifiers: .command) })
+        .help(shortcut.map { "\(tab.title)（⌘\($0)）" } ?? tab.title)
         .onHover { hovering = $0 }
         .accessibilityLabel(tab.title)
         .accessibilityAddTraits(isSelected ? AccessibilityTraits.isSelected : AccessibilityTraits())

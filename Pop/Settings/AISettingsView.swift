@@ -53,7 +53,7 @@ struct AISettingsView: View {
             } header: {
                 Text("AI 接口")
             } footer: {
-                Text("填写兼容 OpenAI Chat Completions 的接口，地址写到 /v1 为止；在本机运行的模型服务也可以（比如 http://localhost:11434/v1）。接口地址和模型会随设置通过 iCloud 同步，API Key 只保存在这台 Mac 的钥匙串里。")
+                Text("填写兼容 OpenAI Chat Completions 的接口，地址写到 /v1 为止；在本机运行的模型服务也可以（比如 `http://localhost:11434/v1`）。接口地址和模型会随设置通过 iCloud 同步，API Key 只保存在这台 Mac 的钥匙串里。")
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }

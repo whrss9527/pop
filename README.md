@@ -330,6 +330,12 @@ make signing-certificate    # 即 scripts/create-signing-certificate.sh，文件
 
 从本地签名换成证书签名后，第一次更新仍然需要重新授权一次辅助功能，之后就不用了。
 
+## 请我喝杯咖啡
+
+Pop 免费开源。觉得好用的话，可以用微信扫一扫请我喝杯咖啡 ☕（程序里「设置 → 更新」也有这张码，点一下能放大）。
+
+<p align="center"><img src="Pop/Resources/donate-wechat.png" width="300" alt="微信赞赏码：请我喝杯咖啡"></p>
+
 ## 许可证
 
 Copyright © 2026 whrss9527
