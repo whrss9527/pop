@@ -40,8 +40,8 @@ final class PopCoordinator: MouseTriggerDelegate {
 
     private struct Session {
         let id = UUID()
-        /// 唤起点（AppKit 屏幕坐标）
-        let anchor: CGPoint
+        /// 唤起点（AppKit 屏幕坐标）；圆盘靠边挪开时改成圆盘中心（见 followRingWithPointer）
+        var anchor: CGPoint
         let pid: pid_t?
         /// 唤起时前台 App 的名字（收集箱记录来源用）
         let sourceAppName: String?
@@ -459,6 +459,7 @@ final class PopCoordinator: MouseTriggerDelegate {
         session?.ring = ring
         session?.panel = nil
         overlay.showRing(ring, center: current.anchor)
+        followRingWithPointer()
         lastPointer = nil
         startPointerTracking()
         // 圆盘出来之前可能已经拖动过了
@@ -1580,6 +1581,24 @@ final class PopCoordinator: MouseTriggerDelegate {
         guard let current = session, current.buttonHeld, let ring = current.ring, overlay.mode == .ring,
               let point = current.dragPoint else { return }
         ring.updateHover(offset: CGVector(dx: point.x - current.anchor.x, dy: point.y - current.anchor.y))
+    }
+
+    /// 靠近屏幕边缘时圆盘整体往里挪了：鼠标键还按着的话，把指针也挪到圆盘中心。
+    /// 按住时按「相对按下点的方向」选格子，指针不在圆心的话，朝看到的一格划过去，选中的却是旁边那格；
+    /// 指针贴着屏幕边缘时，往边外那几格也划不过去。圆盘出来之前已经拖过的那一段接着算
+    private func followRingWithPointer() {
+        guard let current = session, current.buttonHeld, let center = overlay.ringCenter,
+              let shift = ScreenGeometry.ringShift(anchor: current.anchor, center: center) else { return }
+        let moved = current.dragPoint.map { CGVector(dx: $0.x - current.anchor.x, dy: $0.y - current.anchor.y) } ?? CGVector(dx: 0, dy: 0)
+        let target = CGPoint(x: center.x + moved.dx, y: center.y + moved.dy)
+        CGWarpMouseCursorPosition(CGPoint(x: target.x, y: OverlayController.primaryScreenHeight - target.y))
+        // 挪完马上恢复指针跟手，不然指针会停顿一小会儿
+        CGAssociateMouseAndMouseCursorPosition(1)
+        session?.anchor = center
+        if current.dragPoint != nil {
+            session?.dragPoint = target
+        }
+        Self.log.notice("圆盘靠边挪了 \(Int(shift.dx), privacy: .public), \(Int(shift.dy), privacy: .public)，指针跟着挪到圆心")
     }
 
     /// 松开鼠标键之后（点击模式）：看指针在圆盘上的位置。按住时由 updateHeldHover 处理。
