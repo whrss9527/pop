@@ -102,6 +102,21 @@ struct GeneralSettingsView: View {
             }
 
             Section {
+                Toggle("选中文字后显示工具条", isOn: store.binding(\.toolbar.enabled))
+                if store.settings.toolbar.enabled {
+                    BundleIDListView(keyPath: \.toolbar.excludedBundleIDs)
+                }
+            } header: {
+                Text("选中文字后")
+            } footer: {
+                Text("拖着选中一段文字、双击选词或者三击选段后，在选区上方显示圆盘里前几个能处理这段文字的功能，点一下就执行，"
+                    + "点「更多」打开完整的圆盘。只用辅助功能读取选中的文字，不碰剪贴板，读不到选区的 App 里不会出现；"
+                    + "上面列出的 App 里也不出现。")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+
+            Section {
                 ExcludedAppsView()
             } header: {
                 Text("排除的 App")

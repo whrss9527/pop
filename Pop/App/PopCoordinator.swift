@@ -13,6 +13,23 @@ final class PopCoordinator: MouseTriggerDelegate {
     private let downloads: TranslationDownloadRequest
     private let clipboard: ClipboardService
     private let reader = SelectionReader()
+    /// 选中文字后弹出的工具条
+    private let toolbar = SelectionToolbarController()
+    /// 选完文字到读出选区之间又有新的操作时作废
+    private var toolbarGeneration = 0
+    /// 工具条对应的选区；点工具条上的功能时用它
+    private var toolbarContext: ToolbarContext?
+    /// 上一次弹出工具条的选区：读不到选区位置时，同一段文字不再弹（比如拖的是窗口，选区还是之前那一段）
+    private var lastToolbarSelection: (pid: pid_t, text: String)?
+
+    private struct ToolbarContext {
+        let content: ClassifiedContent
+        let pid: pid_t
+        let appName: String?
+        let bundleID: String?
+        /// 结果卡片从这里弹出来
+        let anchor: CGPoint
+    }
 
     private enum Panel {
         case chooser
@@ -65,6 +82,12 @@ final class PopCoordinator: MouseTriggerDelegate {
         }
         overlay.onRingClick = { [weak self] in
             self?.handleRingClick()
+        }
+        toolbar.onRun = { [weak self] pluginID in
+            self?.runFromToolbar(pluginID)
+        }
+        toolbar.onMore = { [weak self] in
+            self?.showRingFromToolbar()
         }
     }
 
@@ -202,10 +225,92 @@ final class PopCoordinator: MouseTriggerDelegate {
 
     func endSession() {
         stopPointerTracking()
+        hideToolbar()
         session = nil
         if overlay.isVisible {
             overlay.hide()
         }
+    }
+
+    // MARK: - 选中文字后的工具条
+
+    /// 拖着选了一段、双击或三击之后（point 是鼠标抬起的地方，AppKit 坐标）：读到选中的文字就在旁边弹出工具条
+    func selectionMade(at point: CGPoint, clickCount: Int) {
+        let settings = settingsStore.settings
+        guard settings.toolbar.enabled, !isPaused, session == nil,
+              let app = NSWorkspace.shared.frontmostApplication,
+              app.processIdentifier != ProcessInfo.processInfo.processIdentifier else { return }
+        if let bundleID = app.bundleIdentifier,
+           settings.toolbar.excludedBundleIDs.contains(bundleID) || settings.trigger.excludedBundleIDs.contains(bundleID) {
+            return
+        }
+        hideToolbar()
+        let generation = toolbarGeneration
+        let pid = app.processIdentifier
+        Task { [weak self] in
+            // 等 App 把选区更新好
+            try? await Task.sleep(nanoseconds: 60_000_000)
+            guard let self, generation == self.toolbarGeneration else { return }
+            guard let selection = await self.reader.readAccessible(pid: pid),
+                  generation == self.toolbarGeneration, self.session == nil else { return }
+            let bounds = selection.bounds.map {
+                SelectionToolbarLogic.appKitRect(fromQuartz: $0, primaryScreenHeight: OverlayController.primaryScreenHeight)
+            }
+            if let bounds {
+                guard SelectionToolbarLogic.selection(bounds, isNear: point) else { return }
+            } else if clickCount < 2, let last = self.lastToolbarSelection, last.pid == pid, last.text == selection.text {
+                return
+            }
+            let content = ContentClassifier.classify(.text(selection.text))
+            self.showToolbar(content: content, selection: bounds, pointer: point, pid: pid, appName: app.localizedName,
+                             bundleID: app.bundleIdentifier)
+        }
+    }
+
+    /// 按了键、点了别处、换了 App：收起工具条
+    func hideToolbar() {
+        toolbarGeneration += 1
+        if toolbar.isVisible {
+            toolbar.hide()
+        }
+    }
+
+    private func showToolbar(content: ClassifiedContent, selection: CGRect?, pointer: CGPoint, pid: pid_t, appName: String?,
+                             bundleID: String?) {
+        let settings = settingsStore.settings
+        let items = SelectionToolbarLogic.items(layout: settings.ring(for: bundleID), catalog: registry.catalog,
+                                                installed: Set(settings.installedPlugins), content: content)
+        guard !items.isEmpty, let text = content.text else { return }
+        toolbar.show(items: items, selection: selection, pointer: pointer)
+        let frame = toolbar.frame ?? CGRect(origin: pointer, size: .zero)
+        toolbarContext = ToolbarContext(content: content, pid: pid, appName: appName, bundleID: bundleID,
+                                        anchor: CGPoint(x: frame.midX, y: frame.minY + 8))
+        lastToolbarSelection = (pid, text)
+    }
+
+    /// 点了工具条上的功能：用读到的选区执行，结果卡片从工具条那里弹出来
+    private func runFromToolbar(_ pluginID: String) {
+        guard let context = toolbarContext else { return }
+        endSession()
+        session = Session(anchor: context.anchor, pid: context.pid, sourceAppName: context.appName, bundleID: context.bundleID,
+                          buttonHeld: false, content: context.content)
+        run(pluginID)
+    }
+
+    /// 点了工具条上的「更多」：在这里打开完整的圆盘，点一下选
+    private func showRingFromToolbar() {
+        guard let context = toolbarContext else { return }
+        endSession()
+        session = Session(anchor: NSEvent.mouseLocation, pid: context.pid, sourceAppName: context.appName,
+                          bundleID: context.bundleID, buttonHeld: false, content: context.content)
+        showRing(content: context.content)
+    }
+
+    /// 演示截图用：假装在 selection 这里选中了 text
+    func showToolbarForDemo(text: String, selection: CGRect) {
+        endSession()
+        showToolbar(content: ContentClassifier.classify(.text(text)), selection: selection,
+                    pointer: CGPoint(x: selection.maxX, y: selection.midY), pid: 0, appName: nil, bundleID: nil)
     }
 
     /// 在 point 处显示一句提示（贴图上的复制、存储等）
