@@ -26,21 +26,21 @@ enum AIClient {
         var errorDescription: String? {
             switch self {
             case .notConfigured:
-                return "还没有设置 AI 接口，请在「设置 → AI」里填写接口地址和模型。"
+                return String(localized: "还没有设置 AI 接口，请在「设置 → AI」里填写接口地址和模型。")
             case .invalidURL:
-                return "接口地址无效，需要以 https:// 或 http:// 开头。"
+                return String(localized: "接口地址无效，需要以 https:// 或 http:// 开头。")
             case .http(let status, let message):
                 let hint: String
                 switch status {
-                case 401, 403: hint = "API Key 不对或者没有权限"
-                case 404: hint = "接口地址或模型名称不对"
-                case 429: hint = "请求太频繁或者额度用完了"
-                case 500...599: hint = "服务暂时出错了"
-                default: hint = "请求失败"
+                case 401, 403: hint = String(localized: "API Key 不对或者没有权限")
+                case 404: hint = String(localized: "接口地址或模型名称不对")
+                case 429: hint = String(localized: "请求太频繁或者额度用完了")
+                case 500...599: hint = String(localized: "服务暂时出错了")
+                default: hint = String(localized: "请求失败")
                 }
-                return message.isEmpty ? "\(hint)（\(status)）" : "\(hint)（\(status)）：\(message)"
+                return message.isEmpty ? String(localized: "\(hint)（\(status)）") : String(localized: "\(hint)（\(status)）：\(message)")
             case .emptyResponse:
-                return "服务没有返回内容。"
+                return String(localized: "服务没有返回内容。")
             }
         }
     }
@@ -208,20 +208,20 @@ enum AIClient {
     /// 给用户看的错误说明
     static func describe(_ error: Error) -> String {
         if let failure = error as? Failure {
-            return failure.errorDescription ?? "请求失败"
+            return failure.errorDescription ?? String(localized: "请求失败")
         }
         if let urlError = error as? URLError {
             switch urlError.code {
             case .notConnectedToInternet, .networkConnectionLost:
-                return "网络连接断开了。"
+                return String(localized: "网络连接断开了。")
             case .timedOut:
-                return "请求超时了，服务可能太忙，稍后再试。"
+                return String(localized: "请求超时了，服务可能太忙，稍后再试。")
             case .cannotFindHost, .cannotConnectToHost, .dnsLookupFailed:
-                return "连不上接口地址，请检查「设置 → AI」里的地址。"
+                return String(localized: "连不上接口地址，请检查「设置 → AI」里的地址。")
             case .secureConnectionFailed, .serverCertificateUntrusted, .serverCertificateHasBadDate:
-                return "和接口地址建立安全连接失败。"
+                return String(localized: "和接口地址建立安全连接失败。")
             case .appTransportSecurityRequiresSecureConnection:
-                return "这个地址需要用 https://（只有本机和局域网的服务可以用 http://）。"
+                return String(localized: "这个地址需要用 https://（只有本机和局域网的服务可以用 http://）。")
             default:
                 break
             }

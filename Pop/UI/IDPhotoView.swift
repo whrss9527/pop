@@ -7,16 +7,16 @@ struct IDPhotoView: View {
     var onClose: () -> Void
 
     private var hint: String {
-        guard model.cutout != nil else { return "抠图在本机进行，不上传照片" }
+        guard model.cutout != nil else { return String(localized: "抠图在本机进行，不上传照片") }
         if let message = model.message {
             return message
         }
-        guard let pixels = model.size.pixels else { return "只换底色，大小不变；另存一份放在原图旁边，原图不动" }
-        return "\(model.size.title) \(pixels.width)×\(pixels.height) 像素（300 dpi）；另存一份放在原图旁边，原图不动"
+        guard let pixels = model.size.pixels else { return String(localized: "只换底色，大小不变；另存一份放在原图旁边，原图不动") }
+        return String(localized: "\(model.size.title) \(pixels.width)×\(pixels.height) 像素（300 dpi）；另存一份放在原图旁边，原图不动")
     }
 
     var body: some View {
-        CardContainer(title: "证件照", subtitle: model.file.lastPathComponent, width: 400, onClose: onClose) {
+        CardContainer(title: String(localized: "证件照"), subtitle: model.file.lastPathComponent, width: 400, onClose: onClose) {
             ZStack {
                 RoundedRectangle(cornerRadius: 8)
                     .fill(Color.primary.opacity(0.05))

@@ -11,7 +11,7 @@ enum ImageWatermark {
         let message: String
     }
 
-    static let defaultText = "仅供办理业务使用，他用无效"
+    static let defaultText = String(localized: "仅供办理业务使用，他用无效")
     /// 上次用的水印文字存在这里
     static let textKey = "watermarkText"
 
@@ -99,15 +99,15 @@ enum ImageWatermark {
     /// PDF 每一页都铺上水印（画在页面内容上面，原来的文字还能选中、搜索），另存「原名 水印.pdf」
     static func watermarkPDF(_ url: URL, text: String, opacity: Double) throws -> URL {
         guard let document = CGPDFDocument(url as CFURL), document.numberOfPages > 0 else {
-            throw Failure(message: "读不了「\(url.lastPathComponent)」")
+            throw Failure(message: String(localized: "读不了「\(url.lastPathComponent)」"))
         }
         if document.isEncrypted && !document.isUnlocked && !document.unlockWithPassword("") {
-            throw Failure(message: "「\(url.lastPathComponent)」有密码，先用「PDF → 去掉密码」再加水印")
+            throw Failure(message: String(localized: "「\(url.lastPathComponent)」有密码，先用「PDF → 去掉密码」再加水印"))
         }
         let output = FileNames.available(in: url.deletingLastPathComponent(),
-                                         base: url.deletingPathExtension().lastPathComponent + " 水印", extension: "pdf")
+                                         base: url.deletingPathExtension().lastPathComponent + String(localized: " 水印"), extension: "pdf")
         guard let context = CGContext(output as CFURL, mediaBox: nil, nil) else {
-            throw Failure(message: "存储「\(output.lastPathComponent)」失败")
+            throw Failure(message: String(localized: "存储「\(output.lastPathComponent)」失败"))
         }
         for index in 1...document.numberOfPages {
             guard let page = document.page(at: index) else { continue }
@@ -146,21 +146,21 @@ enum ImageWatermark {
         }
         guard let source = CGImageSourceCreateWithURL(url as CFURL, nil), CGImageSourceGetCount(source) > 0,
               let image = ImageConverter.uprightImage(source) else {
-            throw Failure(message: "读不了「\(url.lastPathComponent)」")
+            throw Failure(message: String(localized: "读不了「\(url.lastPathComponent)」"))
         }
-        guard let marked = apply(image, text: text, opacity: opacity) else { throw Failure(message: "「\(url.lastPathComponent)」加水印失败") }
+        guard let marked = apply(image, text: text, opacity: opacity) else { throw Failure(message: String(localized: "「\(url.lastPathComponent)」加水印失败")) }
         let sourceType = (CGImageSourceGetType(source) as String?).flatMap { UTType($0) } ?? .png
         let photo = sourceType.conforms(to: .jpeg) || sourceType.conforms(to: .heic) || sourceType.conforms(to: .heif)
         let type: UTType = photo ? .jpeg : .png
         let output = FileNames.available(in: url.deletingLastPathComponent(),
-                                         base: url.deletingPathExtension().lastPathComponent + " 水印", extension: photo ? "jpg" : "png")
+                                         base: url.deletingPathExtension().lastPathComponent + String(localized: " 水印"), extension: photo ? "jpg" : "png")
         guard let destination = CGImageDestinationCreateWithURL(output as CFURL, type.identifier as CFString, 1, nil) else {
-            throw Failure(message: "存储「\(output.lastPathComponent)」失败")
+            throw Failure(message: String(localized: "存储「\(output.lastPathComponent)」失败"))
         }
         CGImageDestinationAddImage(destination, marked, [kCGImageDestinationLossyCompressionQuality: 0.92] as CFDictionary)
         guard CGImageDestinationFinalize(destination) else {
             try? FileManager.default.removeItem(at: output)
-            throw Failure(message: "存储「\(output.lastPathComponent)」失败")
+            throw Failure(message: String(localized: "存储「\(output.lastPathComponent)」失败"))
         }
         return output
     }

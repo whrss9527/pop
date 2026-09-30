@@ -14,12 +14,12 @@ struct GeneralSettingsView: View {
     var body: some View {
         Form {
             Section("快速上手") {
-                QuickStartRow(number: 1, title: "授予辅助功能权限",
-                              detail: "Pop 要靠它识别长按右键、读取选中的内容，所有处理都在本机完成。")
-                QuickStartRow(number: 2, title: "按住右键，不要松开",
+                QuickStartRow(number: 1, title: String(localized: "授予辅助功能权限"),
+                              detail: String(localized: "Pop 要靠它识别长按右键、读取选中的内容，所有处理都在本机完成。"))
+                QuickStartRow(number: 2, title: String(localized: "按住右键，不要松开"),
                               detail: triggerHint)
-                QuickStartRow(number: 3, title: "菜单栏里的 ◎ 就是 Pop",
-                              detail: "点它可以打开设置、暂停或退出。菜单栏图标太多时可能被刘海挡住；macOS 26 也可能在「系统设置 → 菜单栏」里把它隐藏了。找不到图标时，再次打开 Pop 应用就会弹出这个窗口。")
+                QuickStartRow(number: 3, title: String(localized: "菜单栏里的 ◎ 就是 Pop"),
+                              detail: String(localized: "点它可以打开设置、暂停或退出。菜单栏图标太多时可能被刘海挡住；macOS 26 也可能在「系统设置 → 菜单栏」里把它隐藏了。找不到图标时，再次打开 Pop 应用就会弹出这个窗口。"))
             }
 
             Section("权限") {
@@ -109,9 +109,7 @@ struct GeneralSettingsView: View {
             } header: {
                 Text("选中文字后")
             } footer: {
-                Text("拖着选中一段文字、双击选词或者三击选段后，在选区上方显示圆盘里前几个能处理这段文字的功能，点一下就执行，"
-                    + "点「更多」打开完整的圆盘。只用辅助功能读取选中的文字，不碰剪贴板，读不到选区的 App 里不会出现；"
-                    + "上面列出的 App 里也不出现。")
+                Text("拖着选中一段文字、双击选词或者三击选段后，在选区上方显示圆盘里前几个能处理这段文字的功能，点一下就执行，点「更多」打开完整的圆盘。只用辅助功能读取选中的文字，不碰剪贴板，读不到选区的 App 里不会出现；上面列出的 App 里也不出现。")
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
@@ -158,13 +156,13 @@ extension GeneralSettingsView {
         switch trigger.mode {
         case .longPressRight:
             let release = trigger.keepsRingOpen
-                ? "在圆心松开时圆盘保持打开，可以再用鼠标点选，点圆心或按 Esc 关闭。"
-                : "在圆心松开就关闭圆盘；想松开后再用鼠标点选的话，打开「松开右键后圆盘保持打开」。"
-            return "长按右键：短按仍然是系统右键菜单，按住超过设定时长才唤起 Pop。圆盘出来后按住不放，往某个方向一划再松开，就执行那一格的功能；" + release
+                ? String(localized: "在圆心松开时圆盘保持打开，可以再用鼠标点选，点圆心或按 Esc 关闭。")
+                : String(localized: "在圆心松开就关闭圆盘；想松开后再用鼠标点选的话，打开「松开右键后圆盘保持打开」。")
+            return String(localized: "长按右键：短按仍然是系统右键菜单，按住超过设定时长才唤起 Pop。圆盘出来后按住不放，往某个方向一划再松开，就执行那一格的功能；") + release
         case .modifierRightClick, .middleClick:
-            return "按住时往某个方向一划再松开，可以直接执行那一格的功能；点一下的话圆盘保持打开，用鼠标点选，点圆心或按 Esc 关闭。"
+            return String(localized: "按住时往某个方向一划再松开，可以直接执行那一格的功能；点一下的话圆盘保持打开，用鼠标点选，点圆心或按 Esc 关闭。")
         case .disabled:
-            return "只用键盘快捷键唤起：圆盘出来后用鼠标点选，或者按数字键选择，Esc 关闭。"
+            return String(localized: "只用键盘快捷键唤起：圆盘出来后用鼠标点选，或者按数字键选择，Esc 关闭。")
         }
     }
 
@@ -177,18 +175,18 @@ extension GeneralSettingsView {
     }
 
     private var permissionTitle: String {
-        if !permissions.isTrusted { return "需要辅助功能权限" }
-        return permissions.isTriggerRunning ? "已获得辅助功能权限，Pop 已就绪" : "已授权，但鼠标拦截还没生效"
+        if !permissions.isTrusted { return String(localized: "需要辅助功能权限") }
+        return permissions.isTriggerRunning ? String(localized: "已获得辅助功能权限，Pop 已就绪") : String(localized: "已授权，但鼠标拦截还没生效")
     }
 
     private var permissionDetail: String {
         if !permissions.isTrusted {
-            return "点「去授权」，在「系统设置 → 隐私与安全性 → 辅助功能」里打开 Pop。授权后不用重启，几秒内自动生效。"
+            return String(localized: "点「去授权」，在「系统设置 → 隐私与安全性 → 辅助功能」里打开 Pop。授权后不用重启，几秒内自动生效。")
         }
         if !permissions.isTriggerRunning {
-            return "偶尔刚授权时系统还没放行，点「重启 Pop」即可。"
+            return String(localized: "偶尔刚授权时系统还没放行，点「重启 Pop」即可。")
         }
-        return "所有处理都在本机完成。"
+        return String(localized: "所有处理都在本机完成。")
     }
 
     private var triggerHint: String {
@@ -197,15 +195,15 @@ extension GeneralSettingsView {
         case .longPressRight:
             let ms = Int((trigger.holdDuration * 1000).rounded())
             let ring = trigger.keepsRingOpen
-                ? "往要用的功能方向一划再松开，或者松开后再点选"
-                : "按住不放往要用的功能方向一划再松开即可，在圆心松开就关闭"
-            return "按住鼠标右键约 \(ms) 毫秒：选中了外文会直接翻译；其他情况弹出圆盘，\(ring)。普通点一下右键仍然是系统菜单。"
+                ? String(localized: "往要用的功能方向一划再松开，或者松开后再点选")
+                : String(localized: "按住不放往要用的功能方向一划再松开即可，在圆心松开就关闭")
+            return String(localized: "按住鼠标右键约 \(ms) 毫秒：选中了外文会直接翻译；其他情况弹出圆盘，\(ring)。普通点一下右键仍然是系统菜单。")
         case .modifierRightClick:
-            return "按住 \(trigger.modifier.title) 再点鼠标右键唤起 Pop。"
+            return String(localized: "按住 \(trigger.modifier.title) 再点鼠标右键唤起 Pop。")
         case .middleClick:
-            return "点击鼠标中键唤起 Pop。"
+            return String(localized: "点击鼠标中键唤起 Pop。")
         case .disabled:
-            return trigger.hotKey == .none ? "鼠标唤起已关闭，可以在下面设置一个键盘快捷键。" : "用键盘快捷键 \(trigger.hotKey.title) 唤起 Pop。"
+            return trigger.hotKey == .none ? String(localized: "鼠标唤起已关闭，可以在下面设置一个键盘快捷键。") : String(localized: "用键盘快捷键 \(trigger.hotKey.title) 唤起 Pop。")
         }
     }
 }
@@ -408,7 +406,7 @@ struct RingSettingsView: View {
         let panel = NSOpenPanel()
         panel.allowedContentTypes = [.application]
         panel.directoryURL = URL(fileURLWithPath: "/Applications")
-        panel.prompt = "单独设置"
+        panel.prompt = String(localized: "单独设置")
         guard panel.runModal() == .OK, let url = panel.url, let bundleID = Bundle(url: url)?.bundleIdentifier else { return }
         store.update { settings in
             if !settings.appRings.contains(where: { $0.bundleID == bundleID }) {
@@ -429,7 +427,7 @@ struct PluginRow: View {
                 .frame(width: 22)
             Text(info.name)
             Spacer()
-            Text(slotIndex.map { "第 \($0 + 1) 格" } ?? "未放置")
+            Text(slotIndex.map { String(localized: "第 \($0 + 1) 格") } ?? String(localized: "未放置"))
                 .font(.caption)
                 .foregroundStyle(.secondary)
         }
@@ -488,7 +486,7 @@ struct RingEditorCanvas: View {
                 }
             }
             .frame(width: 48, height: 48)
-            Text(info?.name ?? "空")
+            Text(info?.name ?? String(localized: "空"))
                 .font(.caption2)
                 .foregroundStyle(info == nil ? Color.secondary : Color.primary)
                 .lineLimit(1)
@@ -513,7 +511,7 @@ struct RingEditorCanvas: View {
             Divider()
             Button("清空这一格") { onPlace(nil, index) }
         }
-        .help(info?.summary ?? "空格子")
+        .help(info?.summary ?? String(localized: "空格子"))
     }
 }
 
@@ -769,9 +767,9 @@ struct LanguagePackView: View {
         .translationTask(configuration) { session in
             do {
                 try await session.prepareTranslation()
-                await MainActor.run { message = "语言包已就绪" }
+                await MainActor.run { message = String(localized: "语言包已就绪") }
             } catch {
-                await MainActor.run { message = "下载没有完成：\(error.localizedDescription)" }
+                await MainActor.run { message = String(localized: "下载没有完成：\(error.localizedDescription)") }
             }
             await refresh()
         }
@@ -783,11 +781,11 @@ struct LanguagePackView: View {
 
     private var statusText: String {
         switch status {
-        case .none: return "正在检查…"
-        case .some(.installed): return "已安装"
-        case .some(.supported): return "未下载"
-        case .some(.unsupported): return "不支持这个语言组合"
-        case .some(_): return "未知状态"
+        case .none: return String(localized: "正在检查…")
+        case .some(.installed): return String(localized: "已安装")
+        case .some(.supported): return String(localized: "未下载")
+        case .some(.unsupported): return String(localized: "不支持这个语言组合")
+        case .some(_): return String(localized: "未知状态")
         }
     }
 
@@ -888,9 +886,9 @@ struct SyncSettingsView: View {
         guard panel.runModal() == .OK, let url = panel.url else { return }
         do {
             try backup.encoded().write(to: url, options: .atomic)
-            backupMessage = "已导出到「\(url.lastPathComponent)」"
+            backupMessage = String(localized: "已导出到「\(url.lastPathComponent)」")
         } catch {
-            backupMessage = "导出失败：\(error.localizedDescription)"
+            backupMessage = String(localized: "导出失败：\(error.localizedDescription)")
         }
     }
 
@@ -903,14 +901,14 @@ struct SyncSettingsView: View {
         do {
             backup = try SettingsBackup.decode(try Data(contentsOf: url))
         } catch {
-            backupMessage = (error as? SettingsBackup.Failure)?.message ?? "读不了这个文件：\(error.localizedDescription)"
+            backupMessage = (error as? SettingsBackup.Failure)?.message ?? String(localized: "读不了这个文件：\(error.localizedDescription)")
             return
         }
         let alert = NSAlert()
-        alert.messageText = "导入「\(url.lastPathComponent)」？"
-        alert.informativeText = "会替换现在的\(backup.summary)。同名的插件会被覆盖，其他插件保留。"
-        alert.addButton(withTitle: "导入")
-        alert.addButton(withTitle: "取消")
+        alert.messageText = String(localized: "导入「\(url.lastPathComponent)」？")
+        alert.informativeText = String(localized: "会替换现在的\(backup.summary)。同名的插件会被覆盖，其他插件保留。")
+        alert.addButton(withTitle: String(localized: "导入"))
+        alert.addButton(withTitle: String(localized: "取消"))
         guard alert.runModal() == .alertFirstButtonReturn else { return }
         var failed: [String] = []
         for manifest in backup.plugins {
@@ -923,6 +921,6 @@ struct SyncSettingsView: View {
         store.update { settings in
             settings = backup.settings
         }
-        backupMessage = failed.isEmpty ? "已导入" : "已导入，但这些插件没能保存：\(failed.joined(separator: "、"))"
+        backupMessage = failed.isEmpty ? String(localized: "已导入") : String(localized: "已导入，但这些插件没能保存：\(failed.joinedAsList())")
     }
 }

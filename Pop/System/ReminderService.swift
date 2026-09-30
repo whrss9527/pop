@@ -16,13 +16,13 @@ enum ReminderService {
         do {
             granted = try await store.requestFullAccessToReminders()
         } catch {
-            throw Failure(message: "没能申请提醒事项的权限：\(error.localizedDescription)")
+            throw Failure(message: String(localized: "没能申请提醒事项的权限：\(error.localizedDescription)"))
         }
         guard granted else {
-            throw Failure(message: "没有提醒事项的权限：在「系统设置 → 隐私与安全性 → 提醒事项」里打开 Pop")
+            throw Failure(message: String(localized: "没有提醒事项的权限：在「系统设置 → 隐私与安全性 → 提醒事项」里打开 Pop"))
         }
         guard let list = store.defaultCalendarForNewReminders() else {
-            throw Failure(message: "没有找到提醒事项列表，先在「提醒事项」App 里建一个")
+            throw Failure(message: String(localized: "没有找到提醒事项列表，先在「提醒事项」App 里建一个"))
         }
         let reminder = EKReminder(eventStore: store)
         reminder.title = title
@@ -35,7 +35,7 @@ enum ReminderService {
         do {
             try store.save(reminder, commit: true)
         } catch {
-            throw Failure(message: "没能保存：\(error.localizedDescription)")
+            throw Failure(message: String(localized: "没能保存：\(error.localizedDescription)"))
         }
     }
 
@@ -46,13 +46,13 @@ enum ReminderService {
             // 只要写入权限：Pop 不需要看到日历里原有的日程
             granted = try await store.requestWriteOnlyAccessToEvents()
         } catch {
-            throw Failure(message: "没能申请日历的权限：\(error.localizedDescription)")
+            throw Failure(message: String(localized: "没能申请日历的权限：\(error.localizedDescription)"))
         }
         guard granted else {
-            throw Failure(message: "没有日历的权限：在「系统设置 → 隐私与安全性 → 日历」里打开 Pop")
+            throw Failure(message: String(localized: "没有日历的权限：在「系统设置 → 隐私与安全性 → 日历」里打开 Pop"))
         }
         guard let calendar = store.defaultCalendarForNewEvents else {
-            throw Failure(message: "没有找到可以添加日程的日历")
+            throw Failure(message: String(localized: "没有找到可以添加日程的日历"))
         }
         let event = EKEvent(eventStore: store)
         event.title = title
@@ -64,7 +64,7 @@ enum ReminderService {
         do {
             try store.save(event, span: .thisEvent, commit: true)
         } catch {
-            throw Failure(message: "没能保存：\(error.localizedDescription)")
+            throw Failure(message: String(localized: "没能保存：\(error.localizedDescription)"))
         }
     }
 

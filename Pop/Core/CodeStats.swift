@@ -30,17 +30,17 @@ enum CodeStats {
     static let fileLimit = 50_000
 
     static let languages: [String: String] = [
-        "swift": "Swift", "m": "Objective-C", "mm": "Objective-C++", "c": "C", "h": "C/C++ 头文件", "cc": "C++", "cpp": "C++",
-        "cxx": "C++", "hpp": "C/C++ 头文件", "hh": "C/C++ 头文件", "cs": "C#", "java": "Java", "kt": "Kotlin", "kts": "Kotlin",
+        "swift": "Swift", "m": "Objective-C", "mm": "Objective-C++", "c": "C", "h": String(localized: "C/C++ 头文件"), "cc": "C++", "cpp": "C++",
+        "cxx": "C++", "hpp": String(localized: "C/C++ 头文件"), "hh": String(localized: "C/C++ 头文件"), "cs": "C#", "java": "Java", "kt": "Kotlin", "kts": "Kotlin",
         "scala": "Scala", "groovy": "Groovy", "gradle": "Gradle", "go": "Go", "rs": "Rust", "zig": "Zig", "dart": "Dart",
         "js": "JavaScript", "jsx": "JavaScript", "mjs": "JavaScript", "cjs": "JavaScript", "ts": "TypeScript", "tsx": "TypeScript",
         "mts": "TypeScript", "vue": "Vue", "svelte": "Svelte", "html": "HTML", "htm": "HTML", "css": "CSS", "scss": "SCSS",
         "sass": "Sass", "less": "Less", "py": "Python", "pyi": "Python", "rb": "Ruby", "php": "PHP", "pl": "Perl", "pm": "Perl",
         "lua": "Lua", "r": "R", "jl": "Julia", "ex": "Elixir", "exs": "Elixir", "erl": "Erlang", "hs": "Haskell", "ml": "OCaml",
         "clj": "Clojure", "fs": "F#", "nim": "Nim", "sh": "Shell", "bash": "Shell", "zsh": "Shell", "fish": "Shell",
-        "ps1": "PowerShell", "bat": "批处理", "sql": "SQL", "graphql": "GraphQL", "proto": "Protocol Buffers", "tf": "Terraform",
+        "ps1": "PowerShell", "bat": String(localized: "批处理"), "sql": "SQL", "graphql": "GraphQL", "proto": "Protocol Buffers", "tf": "Terraform",
         "json": "JSON", "yaml": "YAML", "yml": "YAML", "toml": "TOML", "xml": "XML", "plist": "XML", "md": "Markdown",
-        "markdown": "Markdown", "rst": "reStructuredText", "tex": "TeX", "vim": "Vim script", "asm": "汇编", "s": "汇编",
+        "markdown": "Markdown", "rst": "reStructuredText", "tex": "TeX", "vim": "Vim script", "asm": String(localized: "汇编"), "s": String(localized: "汇编"),
         "metal": "Metal", "glsl": "GLSL", "cmake": "CMake",
     ]
 
@@ -145,11 +145,11 @@ enum CodeStats {
 
     /// Markdown 表格：语言、文件、行数、空行、代码行
     static func markdown(_ result: Result) -> String {
-        var lines = ["| 语言 | 文件 | 行数 | 空行 | 代码行 |", "| --- | ---: | ---: | ---: | ---: |"]
+        var lines = [String(localized: "| 语言 | 文件 | 行数 | 空行 | 代码行 |"), "| --- | ---: | ---: | ---: | ---: |"]
         for language in result.languages {
             lines.append("| \(language.name) | \(language.files) | \(language.lines) | \(language.blank) | \(language.code) |")
         }
-        lines.append("| 合计 | \(result.files) | \(result.lines) | \(result.blank) | \(result.lines - result.blank) |")
+        lines.append(String(localized: "| 合计 | \(result.files) | \(result.lines) | \(result.blank) | \(result.lines - result.blank) |"))
         return lines.joined(separator: "\n")
     }
 }

@@ -32,6 +32,8 @@ targets:
       base:
         INFOPLIST_FILE: Pop/Resources/Info.plist
         GENERATE_INFOPLIST_FILE: NO
+        # 编译时把代码里的界面文字抽出来（.stringsdata），CI 用它检查每条中文都有英文翻译
+        SWIFT_EMIT_LOC_STRINGS: YES
 
   PopTests:
     type: bundle.unit-test
@@ -55,6 +57,8 @@ schemes:
       config: Debug
     test:
       config: Debug
+      # 单元测试检查的是中文的结果；CI 的 runner 是英文系统，这里固定用中文界面跑
+      language: zh-Hans
       gatherCoverageData: false
       targets:
         - PopTests

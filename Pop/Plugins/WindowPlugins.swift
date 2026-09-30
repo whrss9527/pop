@@ -7,8 +7,8 @@ import UniformTypeIdentifiers
 // MARK: - 窗口布局
 
 struct WindowLayoutPlugin: PopPlugin {
-    let info = PluginInfo(id: BuiltinPluginID.windowLayout, name: "窗口布局", symbol: "rectangle.split.2x1",
-                          summary: "把当前窗口放到屏幕的左半边、右半边、三分之一、最大化、居中，或者移到另一个显示器", accepts: [])
+    let info = PluginInfo(id: BuiltinPluginID.windowLayout, name: String(localized: "窗口布局"), symbol: "rectangle.split.2x1",
+                          summary: String(localized: "把当前窗口放到屏幕的左半边、右半边、三分之一、最大化、居中，或者移到另一个显示器"), accepts: [])
 
     @MainActor func run(_ content: ClassifiedContent, context: PluginContext) async -> PluginOutcome {
         .showWindowLayouts
@@ -23,7 +23,7 @@ struct WindowLayoutCardView: View {
     private let columns = Array(repeating: GridItem(.flexible(), spacing: 6), count: 5)
 
     var body: some View {
-        CardContainer(title: "窗口布局", subtitle: "方向键放到半屏，回车最大化", width: 404, onClose: onClose) {
+        CardContainer(title: String(localized: "窗口布局"), subtitle: String(localized: "方向键放到半屏，回车最大化"), width: 404, onClose: onClose) {
             LazyVGrid(columns: columns, spacing: 6) {
                 ForEach(WindowLayout.allCases) { layout in
                     LayoutTile(layout: layout, enabled: layout != .nextDisplay || hasMultipleDisplays) {
@@ -86,15 +86,15 @@ private struct LayoutTile: View {
 // MARK: - 图片转换
 
 struct ImageConvertPlugin: PopPlugin {
-    let info = PluginInfo(id: BuiltinPluginID.imageConvert, name: "图片转换", symbol: "photo.on.rectangle.angled",
-                          summary: "把选中的图片文件转成 PNG、JPEG、HEIC，缩小一半、压缩体积或者压到指定大小以内，旋转、左右翻转，或者去掉照片里的位置和拍摄信息；结果存在原图旁边",
+    let info = PluginInfo(id: BuiltinPluginID.imageConvert, name: String(localized: "图片转换"), symbol: "photo.on.rectangle.angled",
+                          summary: String(localized: "把选中的图片文件转成 PNG、JPEG、HEIC，缩小一半、压缩体积或者压到指定大小以内，旋转、左右翻转，或者去掉照片里的位置和拍摄信息；结果存在原图旁边"),
                           accepts: [.imageFile])
 
     @MainActor func run(_ content: ClassifiedContent, context: PluginContext) async -> PluginOutcome {
         let files = content.files.filter(ContentClassifier.isImageFile)
-        guard !files.isEmpty else { return .failure("没有选中图片文件") }
+        guard !files.isEmpty else { return .failure(String(localized: "没有选中图片文件")) }
         let rows = files.count == 1 ? ImageInfo.rows(for: files[0]) : []
-        let what = files.count == 1 ? files[0].lastPathComponent : "\(files.count) 张图片"
+        let what = files.count == 1 ? files[0].lastPathComponent : String(localized: "\(files.count) 张图片")
         // 照片里有位置、拍摄信息时才给去掉的按钮
         let metadata = files.prefix(200).compactMap(PhotoMetadata.read)
         let hasLocation = metadata.contains { $0.hasLocation }
@@ -109,12 +109,12 @@ struct ImageConvertPlugin: PopPlugin {
         var buttons = operations.map { operation in
             CardButton(title: operation.title, action: .convertImages(files, operation))
         }
-        buttons.append(CardButton(title: "压缩到指定大小…", action: .imageSizeLimit(files)))
+        buttons.append(CardButton(title: String(localized: "压缩到指定大小…"), action: .imageSizeLimit(files)))
         // 一张不太大的图可以直接复制成 data URI（写进网页、CSS、Markdown）
         if files.count == 1, let uri = Base64Image.dataURI(for: files[0]) {
-            buttons.append(CardButton(title: "复制为 data URI", action: .copy(uri)))
+            buttons.append(CardButton(title: String(localized: "复制为 data URI"), action: .copy(uri)))
         }
-        return .card(ResultCard(title: "图片转换", detail: "\(what)，转换后存在原图旁边", rows: rows, buttons: buttons))
+        return .card(ResultCard(title: String(localized: "图片转换"), detail: String(localized: "\(what)，转换后存在原图旁边"), rows: rows, buttons: buttons))
     }
 }
 
@@ -125,13 +125,13 @@ enum ImageInfo {
               let properties = CGImageSourceCopyPropertiesAtIndex(source, 0, nil) as? [CFString: Any] else { return [] }
         var rows: [ResultCard.Row] = []
         if let width = properties[kCGImagePropertyPixelWidth] as? Int, let height = properties[kCGImagePropertyPixelHeight] as? Int {
-            rows.append(ResultCard.Row(label: "尺寸", value: "\(width) × \(height)"))
+            rows.append(ResultCard.Row(label: String(localized: "尺寸"), value: "\(width) × \(height)"))
         }
         if let identifier = CGImageSourceGetType(source) as String?, let type = UTType(identifier) {
-            rows.append(ResultCard.Row(label: "格式", value: type.preferredFilenameExtension?.uppercased() ?? identifier))
+            rows.append(ResultCard.Row(label: String(localized: "格式"), value: type.preferredFilenameExtension?.uppercased() ?? identifier))
         }
         if let size = try? url.resourceValues(forKeys: [.fileSizeKey]).fileSize {
-            rows.append(ResultCard.Row(label: "大小", value: ByteCountFormatter.string(fromByteCount: Int64(size), countStyle: .file)))
+            rows.append(ResultCard.Row(label: String(localized: "大小"), value: ByteCountFormatter.string(fromByteCount: Int64(size), countStyle: .file)))
         }
         return rows
     }

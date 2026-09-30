@@ -33,10 +33,10 @@ enum OverlayDemo {
         let text = ContentClassifier.classify(.text("Liquid glass"))
         let ring = RingViewModel(layout: settings.ring, catalog: catalog, installed: installed, content: nil)
         let chooserPlugins = catalog.filter { $0.id != BuiltinPluginID.allPlugins && installed.contains($0.id) && $0.canHandle(text) }
-        let card = ResultCard(title: "字数统计", body: "", copyText: "12",
-                              rows: [ResultCard.Row(label: "字符", value: "12"),
-                                     ResultCard.Row(label: "单词", value: "2"),
-                                     ResultCard.Row(label: "行", value: "1")])
+        let card = ResultCard(title: String(localized: "字数统计"), body: "", copyText: "12",
+                              rows: [ResultCard.Row(label: String(localized: "字符"), value: "12"),
+                                     ResultCard.Row(label: String(localized: "单词"), value: "2"),
+                                     ResultCard.Row(label: String(localized: "行"), value: "1")])
         let unit = Motion.timeScale
 
         Task { @MainActor in
@@ -63,7 +63,7 @@ enum OverlayDemo {
 
             await pause(1.2 * unit)
             step("toast")
-            overlay.showToast("已复制", anchor: center)
+            overlay.showToast(String(localized: "已复制"), anchor: center)
 
             await pause(1.6 * unit)
             step("chooser")
@@ -168,9 +168,8 @@ enum OverlayDemo {
             step("diff")
             let diff = TextDiff.compare("长按右键唤起圆盘\n松开就执行\n支持 50 多个功能",
                                         "长按右键弹出圆盘\n松开就执行\n支持 60 多个功能\n还可以写自己的插件")
-            overlay.showCard(ResultCardView(card: ResultCard(title: "文本对比",
-                                                             detail: "剪贴板 → 选中的文字：删去 \(diff.removedCount) 行，"
-                                                                 + "新增 \(diff.addedCount) 行",
+            overlay.showCard(ResultCardView(card: ResultCard(title: String(localized: "文本对比"),
+                                                             detail: String(localized: "剪贴板 → 选中的文字：删去 \(diff.removedCount) 行，新增 \(diff.addedCount) 行"),
                                                              copyText: diff.unifiedText, diff: diff),
                                             onAction: { _ in }, onMore: {}, onClose: {}),
                              anchor: center)
@@ -180,8 +179,8 @@ enum OverlayDemo {
             step("palette")
             if let sample = sampleScreenshot() {
                 let swatches = ColorPalette.extract(from: sample.image)
-                let card = ResultCard(title: "图片配色", detail: "按面积从大到小；点色块复制色值",
-                                      rows: swatches.map { ResultCard.Row(label: "占 \(Int((($0.share) * 100).rounded()))%", value: $0.hex) },
+                let card = ResultCard(title: String(localized: "图片配色"), detail: String(localized: "按面积从大到小；点色块复制色值"),
+                                      rows: swatches.map { ResultCard.Row(label: String(localized: "占 \(Int((($0.share) * 100).rounded()))%"), value: $0.hex) },
                                       palette: swatches.map(\.hex))
                 overlay.showCard(ResultCardView(card: card, onAction: { _ in }, onMore: {}, onClose: {}), anchor: center)
             }
@@ -207,16 +206,15 @@ enum OverlayDemo {
             // Markdown 预览卡片（深色外观下文字也要看得清）
             await pause(1.4 * unit)
             let markdown = "## 发布清单\n\n- 更新 **CHANGELOG**\n- 改 `MARKETING_VERSION`\n\n> 合并到 main 后自动发版"
-            overlay.showCard(ResultCardView(card: ResultCard(title: "Markdown 预览", markdown: markdown,
-                                                             buttons: [CardButton(title: "复制为富文本", action: .copyRichText(markdown))]),
+            overlay.showCard(ResultCardView(card: ResultCard(title: String(localized: "Markdown 预览"), markdown: markdown,
+                                                             buttons: [CardButton(title: String(localized: "复制为富文本"), action: .copyRichText(markdown))]),
                                             onAction: { _ in }, onMore: {}, onClose: {}),
                              anchor: center)
             step("markdown")
 
             // 提取信息卡片
             await pause(1.4 * unit)
-            let notice = "联系 pop@example.com，电话 138-1234-5678；下载 https://github.com/whrss9527/pop/releases，"
-                + "文档在 www.example.com；测试机 192.168.1.20:8080，备用 support@example.com"
+            let notice = "联系 pop@example.com，电话 138-1234-5678；下载 https://github.com/whrss9527/pop/releases，文档在 www.example.com；测试机 192.168.1.20:8080，备用 support@example.com"
             overlay.showCard(ResultCardView(card: InfoExtractor.card(for: InfoExtractor.extract(notice)),
                                             onAction: { _ in }, onMore: {}, onClose: {}),
                              anchor: center)
@@ -228,7 +226,7 @@ enum OverlayDemo {
                 + #""releases": [{"version": "0.10.0", "draft": false}, {"version": "0.11.0", "draft": true, "notes": "新功能"}]}"#
             if let output = JSONTypes.generate(json) {
                 let tabs = output.code.map { ResultCard.Tab(title: $0.language.rawValue, text: $0.text) }
-                overlay.showCard(ResultCardView(card: ResultCard(title: "JSON 转代码", detail: "\(output.typeCount) 个类型；字段是否可选、能否为空按示例推断",
+                overlay.showCard(ResultCardView(card: ResultCard(title: String(localized: "JSON 转代码"), detail: String(localized: "\(output.typeCount) 个类型；字段是否可选、能否为空按示例推断"),
                                                                  tabs: tabs),
                                                 onAction: { _ in }, onMore: {}, onClose: {}),
                                  anchor: center)
@@ -237,11 +235,9 @@ enum OverlayDemo {
 
             // 网页内容转成 Markdown
             await pause(1.4 * unit)
-            let html = "<h2>发布说明</h2><p>这一版加了<strong>提取信息</strong>和<a href=\"https://github.com/whrss9527/pop\">JSON 转代码</a>。</p>"
-                + "<ul><li>支持 <code>HTML</code> 和 RTF</li><li>表格也能转</li></ul>"
-                + "<table><tr><th>功能</th><th>分类</th></tr><tr><td>按行处理</td><td>文字</td></tr></table>"
+            let html = "<h2>发布说明</h2><p>这一版加了<strong>提取信息</strong>和<a href=\"https://github.com/whrss9527/pop\">JSON 转代码</a>。</p><ul><li>支持 <code>HTML</code> 和 RTF</li><li>表格也能转</li></ul><table><tr><th>功能</th><th>分类</th></tr><tr><td>按行处理</td><td>文字</td></tr></table>"
             if let converted = HTMLToMarkdown.convert(html) {
-                overlay.showCard(ResultCardView(card: ResultCard(title: "转成 Markdown", body: converted, monospaced: true,
+                overlay.showCard(ResultCardView(card: ResultCard(title: String(localized: "转成 Markdown"), body: converted, monospaced: true,
                                                                  copyText: converted),
                                                 onAction: { _ in }, onMore: {}, onClose: {}),
                                  anchor: center)
@@ -251,7 +247,7 @@ enum OverlayDemo {
             // 正则测试卡片：用「日期」表达式找出日期，替换成日/月/年
             await pause(1.4 * unit)
             let notes = "0.10.0 发布于 2026-09-29，0.9.0 发布于 2026-09-28。\n下一版计划在 2026-10-08 之前发布。"
-            let regex = RegexTesterModel(text: notes, pattern: RegexTester.presets.first { $0.title == "日期" }?.pattern ?? "")
+            let regex = RegexTesterModel(text: notes, pattern: RegexTester.presets.first { $0.title == String(localized: "日期") }?.pattern ?? "")
             regex.replacement = "$3/$2/$1"
             overlay.showCard(RegexTesterView(model: regex, canReplace: true, onAction: { _ in }, onClose: {}), anchor: center)
             step("regex")
@@ -443,20 +439,20 @@ enum OverlayDemo {
                 let annotation = AnnotationWindowController.present(capture, near: center)
                 annotateSample(annotation)
                 await pause(0.3 * unit)
-                if let window = NSApp.windows.first(where: { $0.isVisible && $0.title == "截图标注" }) {
+                if let window = NSApp.windows.first(where: { $0.isVisible && $0.title == String(localized: "截图标注") }) {
                     logRegion(window.frame, screen: screen)
                 }
             }
             step("annotate")
             await pause(1.4 * unit)
-            NSApp.windows.first { $0.isVisible && $0.title == "截图标注" }?.close()
+            NSApp.windows.first { $0.isVisible && $0.title == String(localized: "截图标注") }?.close()
 
             // 设置窗口里新加的几页：截图区域换成设置窗口
             await pause(0.6 * unit)
             for tab in [SettingsTab.plugins, .ai, .hotKeys] {
                 coordinator.openSettings(tab)
                 await pause(0.6 * unit)
-                if let window = NSApp.windows.first(where: { $0.isVisible && $0.title == "Pop 设置" }) {
+                if let window = NSApp.windows.first(where: { $0.isVisible && $0.title == String(localized: "Pop 设置") }) {
                     logRegion(window.frame, screen: screen)
                 }
                 step("settings-\(tab.rawValue)")
@@ -466,7 +462,7 @@ enum OverlayDemo {
             // 插件库：截图脚本用 POP_PLUGIN_INDEX_URL 指向仓库里的 plugins/index.json，不联网
             coordinator.openPluginLibrary()
             await pause(1.0 * unit)
-            if let window = NSApp.windows.first(where: { $0.isVisible && $0.title == "Pop 设置" }) {
+            if let window = NSApp.windows.first(where: { $0.isVisible && $0.title == String(localized: "Pop 设置") }) {
                 logRegion(window.frame, screen: screen)
             }
             step("settings-pluginLibrary")

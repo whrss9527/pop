@@ -27,8 +27,43 @@ struct PluginManifest: Codable, Equatable, Identifiable {
     var output: Output = .card
     /// 最后修改时间（iCloud 同步用），精确到秒
     var modifiedAt: Date = .distantPast
+    /// 其他语言的名称和说明，键是语言代码：{"en": {"name": "GitHub Search", "summary": "…"}}。
+    /// 界面是这种语言时显示它，没写的语言用 name、summary。
+    var localized: [String: LocalizedText]? = nil
 
     static let defaultSymbol = "puzzlepiece.extension"
+
+    struct LocalizedText: Codable, Equatable {
+        var name: String?
+        var summary: String?
+    }
+
+    /// 按界面语言显示的名称
+    var displayName: String {
+        Self.localizedValue(localized, \.name) ?? name
+    }
+
+    /// 按界面语言显示的说明
+    var displaySummary: String {
+        Self.localizedValue(localized, \.summary) ?? summary
+    }
+
+    /// 先找界面语言（比如 en、zh-Hans），再找去掉地区的写法（zh-Hant-HK → zh-Hant → zh）
+    static func localizedValue(_ localized: [String: LocalizedText]?, _ field: KeyPath<LocalizedText, String?>,
+                               languages: [String] = Bundle.main.preferredLocalizations) -> String? {
+        guard let localized, !localized.isEmpty else { return nil }
+        for language in languages {
+            var code = language
+            while true {
+                if let value = localized[code]?[keyPath: field]?.trimmingCharacters(in: .whitespacesAndNewlines), !value.isEmpty {
+                    return value
+                }
+                guard let dash = code.lastIndex(of: "-") else { break }
+                code = String(code[..<dash])
+            }
+        }
+        return nil
+    }
 
     struct Match: Codable, Equatable {
         /// 能处理的内容类型；为空表示随时可用（不需要选中内容）
@@ -79,11 +114,11 @@ struct PluginManifest: Codable, Equatable, Identifiable {
 
             var title: String {
                 switch self {
-                case .url: return "打开网址"
-                case .shell: return "Shell 脚本"
+                case .url: return String(localized: "打开网址")
+                case .shell: return String(localized: "Shell 脚本")
                 case .javascript: return "JavaScript"
-                case .shortcut: return "快捷指令"
-                case .ai: return "AI 指令"
+                case .shortcut: return String(localized: "快捷指令")
+                case .ai: return String(localized: "AI 指令")
                 }
             }
         }
@@ -168,11 +203,11 @@ struct PluginManifest: Codable, Equatable, Identifiable {
 
         var title: String {
             switch self {
-            case .card: return "显示结果卡片"
-            case .copy: return "复制到剪贴板"
-            case .replace: return "替换选中的文字"
-            case .toast: return "轻提示"
-            case .none: return "不显示"
+            case .card: return String(localized: "显示结果卡片")
+            case .copy: return String(localized: "复制到剪贴板")
+            case .replace: return String(localized: "替换选中的文字")
+            case .toast: return String(localized: "轻提示")
+            case .none: return String(localized: "不显示")
             }
         }
     }
@@ -200,6 +235,7 @@ struct PluginManifest: Codable, Equatable, Identifiable {
         action = c.lenient(.action, default: Action())
         output = c.lenient(.output, default: .card)
         modifiedAt = c.lenient(.modifiedAt, default: .distantPast)
+        localized = c.lenient(.localized, default: [String: LocalizedText]?.none)
     }
 
     // MARK: - ID
@@ -228,6 +264,13 @@ struct PluginManifest: Codable, Equatable, Identifiable {
             copy.symbol = Self.defaultSymbol
         }
         copy.summary = summary.trimmingCharacters(in: .whitespacesAndNewlines)
+        let texts = (localized ?? [:]).compactMapValues { text -> LocalizedText? in
+            let name = text.name?.trimmingCharacters(in: .whitespacesAndNewlines)
+            let summary = text.summary?.trimmingCharacters(in: .whitespacesAndNewlines)
+            let trimmed = LocalizedText(name: name?.isEmpty == false ? name : nil, summary: summary?.isEmpty == false ? summary : nil)
+            return trimmed.name == nil && trimmed.summary == nil ? nil : trimmed
+        }
+        copy.localized = texts.isEmpty ? nil : texts
         let pattern = (match.pattern ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
         copy.match.pattern = pattern.isEmpty ? nil : pattern
         if let min = copy.match.minLength, min <= 0 {
@@ -255,23 +298,23 @@ struct PluginManifest: Codable, Equatable, Identifiable {
     /// 返回需要用户修正的问题；nil 表示可以保存。
     func validationError() -> String? {
         if name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-            return "请填写名称"
+            return String(localized: "请填写名称")
         }
         if let pattern = match.pattern, !pattern.isEmpty, (try? NSRegularExpression(pattern: pattern)) == nil {
-            return "正则表达式有误"
+            return String(localized: "正则表达式有误")
         }
         switch action.type {
         case .url:
             let template = action.template.trimmingCharacters(in: .whitespacesAndNewlines)
-            if template.isEmpty { return "请填写网址" }
+            if template.isEmpty { return String(localized: "请填写网址") }
             let sample = template.replacingOccurrences(of: "{text}", with: "test").replacingOccurrences(of: "{raw}", with: "test")
-            if URL(string: sample)?.scheme == nil { return "网址需要以 https:// 之类的协议开头" }
+            if URL(string: sample)?.scheme == nil { return String(localized: "网址需要以 https:// 之类的协议开头") }
         case .shell, .javascript:
-            if action.script.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty { return "请填写脚本" }
+            if action.script.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty { return String(localized: "请填写脚本") }
         case .shortcut:
-            if action.shortcut.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty { return "请填写快捷指令名称" }
+            if action.shortcut.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty { return String(localized: "请填写快捷指令名称") }
         case .ai:
-            if action.prompt.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty { return "请填写给 AI 的指令" }
+            if action.prompt.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty { return String(localized: "请填写给 AI 的指令") }
         }
         return nil
     }
@@ -310,55 +353,55 @@ extension PluginManifest {
     /// 「新建插件」菜单里的示例，照着改就能用。
     static var templates: [Template] {
         [
-            Template(id: "blank-url", title: "网址（空白）",
-                     manifest: PluginManifest(name: "新的网页插件", symbol: "globe",
+            Template(id: "blank-url", title: String(localized: "网址（空白）"),
+                     manifest: PluginManifest(name: String(localized: "新的网页插件"), symbol: "globe",
                                               action: Action(type: .url, template: "https://www.google.com/search?q={text}"), output: .none)),
-            Template(id: "github", title: "网址：GitHub 搜索",
-                     manifest: PluginManifest(name: "GitHub 搜索", symbol: "chevron.left.forwardslash.chevron.right",
-                                              summary: "在 GitHub 上搜索选中的文字",
+            Template(id: "github", title: String(localized: "网址：GitHub 搜索"),
+                     manifest: PluginManifest(name: String(localized: "GitHub 搜索"), symbol: "chevron.left.forwardslash.chevron.right",
+                                              summary: String(localized: "在 GitHub 上搜索选中的文字"),
                                               action: Action(type: .url, template: "https://github.com/search?q={text}&type=code"), output: .none)),
-            Template(id: "wikipedia", title: "网址：维基百科",
-                     manifest: PluginManifest(name: "维基百科", symbol: "book",
-                                              summary: "在维基百科中查找选中的词条",
+            Template(id: "wikipedia", title: String(localized: "网址：维基百科"),
+                     manifest: PluginManifest(name: String(localized: "维基百科"), symbol: "book",
+                                              summary: String(localized: "在维基百科中查找选中的词条"),
                                               action: Action(type: .url, template: "https://zh.wikipedia.org/wiki/Special:Search?search={text}"), output: .none)),
-            Template(id: "maps", title: "网址：在地图中查找",
-                     manifest: PluginManifest(name: "地图", symbol: "map",
-                                              summary: "在「地图」App 中查找选中的地址",
+            Template(id: "maps", title: String(localized: "网址：在地图中查找"),
+                     manifest: PluginManifest(name: String(localized: "地图"), symbol: "map",
+                                              summary: String(localized: "在「地图」App 中查找选中的地址"),
                                               action: Action(type: .url, template: "maps://?q={text}"), output: .none)),
-            Template(id: "shell-sort", title: "Shell：按行排序去重",
-                     manifest: PluginManifest(name: "排序去重", symbol: "arrow.up.arrow.down",
-                                              summary: "把选中的多行文字排序并去掉重复行",
+            Template(id: "shell-sort", title: String(localized: "Shell：按行排序去重"),
+                     manifest: PluginManifest(name: String(localized: "排序去重"), symbol: "arrow.up.arrow.down",
+                                              summary: String(localized: "把选中的多行文字排序并去掉重复行"),
                                               action: Action(type: .shell, script: "sort -u"), output: .replace)),
-            Template(id: "shell-say", title: "Shell：环境变量示例",
-                     manifest: PluginManifest(name: "字数（Shell）", symbol: "terminal",
-                                              summary: "演示如何读取选中的内容",
+            Template(id: "shell-say", title: String(localized: "Shell：环境变量示例"),
+                     manifest: PluginManifest(name: String(localized: "字数（Shell）"), symbol: "terminal",
+                                              summary: String(localized: "演示如何读取选中的内容"),
                                               action: Action(type: .shell, script: "# 选中的文字从标准输入传入，也可以用 $POP_TEXT\n# 选中文件时 $POP_FILES 是每行一个路径\nprintf '%s' \"$POP_TEXT\" | wc -m | tr -d ' '"),
                                               output: .toast)),
-            Template(id: "js-reverse", title: "JavaScript：反转文字",
-                     manifest: PluginManifest(name: "反转文字", symbol: "arrow.left.arrow.right",
-                                              summary: "把选中的文字倒过来",
-                                              action: Action(type: .javascript, script: "// input 是选中的文字，返回值会作为结果\nfunction run(input) {\n  return Array.from(input).reverse().join('')\n}"),
+            Template(id: "js-reverse", title: String(localized: "JavaScript：反转文字"),
+                     manifest: PluginManifest(name: String(localized: "反转文字"), symbol: "arrow.left.arrow.right",
+                                              summary: String(localized: "把选中的文字倒过来"),
+                                              action: Action(type: .javascript, script: String(localized: "// input 是选中的文字，返回值会作为结果\nfunction run(input) {\n  return Array.from(input).reverse().join('')\n}")),
                                               output: .card)),
-            Template(id: "js-json-keys", title: "JavaScript：列出 JSON 的键",
-                     manifest: PluginManifest(name: "JSON 键名", symbol: "list.bullet",
-                                              summary: "列出选中 JSON 对象的所有键",
+            Template(id: "js-json-keys", title: String(localized: "JavaScript：列出 JSON 的键"),
+                     manifest: PluginManifest(name: String(localized: "JSON 键名"), symbol: "list.bullet",
+                                              summary: String(localized: "列出选中 JSON 对象的所有键"),
                                               match: Match(kinds: [.json]),
                                               action: Action(type: .javascript, script: "function run(input) {\n  return Object.keys(JSON.parse(input)).join('\\n')\n}"),
                                               output: .card)),
-            Template(id: "ai-formal", title: "AI：改写成正式的语气",
-                     manifest: PluginManifest(name: "正式一点", symbol: "text.quote",
-                                              summary: "让 AI 把选中的文字改写得正式、礼貌",
-                                              action: Action(type: .ai, prompt: "把下面的文字改写得更正式、礼貌，保持原来的语言和意思，只输出改写后的文字：\n\n{text}"),
+            Template(id: "ai-formal", title: String(localized: "AI：改写成正式的语气"),
+                     manifest: PluginManifest(name: String(localized: "正式一点"), symbol: "text.quote",
+                                              summary: String(localized: "让 AI 把选中的文字改写得正式、礼貌"),
+                                              action: Action(type: .ai, prompt: String(localized: "把下面的文字改写得更正式、礼貌，保持原来的语言和意思，只输出改写后的文字：\n\n{text}")),
                                               output: .card)),
-            Template(id: "ai-reply", title: "AI：帮我回复",
-                     manifest: PluginManifest(name: "帮我回复", symbol: "arrowshape.turn.up.left",
-                                              summary: "让 AI 替选中的消息拟一段回复",
-                                              action: Action(type: .ai, prompt: "下面是别人发给我的消息，帮我拟一段得体、简洁的回复，用消息原来的语言：\n\n{text}"),
+            Template(id: "ai-reply", title: String(localized: "AI：帮我回复"),
+                     manifest: PluginManifest(name: String(localized: "帮我回复"), symbol: "arrowshape.turn.up.left",
+                                              summary: String(localized: "让 AI 替选中的消息拟一段回复"),
+                                              action: Action(type: .ai, prompt: String(localized: "下面是别人发给我的消息，帮我拟一段得体、简洁的回复，用消息原来的语言：\n\n{text}")),
                                               output: .card)),
-            Template(id: "shortcut", title: "快捷指令",
-                     manifest: PluginManifest(name: "运行快捷指令", symbol: "square.stack.3d.up",
-                                              summary: "把选中的文字交给快捷指令处理",
-                                              action: Action(type: .shortcut, shortcut: "我的快捷指令", timeout: 60), output: .card)),
+            Template(id: "shortcut", title: String(localized: "快捷指令"),
+                     manifest: PluginManifest(name: String(localized: "运行快捷指令"), symbol: "square.stack.3d.up",
+                                              summary: String(localized: "把选中的文字交给快捷指令处理"),
+                                              action: Action(type: .shortcut, shortcut: String(localized: "我的快捷指令"), timeout: 60), output: .card)),
         ]
     }
 }

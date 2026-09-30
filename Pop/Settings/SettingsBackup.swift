@@ -38,10 +38,10 @@ struct SettingsBackup: Codable {
         do {
             backup = try decoder.decode(SettingsBackup.self, from: data)
         } catch {
-            throw Failure(message: "读不了这个文件：不是 Pop 导出的设置，或者文件已经损坏")
+            throw Failure(message: String(localized: "读不了这个文件：不是 Pop 导出的设置，或者文件已经损坏"))
         }
         guard backup.format == formatName else {
-            throw Failure(message: "这不是 Pop 导出的设置文件")
+            throw Failure(message: String(localized: "这不是 Pop 导出的设置文件"))
         }
         return backup
     }
@@ -51,14 +51,14 @@ struct SettingsBackup: Codable {
         let formatter = DateFormatter()
         formatter.locale = Locale(identifier: "en_US_POSIX")
         formatter.dateFormat = "yyyy-MM-dd"
-        return "Pop 设置 \(formatter.string(from: date)).json"
+        return String(localized: "Pop 设置 \(formatter.string(from: date)).json")
     }
 
     /// 导入前给用户看的说明
     var summary: String {
-        var parts = ["圆盘、直达规则、唤起方式和快捷键、翻译、剪贴板、AI 接口设置"]
-        if !settings.snippets.isEmpty { parts.append("\(settings.snippets.count) 条常用短语") }
-        if !plugins.isEmpty { parts.append("\(plugins.count) 个自己写的插件") }
-        return parts.joined(separator: "、")
+        var parts = [String(localized: "圆盘、直达规则、唤起方式和快捷键、翻译、剪贴板、AI 接口设置")]
+        if !settings.snippets.isEmpty { parts.append(String(localized: "\(settings.snippets.count) 条常用短语")) }
+        if !plugins.isEmpty { parts.append(String(localized: "\(plugins.count) 个自己写的插件")) }
+        return parts.joinedAsList()
     }
 }

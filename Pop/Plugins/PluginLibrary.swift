@@ -39,9 +39,20 @@ struct PluginIndex: Decodable, Equatable {
         var url: String
         /// 插件文件的 SHA-256，小写十六进制
         var sha256: String
+        /// 其他语言的名称和说明，写法和插件文件里的 localized 一样
+        var localized: [String: PluginManifest.LocalizedText]? = nil
 
         private enum CodingKeys: String, CodingKey {
-            case id, name, summary, author, symbol, type, url, sha256
+            case id, name, summary, author, symbol, type, url, sha256, localized
+        }
+
+        /// 按界面语言显示的名称和说明
+        var displayName: String {
+            PluginManifest.localizedValue(localized, \.name) ?? name
+        }
+
+        var displaySummary: String {
+            PluginManifest.localizedValue(localized, \.summary) ?? summary
         }
 
         init(id: String, name: String, summary: String = "", author: String = "", symbol: String = PluginManifest.defaultSymbol,
@@ -67,6 +78,7 @@ struct PluginIndex: Decodable, Equatable {
             author = c.lenient(.author, default: "")
             symbol = c.lenient(.symbol, default: PluginManifest.defaultSymbol)
             type = c.lenient(.type, default: PluginManifest.Action.Kind.url.rawValue)
+            localized = c.lenient(.localized, default: [String: PluginManifest.LocalizedText]?.none)
             if name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
                 name = id
             }
@@ -101,7 +113,8 @@ struct PluginIndex: Decodable, Equatable {
         let trimmed = query.trimmingCharacters(in: .whitespaces)
         guard !trimmed.isEmpty else { return plugins }
         return plugins.filter { entry in
-            SearchText.matches(trimmed, keys: SearchText.keys(for: entry.name) + [entry.summary.lowercased(), entry.author.lowercased()])
+            SearchText.matches(trimmed, keys: SearchText.keys(for: entry.name) + SearchText.keys(for: entry.displayName)
+                               + [entry.summary.lowercased(), entry.displaySummary.lowercased(), entry.author.lowercased()])
         }
     }
 }
@@ -150,12 +163,12 @@ enum PluginLibrary {
 
     /// 依次试每个地址，返回第一个读得出来的索引
     static func fetchIndex(from sources: [URL], session: URLSession) async throws -> Catalog {
-        var lastError = Failure("连不上插件库")
+        var lastError = Failure(String(localized: "连不上插件库"))
         for source in sources {
             do {
                 let data = try await download(source, session: session)
                 guard let index = try? JSONDecoder().decode(PluginIndex.self, from: data) else {
-                    lastError = Failure("插件库的索引读不出来")
+                    lastError = Failure(String(localized: "插件库的索引读不出来"))
                     continue
                 }
                 return Catalog(index: index, source: source)
@@ -181,9 +194,9 @@ enum PluginLibrary {
     /// 下载插件文件，核对后读成插件；一个地址下载不了或者核对不上时换下一个
     static func fetchPlugin(_ entry: PluginIndex.Entry, catalog: Catalog, sources: [URL], session: URLSession) async throws -> PluginManifest {
         guard entry.kind != nil else {
-            throw Failure("「\(entry.name)」要更新 Pop 才能安装")
+            throw Failure(String(localized: "「\(entry.name)」要更新 Pop 才能安装"))
         }
-        var lastError = Failure("下载不了「\(entry.name)」")
+        var lastError = Failure(String(localized: "下载不了「\(entry.name)」"))
         for url in candidates(for: entry, catalog: catalog, sources: sources) {
             do {
                 let data = try await download(url, session: session)
@@ -198,22 +211,22 @@ enum PluginLibrary {
     /// 核对下载的内容：sha256 要和索引里的一样，插件 ID 也要一样
     static func manifest(from data: Data, entry: PluginIndex.Entry) throws -> PluginManifest {
         guard Digests.sha256(data) == entry.sha256 else {
-            throw Failure("下载的「\(entry.name)」和插件库记录的校验值对不上，没有安装")
+            throw Failure(String(localized: "下载的「\(entry.name)」和插件库记录的校验值对不上，没有安装"))
         }
         guard var manifest = try? PluginManifest.makeDecoder().decode(PluginManifest.self, from: data) else {
-            throw Failure("「\(entry.name)」不是有效的插件文件")
+            throw Failure(String(localized: "「\(entry.name)」不是有效的插件文件"))
         }
         if manifest.id.isEmpty {
             manifest.id = entry.id
         }
         guard manifest.id == entry.id, PluginManifest.isValidID(manifest.id), !BuiltinPluginID.all.contains(manifest.id) else {
-            throw Failure("「\(entry.name)」的插件 ID 和插件库记录的不一样，没有安装")
+            throw Failure(String(localized: "「\(entry.name)」的插件 ID 和插件库记录的不一样，没有安装"))
         }
         if manifest.name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
             manifest.name = entry.name
         }
         if let problem = manifest.validationError() {
-            throw Failure("「\(entry.name)」有问题：\(problem)")
+            throw Failure(String(localized: "「\(entry.name)」有问题：\(problem)"))
         }
         return manifest
     }
@@ -226,10 +239,10 @@ enum PluginLibrary {
         do {
             result = try await session.data(for: request)
         } catch {
-            throw Failure("连不上插件库：\(error.localizedDescription)")
+            throw Failure(String(localized: "连不上插件库：\(error.localizedDescription)"))
         }
         if let http = result.1 as? HTTPURLResponse, !(200..<300).contains(http.statusCode) {
-            throw Failure("插件库返回了错误（\(http.statusCode)）")
+            throw Failure(String(localized: "插件库返回了错误（\(http.statusCode)）"))
         }
         return result.0
     }

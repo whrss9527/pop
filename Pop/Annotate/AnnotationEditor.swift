@@ -31,7 +31,7 @@ final class AnnotationWindowController: NSObject, NSWindowDelegate {
         window = NSWindow(contentRect: CGRect(origin: .zero, size: contentSize), styleMask: [.titled, .closable],
                           backing: .buffered, defer: false)
         super.init()
-        window.title = "截图标注"
+        window.title = String(localized: "截图标注")
         window.isReleasedWhenClosed = false
         window.delegate = self
         window.level = .floating
@@ -68,10 +68,10 @@ final class AnnotationWindowController: NSObject, NSWindowDelegate {
         switch action {
         case .copy:
             PasteboardWriter.copy(png: png)
-            PinBoard.shared.onToast?("已复制", center)
+            PinBoard.shared.onToast?(String(localized: "已复制"), center)
         case .save:
-            let saved = (try? ImageFiles.saveToDownloads(png, name: ImageFiles.timestampedName("Pop 截图"))) != nil
-            PinBoard.shared.onToast?(saved ? "已存到「下载」" : "存储失败", center)
+            let saved = (try? ImageFiles.saveToDownloads(png, name: ImageFiles.timestampedName(String(localized: "Pop 截图")))) != nil
+            PinBoard.shared.onToast?(saved ? String(localized: "已存到「下载」") : String(localized: "存储失败"), center)
         case .pin:
             if let image = NSImage(data: png) {
                 image.size = model.outputSize
@@ -168,7 +168,7 @@ struct AnnotationEditorView: View {
                     Button(background.title) { model.background = background }
                 }
             } label: {
-                Text(model.background?.title ?? "背景")
+                Text(model.background?.title ?? String(localized: "背景"))
             }
             .fixedSize()
             .help("给截图加渐变背景、圆角和阴影")

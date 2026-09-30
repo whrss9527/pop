@@ -13,6 +13,13 @@
 - 项目里不要写「类似某某」「相当于某某的……」这种拿别的产品作比较的话，直接说功能本身。
 - shell 脚本里变量后面紧跟中文或全角符号时写成 `${VAR}`：macOS 自带的 bash 3.2 会把多字节字符的一部分当成变量名。
 
+## 界面文字和翻译
+
+- Pop 有中文和英文两套界面，跟着系统语言切换。界面文字用中文原文当 key：SwiftUI 的 `Text("中文")`、`Button("中文")` 这类直接写就行；其他地方显示给用户的文字（提示、错误、通知、卡片标题）写成 `String(localized: "中文")`。
+- 每加一条界面文字，都要在 `Pop/Resources/en.lproj/Localizable.strings` 里加一行 `"中文原文" = "English";`（带变量时，字符串写 `%@`，整数写 `%lld`），然后跑 `scripts/check-localization.py --sync-zh-hans` 更新中文那份。CI 的 build-and-test 会检查每条中文都有英文，漏了会失败，日志里按 `.strings` 的格式列出缺的那几条。
+- 发给 AI 的指令、演示模式的示例内容、用来识别中文的关键词表不翻译。
+- 单元测试固定用中文界面跑（`project.yml` 里 scheme 的 test language），断言照旧写中文结果。
+
 ## 看浮窗的效果
 
 - 浮窗的动画参数都在 `Pop/UI/Motion.swift`，玻璃效果在 `Pop/UI/Glass.swift`（macOS 26 上是 Liquid Glass，更早的系统用窗口后面的模糊）。

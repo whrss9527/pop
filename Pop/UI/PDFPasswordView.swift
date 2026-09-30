@@ -36,11 +36,11 @@ final class PDFPasswordModel: ObservableObject {
         switch mode {
         case .add:
             if !confirmation.isEmpty && password != confirmation {
-                return "两次输入的密码不一样"
+                return String(localized: "两次输入的密码不一样")
             }
-            return "另存一份打开时要输入密码的 PDF，原文件不动。密码忘了就打不开了，记得记下来"
+            return String(localized: "另存一份打开时要输入密码的 PDF，原文件不动。密码忘了就打不开了，记得记下来")
         case .remove:
-            return "输入打开这份 PDF 的密码，另存一份不用密码就能打开的，原文件不动"
+            return String(localized: "输入打开这份 PDF 的密码，另存一份不用密码就能打开的，原文件不动")
         }
     }
 
@@ -56,7 +56,7 @@ struct PDFPasswordView: View {
     @FocusState private var focused: Bool
 
     var body: some View {
-        CardContainer(title: model.mode == .add ? "给 PDF 加密码" : "去掉 PDF 的密码", subtitle: model.pdf.lastPathComponent,
+        CardContainer(title: model.mode == .add ? String(localized: "给 PDF 加密码") : String(localized: "去掉 PDF 的密码"), subtitle: model.pdf.lastPathComponent,
                       width: 380, onClose: onClose) {
             SecureField("密码", text: $model.password)
                 .textFieldStyle(.roundedBorder)
@@ -73,7 +73,7 @@ struct PDFPasswordView: View {
                 .fixedSize(horizontal: false, vertical: true)
             HStack(spacing: 8) {
                 Spacer()
-                Button(model.mode == .add ? "存一份加密的" : "存一份没有密码的", action: submit)
+                Button(model.mode == .add ? String(localized: "存一份加密的") : String(localized: "存一份没有密码的"), action: submit)
                     .keyboardShortcut(.defaultAction)
                     .disabled(!model.canSubmit)
             }

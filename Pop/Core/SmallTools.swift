@@ -51,21 +51,21 @@ enum DateSpan {
     }
 
     static func rows(for result: Result, calendar: Calendar = .current) -> [ResultCard.Row] {
-        var rows = [ResultCard.Row(label: "相差", value: "\(result.days) 天")]
+        var rows = [ResultCard.Row(label: String(localized: "相差"), value: String(localized: "\(result.days) 天"))]
         if result.days >= 7 {
             let rest = result.days % 7
-            rows.append(ResultCard.Row(label: "折合", value: "\(result.days / 7) 周" + (rest > 0 ? " \(rest) 天" : "")))
+            rows.append(ResultCard.Row(label: String(localized: "折合"), value: String(localized: "\(result.days / 7) 周") + (rest > 0 ? String(localized: " \(rest) 天") : "")))
         }
         let parts = calendar.dateComponents([.year, .month, .day], from: result.start, to: result.end)
         if (parts.year ?? 0) > 0 || (parts.month ?? 0) > 0 {
             var text = ""
-            if let years = parts.year, years > 0 { text += "\(years) 年 " }
-            if let months = parts.month, months > 0 { text += "\(months) 个月 " }
-            if let days = parts.day, days > 0 { text += "\(days) 天" }
-            rows.append(ResultCard.Row(label: "也就是", value: text.trimmingCharacters(in: .whitespaces)))
+            if let years = parts.year, years > 0 { text += String(localized: "\(years) 年 ") }
+            if let months = parts.month, months > 0 { text += String(localized: "\(months) 个月 ") }
+            if let days = parts.day, days > 0 { text += String(localized: "\(days) 天") }
+            rows.append(ResultCard.Row(label: String(localized: "也就是"), value: text.trimmingCharacters(in: .whitespaces)))
         }
-        rows.append(ResultCard.Row(label: "首尾都算", value: "\(result.days + 1) 天"))
-        rows.append(ResultCard.Row(label: "工作日", value: "\(result.workdays) 天（周一到周五，不算节假日）"))
+        rows.append(ResultCard.Row(label: String(localized: "首尾都算"), value: String(localized: "\(result.days + 1) 天")))
+        rows.append(ResultCard.Row(label: String(localized: "工作日"), value: String(localized: "\(result.workdays) 天（周一到周五，不算节假日）")))
         return rows
     }
 }
@@ -136,8 +136,8 @@ enum FolderTree {
 
         walk(root, prefix: "", depth: 1)
         if truncated {
-            tree.append("…（太多了，没有全部列出）")
-            markdown.append("- …（太多了，没有全部列出）")
+            tree.append(String(localized: "…（太多了，没有全部列出）"))
+            markdown.append(String(localized: "- …（太多了，没有全部列出）"))
         }
         return Result(tree: tree.joined(separator: "\n"), markdown: markdown.joined(separator: "\n"),
                       folders: folders, files: files, truncated: truncated)

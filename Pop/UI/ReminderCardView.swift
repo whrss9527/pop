@@ -38,18 +38,22 @@ final class ReminderDraft: ObservableObject {
     /// 「9月30日 周三 15:00 · 明天」
     func summary(now: Date = Date(), calendar: Calendar = .current) -> String {
         let formatter = DateFormatter()
-        formatter.locale = Locale(identifier: "zh_CN")
+        formatter.locale = Localization.locale
         formatter.calendar = calendar
         formatter.timeZone = calendar.timeZone
-        formatter.dateFormat = hasTime ? "M月d日 EEE HH:mm" : "M月d日 EEE"
+        if Localization.isChinese {
+            formatter.dateFormat = hasTime ? "M月d日 EEE HH:mm" : "M月d日 EEE"
+        } else {
+            formatter.setLocalizedDateFormatFromTemplate(hasTime ? "MMMdEEEHHmm" : "MMMdEEE")
+        }
         var text = formatter.string(from: date)
         let days = calendar.dateComponents([.day], from: calendar.startOfDay(for: now), to: calendar.startOfDay(for: date)).day ?? 0
         switch days {
-        case 0: text += " · 今天"
-        case 1: text += " · 明天"
-        case 2: text += " · 后天"
-        case 3...: text += " · \(days) 天后"
-        default: text += " · 已经过去了"
+        case 0: text += String(localized: " · 今天")
+        case 1: text += String(localized: " · 明天")
+        case 2: text += String(localized: " · 后天")
+        case 3...: text += String(localized: " · \(days) 天后")
+        default: text += String(localized: " · 已经过去了")
         }
         return text
     }
@@ -66,7 +70,7 @@ struct ReminderCardView: View {
     var onClose: () -> Void
 
     var body: some View {
-        CardContainer(title: "加到提醒事项", subtitle: draft.recognized ? nil : "没认出时间，先按明天上午 9 点", onClose: onClose) {
+        CardContainer(title: String(localized: "加到提醒事项"), subtitle: draft.recognized ? nil : String(localized: "没认出时间，先按明天上午 9 点"), onClose: onClose) {
             TextField("要做的事", text: $draft.title)
                 .textFieldStyle(.roundedBorder)
             HStack(spacing: 10) {

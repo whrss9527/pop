@@ -134,7 +134,12 @@ struct CronExpression: Equatable {
 
     // MARK: - 说成中文
 
+    /// 用界面的语言说出这个表达式什么时候运行
     var summary: String {
+        Localization.isChinese ? chineseSummary : englishSummary
+    }
+
+    var chineseSummary: String {
         let when = dayDescription
         let time = timeDescription
         // 每天都运行、时间又是「每……」开头的，不用再说「每天」
@@ -205,12 +210,85 @@ struct CronExpression: Equatable {
         return everyMinute ? "\(hourPart)\(minutePart)" : "\(hourPart)的\(minutePart)"
     }
 
+    // MARK: - 说成英文
+
+    var englishSummary: String {
+        let when = englishDayDescription
+        let time = englishTimeDescription
+        if when == "every day", time.hasPrefix("every") {
+            return time
+        }
+        return "\(when) \(time)"
+    }
+
+    private static let englishMonths = ["January", "February", "March", "April", "May", "June", "July",
+                                        "August", "September", "October", "November", "December"]
+    private static let englishWeekdays = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"]
+
+    private var englishDayDescription: String {
+        let monthNames = Self.englishMonths
+        let monthText = fields[3] == "*" ? nil : Self.list(months, unit: "", separator: ", ") { monthNames[($0 - 1) % 12] }
+        let dayText = Self.list(days, unit: "", separator: ", ")
+        switch (anyDay, anyWeekday) {
+        case (true, true):
+            return monthText.map { "every day in \($0)" } ?? "every day"
+        case (false, true):
+            return monthText.map { "on day \(dayText) of \($0)" } ?? "on day \(dayText) of every month"
+        case (true, false):
+            return "every \(englishWeekdayDescription)" + (monthText.map { " in \($0)" } ?? "")
+        case (false, false):
+            return "on day \(dayText) and every \(englishWeekdayDescription)" + (monthText.map { " in \($0)" } ?? "")
+        }
+    }
+
+    private var englishWeekdayDescription: String {
+        let names = Self.englishWeekdays
+        let sorted = weekdays.sorted { ($0 == 0 ? 7 : $0) < ($1 == 0 ? 7 : $1) }
+        if sorted == [1, 2, 3, 4, 5] { return "weekday (Monday to Friday)" }
+        if sorted == [6, 0] { return "weekend day" }
+        if sorted.count > 2, Self.isRange(sorted.map { $0 == 0 ? 7 : $0 }), let first = sorted.first, let last = sorted.last {
+            return "\(names[first]) to \(names[last])"
+        }
+        return sorted.map { names[$0] }.joined(separator: ", ")
+    }
+
+    private var englishTimeDescription: String {
+        if minutes.count == 1, hours.count <= 6, let minute = minutes.first {
+            return "at " + hours.sorted().map { String(format: "%02d:%02d", $0, minute) }.joined(separator: ", ")
+        }
+        let minuteField = fields[0]
+        let minutePart: String
+        if minuteField == "*" {
+            minutePart = "every minute"
+        } else if minuteField.hasPrefix("*/"), let step = Int(minuteField.dropFirst(2)) {
+            minutePart = "every \(step) minutes"
+        } else if minutes == [0] {
+            minutePart = "on the hour"
+        } else {
+            minutePart = "at minute " + Self.list(minutes, unit: "", separator: ", ")
+        }
+        if hours.count == 24 {
+            return minutePart.hasPrefix("every") ? minutePart : "every hour \(minutePart)"
+        }
+        let hourField = fields[1]
+        let hourPart: String
+        if hourField.hasPrefix("*/"), let step = Int(hourField.dropFirst(2)) {
+            hourPart = "every \(step) hours"
+        } else if hours.count > 2, Self.isRange(hours.sorted()), let first = hours.min(), let last = hours.max() {
+            hourPart = "during hours \(first)–\(last)"
+        } else {
+            hourPart = "during hours " + Self.list(hours, unit: "", separator: ", ")
+        }
+        return "\(minutePart) \(hourPart)"
+    }
+
     private static func isRange(_ sorted: [Int]) -> Bool {
         zip(sorted, sorted.dropFirst()).allSatisfy { $1 == $0 + 1 }
     }
 
     /// 1,2,3,4,10 → 「1–4、10」，每一项后面加上单位
-    private static func list(_ values: Set<Int>, unit: String, separator: String = "、") -> String {
+    private static func list(_ values: Set<Int>, unit: String, separator: String = "、",
+                             name: (Int) -> String = { String($0) }) -> String {
         let sorted = values.sorted()
         var parts: [String] = []
         var index = 0
@@ -218,9 +296,9 @@ struct CronExpression: Equatable {
             var end = index
             while end + 1 < sorted.count, sorted[end + 1] == sorted[end] + 1 { end += 1 }
             if end - index >= 2 {
-                parts.append("\(sorted[index])–\(sorted[end])\(unit)")
+                parts.append("\(name(sorted[index]))–\(name(sorted[end]))\(unit)")
             } else {
-                parts += sorted[index...end].map { "\($0)\(unit)" }
+                parts += sorted[index...end].map { "\(name($0))\(unit)" }
             }
             index = end + 1
         }

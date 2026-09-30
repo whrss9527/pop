@@ -176,7 +176,7 @@ struct PluginsSettingsView: View {
                 let imported = try pluginStore.importFile(at: url)
                 store.update { $0.setInstalled(imported.id, true) }
             } catch {
-                failures.append("\(url.lastPathComponent)：\(error.localizedDescription)")
+                failures.append(String(localized: "\(url.lastPathComponent)：\(error.localizedDescription)"))
             }
         }
         if !failures.isEmpty {
@@ -211,11 +211,11 @@ struct PluginsSettingsView: View {
 
     private func delete(_ manifest: PluginManifest) {
         let alert = NSAlert()
-        alert.messageText = "删除插件「\(manifest.name)」？"
-        alert.informativeText = "插件文件会被删除；打开了 iCloud 同步的话，其他 Mac 上的这个插件也会删除。"
+        alert.messageText = String(localized: "删除插件「\(manifest.displayName)」？")
+        alert.informativeText = String(localized: "插件文件会被删除；打开了 iCloud 同步的话，其他 Mac 上的这个插件也会删除。")
         alert.alertStyle = .warning
-        alert.addButton(withTitle: "删除")
-        alert.addButton(withTitle: "取消")
+        alert.addButton(withTitle: String(localized: "删除"))
+        alert.addButton(withTitle: String(localized: "取消"))
         guard alert.runModal() == .alertFirstButtonReturn else { return }
         pluginStore.delete(id: manifest.id)
         store.update { $0.setInstalled(manifest.id, false) }
@@ -240,7 +240,7 @@ struct UserPluginRow: View {
             Image(systemName: manifest.symbol)
                 .frame(width: 22)
             VStack(alignment: .leading, spacing: 2) {
-                Text(manifest.name)
+                Text(manifest.displayName)
                 Text(subtitle)
                     .font(.caption)
                     .foregroundStyle(.secondary)
@@ -266,7 +266,7 @@ struct UserPluginRow: View {
     }
 
     private var subtitle: String {
-        let detail = manifest.summary.isEmpty ? manifest.match.kinds.map(\.title).joined(separator: "、") : manifest.summary
+        let detail = manifest.displaySummary.isEmpty ? manifest.match.kinds.map(\.title).joinedAsList() : manifest.displaySummary
         return detail.isEmpty ? manifest.action.type.title : "\(manifest.action.type.title) · \(detail)"
     }
 }
@@ -404,7 +404,7 @@ struct PluginEditorView: View {
                 Spacer()
                 Button("取消", action: onCancel)
                     .keyboardShortcut(.cancelAction)
-                Button(isNew ? "添加" : "保存", action: save)
+                Button(isNew ? String(localized: "添加") : String(localized: "保存"), action: save)
                     .keyboardShortcut(.defaultAction)
             }
             .padding(12)
@@ -450,15 +450,15 @@ struct PluginEditorView: View {
     private var actionHelp: String {
         switch manifest.action.type {
         case .url:
-            return "{text} 会换成编码后的选中文字，{raw} 换成原文。可以用任何网址，也可以用 App 的链接（比如 maps://?q={text}）。"
+            return String(localized: "{text} 会换成编码后的选中文字，{raw} 换成原文。可以用任何网址，也可以用 App 的链接（比如 maps://?q={text}）。")
         case .shell:
-            return "用 zsh 运行。选中的文字从标准输入传入，也可以读环境变量 $POP_TEXT；选中文件时 $POP_FILES 是每行一个路径。标准输出就是结果，退出码不为 0 时显示错误输出。"
+            return String(localized: "用 zsh 运行。选中的文字从标准输入传入，也可以读环境变量 $POP_TEXT；选中文件时 $POP_FILES 是每行一个路径。标准输出就是结果，退出码不为 0 时显示错误输出。")
         case .javascript:
-            return "定义 function run(input, files) 并返回结果（返回对象会自动转成 JSON），也可以直接写一个表达式。脚本在隔离的环境里运行，不能访问网络和文件。"
+            return String(localized: "定义 function run(input, files) 并返回结果（返回对象会自动转成 JSON），也可以直接写一个表达式。脚本在隔离的环境里运行，不能访问网络和文件。")
         case .shortcut:
-            return "选中的文字作为快捷指令的输入，快捷指令的输出就是结果。第一次运行时系统可能会请求权限。"
+            return String(localized: "选中的文字作为快捷指令的输入，快捷指令的输出就是结果。第一次运行时系统可能会请求权限。")
         case .ai:
-            return "指令和选中的文字一起发给「设置 → AI」里填写的服务，{text} 换成选中的文字（没写的话文字接在指令后面）。结果选「显示结果卡片」时一边生成一边显示。"
+            return String(localized: "指令和选中的文字一起发给「设置 → AI」里填写的服务，{text} 换成选中的文字（没写的话文字接在指令后面）。结果选「显示结果卡片」时一边生成一边显示。")
         }
     }
 
@@ -514,7 +514,7 @@ struct PluginEditorView: View {
             switch result {
             case .success(let output):
                 testFailed = false
-                testResult = output.isEmpty ? "（没有输出）" : output
+                testResult = output.isEmpty ? String(localized: "（没有输出）") : output
             case .failure(let failure):
                 testFailed = true
                 testResult = failure.message

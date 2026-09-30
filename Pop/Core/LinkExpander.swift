@@ -65,7 +65,7 @@ enum LinkExpander {
 
     static func describe(_ error: Error) -> String {
         if case Failure.tooManyRedirects = error {
-            return "跳转次数太多"
+            return String(localized: "跳转次数太多")
         }
         return error.localizedDescription
     }
@@ -74,16 +74,16 @@ enum LinkExpander {
     static func card(for expansion: Expansion) -> ResultCard {
         let final = expansion.final
         let clean = LinkInspector.cleaned(final) ?? final
-        var detail = expansion.hops.isEmpty ? "这个链接没有跳转" : "跳转了 \(expansion.hops.count) 次"
+        var detail = expansion.hops.isEmpty ? String(localized: "这个链接没有跳转") : String(localized: "跳转了 \(expansion.hops.count) 次")
         if clean != final {
-            detail += "，已去掉跟踪参数"
+            detail += String(localized: "，已去掉跟踪参数")
         }
         let rows = expansion.hops.enumerated().map { index, hop in
-            ResultCard.Row(label: "第 \(index + 1) 跳", value: hop.absoluteString)
+            ResultCard.Row(label: String(localized: "第 \(index + 1) 跳"), value: hop.absoluteString)
         }
-        return ResultCard(title: "展开短链接", body: clean.absoluteString, detail: detail, monospaced: true,
+        return ResultCard(title: String(localized: "展开短链接"), body: clean.absoluteString, detail: detail, monospaced: true,
                           copyText: clean.absoluteString, replaceText: clean.absoluteString, rows: rows, rowLineLimit: 2,
-                          buttons: [CardButton(title: "打开链接", action: .open(clean))])
+                          buttons: [CardButton(title: String(localized: "打开链接"), action: .open(clean))])
     }
 }
 

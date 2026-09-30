@@ -85,12 +85,12 @@ struct ClipboardSettingsView: View {
 
     private func confirmClear() {
         let alert = NSAlert()
-        alert.messageText = "清空剪贴板历史？"
-        alert.informativeText = "删除后无法恢复。"
+        alert.messageText = String(localized: "清空剪贴板历史？")
+        alert.informativeText = String(localized: "删除后无法恢复。")
         alert.alertStyle = .warning
-        alert.addButton(withTitle: "清空（保留固定的）")
-        alert.addButton(withTitle: "全部清空")
-        alert.addButton(withTitle: "取消")
+        alert.addButton(withTitle: String(localized: "清空（保留固定的）"))
+        alert.addButton(withTitle: String(localized: "全部清空"))
+        alert.addButton(withTitle: String(localized: "取消"))
         switch alert.runModal() {
         case .alertFirstButtonReturn:
             clipboard.clear(keepPinned: true)

@@ -50,22 +50,22 @@ enum ContentKind: String, Codable, CaseIterable {
 
     var title: String {
         switch self {
-        case .text: return "文本"
-        case .chineseText: return "中文"
-        case .foreignText: return "外文"
-        case .url: return "链接"
-        case .email: return "邮箱"
-        case .math: return "算式"
-        case .timestamp: return "时间戳"
+        case .text: return String(localized: "文本")
+        case .chineseText: return String(localized: "中文")
+        case .foreignText: return String(localized: "外文")
+        case .url: return String(localized: "链接")
+        case .email: return String(localized: "邮箱")
+        case .math: return String(localized: "算式")
+        case .timestamp: return String(localized: "时间戳")
         case .json: return "JSON"
-        case .files: return "文件"
-        case .image: return "图片"
-        case .word: return "单个词"
-        case .color: return "颜色"
-        case .number: return "数字"
-        case .dateTime: return "日期时间"
-        case .imageFile: return "图片文件"
-        case .measurement: return "带单位的数值"
+        case .files: return String(localized: "文件")
+        case .image: return String(localized: "图片")
+        case .word: return String(localized: "单个词")
+        case .color: return String(localized: "颜色")
+        case .number: return String(localized: "数字")
+        case .dateTime: return String(localized: "日期时间")
+        case .imageFile: return String(localized: "图片文件")
+        case .measurement: return String(localized: "带单位的数值")
         }
     }
 }
@@ -89,21 +89,21 @@ struct ClassifiedContent: Equatable {
     var summary: String {
         switch selection {
         case .none:
-            return "未选中内容"
+            return String(localized: "未选中内容")
         case .files(let urls):
-            return urls.count == 1 ? urls[0].lastPathComponent : "\(urls.count) 个文件"
+            return urls.count == 1 ? urls[0].lastPathComponent : String(localized: "\(urls.count) 个文件")
         case .image:
-            return "图片"
+            return String(localized: "图片")
         case .text:
             if kinds.contains(.measurement), let text, text.count <= 12 {
                 return text
             }
             let specific: [ContentKind] = [.url, .email, .math, .timestamp, .json, .color, .dateTime, .measurement, .number, .files]
             if let kind = specific.first(where: { kinds.contains($0) }) {
-                return kind == .files ? "路径" : kind.title
+                return kind == .files ? String(localized: "路径") : kind.title
             }
             if kinds.contains(.word), let text { return text }
-            return "\(text?.count ?? 0) 字"
+            return String(localized: "\(text?.count ?? 0) 字")
         }
     }
 }

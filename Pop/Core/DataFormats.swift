@@ -312,7 +312,7 @@ enum YAMLConverter {
         var line: Int?
 
         var description: String {
-            line.map { "第 \($0) 行：\(message)" } ?? message
+            line.map { String(localized: "第 \($0) 行：\(message)") } ?? message
         }
     }
 
@@ -444,7 +444,7 @@ enum YAMLConverter {
             let indent = raw.prefix { $0 == " " }.count
             let content = String(raw.dropFirst(indent))
             if content.hasPrefix("\t"), !Line.stripComment(content).trimmingCharacters(in: .whitespaces).isEmpty {
-                throw Failure(message: "缩进里不能有制表符", line: offset + 1)
+                throw Failure(message: String(localized: "缩进里不能有制表符"), line: offset + 1)
             }
             lines.append(Line(number: offset + 1, indent: indent, content: content))
         }
@@ -691,9 +691,9 @@ enum YAMLConverter {
                     return value
                 }
                 if line.structural == "---" || line.structural.hasPrefix("--- ") {
-                    throw Failure(message: "只支持一个文档（第二个 --- 之后的内容读不了）", line: line.number)
+                    throw Failure(message: String(localized: "只支持一个文档（第二个 --- 之后的内容读不了）"), line: line.number)
                 }
-                throw Failure(message: "缩进不对", line: line.number)
+                throw Failure(message: String(localized: "缩进不对"), line: line.number)
             }
             return value
         }
@@ -734,14 +734,14 @@ enum YAMLConverter {
                 if line.indent < indent || content == "..." || (line.indent == 0 && content == "---") {
                     break
                 }
-                guard line.indent == indent else { throw Failure(message: "缩进不对", line: line.number) }
+                guard line.indent == indent else { throw Failure(message: String(localized: "缩进不对"), line: line.number) }
                 guard let (key, rest) = YAMLConverter.splitKey(content) else {
                     if Self.isSequenceItem(content) {
-                        throw Failure(message: "列表项要比上面的键多缩进，或者放在键的下一行", line: line.number)
+                        throw Failure(message: String(localized: "列表项要比上面的键多缩进，或者放在键的下一行"), line: line.number)
                     }
-                    throw Failure(message: "这里应该是「键: 值」", line: line.number)
+                    throw Failure(message: String(localized: "这里应该是「键: 值」"), line: line.number)
                 }
-                guard seen.insert(key).inserted else { throw Failure(message: "键「\(key)」重复了", line: line.number) }
+                guard seen.insert(key).inserted else { throw Failure(message: String(localized: "键「\(key)」重复了"), line: line.number) }
                 index += 1
                 let value: DataValue
                 if rest.isEmpty {
@@ -774,7 +774,7 @@ enum YAMLConverter {
                 if line.indent < indent || content == "..." || (line.indent == 0 && content == "---") {
                     break
                 }
-                guard line.indent == indent else { throw Failure(message: "缩进不对", line: line.number) }
+                guard line.indent == indent else { throw Failure(message: String(localized: "缩进不对"), line: line.number) }
                 // 同一层的「键: 值」：列表到这里结束（键下面同样缩进的列表）
                 guard Self.isSequenceItem(content) else { break }
                 let afterDash = content.dropFirst()
@@ -807,9 +807,9 @@ enum YAMLConverter {
             guard let first = text.first else { return .null }
             switch first {
             case "&", "*":
-                throw Failure(message: "不支持锚点和引用（& 和 *）", line: line)
+                throw Failure(message: String(localized: "不支持锚点和引用（& 和 *）"), line: line)
             case "!":
-                throw Failure(message: "不支持标签（!）", line: line)
+                throw Failure(message: String(localized: "不支持标签（!）"), line: line)
             case "[", "{":
                 // 可以跨行：一直读到括号配对
                 var flow = text
@@ -818,7 +818,7 @@ enum YAMLConverter {
                     index += 1
                 }
                 var parser = FlowParser(characters: Array(flow))
-                guard let value = parser.document() else { throw Failure(message: "[ ] 或 { } 的写法不对", line: line) }
+                guard let value = parser.document() else { throw Failure(message: String(localized: "[ ] 或 { } 的写法不对"), line: line) }
                 return value
             case "\"", "'":
                 var joined = text
@@ -830,10 +830,10 @@ enum YAMLConverter {
                     characters = Array(joined)
                 }
                 guard let (value, end) = YAMLConverter.quotedScalar(characters, from: 0) else {
-                    throw Failure(message: "引号没有配对", line: line)
+                    throw Failure(message: String(localized: "引号没有配对"), line: line)
                 }
                 let trailing = Line.stripComment(String(characters[end...])).trimmingCharacters(in: .whitespaces)
-                guard trailing.isEmpty else { throw Failure(message: "引号后面多了「\(trailing)」", line: line) }
+                guard trailing.isEmpty else { throw Failure(message: String(localized: "引号后面多了「\(trailing)」"), line: line) }
                 return .string(value)
             default:
                 // 普通的值可以跨行，下面缩进更深的行接在后面（换行变成空格）

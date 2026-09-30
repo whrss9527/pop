@@ -150,8 +150,8 @@ final class WatermarkTests: XCTestCase {
         let outcome = await plugin.run(ContentClassifier.classify(.files([pdf, URL(fileURLWithPath: "/tmp/说明.txt"), photo])),
                                        context: PluginContext(settings: AppSettings(), openSettings: {}))
         XCTAssertEqual(outcome, .watermark([pdf, photo]))
-        XCTAssertEqual(WatermarkModel(files: [pdf, photo]).unit, "个文件")
-        XCTAssertEqual(WatermarkModel(files: [photo]).unit, "张图片")
+        XCTAssertEqual(WatermarkModel(files: [pdf, photo]).countLabel(2), "2 个文件")
+        XCTAssertEqual(WatermarkModel(files: [photo]).countLabel(1), "1 张图片")
     }
 
     @MainActor

@@ -22,26 +22,26 @@ enum FileInfo {
         guard let values = try? url.resourceValues(forKeys: keys) else { return [] }
         var rows: [ResultCard.Row] = []
         if let type = values.contentType {
-            rows.append(ResultCard.Row(label: "类型", value: type.localizedDescription ?? type.identifier))
+            rows.append(ResultCard.Row(label: String(localized: "类型"), value: type.localizedDescription ?? type.identifier))
         }
         if values.isDirectory == true {
             let size = folderSize(url)
-            let prefix = size.truncated ? "至少 " : ""
-            rows.append(ResultCard.Row(label: "大小", value: prefix + describe(bytes: size.bytes)))
-            rows.append(ResultCard.Row(label: "文件数", value: "\(prefix)\(size.files) 个"))
+            let prefix = size.truncated ? String(localized: "至少 ") : ""
+            rows.append(ResultCard.Row(label: String(localized: "大小"), value: prefix + describe(bytes: size.bytes)))
+            rows.append(ResultCard.Row(label: String(localized: "文件数"), value: String(localized: "\(prefix)\(size.files) 个")))
         } else if let bytes = values.fileSize {
-            rows.append(ResultCard.Row(label: "大小", value: describe(bytes: Int64(bytes))))
+            rows.append(ResultCard.Row(label: String(localized: "大小"), value: describe(bytes: Int64(bytes))))
         }
         if let created = values.creationDate {
-            rows.append(ResultCard.Row(label: "创建时间", value: format(created)))
+            rows.append(ResultCard.Row(label: String(localized: "创建时间"), value: format(created)))
         }
         if let modified = values.contentModificationDate {
-            rows.append(ResultCard.Row(label: "修改时间", value: format(modified)))
+            rows.append(ResultCard.Row(label: String(localized: "修改时间"), value: format(modified)))
         }
         if let type = values.contentType, values.isDirectory != true {
             rows += await details(for: url, type: type)
         }
-        rows.append(ResultCard.Row(label: "位置", value: abbreviated(url.deletingLastPathComponent())))
+        rows.append(ResultCard.Row(label: String(localized: "位置"), value: abbreviated(url.deletingLastPathComponent())))
         return rows
     }
 
@@ -62,11 +62,11 @@ enum FileInfo {
                 files += 1
             }
         }
-        let prefix = truncated ? "至少 " : ""
+        let prefix = truncated ? String(localized: "至少 ") : ""
         return [
-            ResultCard.Row(label: "选中", value: "\(urls.count) 项"),
-            ResultCard.Row(label: "文件数", value: "\(prefix)\(files) 个"),
-            ResultCard.Row(label: "总大小", value: prefix + describe(bytes: bytes)),
+            ResultCard.Row(label: String(localized: "选中"), value: String(localized: "\(urls.count) 项")),
+            ResultCard.Row(label: String(localized: "文件数"), value: String(localized: "\(prefix)\(files) 个")),
+            ResultCard.Row(label: String(localized: "总大小"), value: prefix + describe(bytes: bytes)),
         ]
     }
 
@@ -92,7 +92,7 @@ enum FileInfo {
         let readable = ByteCountFormatter.string(fromByteCount: bytes, countStyle: .file)
         guard bytes >= 1000 else { return readable }
         let exact = NumberFormatter.localizedString(from: NSNumber(value: bytes), number: .decimal)
-        return "\(readable)（\(exact) 字节）"
+        return String(localized: "\(readable)（\(exact) 字节）")
     }
 
     /// 1.2 MB（只要好读的写法）
@@ -111,20 +111,20 @@ enum FileInfo {
 
     private static func details(for url: URL, type: UTType) async -> [ResultCard.Row] {
         if type.conforms(to: .image) {
-            return ImageInfo.rows(for: url).filter { $0.label == "尺寸" } + (PhotoMetadata.read(url)?.rows ?? [])
+            return ImageInfo.rows(for: url).filter { $0.label == String(localized: "尺寸") } + (PhotoMetadata.read(url)?.rows ?? [])
         }
         if type.conforms(to: .pdf), let document = PDFDocument(url: url) {
-            return [ResultCard.Row(label: "页数", value: "\(document.pageCount) 页")]
+            return [ResultCard.Row(label: String(localized: "页数"), value: String(localized: "\(document.pageCount) 页"))]
         }
         if type.conforms(to: .audiovisualContent) {
             let asset = AVURLAsset(url: url)
             var rows: [ResultCard.Row] = []
             if let time = try? await asset.load(.duration), time.seconds.isFinite, time.seconds > 0 {
-                rows.append(ResultCard.Row(label: "时长", value: duration(time.seconds)))
+                rows.append(ResultCard.Row(label: String(localized: "时长"), value: duration(time.seconds)))
             }
             if let track = try? await asset.loadTracks(withMediaType: .video).first,
                let size = try? await track.load(.naturalSize), size.width > 0 {
-                rows.append(ResultCard.Row(label: "画面", value: "\(Int(size.width)) × \(Int(size.height))"))
+                rows.append(ResultCard.Row(label: String(localized: "画面"), value: "\(Int(size.width)) × \(Int(size.height))"))
             }
             return rows
         }

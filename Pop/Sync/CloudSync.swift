@@ -53,7 +53,7 @@ enum SyncResolver {
 @MainActor
 final class CloudSync: ObservableObject {
     @Published private(set) var isEnabled: Bool
-    @Published private(set) var statusText = "未开启"
+    @Published private(set) var statusText = String(localized: "未开启")
     @Published private(set) var lastSyncDate: Date?
     @Published private(set) var lastRemoteDevice: String? = nil
 
@@ -95,11 +95,11 @@ final class CloudSync: ObservableObject {
 
     func start() {
         guard isAvailableInBuild else {
-            statusText = "当前构建未启用 iCloud"
+            statusText = String(localized: "当前构建未启用 iCloud")
             return
         }
         guard isEnabled else {
-            statusText = "未开启"
+            statusText = String(localized: "未开启")
             return
         }
         let store = self.store ?? NSUbiquitousKeyValueStore.default
@@ -114,9 +114,9 @@ final class CloudSync: ObservableObject {
             }
         }
         if FileManager.default.ubiquityIdentityToken == nil {
-            statusText = "没有登录 iCloud（登录后会自动同步）"
+            statusText = String(localized: "没有登录 iCloud（登录后会自动同步）")
         } else {
-            statusText = "已开启"
+            statusText = String(localized: "已开启")
         }
         _ = store.synchronize()
         reconcile()
@@ -131,7 +131,7 @@ final class CloudSync: ObservableObject {
         } else {
             settingsPush?.cancel()
             pluginsPush?.cancel()
-            statusText = "未开启"
+            statusText = String(localized: "未开启")
         }
     }
 
@@ -147,9 +147,9 @@ final class CloudSync: ObservableObject {
         guard isEnabled else { return }
         switch reason {
         case NSUbiquitousKeyValueStoreQuotaViolationChange:
-            statusText = "iCloud 存储空间超出配额"
+            statusText = String(localized: "iCloud 存储空间超出配额")
         case NSUbiquitousKeyValueStoreAccountChange:
-            statusText = FileManager.default.ubiquityIdentityToken == nil ? "iCloud 账号已退出" : "iCloud 账号已切换"
+            statusText = FileManager.default.ubiquityIdentityToken == nil ? String(localized: "iCloud 账号已退出") : String(localized: "iCloud 账号已切换")
             reconcile()
         default:
             reconcile()

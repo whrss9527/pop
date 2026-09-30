@@ -4,6 +4,12 @@
   "name": "豆瓣",
   "symbol": "film",
   "summary": "在豆瓣上搜书、电影和音乐",
+  "localized": {
+    "en": {
+      "name": "Douban",
+      "summary": "Search Douban for books, movies and music"
+    }
+  },
   "match": {
     "kinds": [
       "text"

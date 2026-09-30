@@ -17,16 +17,16 @@ enum SettingsTab: String, CaseIterable, Identifiable, Hashable {
 
     var title: String {
         switch self {
-        case .general: return "通用"
-        case .ring: return "圆盘"
-        case .plugins: return "功能"
-        case .rules: return "直达规则"
-        case .hotKeys: return "快捷键"
-        case .clipboard: return "剪贴板"
-        case .translation: return "翻译"
+        case .general: return String(localized: "通用")
+        case .ring: return String(localized: "圆盘")
+        case .plugins: return String(localized: "功能")
+        case .rules: return String(localized: "直达规则")
+        case .hotKeys: return String(localized: "快捷键")
+        case .clipboard: return String(localized: "剪贴板")
+        case .translation: return String(localized: "翻译")
         case .ai: return "AI"
-        case .sync: return "同步"
-        case .update: return "更新"
+        case .sync: return String(localized: "同步")
+        case .update: return String(localized: "更新")
         }
     }
 
@@ -106,7 +106,7 @@ final class SettingsWindowController: NSObject, NSWindowDelegate {
     private func makeWindow() -> NSWindow {
         let controller = NSHostingController(rootView: makeContent(navigation))
         let window = NSWindow(contentViewController: controller)
-        window.title = "Pop 设置"
+        window.title = String(localized: "Pop 设置")
         window.styleMask = [.titled, .closable, .miniaturizable]
         window.isReleasedWhenClosed = false
         window.delegate = self
@@ -213,7 +213,7 @@ private struct SettingsTabButton: View {
         .focusable(false)
         .focusEffectDisabled()
         .keyboardShortcut(shortcut.map { KeyboardShortcut(KeyEquivalent($0), modifiers: .command) })
-        .help(shortcut.map { "\(tab.title)（⌘\($0)）" } ?? tab.title)
+        .help(shortcut.map { String(localized: "\(tab.title)（⌘\(String($0))）") } ?? tab.title)
         .onHover { hovering = $0 }
         .accessibilityLabel(tab.title)
         .accessibilityAddTraits(isSelected ? AccessibilityTraits.isSelected : AccessibilityTraits())

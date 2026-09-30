@@ -9,14 +9,14 @@ struct ImageSizeLimitView: View {
     @FocusState private var focused: Bool
 
     private var subtitle: String {
-        files.count == 1 ? files[0].lastPathComponent : "\(files.count) 张图片"
+        files.count == 1 ? files[0].lastPathComponent : String(localized: "\(files.count) 张图片")
     }
 
     /// 说明，带上现在一共多大
     private var note: String {
         let bytes = files.compactMap { try? $0.resourceValues(forKeys: [.fileSizeKey]).fileSize }.reduce(0, +)
-        let base = "存成 JPEG：先降低画质，还不够就缩小尺寸，另存一份，原图不动。"
-        return bytes > 0 ? base + "现在一共 \(FileInfo.shortSize(Int64(bytes)))。" : base
+        let base = String(localized: "存成 JPEG：先降低画质，还不够就缩小尺寸，另存一份，原图不动。")
+        return bytes > 0 ? base + String(localized: "现在一共 \(FileInfo.shortSize(Int64(bytes)))。") : base
     }
 
     /// 写的数字按 KB 算
@@ -26,7 +26,7 @@ struct ImageSizeLimitView: View {
     }
 
     var body: some View {
-        CardContainer(title: "压缩到指定大小", subtitle: subtitle, width: 420, onClose: onClose) {
+        CardContainer(title: String(localized: "压缩到指定大小"), subtitle: subtitle, width: 420, onClose: onClose) {
             Text(note)
                 .font(.caption)
                 .foregroundStyle(.secondary)

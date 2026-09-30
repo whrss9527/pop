@@ -69,7 +69,7 @@ struct SnippetPickerView: View {
     @Namespace private var selectionSpace
 
     var body: some View {
-        CardContainer(title: "常用短语", subtitle: "↑↓ 选择 · ⏎ 粘贴", onClose: onClose) {
+        CardContainer(title: String(localized: "常用短语"), subtitle: String(localized: "↑↓ 选择 · ⏎ 粘贴"), onClose: onClose) {
             if model.isEmpty {
                 Text("还没有常用短语。在「设置 → 剪贴板」里添加，写一次就能反复粘贴，还可以用 {date}、{clipboard} 这样的占位符。")
                     .font(.callout)

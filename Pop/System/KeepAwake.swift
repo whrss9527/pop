@@ -53,11 +53,11 @@ final class KeepAwake: ObservableObject {
     /// 现在的状态，比如「保持唤醒到 15:30（还剩 25 分钟）」；没有保持唤醒时为 nil
     func statusText(now: Date = Date()) -> String? {
         guard isActive else { return nil }
-        guard let endsAt else { return "一直保持唤醒，直到手动停止或退出 Pop" }
+        guard let endsAt else { return String(localized: "一直保持唤醒，直到手动停止或退出 Pop") }
         let formatter = DateFormatter()
         formatter.dateFormat = "HH:mm"
         let remaining = max(Int((endsAt.timeIntervalSince(now) / 60).rounded(.up)), 1)
-        return "保持唤醒到 \(formatter.string(from: endsAt))（还剩 \(Self.title(minutes: remaining))）"
+        return String(localized: "保持唤醒到 \(formatter.string(from: endsAt))（还剩 \(Self.title(minutes: remaining))）")
     }
 
     /// 30 → 「30 分钟」，60 → 「1 小时」，90 → 「1 小时 30 分钟」
@@ -65,9 +65,9 @@ final class KeepAwake: ObservableObject {
         let hours = minutes / 60
         let rest = minutes % 60
         switch (hours, rest) {
-        case (0, _): return "\(minutes) 分钟"
-        case (_, 0): return "\(hours) 小时"
-        default: return "\(hours) 小时 \(rest) 分钟"
+        case (0, _): return String(localized: "\(minutes) 分钟")
+        case (_, 0): return String(localized: "\(hours) 小时")
+        default: return String(localized: "\(hours) 小时 \(rest) 分钟")
         }
     }
 }

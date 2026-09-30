@@ -60,13 +60,13 @@ enum TableOCR {
     static func card(for rows: [[String]], otherTables: Int = 0) -> ResultCard {
         let columns = rows.map(\.count).max() ?? 0
         let padded = rows.map { $0 + Array(repeating: "", count: columns - $0.count) }
-        var detail = "\(padded.count) 行 × \(columns) 列"
+        var detail = String(localized: "\(padded.count) 行 × \(columns) 列")
         if otherTables > 0 {
-            detail += "；图片里还有 \(otherTables) 个表格，这里只显示第一个"
+            detail += String(localized: "；图片里还有 \(otherTables) 个表格，这里只显示第一个")
         }
-        return ResultCard(title: "识别表格", detail: detail, tabs: [
+        return ResultCard(title: String(localized: "识别表格"), detail: detail, tabs: [
             ResultCard.Tab(title: "Markdown", text: TableConverter.render(padded, as: .markdown)),
-            ResultCard.Tab(title: "制表符分隔", text: TableConverter.render(padded, as: .tsv)),
+            ResultCard.Tab(title: String(localized: "制表符分隔"), text: TableConverter.render(padded, as: .tsv)),
             ResultCard.Tab(title: "CSV", text: TableConverter.render(padded, as: .csv)),
         ])
     }

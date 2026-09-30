@@ -11,8 +11,8 @@ enum WebCapture {
 
         var title: String {
             switch self {
-            case .pdf: return "存成 PDF"
-            case .image: return "存成长图"
+            case .pdf: return String(localized: "存成 PDF")
+            case .image: return String(localized: "存成长图")
             }
         }
     }
@@ -48,17 +48,17 @@ enum WebCapture {
     /// 一页 PDF 画成 PNG：按 1.5 倍画，太长、太大时整体缩小。比较慢，在后台调用
     static func image(fromPDF data: Data) throws -> Data {
         guard let document = PDFDocument(data: data), let page = document.page(at: 0) else {
-            throw Failure(message: "网页没能画出来")
+            throw Failure(message: String(localized: "网页没能画出来"))
         }
         let bounds = page.bounds(for: .mediaBox)
-        guard bounds.width > 0, bounds.height > 0 else { throw Failure(message: "网页是空的") }
+        guard bounds.width > 0, bounds.height > 0 else { throw Failure(message: String(localized: "网页是空的")) }
         let scale = min(1.5, maxImageHeight / bounds.height, (maxImagePixels / (bounds.width * bounds.height)).squareRoot())
         let width = Int((bounds.width * scale).rounded())
         let height = Int((bounds.height * scale).rounded())
         guard let context = CGContext(data: nil, width: width, height: height, bitsPerComponent: 8, bytesPerRow: 0,
                                       space: CGColorSpace(name: CGColorSpace.sRGB) ?? CGColorSpaceCreateDeviceRGB(),
                                       bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue) else {
-            throw Failure(message: "网页太大了，画不出来")
+            throw Failure(message: String(localized: "网页太大了，画不出来"))
         }
         context.setFillColor(CGColor(gray: 1, alpha: 1))
         context.fill(CGRect(x: 0, y: 0, width: width, height: height))
@@ -69,7 +69,7 @@ enum WebCapture {
         }
         guard let image = context.makeImage(),
               let png = NSBitmapImageRep(cgImage: image).representation(using: .png, properties: [:]) else {
-            throw Failure(message: "网页没能画出来")
+            throw Failure(message: String(localized: "网页没能画出来"))
         }
         return png
     }
@@ -77,7 +77,7 @@ enum WebCapture {
     /// 文件名用网页标题；没有标题时用网址的主机名
     static func fileName(title: String?, url: URL) -> String {
         let trimmed = (title ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
-        let base = trimmed.isEmpty ? (url.host() ?? "网页") : trimmed
+        let base = trimmed.isEmpty ? (url.host() ?? String(localized: "网页")) : trimmed
         let safe = base.replacingOccurrences(of: "/", with: "-").replacingOccurrences(of: ":", with: "-")
         return String(safe.prefix(80))
     }
@@ -136,12 +136,12 @@ private final class PageLoader: NSObject, WKNavigationDelegate {
             } else if let url {
                 webView.load(URLRequest(url: url, timeoutInterval: timeout))
             } else {
-                finish(.failure(WebCapture.Failure(message: "没有网址")))
+                finish(.failure(WebCapture.Failure(message: String(localized: "没有网址"))))
             }
             DispatchQueue.main.asyncAfter(deadline: .now() + timeout) { [weak self] in
                 MainActor.assumeIsolated {
                     guard let self else { return }
-                    self.finish(self.committed ? .success(()) : .failure(WebCapture.Failure(message: "网页打开太慢，已经放弃")))
+                    self.finish(self.committed ? .success(()) : .failure(WebCapture.Failure(message: String(localized: "网页打开太慢，已经放弃"))))
                 }
             }
         }
@@ -204,7 +204,7 @@ private final class PageLoader: NSObject, WKNavigationDelegate {
         do {
             return try await webView.pdf(configuration: WKPDFConfiguration())
         } catch {
-            throw WebCapture.Failure(message: "网页没能存下来：\(error.localizedDescription)")
+            throw WebCapture.Failure(message: String(localized: "网页没能存下来：\(error.localizedDescription)"))
         }
     }
 
@@ -231,7 +231,7 @@ private final class PageLoader: NSObject, WKNavigationDelegate {
         if error.domain == NSURLErrorDomain, error.code == NSURLErrorCancelled {
             return
         }
-        finish(.failure(WebCapture.Failure(message: "网页打不开：\(error.localizedDescription)")))
+        finish(.failure(WebCapture.Failure(message: String(localized: "网页打不开：\(error.localizedDescription)"))))
     }
 
     nonisolated func webView(_ webView: WKWebView, didCommit navigation: WKNavigation!) {

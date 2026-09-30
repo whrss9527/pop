@@ -11,11 +11,11 @@ enum ClipboardFilter: String, CaseIterable, Identifiable {
 
     var title: String {
         switch self {
-        case .all: return "全部"
-        case .text: return "文字"
-        case .image: return "图片"
-        case .files: return "文件"
-        case .pinned: return "固定"
+        case .all: return String(localized: "全部")
+        case .text: return String(localized: "文字")
+        case .image: return String(localized: "图片")
+        case .files: return String(localized: "文件")
+        case .pinned: return String(localized: "固定")
         }
     }
 
@@ -206,7 +206,7 @@ struct ClipboardHistoryView: View {
     @Namespace private var selectionSpace
 
     var body: some View {
-        CardContainer(title: "剪贴板历史", subtitle: subtitle, width: 460, onClose: onClose) {
+        CardContainer(title: String(localized: "剪贴板历史"), subtitle: subtitle, width: 460, onClose: onClose) {
             if model.isEnabled {
                 TextField("搜索", text: $model.query)
                     .textFieldStyle(.roundedBorder)
@@ -219,8 +219,8 @@ struct ClipboardHistoryView: View {
                 .controlSize(.small)
                 list
                 Text(model.marked.isEmpty
-                     ? "⏎ 粘贴 · ⌘1–9 快速粘贴 · ⌘ 点选多条 · ⌘P 固定 · ⌘⌫ 删除 · 右键更多"
-                     : "已选 \(model.marked.count) 条 · ⏎ 按顺序合在一起粘贴 · ⌘C 合在一起复制 · Esc 取消")
+                     ? String(localized: "⏎ 粘贴 · ⌘1–9 快速粘贴 · ⌘ 点选多条 · ⌘P 固定 · ⌘⌫ 删除 · 右键更多")
+                     : String(localized: "已选 \(model.marked.count) 条 · ⏎ 按顺序合在一起粘贴 · ⌘C 合在一起复制 · Esc 取消"))
                     .font(.caption2)
                     .foregroundStyle(model.marked.isEmpty ? Color.secondary : Color.accentColor)
             } else {
@@ -236,7 +236,7 @@ struct ClipboardHistoryView: View {
     }
 
     private var subtitle: String {
-        model.items.isEmpty ? "" : "\(model.items.count) 条"
+        model.items.isEmpty ? "" : String(localized: "\(model.items.count) 条")
     }
 
     private var list: some View {
@@ -255,7 +255,7 @@ struct ClipboardHistoryView: View {
                                 Button("粘贴") { model.paste(item) }
                                 Button("只复制") { model.service.copy(item) }
                                 if item.kind == .text {
-                                    Button(model.markNumber(of: item) == nil ? "加入多选" : "移出多选") { model.toggleMark(item) }
+                                    Button(model.markNumber(of: item) == nil ? String(localized: "加入多选") : String(localized: "移出多选")) { model.toggleMark(item) }
                                 }
                                 Divider()
                                 if item.kind == .text {
@@ -271,7 +271,7 @@ struct ClipboardHistoryView: View {
                                     Button("贴到屏幕") { model.onPin(item) }
                                 }
                                 Divider()
-                                Button(item.pinned ? "取消固定" : "固定") { model.togglePin(item) }
+                                Button(item.pinned ? String(localized: "取消固定") : String(localized: "固定")) { model.togglePin(item) }
                                 Button("删除") { model.delete(item) }
                             }
                     }
@@ -281,7 +281,7 @@ struct ClipboardHistoryView: View {
             .frame(height: 340)
             .overlay {
                 if model.items.isEmpty {
-                    Text(model.query.isEmpty ? "还没有记录，复制点什么试试" : "没有匹配的记录")
+                    Text(model.query.isEmpty ? String(localized: "还没有记录，复制点什么试试") : String(localized: "没有匹配的记录"))
                         .foregroundStyle(.secondary)
                 }
             }
@@ -347,7 +347,7 @@ struct ClipboardRow: View {
         case .text, .files:
             text = item.text
         case .image:
-            text = item.recognizedText.map { $0.isEmpty ? "" : "图片里的文字：\n" + $0 } ?? ""
+            text = item.recognizedText.map { $0.isEmpty ? "" : String(localized: "图片里的文字：\n") + $0 } ?? ""
         }
         return text.count > 1000 ? String(text.prefix(1000)) + "…" : text
     }
@@ -363,7 +363,7 @@ struct ClipboardRow: View {
             HStack(spacing: 6) {
                 Image(systemName: item.fileURLs.count > 1 ? "doc.on.doc" : "doc")
                     .foregroundStyle(.secondary)
-                Text(item.fileURLs.map(\.lastPathComponent).joined(separator: "、"))
+                Text(item.fileURLs.map(\.lastPathComponent).joinedAsList())
                     .font(.system(size: 12))
                     .lineLimit(2)
             }

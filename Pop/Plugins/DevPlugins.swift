@@ -3,41 +3,41 @@ import AppKit
 // MARK: - 链接解析
 
 struct WebCapturePlugin: PopPlugin {
-    let info = PluginInfo(id: BuiltinPluginID.webCapture, name: "网页存档", symbol: "arrow.down.doc",
-                          summary: "把选中的网址整页存成一页长 PDF（文字能选、能搜）或者一张长图，放在「下载」里", accepts: [.url])
+    let info = PluginInfo(id: BuiltinPluginID.webCapture, name: String(localized: "网页存档"), symbol: "arrow.down.doc",
+                          summary: String(localized: "把选中的网址整页存成一页长 PDF（文字能选、能搜）或者一张长图，放在「下载」里"), accepts: [.url])
 
     @MainActor func run(_ content: ClassifiedContent, context: PluginContext) async -> PluginOutcome {
         guard let url = content.url, ["http", "https"].contains(url.scheme?.lowercased() ?? "") else {
-            return .failure("只能存网页（http、https 开头的链接）")
+            return .failure(String(localized: "只能存网页（http、https 开头的链接）"))
         }
         return .card(Self.card(url))
     }
 
     static func card(_ url: URL) -> ResultCard {
-        ResultCard(title: "网页存档", body: url.absoluteString,
-                   detail: "在后台打开这个网页，整页存到「下载」；要登录才能看的页面存下来是登录页",
+        ResultCard(title: String(localized: "网页存档"), body: url.absoluteString,
+                   detail: String(localized: "在后台打开这个网页，整页存到「下载」；要登录才能看的页面存下来是登录页"),
                    buttons: WebCapture.Format.allCases.map { CardButton(title: $0.title, action: .captureWeb(url, $0)) })
     }
 }
 
 struct LinkInspectPlugin: PopPlugin {
-    let info = PluginInfo(id: BuiltinPluginID.linkInspect, name: "链接解析", symbol: "link",
-                          summary: "拆开链接的协议、主机、路径和每个参数（解码后），去掉 utm_source 这类跟踪参数", accepts: [.url])
+    let info = PluginInfo(id: BuiltinPluginID.linkInspect, name: String(localized: "链接解析"), symbol: "link",
+                          summary: String(localized: "拆开链接的协议、主机、路径和每个参数（解码后），去掉 utm_source 这类跟踪参数"), accepts: [.url])
 
     @MainActor func run(_ content: ClassifiedContent, context: PluginContext) async -> PluginOutcome {
-        guard let url = content.url, url.scheme?.lowercased() != "mailto" else { return .failure("没有识别到链接") }
+        guard let url = content.url, url.scheme?.lowercased() != "mailto" else { return .failure(String(localized: "没有识别到链接")) }
         let clean = LinkInspector.cleaned(url)?.absoluteString
         var buttons: [CardButton] = []
         if let clean {
-            buttons.append(CardButton(title: "复制干净的链接", action: .copy(clean)))
+            buttons.append(CardButton(title: String(localized: "复制干净的链接"), action: .copy(clean)))
         }
-        var detail = clean == nil ? "这个链接里没有跟踪参数" : "上面是去掉跟踪参数后的链接，可以直接替换原文"
+        var detail = clean == nil ? String(localized: "这个链接里没有跟踪参数") : String(localized: "上面是去掉跟踪参数后的链接，可以直接替换原文")
         if LinkExpander.isShortLink(url) {
             // 只有点了才访问短链接服务
-            buttons.insert(CardButton(title: "展开短链接", action: .expandLink(url)), at: 0)
-            detail += "；这是短链接，点「展开短链接」会访问一次它的服务器，看最后跳到哪里"
+            buttons.insert(CardButton(title: String(localized: "展开短链接"), action: .expandLink(url)), at: 0)
+            detail += String(localized: "；这是短链接，点「展开短链接」会访问一次它的服务器，看最后跳到哪里")
         }
-        return .card(ResultCard(title: "链接解析", body: clean ?? "", detail: detail,
+        return .card(ResultCard(title: String(localized: "链接解析"), body: clean ?? "", detail: detail,
                                 monospaced: true, replaceText: clean, rows: LinkInspector.rows(for: url), rowLineLimit: 2,
                                 buttons: buttons))
     }
@@ -46,16 +46,16 @@ struct LinkInspectPlugin: PopPlugin {
 // MARK: - 代码截图
 
 struct CodeImagePlugin: PopPlugin {
-    let info = PluginInfo(id: BuiltinPluginID.codeImage, name: "代码截图", symbol: "chevron.left.forwardslash.chevron.right",
-                          summary: "把选中的代码画成一张图片（深色编辑器、语法着色、渐变背景），可以复制、存储或贴到屏幕上",
+    let info = PluginInfo(id: BuiltinPluginID.codeImage, name: String(localized: "代码截图"), symbol: "chevron.left.forwardslash.chevron.right",
+                          summary: String(localized: "把选中的代码画成一张图片（深色编辑器、语法着色、渐变背景），可以复制、存储或贴到屏幕上"),
                           accepts: [.text], maxLength: 20_000)
 
     @MainActor func run(_ content: ClassifiedContent, context: PluginContext) async -> PluginOutcome {
-        guard let text = content.text, let png = CodeImage.render(text) else { return .failure("没能画出这段代码") }
-        return .card(ResultCard(title: "代码截图", detail: "按住拖动预览图也能拖到别的 App 里", image: png, buttons: [
-            CardButton(title: "复制图片", action: .copyImage(png)),
-            CardButton(title: "存储", action: .saveImage(png, name: ImageFiles.timestampedName("Pop 代码"))),
-            CardButton(title: "贴到屏幕", action: .pinImage(png)),
+        guard let text = content.text, let png = CodeImage.render(text) else { return .failure(String(localized: "没能画出这段代码")) }
+        return .card(ResultCard(title: String(localized: "代码截图"), detail: String(localized: "按住拖动预览图也能拖到别的 App 里"), image: png, buttons: [
+            CardButton(title: String(localized: "复制图片"), action: .copyImage(png)),
+            CardButton(title: String(localized: "存储"), action: .saveImage(png, name: ImageFiles.timestampedName(String(localized: "Pop 代码")))),
+            CardButton(title: String(localized: "贴到屏幕"), action: .pinImage(png)),
         ]))
     }
 }
@@ -63,22 +63,22 @@ struct CodeImagePlugin: PopPlugin {
 // MARK: - Cron
 
 struct CronPlugin: PopPlugin {
-    let info = PluginInfo(id: BuiltinPluginID.cron, name: "Cron 表达式", symbol: "clock.arrow.circlepath",
-                          summary: "把 cron 表达式（比如 */15 9-17 * * 1-5）说成中文，列出接下来几次运行的时间",
+    let info = PluginInfo(id: BuiltinPluginID.cron, name: String(localized: "Cron 表达式"), symbol: "clock.arrow.circlepath",
+                          summary: String(localized: "把 cron 表达式（比如 */15 9-17 * * 1-5）说成中文，列出接下来几次运行的时间"),
                           accepts: [.text], maxLength: 120, check: .cron)
 
     @MainActor func run(_ content: ClassifiedContent, context: PluginContext) async -> PluginOutcome {
-        guard let text = content.text, let cron = CronExpression(text) else { return .failure("不是有效的 cron 表达式") }
+        guard let text = content.text, let cron = CronExpression(text) else { return .failure(String(localized: "不是有效的 cron 表达式")) }
         let calendar = Calendar.current
         let runs = cron.nextRuns(after: Date(), count: 5, calendar: calendar)
         let formatter = DateFormatter()
-        formatter.locale = Locale(identifier: "zh_CN")
+        formatter.locale = Localization.locale
         formatter.dateFormat = "yyyy-MM-dd HH:mm EEE"
         let rows = runs.enumerated().map { index, date in
-            ResultCard.Row(label: "第 \(index + 1) 次", value: formatter.string(from: date))
+            ResultCard.Row(label: String(localized: "第 \(index + 1) 次"), value: formatter.string(from: date))
         }
-        return .card(ResultCard(title: "Cron 表达式", body: cron.summary,
-                                detail: runs.isEmpty ? "五年内都不会运行" : "接下来几次（本机时区 \(calendar.timeZone.identifier)）",
+        return .card(ResultCard(title: String(localized: "Cron 表达式"), body: cron.summary,
+                                detail: runs.isEmpty ? String(localized: "五年内都不会运行") : String(localized: "接下来几次（本机时区 \(calendar.timeZone.identifier)）"),
                                 copyText: cron.summary, rows: rows))
     }
 }
@@ -86,45 +86,45 @@ struct CronPlugin: PopPlugin {
 // MARK: - JWT
 
 struct JWTPlugin: PopPlugin {
-    let info = PluginInfo(id: BuiltinPluginID.jwtDecode, name: "JWT 解码", symbol: "key",
-                          summary: "解码选中的 JWT，列出签发者、过期时间等声明（只解码，不验证签名）", accepts: [.text],
+    let info = PluginInfo(id: BuiltinPluginID.jwtDecode, name: String(localized: "JWT 解码"), symbol: "key",
+                          summary: String(localized: "解码选中的 JWT，列出签发者、过期时间等声明（只解码，不验证签名）"), accepts: [.text],
                           pattern: JWTDecoder.pattern)
 
     @MainActor func run(_ content: ClassifiedContent, context: PluginContext) async -> PluginOutcome {
-        guard let text = content.text, let token = JWTDecoder.decode(text) else { return .failure("不是有效的 JWT") }
-        return .card(ResultCard(title: "JWT", body: token.payload, detail: "只是解码，没有验证签名", monospaced: true,
+        guard let text = content.text, let token = JWTDecoder.decode(text) else { return .failure(String(localized: "不是有效的 JWT")) }
+        return .card(ResultCard(title: "JWT", body: token.payload, detail: String(localized: "只是解码，没有验证签名"), monospaced: true,
                                 copyText: token.payload, rows: JWTDecoder.rows(for: token),
-                                buttons: [CardButton(title: "复制头部", action: .copy(token.header))]))
+                                buttons: [CardButton(title: String(localized: "复制头部"), action: .copy(token.header))]))
     }
 }
 
 // MARK: - Markdown 转富文本
 
 struct MarkdownCopyPlugin: PopPlugin {
-    let info = PluginInfo(id: BuiltinPluginID.markdownCopy, name: "复制为富文本", symbol: "doc.richtext",
-                          summary: "把选中的 Markdown 转成带格式的文字复制下来（标题、粗体、列表、链接……），粘贴到文稿、邮件、备忘录里保留格式",
+    let info = PluginInfo(id: BuiltinPluginID.markdownCopy, name: String(localized: "复制为富文本"), symbol: "doc.richtext",
+                          summary: String(localized: "把选中的 Markdown 转成带格式的文字复制下来（标题、粗体、列表、链接……），粘贴到文稿、邮件、备忘录里保留格式"),
                           accepts: [.text], pattern: MarkdownRichText.pattern)
 
     @MainActor func run(_ content: ClassifiedContent, context: PluginContext) async -> PluginOutcome {
         guard let text = content.text, let rich = MarkdownRichText.render(text) else {
-            return .failure("没能转换这段 Markdown")
+            return .failure(String(localized: "没能转换这段 Markdown"))
         }
         MarkdownRichText.copy(rich)
-        return .done(toast: "已复制为富文本")
+        return .done(toast: String(localized: "已复制为富文本"))
     }
 }
 
 struct MarkdownPreviewPlugin: PopPlugin {
-    let info = PluginInfo(id: BuiltinPluginID.markdownPreview, name: "Markdown 预览", symbol: "doc.text.magnifyingglass",
-                          summary: "把选中的 Markdown 显示成排好版的样子（标题、列表、粗体、代码……），可以复制为富文本",
+    let info = PluginInfo(id: BuiltinPluginID.markdownPreview, name: String(localized: "Markdown 预览"), symbol: "doc.text.magnifyingglass",
+                          summary: String(localized: "把选中的 Markdown 显示成排好版的样子（标题、列表、粗体、代码……），可以复制为富文本"),
                           accepts: [.text], pattern: MarkdownRichText.pattern)
 
     @MainActor func run(_ content: ClassifiedContent, context: PluginContext) async -> PluginOutcome {
         guard let text = content.text, MarkdownRichText.render(text) != nil else {
-            return .failure("没能解析这段 Markdown")
+            return .failure(String(localized: "没能解析这段 Markdown"))
         }
-        return .card(ResultCard(title: "Markdown 预览", markdown: text,
-                                buttons: [CardButton(title: "复制为富文本", action: .copyRichText(text))]))
+        return .card(ResultCard(title: String(localized: "Markdown 预览"), markdown: text,
+                                buttons: [CardButton(title: String(localized: "复制为富文本"), action: .copyRichText(text))]))
     }
 }
 
@@ -268,36 +268,36 @@ enum MarkdownRichText {
 // MARK: - 转成 Markdown
 
 struct ToMarkdownPlugin: PopPlugin {
-    let info = PluginInfo(id: BuiltinPluginID.toMarkdown, name: "转成 Markdown", symbol: "doc.plaintext",
-                          summary: "把网页、文档里选中的带格式文字转成 Markdown：标题、列表、链接、粗体、代码、表格",
+    let info = PluginInfo(id: BuiltinPluginID.toMarkdown, name: String(localized: "转成 Markdown"), symbol: "doc.plaintext",
+                          summary: String(localized: "把网页、文档里选中的带格式文字转成 Markdown：标题、列表、链接、粗体、代码、表格"),
                           accepts: [.text], hidesOverlay: true)
 
     @MainActor func run(_ content: ClassifiedContent, context: PluginContext) async -> PluginOutcome {
         // 读选中内容时拿到的只是纯文字，这里带着格式重新拷贝一次（先收起浮窗，⌘C 才会发给原来的 App）
         guard let selection = await context.readRichSelection?() else {
-            return .failure("没能拷贝选中的内容，确认文字还选着再试一次")
+            return .failure(String(localized: "没能拷贝选中的内容，确认文字还选着再试一次"))
         }
         guard let markdown = await runInBackground({ HTMLToMarkdown.convert(selection) }) else {
-            return .failure("选中的内容没有带格式（标题、列表、链接这些），不用转换")
+            return .failure(String(localized: "选中的内容没有带格式（标题、列表、链接这些），不用转换"))
         }
-        return .card(ResultCard(title: "转成 Markdown", body: markdown, monospaced: true, copyText: markdown,
-                                buttons: [CardButton(title: "贴到屏幕", action: .pinText(markdown))]))
+        return .card(ResultCard(title: String(localized: "转成 Markdown"), body: markdown, monospaced: true, copyText: markdown,
+                                buttons: [CardButton(title: String(localized: "贴到屏幕"), action: .pinText(markdown))]))
     }
 }
 
 // MARK: - JSON 转代码
 
 struct JSONTypesPlugin: PopPlugin {
-    let info = PluginInfo(id: BuiltinPluginID.jsonTypes, name: "JSON 转代码", symbol: "curlybraces.square",
-                          summary: "根据选中的 JSON 生成 TypeScript、Swift、Go、Kotlin 的类型定义",
+    let info = PluginInfo(id: BuiltinPluginID.jsonTypes, name: String(localized: "JSON 转代码"), symbol: "curlybraces.square",
+                          summary: String(localized: "根据选中的 JSON 生成 TypeScript、Swift、Go、Kotlin 的类型定义"),
                           accepts: [.json], maxLength: JSONTypes.maxLength)
 
     @MainActor func run(_ content: ClassifiedContent, context: PluginContext) async -> PluginOutcome {
         guard let text = content.text, let output = await runInBackground({ JSONTypes.generate(text) }) else {
-            return .failure("JSON 里没有对象，不用生成类型定义")
+            return .failure(String(localized: "JSON 里没有对象，不用生成类型定义"))
         }
         let tabs = output.code.map { ResultCard.Tab(title: $0.language.rawValue, text: $0.text) }
-        return .card(ResultCard(title: "JSON 转代码", detail: "\(output.typeCount) 个类型；字段是否可选、能否为空按示例推断",
+        return .card(ResultCard(title: String(localized: "JSON 转代码"), detail: String(localized: "\(output.typeCount) 个类型；字段是否可选、能否为空按示例推断"),
                                 tabs: tabs))
     }
 }
@@ -305,12 +305,12 @@ struct JSONTypesPlugin: PopPlugin {
 // MARK: - 字符信息
 
 struct CharInfoPlugin: PopPlugin {
-    let info = PluginInfo(id: BuiltinPluginID.charInfo, name: "字符信息", symbol: "character.magnify",
-                          summary: "查看每个字符的 Unicode 码点、名称和编码；找出并去掉零宽空格这类看不见的字符",
+    let info = PluginInfo(id: BuiltinPluginID.charInfo, name: String(localized: "字符信息"), symbol: "character.magnify",
+                          summary: String(localized: "查看每个字符的 Unicode 码点、名称和编码；找出并去掉零宽空格这类看不见的字符"),
                           accepts: [.text], maxLength: 100_000, check: .characters)
 
     @MainActor func run(_ content: ClassifiedContent, context: PluginContext) async -> PluginOutcome {
-        guard let text = content.text else { return .failure("没有文字") }
+        guard let text = content.text else { return .failure(String(localized: "没有文字")) }
         return .card(await runInBackground { CharacterInspector.card(for: text) })
     }
 }
@@ -318,12 +318,12 @@ struct CharInfoPlugin: PopPlugin {
 // MARK: - 正则测试
 
 struct RegexTestPlugin: PopPlugin {
-    let info = PluginInfo(id: BuiltinPluginID.regexTest, name: "正则测试", symbol: "asterisk.circle",
-                          summary: "在选中的文字里试正则表达式：实时标出每处匹配、列出分组，也可以试替换",
+    let info = PluginInfo(id: BuiltinPluginID.regexTest, name: String(localized: "正则测试"), symbol: "asterisk.circle",
+                          summary: String(localized: "在选中的文字里试正则表达式：实时标出每处匹配、列出分组，也可以试替换"),
                           accepts: [.text], maxLength: 200_000)
 
     @MainActor func run(_ content: ClassifiedContent, context: PluginContext) async -> PluginOutcome {
-        guard let text = content.text else { return .failure("没有文字") }
+        guard let text = content.text else { return .failure(String(localized: "没有文字")) }
         return .regexTester(text: text)
     }
 }

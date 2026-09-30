@@ -335,8 +335,8 @@ enum JSONTypes {
             case .double: return ("Double", nil)
             case .bool: return ("Bool", nil)
             case .named(let name): return (name, nil)
-            case .unknown: return ("String", "示例里只有 null 或空数组，看不出类型")
-            case .mixed: return ("String", "示例里的类型不固定")
+            case .unknown: return ("String", String(localized: "示例里只有 null 或空数组，看不出类型"))
+            case .mixed: return ("String", String(localized: "示例里的类型不固定"))
             case .array(let element):
                 let (inner, note) = name(element)
                 return ("[\(inner)]", note)

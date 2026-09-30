@@ -12,14 +12,14 @@ extension ImageStitcher {
     /// 按顺序把几张图片合成一张循环播放的 GIF，存在第一张旁边，返回新文件的位置。
     /// 画面大小按第一张（最长边不超过 800），其余的等比缩放放在正中，空出来的地方填白色
     static func animate(_ urls: [URL], frameDelay: Double = gifFrameDelay) throws -> URL {
-        guard urls.count >= 2 else { throw Failure(message: "至少选两张图片") }
-        guard urls.count <= maxCount else { throw Failure(message: "一次最多合成 \(maxCount) 张") }
+        guard urls.count >= 2 else { throw Failure(message: String(localized: "至少选两张图片")) }
+        guard urls.count <= maxCount else { throw Failure(message: String(localized: "一次最多合成 \(maxCount) 张")) }
         var sources: [CGImageSource] = []
         var sizes: [CGSize] = []
         for url in urls {
             guard let source = CGImageSourceCreateWithURL(url as CFURL, nil), CGImageSourceGetCount(source) > 0,
                   let size = uprightSize(source) else {
-                throw Failure(message: "读不了「\(url.lastPathComponent)」")
+                throw Failure(message: String(localized: "读不了「\(url.lastPathComponent)」"))
             }
             sources.append(source)
             sizes.append(size)
@@ -27,9 +27,9 @@ extension ImageStitcher {
         let canvas = fitted(sizes[0], maxSide: gifMaxSide)
         let first = urls[0]
         let output = FileNames.available(in: first.deletingLastPathComponent(),
-                                         base: first.deletingPathExtension().lastPathComponent + " 动图", extension: "gif")
+                                         base: first.deletingPathExtension().lastPathComponent + String(localized: " 动图"), extension: "gif")
         guard let destination = CGImageDestinationCreateWithURL(output as CFURL, UTType.gif.identifier as CFString, urls.count, nil) else {
-            throw Failure(message: "这台 Mac 不支持存成 GIF")
+            throw Failure(message: String(localized: "这台 Mac 不支持存成 GIF"))
         }
         CGImageDestinationSetProperties(destination, [kCGImagePropertyGIFDictionary: [kCGImagePropertyGIFLoopCount: 0]] as CFDictionary)
         let frameProperties = [kCGImagePropertyGIFDictionary: [kCGImagePropertyGIFDelayTime: frameDelay,
@@ -46,18 +46,18 @@ extension ImageStitcher {
             guard let image = CGImageSourceCreateThumbnailAtIndex(source, 0, options as CFDictionary),
                   let context = CGContext(data: nil, width: Int(canvas.width), height: Int(canvas.height), bitsPerComponent: 8,
                                           bytesPerRow: 0, space: space, bitmapInfo: CGImageAlphaInfo.noneSkipLast.rawValue) else {
-                throw Failure(message: "读不了「\(urls[index].lastPathComponent)」")
+                throw Failure(message: String(localized: "读不了「\(urls[index].lastPathComponent)」"))
             }
             context.interpolationQuality = .high
             context.setFillColor(CGColor(red: 1, green: 1, blue: 1, alpha: 1))
             context.fill(CGRect(origin: .zero, size: canvas))
             context.draw(image, in: frame)
-            guard let frameImage = context.makeImage() else { throw Failure(message: "合成动图失败") }
+            guard let frameImage = context.makeImage() else { throw Failure(message: String(localized: "合成动图失败")) }
             CGImageDestinationAddImage(destination, frameImage, frameProperties)
         }
         guard CGImageDestinationFinalize(destination) else {
             try? FileManager.default.removeItem(at: output)
-            throw Failure(message: "存储「\(output.lastPathComponent)」失败")
+            throw Failure(message: String(localized: "存储「\(output.lastPathComponent)」失败"))
         }
         return output
     }

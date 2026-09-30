@@ -40,7 +40,7 @@ final class RingViewModel: ObservableObject {
             let info = pluginID.flatMap { id in installed.contains(id) ? catalog.first(where: { $0.id == id }) : nil }
             return Slot(id: index, info: info, enabled: false)
         }
-        centerText = "读取中…"
+        centerText = String(localized: "读取中…")
         isLoading = true
         if let content {
             apply(content)
@@ -69,7 +69,7 @@ final class RingViewModel: ObservableObject {
         guard let hovered, slots.indices.contains(hovered) else { return Center(title: centerText) }
         let slot = slots[hovered]
         guard let info = slot.info else {
-            return Center(title: "空格子", detail: "可以在设置里放上功能", isFunction: true, enabled: false)
+            return Center(title: String(localized: "空格子"), detail: String(localized: "可以在设置里放上功能"), isFunction: true, enabled: false)
         }
         let hint = slot.enabled || isLoading ? nil : Self.unavailableHint(for: info, content: content)
         return Center(title: info.name, detail: hint, isFunction: true, enabled: slot.enabled)
@@ -78,14 +78,18 @@ final class RingViewModel: ObservableObject {
     /// 这一格用不了时的简短说明：缺的是哪种内容，或者这次的内容不合适
     static func unavailableHint(for info: PluginInfo, content: ClassifiedContent?) -> String {
         let kinds = content?.kinds ?? []
-        guard !info.accepts.isEmpty, info.accepts.isDisjoint(with: kinds) else { return "当前内容用不了" }
+        guard !info.accepts.isEmpty, info.accepts.isDisjoint(with: kinds) else { return String(localized: "当前内容用不了") }
         let order: [(ContentKind, String)] = [
-            (.text, "文字"), (.chineseText, "文字"), (.foreignText, "外文"), (.files, "文件"), (.imageFile, "图片文件"),
-            (.image, "图片"), (.url, "链接"), (.email, "邮箱"), (.json, "JSON"), (.math, "算式"), (.number, "数字"),
-            (.color, "颜色值"), (.timestamp, "时间戳"), (.dateTime, "日期"), (.measurement, "带单位的数"), (.word, "一个词"),
+            (.text, String(localized: "要先选中文字")), (.chineseText, String(localized: "要先选中文字")),
+            (.foreignText, String(localized: "要先选中外文")), (.files, String(localized: "要先选中文件")),
+            (.imageFile, String(localized: "要先选中图片文件")), (.image, String(localized: "要先选中图片")),
+            (.url, String(localized: "要先选中链接")), (.email, String(localized: "要先选中邮箱")),
+            (.json, String(localized: "要先选中JSON")), (.math, String(localized: "要先选中算式")),
+            (.number, String(localized: "要先选中数字")), (.color, String(localized: "要先选中颜色值")),
+            (.timestamp, String(localized: "要先选中时间戳")), (.dateTime, String(localized: "要先选中日期")),
+            (.measurement, String(localized: "要先选中带单位的数")), (.word, String(localized: "要先选中一个词")),
         ]
-        let needed = order.first(where: { info.accepts.contains($0.0) })?.1 ?? "内容"
-        return "要先选中" + needed
+        return order.first(where: { info.accepts.contains($0.0) })?.1 ?? String(localized: "要先选中内容")
     }
 
     /// offset 是指针相对圆心（或按下点）的偏移，y 轴向上；nil 表示不指向任何格子。

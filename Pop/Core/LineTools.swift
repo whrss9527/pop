@@ -53,26 +53,26 @@ enum LineTools {
             rows.append(ResultCard.Row(label: label, value: value))
         }
         if !parsed.fromLines {
-            add("拆成多行", values.joined(separator: "\n"))
+            add(String(localized: "拆成多行"), values.joined(separator: "\n"))
         }
-        add("逗号隔开", values.joined(separator: ", "))
-        add("单引号", values.map { "'" + $0.replacingOccurrences(of: "'", with: "''") + "'" }.joined(separator: ", "))
-        add("双引号", values.map(jsonString).joined(separator: ", "))
+        add(String(localized: "逗号隔开"), values.joined(separator: ", "))
+        add(String(localized: "单引号"), values.map { "'" + $0.replacingOccurrences(of: "'", with: "''") + "'" }.joined(separator: ", "))
+        add(String(localized: "双引号"), values.map(jsonString).joined(separator: ", "))
         let numeric = values.allSatisfy { plainNumber.firstMatch(in: $0, range: NSRange($0.startIndex..., in: $0)) != nil }
-        add("JSON 数组", "[" + (numeric ? values : values.map(jsonString)).joined(separator: ", ") + "]")
+        add(String(localized: "JSON 数组"), "[" + (numeric ? values : values.map(jsonString)).joined(separator: ", ") + "]")
         let stripped = values.map(removingNumbering)
         if stripped != values {
-            add("去掉序号", stripped.joined(separator: "\n"))
+            add(String(localized: "去掉序号"), stripped.joined(separator: "\n"))
         } else {
-            add("加序号", values.enumerated().map { "\($0.offset + 1). \($0.element)" }.joined(separator: "\n"))
+            add(String(localized: "加序号"), values.enumerated().map { "\($0.offset + 1). \($0.element)" }.joined(separator: "\n"))
         }
         if let unquoted = removingQuotes(values) {
-            add("去掉引号", unquoted.joined(separator: "\n"))
+            add(String(localized: "去掉引号"), unquoted.joined(separator: "\n"))
         }
         let separator = parsed.fromLines ? "\n" : ", "
-        add("倒序", values.reversed().joined(separator: separator))
+        add(String(localized: "倒序"), values.reversed().joined(separator: separator))
         if values.count > 2 {
-            add("打乱顺序", values.shuffled().joined(separator: separator))
+            add(String(localized: "打乱顺序"), values.shuffled().joined(separator: separator))
         }
         return rows
     }

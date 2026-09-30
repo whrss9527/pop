@@ -59,22 +59,22 @@ enum LinkInspector {
         guard let components = URLComponents(url: url, resolvingAgainstBaseURL: false) else { return [] }
         var rows: [ResultCard.Row] = []
         if let scheme = components.scheme {
-            rows.append(ResultCard.Row(label: "协议", value: scheme))
+            rows.append(ResultCard.Row(label: String(localized: "协议"), value: scheme))
         }
         if let host = components.host, !host.isEmpty {
-            rows.append(ResultCard.Row(label: "主机", value: host))
+            rows.append(ResultCard.Row(label: String(localized: "主机"), value: host))
         }
         if let port = components.port {
-            rows.append(ResultCard.Row(label: "端口", value: String(port)))
+            rows.append(ResultCard.Row(label: String(localized: "端口"), value: String(port)))
         }
         if !components.path.isEmpty, components.path != "/" {
-            rows.append(ResultCard.Row(label: "路径", value: components.path))
+            rows.append(ResultCard.Row(label: String(localized: "路径"), value: components.path))
         }
         for item in components.queryItems ?? [] {
             rows.append(ResultCard.Row(label: item.name, value: item.value ?? ""))
         }
         if let fragment = components.fragment, !fragment.isEmpty {
-            rows.append(ResultCard.Row(label: "片段", value: fragment))
+            rows.append(ResultCard.Row(label: String(localized: "片段"), value: fragment))
         }
         return rows
     }
@@ -125,23 +125,23 @@ enum JWTDecoder {
     static func rows(for token: Token, now: Date = Date(), timeZone: TimeZone = .current) -> [ResultCard.Row] {
         var rows: [ResultCard.Row] = []
         if let algorithm = token.algorithm {
-            rows.append(ResultCard.Row(label: "算法", value: algorithm))
+            rows.append(ResultCard.Row(label: String(localized: "算法"), value: algorithm))
         }
-        for (key, label) in [("iss", "签发者"), ("sub", "主题")] {
+        for (key, label) in [("iss", String(localized: "签发者")), ("sub", String(localized: "主题"))] {
             if let value = token.claims[key] {
                 rows.append(ResultCard.Row(label: label, value: "\(value)"))
             }
         }
         if let audience = token.claims["aud"] {
             let value = (audience as? [Any])?.map { "\($0)" }.joined(separator: ", ") ?? "\(audience)"
-            rows.append(ResultCard.Row(label: "受众", value: value))
+            rows.append(ResultCard.Row(label: String(localized: "受众"), value: value))
         }
-        for (key, label) in [("iat", "签发时间"), ("nbf", "生效时间"), ("exp", "过期时间")] {
+        for (key, label) in [("iat", String(localized: "签发时间")), ("nbf", String(localized: "生效时间")), ("exp", String(localized: "过期时间"))] {
             guard let seconds = (token.claims[key] as? NSNumber)?.doubleValue else { continue }
             let date = Date(timeIntervalSince1970: seconds)
             var value = TimestampConverter.localString(date, timeZone: timeZone)
             if key == "exp" {
-                value += date < now ? "（已过期）" : "（\(relative(date, now: now))过期）"
+                value += date < now ? String(localized: "（已过期）") : String(localized: "（\(relative(date, now: now))过期）")
             }
             rows.append(ResultCard.Row(label: label, value: value))
         }
@@ -150,7 +150,7 @@ enum JWTDecoder {
 
     private static func relative(_ date: Date, now: Date) -> String {
         let formatter = RelativeDateTimeFormatter()
-        formatter.locale = Locale(identifier: "zh_CN")
+        formatter.locale = Localization.locale
         formatter.unitsStyle = .full
         return formatter.localizedString(for: date, relativeTo: now)
     }
