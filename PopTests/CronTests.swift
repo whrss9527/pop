@@ -21,6 +21,19 @@ final class CronTests: XCTestCase {
         XCTAssertEqual(summary("0 0 * * 7"), "每周日 00:00")
     }
 
+    func testEnglishSummaries() {
+        func english(_ text: String) -> String? { CronExpression(text)?.englishSummary }
+        XCTAssertEqual(english("*/5 * * * *"), "every 5 minutes")
+        XCTAssertEqual(english("30 9 * * 1-5"), "every weekday (Monday to Friday) at 09:30")
+        XCTAssertEqual(english("0 0 1 * *"), "on day 1 of every month at 00:00")
+        XCTAssertEqual(english("@yearly"), "on day 1 of January at 00:00")
+        XCTAssertEqual(english("@hourly"), "every hour on the hour")
+        XCTAssertEqual(english("0 9-18 * * *"), "every day on the hour during hours 9–18")
+        XCTAssertEqual(english("0 12 * * SAT,SUN"), "every weekend day at 12:00")
+        XCTAssertEqual(english("15 10 * * MON-WED"), "every Monday to Wednesday at 10:15")
+        XCTAssertEqual(english("0 8,12,18 * * *"), "every day at 08:00, 12:00, 18:00")
+    }
+
     func testInvalidExpressions() {
         XCTAssertNil(CronExpression("61 * * * *"))
         XCTAssertNil(CronExpression("* * *"))

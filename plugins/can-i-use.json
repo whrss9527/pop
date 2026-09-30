@@ -4,6 +4,12 @@
   "name": "Can I use",
   "symbol": "checkmark.seal",
   "summary": "查一个网页特性在各个浏览器里能不能用",
+  "localized": {
+    "en": {
+      "name": "Can I use",
+      "summary": "Check whether a web feature works in each browser"
+    }
+  },
   "match": {
     "kinds": [
       "text"

@@ -180,10 +180,10 @@ enum TriggerMode: String, Codable, CaseIterable, Identifiable {
 
     var title: String {
         switch self {
-        case .longPressRight: return "长按右键"
-        case .modifierRightClick: return "修饰键 + 右键"
-        case .middleClick: return "鼠标中键"
-        case .disabled: return "不用鼠标唤起"
+        case .longPressRight: return String(localized: "长按右键")
+        case .modifierRightClick: return String(localized: "修饰键 + 右键")
+        case .middleClick: return String(localized: "鼠标中键")
+        case .disabled: return String(localized: "不用鼠标唤起")
         }
     }
 }
@@ -220,7 +220,7 @@ enum HotKeyPreset: String, Codable, CaseIterable, Identifiable {
 
     var title: String {
         switch self {
-        case .none: return "不使用"
+        case .none: return String(localized: "不使用")
         case .optionSpace: return "⌥ Space"
         case .commandShiftSpace: return "⌘ ⇧ Space"
         case .optionBacktick: return "⌥ `"
@@ -402,21 +402,21 @@ enum RuleCondition: String, Codable, CaseIterable, Identifiable {
 
     var title: String {
         switch self {
-        case .color: return "选中颜色值"
-        case .word: return "选中单个词"
-        case .foreignText: return "选中外文"
-        case .chineseText: return "选中中文"
-        case .url: return "选中链接"
-        case .email: return "选中邮箱"
-        case .math: return "选中算式"
-        case .measurement: return "选中带单位的数值"
-        case .timestamp: return "选中时间戳"
-        case .dateTime: return "选中日期时间"
-        case .number: return "选中数字"
-        case .json: return "选中 JSON"
-        case .files: return "选中文件"
-        case .image: return "选中图片"
-        case .anyText: return "其他任意文本"
+        case .color: return String(localized: "选中颜色值")
+        case .word: return String(localized: "选中单个词")
+        case .foreignText: return String(localized: "选中外文")
+        case .chineseText: return String(localized: "选中中文")
+        case .url: return String(localized: "选中链接")
+        case .email: return String(localized: "选中邮箱")
+        case .math: return String(localized: "选中算式")
+        case .measurement: return String(localized: "选中带单位的数值")
+        case .timestamp: return String(localized: "选中时间戳")
+        case .dateTime: return String(localized: "选中日期时间")
+        case .number: return String(localized: "选中数字")
+        case .json: return String(localized: "选中 JSON")
+        case .files: return String(localized: "选中文件")
+        case .image: return String(localized: "选中图片")
+        case .anyText: return String(localized: "其他任意文本")
         }
     }
 }
@@ -508,7 +508,7 @@ struct LanguageOption: Identifiable, Hashable {
     ]
 
     static func name(for id: String?) -> String {
-        guard let id else { return "自动识别" }
+        guard let id else { return String(localized: "自动识别") }
         if let option = translationTargets.first(where: { $0.id == id }) {
             return option.name
         }
@@ -528,7 +528,7 @@ enum SearchEngine: String, Codable, CaseIterable, Identifiable {
         switch self {
         case .google: return "Google"
         case .bing: return "Bing"
-        case .baidu: return "百度"
+        case .baidu: return String(localized: "百度")
         case .duckDuckGo: return "DuckDuckGo"
         }
     }
@@ -596,7 +596,7 @@ struct ClipboardSettings: Codable, Equatable {
     }
 
     static func retentionTitle(_ days: Int) -> String {
-        days == 0 ? "一直保存" : "\(days) 天"
+        days == 0 ? String(localized: "一直保存") : String(localized: "\(days) 天")
     }
 }
 
@@ -620,8 +620,8 @@ enum AIProvider: String, Codable, CaseIterable, Identifiable {
 
     var title: String {
         switch self {
-        case .onDevice: return "系统内置（离线）"
-        case .custom: return "自己填的接口"
+        case .onDevice: return String(localized: "系统内置（离线）")
+        case .custom: return String(localized: "自己填的接口")
         }
     }
 }

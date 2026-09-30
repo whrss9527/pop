@@ -51,9 +51,9 @@ enum ContactSheet {
     /// 生成缩略图，存成 JPEG
     static func make(from asset: AVURLAsset, name: String, fileSize: Int?, to output: URL) async throws {
         let duration = try await asset.load(.duration).seconds
-        guard duration.isFinite, duration > 0 else { throw VideoConverter.Failure(message: "读不到视频的时长") }
+        guard duration.isFinite, duration > 0 else { throw VideoConverter.Failure(message: String(localized: "读不到视频的时长")) }
         guard let track = try await asset.loadTracks(withMediaType: .video).first else {
-            throw VideoConverter.Failure(message: "这个文件里没有画面")
+            throw VideoConverter.Failure(message: String(localized: "这个文件里没有画面"))
         }
         let natural = try await track.load(.naturalSize)
         let transform = try await track.load(.preferredTransform)
@@ -65,11 +65,12 @@ enum ContactSheet {
         guard let context = CGContext(data: nil, width: Int(size.width), height: Int(size.height), bitsPerComponent: 8, bytesPerRow: 0,
                                       space: CGColorSpace(name: CGColorSpace.sRGB) ?? CGColorSpaceCreateDeviceRGB(),
                                       bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue) else {
-            throw VideoConverter.Failure(message: "缩略图太大了，画不出来")
+            throw VideoConverter.Failure(message: String(localized: "缩略图太大了，画不出来"))
         }
         context.setFillColor(CGColor(srgbRed: 0.11, green: 0.11, blue: 0.12, alpha: 1))
         context.fill(CGRect(origin: .zero, size: size))
-        var details = ["时长 \(FileInfo.duration(duration))", "\(Int(videoSize.width.rounded())) × \(Int(videoSize.height.rounded()))"]
+        let length = FileInfo.duration(duration)
+        var details = [String(localized: "时长 \(length)"), "\(Int(videoSize.width.rounded())) × \(Int(videoSize.height.rounded()))"]
         if let fileSize {
             details.append(ByteCountFormatter.string(fromByteCount: Int64(fileSize), countStyle: .file))
         }
@@ -100,13 +101,13 @@ enum ContactSheet {
                 context.fill(cell)
             }
         }
-        guard drawn > 0 else { throw VideoConverter.Failure(message: "没能从视频里取出画面") }
+        guard drawn > 0 else { throw VideoConverter.Failure(message: String(localized: "没能从视频里取出画面")) }
         guard let image = context.makeImage(),
               let destination = CGImageDestinationCreateWithURL(output as CFURL, UTType.jpeg.identifier as CFString, 1, nil) else {
-            throw VideoConverter.Failure(message: "存储缩略图失败")
+            throw VideoConverter.Failure(message: String(localized: "存储缩略图失败"))
         }
         CGImageDestinationAddImage(destination, image, [kCGImageDestinationLossyCompressionQuality: 0.88] as CFDictionary)
-        guard CGImageDestinationFinalize(destination) else { throw VideoConverter.Failure(message: "存储缩略图失败") }
+        guard CGImageDestinationFinalize(destination) else { throw VideoConverter.Failure(message: String(localized: "存储缩略图失败")) }
     }
 
     /// 按比例放进格子里，居中

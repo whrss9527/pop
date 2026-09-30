@@ -24,10 +24,10 @@ enum PDFTools {
 
     static func open(_ url: URL) throws -> PDFDocument {
         guard let document = PDFDocument(url: url) else {
-            throw Failure(message: "读不了「\(url.lastPathComponent)」")
+            throw Failure(message: String(localized: "读不了「\(url.lastPathComponent)」"))
         }
         guard !document.isLocked else {
-            throw Failure(message: "「\(url.lastPathComponent)」有密码，先解锁再处理")
+            throw Failure(message: String(localized: "「\(url.lastPathComponent)」有密码，先解锁再处理"))
         }
         return document
     }
@@ -45,27 +45,27 @@ enum PDFTools {
                 }
             } else {
                 guard let image = NSImage(contentsOf: file), let page = PDFPage(image: image) else {
-                    throw Failure(message: "读不了「\(file.lastPathComponent)」")
+                    throw Failure(message: String(localized: "读不了「\(file.lastPathComponent)」"))
                 }
                 output.insert(page, at: output.pageCount)
             }
         }
-        guard output.pageCount > 0 else { throw Failure(message: "没有可以合成的页面") }
-        guard output.write(to: destination) else { throw Failure(message: "写不进「\(destination.lastPathComponent)」") }
+        guard output.pageCount > 0 else { throw Failure(message: String(localized: "没有可以合成的页面")) }
+        guard output.write(to: destination) else { throw Failure(message: String(localized: "写不进「\(destination.lastPathComponent)」")) }
         return output.pageCount
     }
 
     /// 把 PDF 的每一页存成 PNG（按页面大小的 scale 倍像素），放进 folder，返回这些文件
     static func exportPages(of pdf: URL, to folder: URL, scale: CGFloat = 2) throws -> [URL] {
         let document = try open(pdf)
-        guard document.pageCount > 0 else { throw Failure(message: "「\(pdf.lastPathComponent)」里没有页面") }
+        guard document.pageCount > 0 else { throw Failure(message: String(localized: "「\(pdf.lastPathComponent)」里没有页面")) }
         try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
         let base = pdf.deletingPathExtension().lastPathComponent
         let digits = max(String(document.pageCount).count, 2)
         var outputs: [URL] = []
         for index in 0..<document.pageCount {
             guard let page = document.page(at: index), let png = render(page, scale: scale) else {
-                throw Failure(message: "第 \(index + 1) 页渲染失败")
+                throw Failure(message: String(localized: "第 \(index + 1) 页渲染失败"))
             }
             let number = String(repeating: "0", count: max(digits - String(index + 1).count, 0)) + String(index + 1)
             let url = folder.appending(path: "\(base)-\(number).png")
@@ -111,11 +111,11 @@ enum PDFTools {
     static func compress(_ pdf: URL) throws -> Compression {
         let document = try open(pdf)
         let output = FileNames.available(in: pdf.deletingLastPathComponent(),
-                                         base: pdf.deletingPathExtension().lastPathComponent + " 压缩", extension: "pdf")
+                                         base: pdf.deletingPathExtension().lastPathComponent + String(localized: " 压缩"), extension: "pdf")
         let options: [PDFDocumentWriteOption: Any] = [.saveImagesAsJPEGOption: true, .optimizeImagesForScreenOption: true]
         guard document.write(to: output, withOptions: options) else {
             try? FileManager.default.removeItem(at: output)
-            throw Failure(message: "写不进「\(output.lastPathComponent)」")
+            throw Failure(message: String(localized: "写不进「\(output.lastPathComponent)」"))
         }
         func size(_ url: URL) -> Int64 {
             Int64((try? url.resourceValues(forKeys: [.fileSizeKey]))?.fileSize ?? 0)
@@ -159,18 +159,18 @@ enum PDFTools {
         let output = PDFDocument()
         for index in pages {
             guard let page = document.page(at: index)?.copy() as? PDFPage else {
-                throw Failure(message: "没有第 \(index + 1) 页")
+                throw Failure(message: String(localized: "没有第 \(index + 1) 页"))
             }
             output.insert(page, at: output.pageCount)
         }
-        guard output.pageCount > 0 else { throw Failure(message: "没有选中页面") }
-        guard output.write(to: destination) else { throw Failure(message: "写不进「\(destination.lastPathComponent)」") }
+        guard output.pageCount > 0 else { throw Failure(message: String(localized: "没有选中页面")) }
+        guard output.write(to: destination) else { throw Failure(message: String(localized: "写不进「\(destination.lastPathComponent)」")) }
     }
 
     /// 每一页存成一个 PDF，放进 folder，返回这些文件
     static func split(_ pdf: URL, to folder: URL) throws -> [URL] {
         let document = try open(pdf)
-        guard document.pageCount > 0 else { throw Failure(message: "「\(pdf.lastPathComponent)」里没有页面") }
+        guard document.pageCount > 0 else { throw Failure(message: String(localized: "「\(pdf.lastPathComponent)」里没有页面")) }
         try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
         let base = pdf.deletingPathExtension().lastPathComponent
         let digits = max(String(document.pageCount).count, 2)
@@ -191,24 +191,24 @@ enum PDFTools {
 
     /// 加上打开密码（修改权限也用同一个密码），另存一份
     static func encrypt(_ pdf: URL, password: String, to destination: URL) throws {
-        guard !password.isEmpty else { throw Failure(message: "密码不能是空的") }
+        guard !password.isEmpty else { throw Failure(message: String(localized: "密码不能是空的")) }
         let document = try open(pdf)
         let options: [PDFDocumentWriteOption: Any] = [.userPasswordOption: password, .ownerPasswordOption: password]
         guard document.write(to: destination, withOptions: options) else {
-            throw Failure(message: "写不进「\(destination.lastPathComponent)」")
+            throw Failure(message: String(localized: "写不进「\(destination.lastPathComponent)」"))
         }
     }
 
     /// 用密码打开，另存一份没有密码的。只知道打开密码、PDF 还限制了打印复制这些的，不去掉
     static func removePassword(_ pdf: URL, password: String, to destination: URL) throws {
-        guard let document = PDFDocument(url: pdf) else { throw Failure(message: "读不了「\(pdf.lastPathComponent)」") }
-        guard document.isEncrypted else { throw Failure(message: "「\(pdf.lastPathComponent)」没有密码") }
-        guard document.unlock(withPassword: password) else { throw Failure(message: "密码不对") }
+        guard let document = PDFDocument(url: pdf) else { throw Failure(message: String(localized: "读不了「\(pdf.lastPathComponent)」")) }
+        guard document.isEncrypted else { throw Failure(message: String(localized: "「\(pdf.lastPathComponent)」没有密码")) }
+        guard document.unlock(withPassword: password) else { throw Failure(message: String(localized: "密码不对")) }
         let permissions = [document.allowsPrinting, document.allowsCopying, document.allowsDocumentChanges,
                            document.allowsContentAccessibility, document.allowsCommenting, document.allowsFormFieldEntry,
                            document.allowsDocumentAssembly]
         guard document.permissionsStatus == .owner || !permissions.contains(false) else {
-            throw Failure(message: "这份 PDF 还限制了打印、复制这些操作，要输入所有者密码才能去掉")
+            throw Failure(message: String(localized: "这份 PDF 还限制了打印、复制这些操作，要输入所有者密码才能去掉"))
         }
         // 解开之后另存出来的就没有加密；万一还带着密码，就把每一页拷到新文件里
         if document.write(to: destination), PDFDocument(url: destination)?.isEncrypted == false {
@@ -218,7 +218,7 @@ enum PDFTools {
         try write(Array(0..<document.pageCount), of: document, to: destination)
         guard PDFDocument(url: destination)?.isEncrypted == false else {
             try? FileManager.default.removeItem(at: destination)
-            throw Failure(message: "没能去掉密码")
+            throw Failure(message: String(localized: "没能去掉密码"))
         }
     }
 
@@ -234,7 +234,8 @@ enum PDFTools {
             ranges.append(end > index ? "\(pages[index] + 1)–\(pages[end] + 1)" : "\(pages[index] + 1)")
             index = end + 1
         }
-        return "第 " + ranges.joined(separator: "、") + " 页"
+        let list = ranges.joined(separator: Localization.listSeparator)
+        return String(localized: "第 \(list) 页")
     }
 
     /// PDF 里的全部文字（扫描件没有文字层时为空）

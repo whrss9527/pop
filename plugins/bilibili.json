@@ -4,6 +4,12 @@
   "name": "哔哩哔哩",
   "symbol": "play.tv",
   "summary": "在哔哩哔哩上搜视频",
+  "localized": {
+    "en": {
+      "name": "Bilibili",
+      "summary": "Search Bilibili for videos"
+    }
+  },
   "match": {
     "kinds": [
       "text"

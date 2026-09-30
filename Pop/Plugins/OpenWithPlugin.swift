@@ -32,20 +32,20 @@ enum OpenWith {
     /// 卡片副标题：文件名、「3 个文件」或者链接的主机名
     static func subject(of targets: [URL]) -> String {
         guard let first = targets.first else { return "" }
-        if targets.count > 1 { return "\(targets.count) 个文件" }
+        if targets.count > 1 { return String(localized: "\(targets.count) 个文件") }
         return first.isFileURL ? first.lastPathComponent : (first.host() ?? first.absoluteString)
     }
 }
 
 struct OpenWithPlugin: PopPlugin {
-    let info = PluginInfo(id: BuiltinPluginID.openWith, name: "打开方式", symbol: "arrow.up.forward.app",
-                          summary: "选一个 App 打开选中的文件或链接，比如换一个浏览器打开链接", accepts: [.files, .url, .email])
+    let info = PluginInfo(id: BuiltinPluginID.openWith, name: String(localized: "打开方式"), symbol: "arrow.up.forward.app",
+                          summary: String(localized: "选一个 App 打开选中的文件或链接，比如换一个浏览器打开链接"), accepts: [.files, .url, .email])
 
     @MainActor func run(_ content: ClassifiedContent, context: PluginContext) async -> PluginOutcome {
         let targets = content.files.isEmpty ? (content.url.map { [$0] } ?? []) : content.files
-        guard let first = targets.first else { return .failure("没有可以打开的文件或链接") }
+        guard let first = targets.first else { return .failure(String(localized: "没有可以打开的文件或链接")) }
         let apps = await runInBackground { OpenWith.applications(for: first) }
-        guard !apps.isEmpty else { return .failure("没有找到能打开「\(OpenWith.subject(of: targets))」的 App") }
+        guard !apps.isEmpty else { return .failure(String(localized: "没有找到能打开「\(OpenWith.subject(of: targets))」的 App")) }
         return .chooseApp(OpenWithRequest(targets: targets, apps: apps))
     }
 }
@@ -59,7 +59,7 @@ struct OpenWithCardView: View {
     private let columns = Array(repeating: GridItem(.flexible(), spacing: 6), count: 4)
 
     var body: some View {
-        CardContainer(title: "打开方式", subtitle: OpenWith.subject(of: request.targets), onClose: onClose) {
+        CardContainer(title: String(localized: "打开方式"), subtitle: OpenWith.subject(of: request.targets), onClose: onClose) {
             LazyVGrid(columns: columns, spacing: 6) {
                 ForEach(Array(request.apps.enumerated()), id: \.element) { index, app in
                     AppTile(app: app, number: index < 9 ? index + 1 : nil, isDefault: index == 0) {

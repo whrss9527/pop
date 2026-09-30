@@ -22,6 +22,7 @@
      "symbol": "film",
      "type": "url",
      "url": "douban.json",
+     "localized": {"en": {"name": "Douban", "summary": "Search Douban for books, movies and music"}},
      "sha256": "d47ea1ccf79da3279678aa85cd8791a1c89b6eb8ef2b89b568e5c5d6b793815d"
    }
    ```
@@ -38,5 +39,6 @@
 | `type` | 插件的动作类型（`url`、`shell`、`javascript`、`shortcut`、`ai`），和插件文件里的 `action.type` 一样 |
 | `url` | 插件文件的地址，写相对 `index.json` 的路径（比如 `douban.json`） |
 | `sha256` | 插件文件的 SHA-256，小写十六进制 |
+| `localized` | 可选，其他语言的名称和说明，和插件文件里的 `localized` 一样，比如 `{"en": {"name": "Douban", "summary": "Search Douban for books, movies and music"}}` |
 
 插件文件的格式见 [README 里的「自定义插件」](../README.md#自定义插件)。运行 Shell 脚本的插件，安装前 Pop 会先把脚本给用户看，同意了才装。

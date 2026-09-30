@@ -50,8 +50,8 @@ enum Transcriber {
 
     /// 卡片上能选的语言：这台 Mac 认不了的不列；系统语言不是中文时英语排在前面
     static func languages(preferred: String = Locale.preferredLanguages.first ?? "zh-Hans") -> [Language] {
-        var all = [Language(title: "普通话", identifier: "zh-CN"), Language(title: "英语", identifier: "en-US"),
-                   Language(title: "粤语", identifier: "zh-HK"), Language(title: "日语", identifier: "ja-JP")]
+        var all = [Language(title: String(localized: "普通话"), identifier: "zh-CN"), Language(title: String(localized: "英语"), identifier: "en-US"),
+                   Language(title: String(localized: "粤语"), identifier: "zh-HK"), Language(title: String(localized: "日语"), identifier: "ja-JP")]
         if !preferred.hasPrefix("zh"), let english = all.firstIndex(where: { $0.identifier == "en-US" }) {
             let moved = all.remove(at: english)
             all.insert(moved, at: 0)
@@ -105,10 +105,10 @@ enum Transcriber {
     /// 用 SFSpeechRecognizer 识别（macOS 15 上，和 macOS 26 上新的转写用不了时）
     private static func recognize(_ audio: URL, language identifier: String) async throws -> Transcript {
         guard let recognizer = SFSpeechRecognizer(locale: Locale(identifier: identifier)) else {
-            throw Failure(message: "这台 Mac 认不了这种语言")
+            throw Failure(message: String(localized: "这台 Mac 认不了这种语言"))
         }
         guard recognizer.isAvailable else {
-            throw Failure(message: "语音识别现在用不了，稍后再试")
+            throw Failure(message: String(localized: "语音识别现在用不了，稍后再试"))
         }
         let request = SFSpeechURLRecognitionRequest(url: audio)
         request.shouldReportPartialResults = false
@@ -143,16 +143,16 @@ enum Transcriber {
         guard videoExtensions.contains(url.pathExtension.lowercased()) else { return url }
         let asset = AVURLAsset(url: url)
         let tracks = (try? await asset.loadTracks(withMediaType: .audio)) ?? []
-        guard !tracks.isEmpty else { throw Failure(message: "「\(url.lastPathComponent)」里没有声音") }
+        guard !tracks.isEmpty else { throw Failure(message: String(localized: "「\(url.lastPathComponent)」里没有声音")) }
         guard let session = AVAssetExportSession(asset: asset, presetName: AVAssetExportPresetAppleM4A) else {
-            throw Failure(message: "读不了「\(url.lastPathComponent)」里的声音")
+            throw Failure(message: String(localized: "读不了「\(url.lastPathComponent)」里的声音"))
         }
         let output = FileManager.default.temporaryDirectory.appending(path: "pop-transcribe-\(UUID().uuidString).m4a")
         do {
             try await session.export(to: output, as: .m4a)
         } catch {
             try? FileManager.default.removeItem(at: output)
-            throw Failure(message: "读不了「\(url.lastPathComponent)」里的声音：\(error.localizedDescription)")
+            throw Failure(message: String(localized: "读不了「\(url.lastPathComponent)」里的声音：\(error.localizedDescription)"))
         }
         return output
     }
@@ -165,11 +165,11 @@ enum Transcriber {
         let nsError = error as NSError
         switch (nsError.domain, nsError.code) {
         case ("kAFAssistantErrorDomain", 1110):
-            return "没有听到有人说话"
+            return String(localized: "没有听到有人说话")
         case ("kLSRErrorDomain", 201), ("kAFAssistantErrorDomain", 1700):
-            return "要先在「系统设置 → 键盘 → 听写」里打开听写，才能在本机识别"
+            return String(localized: "要先在「系统设置 → 键盘 → 听写」里打开听写，才能在本机识别")
         default:
-            return "识别失败：\(nsError.localizedDescription)"
+            return String(localized: "识别失败：\(nsError.localizedDescription)")
         }
     }
 
@@ -234,19 +234,19 @@ enum Transcriber {
             try transcript.text.write(to: textURL, atomically: true, encoding: .utf8)
             try srt(cues(transcript.segments, language: language)).write(to: subtitleURL, atomically: true, encoding: .utf8)
         } catch {
-            throw Failure(message: "存不了识别结果：\(error.localizedDescription)")
+            throw Failure(message: String(localized: "存不了识别结果：\(error.localizedDescription)"))
         }
         return (textURL, subtitleURL)
     }
 
     static func card(_ transcript: Transcript, file: URL, language: String) -> ResultCard {
-        var detail = "文字和字幕已经存在「\(file.lastPathComponent)」旁边"
+        var detail = String(localized: "文字和字幕已经存在「\(file.lastPathComponent)」旁边")
         if !transcript.onDevice {
-            detail += "；这台 Mac 不能在本机识别这种话，用的是苹果的服务器"
+            detail += String(localized: "；这台 Mac 不能在本机识别这种话，用的是苹果的服务器")
         }
-        return ResultCard(title: "语音转文字", detail: detail,
-                          tabs: [ResultCard.Tab(title: "文字", text: transcript.text),
-                                 ResultCard.Tab(title: "字幕 SRT", text: srt(cues(transcript.segments, language: language)))])
+        return ResultCard(title: String(localized: "语音转文字"), detail: detail,
+                          tabs: [ResultCard.Tab(title: String(localized: "文字"), text: transcript.text),
+                                 ResultCard.Tab(title: String(localized: "字幕 SRT"), text: srt(cues(transcript.segments, language: language)))])
     }
 }
 

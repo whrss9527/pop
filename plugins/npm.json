@@ -4,6 +4,12 @@
   "name": "npm",
   "symbol": "shippingbox",
   "summary": "在 npm 上搜 JavaScript 包",
+  "localized": {
+    "en": {
+      "name": "npm",
+      "summary": "Search npm for JavaScript packages"
+    }
+  },
   "match": {
     "kinds": [
       "text"

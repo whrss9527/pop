@@ -14,8 +14,8 @@ enum ImageStitcher {
 
         var title: String {
             switch self {
-            case .vertical: return "竖着拼接"
-            case .horizontal: return "横着拼接"
+            case .vertical: return String(localized: "竖着拼接")
+            case .horizontal: return String(localized: "横着拼接")
             }
         }
     }
@@ -91,14 +91,14 @@ enum ImageStitcher {
 
     /// 拼好存在第一张图旁边，返回新文件的位置
     static func stitch(_ urls: [URL], direction: Direction) throws -> URL {
-        guard urls.count >= 2 else { throw Failure(message: "至少选两张图片") }
-        guard urls.count <= maxCount else { throw Failure(message: "一次最多拼 \(maxCount) 张") }
+        guard urls.count >= 2 else { throw Failure(message: String(localized: "至少选两张图片")) }
+        guard urls.count <= maxCount else { throw Failure(message: String(localized: "一次最多拼 \(maxCount) 张")) }
         var sources: [CGImageSource] = []
         var sizes: [CGSize] = []
         for url in urls {
             guard let source = CGImageSourceCreateWithURL(url as CFURL, nil), CGImageSourceGetCount(source) > 0,
                   let size = uprightSize(source) else {
-                throw Failure(message: "读不了「\(url.lastPathComponent)」")
+                throw Failure(message: String(localized: "读不了「\(url.lastPathComponent)」"))
             }
             sources.append(source)
             sizes.append(size)
@@ -113,7 +113,7 @@ enum ImageStitcher {
         guard let context = CGContext(data: nil, width: Int(plan.size.width), height: Int(plan.size.height),
                                       bitsPerComponent: 8, bytesPerRow: 0, space: space,
                                       bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue) else {
-            throw Failure(message: "拼出来的图太大了")
+            throw Failure(message: String(localized: "拼出来的图太大了"))
         }
         context.interpolationQuality = .high
         if photos {
@@ -128,24 +128,24 @@ enum ImageStitcher {
                 kCGImageSourceThumbnailMaxPixelSize: max(frame.width, frame.height),
             ]
             guard let image = CGImageSourceCreateThumbnailAtIndex(source, 0, options as CFDictionary) else {
-                throw Failure(message: "读不了「\(urls[index].lastPathComponent)」")
+                throw Failure(message: String(localized: "读不了「\(urls[index].lastPathComponent)」"))
             }
             // CGContext 的原点在左下角
             context.draw(image, in: CGRect(x: frame.minX, y: plan.size.height - frame.maxY, width: frame.width, height: frame.height))
         }
-        guard let result = context.makeImage() else { throw Failure(message: "拼出来的图太大了") }
+        guard let result = context.makeImage() else { throw Failure(message: String(localized: "拼出来的图太大了")) }
         let type: UTType = photos ? .jpeg : .png
         let first = urls[0]
         let output = FileNames.available(in: first.deletingLastPathComponent(),
-                                         base: first.deletingPathExtension().lastPathComponent + " 拼接",
+                                         base: first.deletingPathExtension().lastPathComponent + String(localized: " 拼接"),
                                          extension: photos ? "jpg" : "png")
         guard let destination = CGImageDestinationCreateWithURL(output as CFURL, type.identifier as CFString, 1, nil) else {
-            throw Failure(message: "存储「\(output.lastPathComponent)」失败")
+            throw Failure(message: String(localized: "存储「\(output.lastPathComponent)」失败"))
         }
         CGImageDestinationAddImage(destination, result, [kCGImageDestinationLossyCompressionQuality: 0.9] as CFDictionary)
         guard CGImageDestinationFinalize(destination) else {
             try? FileManager.default.removeItem(at: output)
-            throw Failure(message: "存储「\(output.lastPathComponent)」失败")
+            throw Failure(message: String(localized: "存储「\(output.lastPathComponent)」失败"))
         }
         return output
     }

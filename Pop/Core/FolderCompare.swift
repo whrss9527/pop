@@ -95,7 +95,7 @@ enum FolderCompare {
         }
         // 同一个文件夹选了两次
         guard common < a.count, common < b.count else {
-            return ("第一个 " + nameA, "第二个 " + nameB)
+            return (String(localized: "第一个 ") + nameA, String(localized: "第二个 ") + nameB)
         }
         let joiner = common > 1 ? "/…/" : "/"
         return (a[a.count - 1 - common] + joiner + nameA, b[b.count - 1 - common] + joiner + nameB)
@@ -108,26 +108,25 @@ enum FolderCompare {
         func list(_ paths: [String]) -> String {
             var lines = Array(paths.prefix(shown))
             if paths.count > shown {
-                lines.append("……还有 \(paths.count - shown) 个")
+                lines.append(String(localized: "……还有 \(paths.count - shown) 个"))
             }
             return lines.joined(separator: "\n")
         }
         var tabs: [ResultCard.Tab] = []
         if !result.different.isEmpty {
-            tabs.append(ResultCard.Tab(title: "内容不同 \(result.different.count)", text: list(result.different)))
+            tabs.append(ResultCard.Tab(title: String(localized: "内容不同 \(result.different.count)"), text: list(result.different)))
         }
         if !result.onlyLeft.isEmpty {
-            tabs.append(ResultCard.Tab(title: "只在「\(labels.left)」里 \(result.onlyLeft.count)", text: list(result.onlyLeft)))
+            tabs.append(ResultCard.Tab(title: String(localized: "只在「\(labels.left)」里 \(result.onlyLeft.count)"), text: list(result.onlyLeft)))
         }
         if !result.onlyRight.isEmpty {
-            tabs.append(ResultCard.Tab(title: "只在「\(labels.right)」里 \(result.onlyRight.count)", text: list(result.onlyRight)))
+            tabs.append(ResultCard.Tab(title: String(localized: "只在「\(labels.right)」里 \(result.onlyRight.count)"), text: list(result.onlyRight)))
         }
-        var detail = "一样的 \(result.same) 个，内容不同 \(result.different.count) 个，只在一边有的 \(result.onlyLeft.count + result.onlyRight.count) 个；"
-            + "隐藏文件和 App 这类包里面的文件不比较"
+        var detail = String(localized: "一样的 \(result.same) 个，内容不同 \(result.different.count) 个，只在一边有的 \(result.onlyLeft.count + result.onlyRight.count) 个；隐藏文件和 App 这类包里面的文件不比较")
         if result.truncated {
-            detail += "，文件太多只比了前 \(fileLimit) 个"
+            detail += String(localized: "，文件太多只比了前 \(fileLimit) 个")
         }
-        let body = result.isIdentical ? "两个文件夹里的 \(result.same) 个文件完全一样" : ""
-        return ResultCard(title: "比较文件夹", body: body, detail: detail, tabs: tabs)
+        let body = result.isIdentical ? String(localized: "两个文件夹里的 \(result.same) 个文件完全一样") : ""
+        return ResultCard(title: String(localized: "比较文件夹"), body: body, detail: detail, tabs: tabs)
     }
 }

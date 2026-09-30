@@ -59,7 +59,7 @@ final class ScreenRecorder: NSObject {
         do {
             let content = try await SCShareableContent.excludingDesktopWindows(false, onScreenWindowsOnly: true)
             guard let display = content.displays.first(where: { $0.displayID == screen.screenNumber }) else {
-                throw ScreenRecording.Failure(message: "找不到要录的屏幕")
+                throw ScreenRecording.Failure(message: String(localized: "找不到要录的屏幕"))
             }
             let ours = Set([frame?.windowNumber, panel.windowNumber].compactMap { $0 }.map { CGWindowID($0) })
             let filter = SCContentFilter(display: display, excludingWindows: content.windows.filter { ours.contains($0.windowID) })
@@ -114,7 +114,7 @@ final class ScreenRecorder: NSObject {
             if let failure = error as? ScreenRecording.Failure {
                 throw failure
             }
-            throw ScreenRecording.Failure(message: "录屏没能开始：\(error.localizedDescription)")
+            throw ScreenRecording.Failure(message: String(localized: "录屏没能开始：\(error.localizedDescription)"))
         }
     }
 
@@ -219,7 +219,7 @@ final class ScreenRecorder: NSObject {
                                                    width: pixels.width, height: pixels.height)))
         } else {
             try? FileManager.default.removeItem(at: url)
-            onFinish(.failure(ScreenRecording.Failure(message: problem.map { "录屏失败：\($0)" } ?? "没有录下来")))
+            onFinish(.failure(ScreenRecording.Failure(message: problem.map { String(localized: "录屏失败：\($0)") } ?? String(localized: "没有录下来"))))
         }
         problem = nil
     }
@@ -336,7 +336,7 @@ private struct RecordingPanelView: View {
                 .frame(width: 8, height: 8)
             Text(model.elapsed)
                 .font(.system(size: 12, weight: .semibold).monospacedDigit())
-            Button(model.stopping ? "正在保存…" : "停止", action: onStop)
+            Button(model.stopping ? String(localized: "正在保存…") : String(localized: "停止"), action: onStop)
                 .controlSize(.small)
                 .disabled(model.stopping)
         }

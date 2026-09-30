@@ -438,7 +438,7 @@ final class TranslationModel: ObservableObject {
                 }
                 guard let self, self.generation == generation else { return }
                 let translated = output.trimmingCharacters(in: .whitespacesAndNewlines)
-                self.results[engine] = translated.isEmpty ? .failed("\(engine.title) 没有返回译文") : .done(translated)
+                self.results[engine] = translated.isEmpty ? .failed(String(localized: "\(engine.title) 没有返回译文")) : .done(translated)
             } catch {
                 guard let self, self.generation == generation, !Task.isCancelled else { return }
                 self.results[engine] = .failed(TranslationModel.describe(error))
@@ -458,7 +458,7 @@ final class TranslationModel: ObservableObject {
         case .needsDownload:
             results[.system] = .needsDownload
         case .unsupported:
-            results[.system] = .failed("系统翻译暂不支持「\(pairDescription)」")
+            results[.system] = .failed(String(localized: "系统翻译暂不支持「\(pairDescription)」"))
         case .failed(let message):
             results[.system] = .failed(message)
         }
@@ -472,7 +472,7 @@ final class TranslationModel: ObservableObject {
             results[.system] = .done(response.targetText)
         } catch {
             guard self.generation == generation else { return }
-            results[.system] = .failed("翻译失败：\(error.localizedDescription)")
+            results[.system] = .failed(String(localized: "翻译失败：\(error.localizedDescription)"))
         }
     }
 
@@ -496,7 +496,7 @@ struct TranslationCardView: View {
     var onClose: () -> Void
 
     var body: some View {
-        CardContainer(title: "翻译", subtitle: model.pairDescription, onClose: onClose) {
+        CardContainer(title: String(localized: "翻译"), subtitle: model.pairDescription, onClose: onClose) {
             HStack(spacing: 8) {
                 Menu {
                     ForEach(LanguageOption.translationTargets) { option in

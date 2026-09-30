@@ -4,6 +4,12 @@
   "name": "Stack Overflow",
   "symbol": "questionmark.bubble",
   "summary": "在 Stack Overflow 上搜编程问题，报错信息可以直接选中来搜",
+  "localized": {
+    "en": {
+      "name": "Stack Overflow",
+      "summary": "Search Stack Overflow for programming questions; select an error message to search it directly"
+    }
+  },
   "match": {
     "kinds": [
       "text"

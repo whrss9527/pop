@@ -122,7 +122,8 @@ echo "==> 1. 校验和不对"
 echo "0000000000000000000000000000000000000000000000000000000000000000  Pop-9.9.9.zip" > "$FEED/SHA256SUMS.txt"
 launch_pop
 wait_for_log "Pop 更新：更新到 9.9.9 失败" 60 || fail "校验和不对时没有报错"
-pop_log | grep -q "校验和不对" || fail "失败原因不是校验和"
+# 失败原因跟着系统语言：runner 是英文系统，本机可能是中文
+pop_log | grep -qE "校验和不对|checksum doesn.t match" || fail "失败原因不是校验和"
 [ "$(version_of "$APP")" = "$ORIGINAL" ] || fail "校验和不对却换掉了程序"
 echo "✅ 拒绝了校验和不对的包"
 
@@ -131,7 +132,7 @@ if [ -n "${CODESIGN_IDENTITY:-}" ]; then
   make_release adhoc
   launch_pop
   wait_for_log "Pop 更新：更新到 9.9.9 失败" 60 || fail "签名不一致时没有报错"
-  pop_log | grep -q "同一个证书" || fail "失败原因不是签名不一致"
+  pop_log | grep -qE "同一个证书|same certificate" || fail "失败原因不是签名不一致"
   [ "$(version_of "$APP")" = "$ORIGINAL" ] || fail "签名不一致却换掉了程序"
   echo "✅ 拒绝了别的证书签名的包"
 fi

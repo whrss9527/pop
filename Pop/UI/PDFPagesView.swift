@@ -22,10 +22,10 @@ final class PDFPagesModel: ObservableObject {
 
     var summary: String {
         if input.trimmingCharacters(in: .whitespaces).isEmpty {
-            return "一共 \(pageCount) 页。写上要取出的页码，比如 1-3, 5, 8-（8- 是第 8 页到最后）"
+            return String(localized: "一共 \(pageCount) 页。写上要取出的页码，比如 1-3, 5, 8-（8- 是第 8 页到最后）")
         }
-        guard let pages else { return "页码写得不对，或者不在 1–\(pageCount) 之间" }
-        return "\(PDFTools.describe(pages))，一共 \(pages.count) 页"
+        guard let pages else { return String(localized: "页码写得不对，或者不在 1–\(pageCount) 之间") }
+        return String(localized: "\(PDFTools.describe(pages))，一共 \(pages.count) 页")
     }
 }
 
@@ -37,7 +37,7 @@ struct PDFPagesView: View {
     @FocusState private var focused: Bool
 
     var body: some View {
-        CardContainer(title: "PDF 页面", subtitle: model.pdf.lastPathComponent, width: 420, onClose: onClose) {
+        CardContainer(title: String(localized: "PDF 页面"), subtitle: model.pdf.lastPathComponent, width: 420, onClose: onClose) {
             TextField("页码，比如 1-3, 5, 8-", text: $model.input)
                 .textFieldStyle(.roundedBorder)
                 .focused($focused)

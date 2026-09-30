@@ -18,7 +18,7 @@ enum SmartCrop {
 
         var title: String {
             switch self {
-            case .square: return "1:1 方形"
+            case .square: return String(localized: "1:1 方形")
             case .fourThree: return "4:3"
             case .threeFour: return "3:4"
             case .sixteenNine: return "16:9"
@@ -40,11 +40,11 @@ enum SmartCrop {
         /// 文件名里用的写法（文件名里不能有冒号）
         var fileSuffix: String {
             switch self {
-            case .square: return "1比1"
-            case .fourThree: return "4比3"
-            case .threeFour: return "3比4"
-            case .sixteenNine: return "16比9"
-            case .nineSixteen: return "9比16"
+            case .square: return String(localized: "1比1")
+            case .fourThree: return String(localized: "4比3")
+            case .threeFour: return String(localized: "3比4")
+            case .sixteenNine: return String(localized: "16比9")
+            case .nineSixteen: return String(localized: "9比16")
             }
         }
     }
@@ -85,16 +85,16 @@ enum SmartCrop {
     static func crop(_ url: URL, ratio: Ratio) throws -> URL {
         guard let source = CGImageSourceCreateWithURL(url as CFURL, nil), CGImageSourceGetCount(source) > 0,
               let image = ImageConverter.uprightImage(source) else {
-            throw Failure(message: "读不了「\(url.lastPathComponent)」")
+            throw Failure(message: String(localized: "读不了「\(url.lastPathComponent)」"))
         }
         let size = CGSize(width: image.width, height: image.height)
         let whole = cropRect(imageSize: size, ratio: ratio.value, focus: nil)
         if Int(whole.width) == image.width, Int(whole.height) == image.height {
-            throw Failure(message: "「\(url.lastPathComponent)」本来就是 \(ratio.title)")
+            throw Failure(message: String(localized: "「\(url.lastPathComponent)」本来就是 \(ratio.title)"))
         }
         let rect = cropRect(imageSize: size, ratio: ratio.value, focus: focus(of: image))
         guard rect.width >= 1, rect.height >= 1, let cropped = image.cropping(to: rect) else {
-            throw Failure(message: "「\(url.lastPathComponent)」裁剪失败")
+            throw Failure(message: String(localized: "「\(url.lastPathComponent)」裁剪失败"))
         }
         let sourceType = (CGImageSourceGetType(source) as String?).flatMap { UTType($0) } ?? .png
         let photo = sourceType.conforms(to: .jpeg) || sourceType.conforms(to: .heic) || sourceType.conforms(to: .heif)
@@ -103,12 +103,12 @@ enum SmartCrop {
                                          base: url.deletingPathExtension().lastPathComponent + " " + ratio.fileSuffix,
                                          extension: photo ? "jpg" : "png")
         guard let destination = CGImageDestinationCreateWithURL(output as CFURL, type.identifier as CFString, 1, nil) else {
-            throw Failure(message: "存储「\(output.lastPathComponent)」失败")
+            throw Failure(message: String(localized: "存储「\(output.lastPathComponent)」失败"))
         }
         CGImageDestinationAddImage(destination, cropped, [kCGImageDestinationLossyCompressionQuality: 0.92] as CFDictionary)
         guard CGImageDestinationFinalize(destination) else {
             try? FileManager.default.removeItem(at: output)
-            throw Failure(message: "存储「\(output.lastPathComponent)」失败")
+            throw Failure(message: String(localized: "存储「\(output.lastPathComponent)」失败"))
         }
         return output
     }

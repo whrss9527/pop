@@ -109,12 +109,12 @@ enum AnnotationBackground: String, CaseIterable, Identifiable {
 
     var title: String {
         switch self {
-        case .sky: return "晴空"
-        case .sunset: return "晚霞"
-        case .mint: return "薄荷"
-        case .grape: return "葡萄"
-        case .graphite: return "石墨"
-        case .paper: return "纸白"
+        case .sky: return String(localized: "晴空")
+        case .sunset: return String(localized: "晚霞")
+        case .mint: return String(localized: "薄荷")
+        case .grape: return String(localized: "葡萄")
+        case .graphite: return String(localized: "石墨")
+        case .paper: return String(localized: "纸白")
         }
     }
 
@@ -140,13 +140,13 @@ enum AnnotationTool: String, CaseIterable, Identifiable {
 
     var title: String {
         switch self {
-        case .arrow: return "箭头"
-        case .rectangle: return "方框"
-        case .ellipse: return "椭圆"
-        case .pen: return "画笔"
-        case .text: return "文字"
-        case .mosaic: return "马赛克"
-        case .counter: return "序号"
+        case .arrow: return String(localized: "箭头")
+        case .rectangle: return String(localized: "方框")
+        case .ellipse: return String(localized: "椭圆")
+        case .pen: return String(localized: "画笔")
+        case .text: return String(localized: "文字")
+        case .mosaic: return String(localized: "马赛克")
+        case .counter: return String(localized: "序号")
         }
     }
 

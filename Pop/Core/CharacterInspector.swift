@@ -7,44 +7,44 @@ enum CharacterInspector {
 
     /// 看不见、但会让文字出问题的字符（从网页、聊天软件复制的文字里常见）
     static let invisibleNames: [UInt32: String] = [
-        0x00A0: "不换行空格",
-        0x00AD: "软连字符",
-        0x034F: "字形连接符",
-        0x061C: "阿拉伯字母标记",
-        0x115F: "韩文填充符",
-        0x1160: "韩文填充符",
-        0x17B4: "高棉文隐藏元音",
-        0x17B5: "高棉文隐藏元音",
-        0x180E: "蒙古文元音分隔符",
-        0x200B: "零宽空格",
-        0x200C: "零宽不连字",
-        0x200D: "零宽连字",
-        0x200E: "从左到右标记",
-        0x200F: "从右到左标记",
-        0x2028: "行分隔符",
-        0x2029: "段分隔符",
-        0x202A: "双向文字控制",
-        0x202B: "双向文字控制",
-        0x202C: "双向文字控制",
-        0x202D: "双向文字控制",
-        0x202E: "双向文字控制",
-        0x2060: "字连接符",
-        0x2061: "不可见运算符",
-        0x2062: "不可见运算符",
-        0x2063: "不可见运算符",
-        0x2064: "不可见运算符",
-        0x2066: "双向文字隔离",
-        0x2067: "双向文字隔离",
-        0x2068: "双向文字隔离",
-        0x2069: "双向文字隔离",
-        0x3164: "韩文填充符",
+        0x00A0: String(localized: "不换行空格"),
+        0x00AD: String(localized: "软连字符"),
+        0x034F: String(localized: "字形连接符"),
+        0x061C: String(localized: "阿拉伯字母标记"),
+        0x115F: String(localized: "韩文填充符"),
+        0x1160: String(localized: "韩文填充符"),
+        0x17B4: String(localized: "高棉文隐藏元音"),
+        0x17B5: String(localized: "高棉文隐藏元音"),
+        0x180E: String(localized: "蒙古文元音分隔符"),
+        0x200B: String(localized: "零宽空格"),
+        0x200C: String(localized: "零宽不连字"),
+        0x200D: String(localized: "零宽连字"),
+        0x200E: String(localized: "从左到右标记"),
+        0x200F: String(localized: "从右到左标记"),
+        0x2028: String(localized: "行分隔符"),
+        0x2029: String(localized: "段分隔符"),
+        0x202A: String(localized: "双向文字控制"),
+        0x202B: String(localized: "双向文字控制"),
+        0x202C: String(localized: "双向文字控制"),
+        0x202D: String(localized: "双向文字控制"),
+        0x202E: String(localized: "双向文字控制"),
+        0x2060: String(localized: "字连接符"),
+        0x2061: String(localized: "不可见运算符"),
+        0x2062: String(localized: "不可见运算符"),
+        0x2063: String(localized: "不可见运算符"),
+        0x2064: String(localized: "不可见运算符"),
+        0x2066: String(localized: "双向文字隔离"),
+        0x2067: String(localized: "双向文字隔离"),
+        0x2068: String(localized: "双向文字隔离"),
+        0x2069: String(localized: "双向文字隔离"),
+        0x3164: String(localized: "韩文填充符"),
         0xFEFF: "BOM",
-        0xFFA0: "韩文填充符",
+        0xFFA0: String(localized: "韩文填充符"),
     ]
 
     /// 常见空白字符的叫法（名称栏里显示它，不然什么都看不见）
     private static let spaceNames: [UInt32: String] = [
-        0x09: "制表符", 0x0A: "换行", 0x0D: "回车", 0x20: "空格", 0x3000: "全角空格",
+        0x09: String(localized: "制表符"), 0x0A: String(localized: "换行"), 0x0D: String(localized: "回车"), 0x20: String(localized: "空格"), 0x3000: String(localized: "全角空格"),
     ]
 
     struct Found: Equatable {
@@ -101,7 +101,7 @@ enum CharacterInspector {
     }
 
     static func scalarName(_ scalar: Unicode.Scalar) -> String {
-        scalar.properties.name ?? scalar.properties.nameAlias ?? "（没有名称）"
+        scalar.properties.name ?? scalar.properties.nameAlias ?? String(localized: "（没有名称）")
     }
 
     static func codePoint(_ scalar: Unicode.Scalar) -> String {
@@ -158,25 +158,25 @@ enum CharacterInspector {
         } else {
             for item in found {
                 rows.append(ResultCard.Row(label: "\(item.name) \(codePoint(item.scalar))",
-                                           value: "\(codePoint(item.scalar)) · \(scalarName(item.scalar)) · \(item.count) 处"))
+                                           value: String(localized: "\(codePoint(item.scalar)) · \(scalarName(item.scalar)) · \(item.count) 处")))
             }
         }
         var buttons: [CardButton] = []
         var detail: String?
         if !found.isEmpty {
             let total = found.reduce(0) { $0 + $1.count }
-            let kinds = found.map { "\($0.name) ×\($0.count)" }.joined(separator: "、")
-            detail = "有 \(total) 个看不见的字符：\(kinds)"
+            let kinds = found.map { "\($0.name) ×\($0.count)" }.joinedAsList()
+            detail = String(localized: "有 \(total) 个看不见的字符：\(kinds)")
             let cleaned = removingInvisibles(text)
-            buttons.append(CardButton(title: "去掉后替换原文", action: .replace(cleaned)))
-            buttons.append(CardButton(title: "去掉后复制", action: .copy(cleaned)))
+            buttons.append(CardButton(title: String(localized: "去掉后替换原文"), action: .replace(cleaned)))
+            buttons.append(CardButton(title: String(localized: "去掉后复制"), action: .copy(cleaned)))
         } else if !listed {
-            detail = "没有看不见的字符"
+            detail = String(localized: "没有看不见的字符")
         }
         if listed {
             let points = text.unicodeScalars.map(codePoint).joined(separator: " ")
-            buttons.insert(CardButton(title: "复制码点", action: .copy(points)), at: 0)
+            buttons.insert(CardButton(title: String(localized: "复制码点"), action: .copy(points)), at: 0)
         }
-        return ResultCard(title: "字符信息", detail: detail, rows: rows, rowLineLimit: 3, buttons: buttons)
+        return ResultCard(title: String(localized: "字符信息"), detail: detail, rows: rows, rowLineLimit: 3, buttons: buttons)
     }
 }

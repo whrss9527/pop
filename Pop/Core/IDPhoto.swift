@@ -14,9 +14,9 @@ enum IDPhoto {
 
         var title: String {
             switch self {
-            case .white: return "白底"
-            case .blue: return "蓝底"
-            case .red: return "红底"
+            case .white: return String(localized: "白底")
+            case .blue: return String(localized: "蓝底")
+            case .red: return String(localized: "红底")
             }
         }
 
@@ -46,12 +46,12 @@ enum IDPhoto {
 
         var title: String {
             switch self {
-            case .original: return "原尺寸"
-            case .smallOneInch: return "小一寸"
-            case .oneInch: return "一寸"
-            case .largeOneInch: return "大一寸"
-            case .smallTwoInch: return "小二寸"
-            case .twoInch: return "二寸"
+            case .original: return String(localized: "原尺寸")
+            case .smallOneInch: return String(localized: "小一寸")
+            case .oneInch: return String(localized: "一寸")
+            case .largeOneInch: return String(localized: "大一寸")
+            case .smallTwoInch: return String(localized: "小二寸")
+            case .twoInch: return String(localized: "二寸")
             }
         }
 
@@ -102,20 +102,20 @@ enum IDPhoto {
         do {
             try handler.perform([mask, faces])
         } catch {
-            throw Failure(message: "抠图失败：\(error.localizedDescription)")
+            throw Failure(message: String(localized: "抠图失败：\(error.localizedDescription)"))
         }
         guard let observation = mask.results?.first, !observation.allInstances.isEmpty else {
-            throw Failure(message: "照片里没有找到人像")
+            throw Failure(message: String(localized: "照片里没有找到人像"))
         }
         let buffer: CVPixelBuffer
         do {
             buffer = try observation.generateMaskedImage(ofInstances: observation.allInstances, from: handler, croppedToInstancesExtent: false)
         } catch {
-            throw Failure(message: "抠图失败：\(error.localizedDescription)")
+            throw Failure(message: String(localized: "抠图失败：\(error.localizedDescription)"))
         }
         let output = CIImage(cvPixelBuffer: buffer)
         guard let cutout = CIContext().createCGImage(output, from: output.extent) else {
-            throw Failure(message: "无法生成抠好的图片")
+            throw Failure(message: String(localized: "无法生成抠好的图片"))
         }
         let largest = (faces.results ?? []).max { $0.boundingBox.width * $0.boundingBox.height < $1.boundingBox.width * $1.boundingBox.height }
         let face = largest.map { pixelRect($0.boundingBox, width: cutout.width, height: cutout.height) }
@@ -205,7 +205,7 @@ enum IDPhoto {
         }
         let output = FileNames.available(in: url.deletingLastPathComponent(), base: base, extension: "jpg")
         guard let destination = CGImageDestinationCreateWithURL(output as CFURL, UTType.jpeg.identifier as CFString, 1, nil) else {
-            throw Failure(message: "存不了「\(output.lastPathComponent)」")
+            throw Failure(message: String(localized: "存不了「\(output.lastPathComponent)」"))
         }
         var properties: [CFString: Any] = [kCGImageDestinationLossyCompressionQuality: 0.95]
         if size != .original {
@@ -214,7 +214,7 @@ enum IDPhoto {
         }
         CGImageDestinationAddImage(destination, image, properties as CFDictionary)
         guard CGImageDestinationFinalize(destination) else {
-            throw Failure(message: "存不了「\(output.lastPathComponent)」")
+            throw Failure(message: String(localized: "存不了「\(output.lastPathComponent)」"))
         }
         return output
     }
@@ -306,7 +306,7 @@ final class IDPhotoModel: ObservableObject {
         Task { [weak self] in
             let result = await runInBackground { () -> Result<IDPhoto.Cutout, IDPhoto.Failure> in
                 guard let image = TextRecognizer.cgImage(contentsOf: file) else {
-                    return .failure(IDPhoto.Failure(message: "读不了这张照片"))
+                    return .failure(IDPhoto.Failure(message: String(localized: "读不了这张照片")))
                 }
                 do {
                     return .success(try IDPhoto.cutout(image))
@@ -326,7 +326,7 @@ final class IDPhotoModel: ObservableObject {
 
     private func accept(_ cutout: IDPhoto.Cutout) {
         self.cutout = cutout
-        message = cutout.face == nil ? "没有找到人脸，一寸、二寸按照片中间裁剪" : nil
+        message = cutout.face == nil ? String(localized: "没有找到人脸，一寸、二寸按照片中间裁剪") : nil
         render()
     }
 
@@ -345,19 +345,19 @@ final class IDPhotoModel: ObservableObject {
 
     /// 按现在选的底色和尺寸生成原大的照片，另存到原图旁边；选了冲印排版（原尺寸除外）再存一张 6 寸相纸
     func save() async throws -> IDPhoto.Saved {
-        guard let cutout else { throw IDPhoto.Failure(message: "还没抠好图") }
+        guard let cutout else { throw IDPhoto.Failure(message: String(localized: "还没抠好图")) }
         let file = self.file
         let background = self.background
         let size = self.size
         let wantsSheet = printSheet && size != .original
         let result = await runInBackground { () -> Result<IDPhoto.Saved, IDPhoto.Failure> in
             guard let image = IDPhoto.compose(cutout, background: background, size: size) else {
-                return .failure(IDPhoto.Failure(message: "无法生成照片"))
+                return .failure(IDPhoto.Failure(message: String(localized: "无法生成照片")))
             }
             do {
                 var saved = IDPhoto.Saved(photo: try IDPhoto.save(image, beside: file, background: background, size: size), sheet: nil, copies: 0)
                 if wantsSheet, let sheet = IDPhoto.printSheet(image) {
-                    saved.sheet = try IDPhoto.save(sheet.image, beside: file, background: background, size: size, suffix: "排版")
+                    saved.sheet = try IDPhoto.save(sheet.image, beside: file, background: background, size: size, suffix: String(localized: "排版"))
                     saved.copies = sheet.copies
                 }
                 return .success(saved)

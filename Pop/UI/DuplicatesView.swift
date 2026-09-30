@@ -81,9 +81,9 @@ final class DuplicatesModel: ObservableObject {
         }
         phase = .done(result)
         if let failure = outcome.failures.first {
-            message = "有 \(outcome.failures.count) 个没能移走：\(failure)"
+            message = String(localized: "有 \(outcome.failures.count) 个没能移走：\(failure)")
         } else {
-            message = "已把 \(outcome.moved.count) 个文件移到废纸篓，可以从废纸篓放回"
+            message = String(localized: "已把 \(outcome.moved.count) 个文件移到废纸篓，可以从废纸篓放回")
         }
     }
 }
@@ -94,11 +94,11 @@ struct DuplicatesView: View {
     var onClose: () -> Void
 
     private var subtitle: String {
-        model.roots.count == 1 ? model.roots[0].lastPathComponent : "\(model.roots.count) 个文件夹"
+        model.roots.count == 1 ? model.roots[0].lastPathComponent : String(localized: "\(model.roots.count) 个文件夹")
     }
 
     var body: some View {
-        CardContainer(title: "查找重复文件", subtitle: subtitle, width: 500, onClose: {
+        CardContainer(title: String(localized: "查找重复文件"), subtitle: subtitle, width: 500, onClose: {
             model.cancel()
             onClose()
         }) {
@@ -107,8 +107,8 @@ struct DuplicatesView: View {
                 HStack(spacing: 10) {
                     ProgressView()
                         .controlSize(.small)
-                    Text(progress.toHash == 0 ? "正在列出文件，已经找到 \(progress.scanned) 个…"
-                        : "正在比较内容：\(progress.hashed) / \(progress.toHash)")
+                    Text(progress.toHash == 0 ? String(localized: "正在列出文件，已经找到 \(progress.scanned) 个…")
+                        : String(localized: "正在比较内容：\(progress.hashed) / \(progress.toHash)"))
                         .font(.callout)
                         .foregroundStyle(.secondary)
                 }
@@ -123,7 +123,7 @@ struct DuplicatesView: View {
 
     @ViewBuilder
     private func results(_ result: DuplicateFinder.Result) -> some View {
-        let limited = result.truncated ? "（文件太多，只看了前 \(DuplicateFinder.fileLimit) 个）" : ""
+        let limited = result.truncated ? String(localized: "（文件太多，只看了前 \(DuplicateFinder.fileLimit) 个）") : ""
         if result.groups.isEmpty {
             Text("看了 \(result.scanned) 个文件，没有内容完全一样的。\(limited)")
                 .font(.callout)
@@ -182,7 +182,7 @@ struct DuplicatesView: View {
             }
             ForEach(Array(group.files.enumerated()), id: \.offset) { index, file in
                 HStack(spacing: 6) {
-                    Text(index == 0 ? "留" : "")
+                    Text(index == 0 ? String(localized: "留") : "")
                         .font(.caption2)
                         .foregroundStyle(.green)
                         .frame(width: 14)

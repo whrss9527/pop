@@ -104,7 +104,7 @@ struct SelectionToolbarView: View {
             Divider()
                 .frame(height: 26)
                 .padding(.horizontal, 2)
-            SelectionToolbarButton(symbol: "ellipsis.circle", title: "更多") {
+            SelectionToolbarButton(symbol: "ellipsis.circle", title: String(localized: "更多")) {
                 onMore()
             }
         }

@@ -1,0 +1,6 @@
+/* Info.plist 里给用户看的文字（系统弹出授权提示时显示） */
+"NSRemindersFullAccessUsageDescription" = "把选中的事情加到「提醒事项」时需要这个权限。Pop 只在你点「加到提醒事项」时添加一条提醒。";
+"NSRemindersUsageDescription" = "把选中的事情加到「提醒事项」时需要这个权限。Pop 只在你点「加到提醒事项」时添加一条提醒。";
+"NSCalendarsWriteOnlyAccessUsageDescription" = "把选中的事情加到「日历」时需要这个权限。Pop 只添加日程，不会读取你的日历。";
+"NSCalendarsUsageDescription" = "把选中的事情加到「日历」时需要这个权限。Pop 只添加日程，不会读取你的日历。";
+"NSSpeechRecognitionUsageDescription" = "把录音、视频里说的话转成文字时需要语音识别权限。这台 Mac 支持时只在本机识别，不上传音频。";

@@ -1,0 +1,2043 @@
+/* 界面文字的英文翻译。key 是中文原文（开发语言是简体中文），改完跑 scripts/check-localization.py --sync-zh-hans */
+
+/* AIAssistant.swift */
+"润色" = "Polish";
+"总结" = "Summarize";
+"解释" = "Explain";
+"翻译" = "Translate";
+"AI 助手" = "AI Assistant";
+"就选中的文字提问，或者让 AI 润色、总结、解释、翻译（先在「设置 → AI」里填写接口）" = "Ask about the selected text, or have AI polish, summarize, explain or translate it (set up the API in Settings → AI first)";
+"AI 润色" = "AI Polish";
+"让 AI 改正错别字和不通顺的地方，可以直接替换原文" = "Have AI fix typos and awkward phrasing; you can replace the original directly";
+"AI 总结" = "AI Summary";
+"让 AI 用几条要点总结选中的内容" = "Have AI summarize the selection in a few bullet points";
+"AI 解释" = "AI Explain";
+"让 AI 解释选中的内容，补充背景和术语" = "Have AI explain the selection, with background and terms";
+"没有文字" = "No text";
+
+/* AICard.swift */
+"就这段文字提问，回车发送" = "Ask about this text, press Return to send";
+"选一个指令，或者直接提问。选中的文字会发给「设置 → AI」里填写的服务。" = "Choose a prompt or ask a question. The selected text is sent to the service set in Settings → AI.";
+"思考中…" = "Thinking…";
+"打开 AI 设置…" = "Open AI Settings…";
+"还没有设置 AI 接口。在「设置 → AI」里填写接口地址、API Key 和模型后就能用。" = "The AI API isn’t set up yet. Enter the API URL, API key and model in Settings → AI to use it.";
+"复制" = "Copy";
+"替换原文" = "Replace";
+"用结果替换选中的文字（⌘↩）" = "Replace the selected text with the result (⌘↩)";
+"贴到屏幕" = "Pin to Screen";
+"停止" = "Stop";
+"重新生成" = "Regenerate";
+"更多功能" = "More Actions";
+
+/* AIClient.swift */
+"还没有设置 AI 接口，请在「设置 → AI」里填写接口地址和模型。" = "The AI API isn’t set up. Enter the API URL and model in Settings → AI.";
+"接口地址无效，需要以 https:// 或 http:// 开头。" = "Invalid API URL. It must start with https:// or http://.";
+"API Key 不对或者没有权限" = "Wrong API key or no permission";
+"接口地址或模型名称不对" = "Wrong API URL or model name";
+"请求太频繁或者额度用完了" = "Too many requests, or the quota is used up";
+"服务暂时出错了" = "The service had a temporary error";
+"请求失败" = "Request failed";
+"服务没有返回内容。" = "The service returned nothing.";
+"网络连接断开了。" = "The network connection was lost.";
+"请求超时了，服务可能太忙，稍后再试。" = "The request timed out. The service may be busy; try again later.";
+"连不上接口地址，请检查「设置 → AI」里的地址。" = "Can’t connect to the API URL. Check the URL in Settings → AI.";
+"和接口地址建立安全连接失败。" = "Couldn’t establish a secure connection to the API URL.";
+"这个地址需要用 https://（只有本机和局域网的服务可以用 http://）。" = "This URL must use https:// (only services on this Mac or the local network can use http://).";
+
+/* AIService.swift */
+"系统内置的模型现在用不了：%@。也可以在「设置 → AI」里改用自己填的接口。" = "The built-in model isn’t available: %@. You can switch to a custom API in Settings → AI.";
+
+/* AISettingsView.swift */
+"使用" = "Use";
+"模型" = "Model";
+"系统内置的模型是 macOS 自带的 Apple 智能，在这台 Mac 上处理，不联网，也不用填接口；能处理的内容比较短，长的只取前面一部分。它用不了的时候自动改用下面填的接口。" = "The built-in model is Apple Intelligence that comes with macOS. It runs on this Mac, works offline and needs no setup, but handles only short text; longer text is cut off. When it isn't available, Pop uses the API below instead.";
+"接口地址" = "API URL";
+"本机运行的服务可以不填" = "Optional for services running on this Mac";
+"比如 gpt-4o-mini" = "e.g. gpt-4o-mini";
+"保存并测试" = "Save and Test";
+"AI 接口" = "AI API";
+"填写兼容 OpenAI Chat Completions 的接口，地址写到 /v1 为止；在本机运行的模型服务也可以（比如 `http://localhost:11434/v1`）。接口地址和模型会随设置通过 iCloud 同步，API Key 只保存在这台 Mac 的钥匙串里。" = "Enter an API compatible with OpenAI Chat Completions, with the URL ending at /v1. Model servers running on this Mac work too (e.g. `http://localhost:11434/v1`). The URL and model sync with your settings through iCloud; the API key stays in this Mac’s keychain.";
+"选中文字后用「AI 助手」提问，或者让 AI 润色、总结、解释、翻译；结果可以复制、替换原文、贴到屏幕上。" = "Select text, then ask AI Assistant a question, or have AI polish, summarize, explain or translate it. You can copy the result, replace the selection with it or pin it to the screen.";
+"「AI 润色」「AI 总结」「AI 解释」可以在「功能」里打开，放到圆盘上一划就执行。" = "Turn on AI Polish, AI Summary and AI Explain in Actions and put them on the ring to run them with a flick.";
+"在「功能 → 我的插件」里新建「AI 指令」类型的插件，写上自己的指令（{text} 换成选中的文字）。" = "Create an AI Prompt plugin in Actions → My Plugins and write your own prompt ({text} is replaced with the selected text).";
+"怎么用" = "How to Use";
+"只有在你使用 AI 功能时，Pop 才会把选中的文字发给上面填写的服务，不会在后台发送任何内容。服务怎么处理这些文字，以服务方的隐私政策为准。" = "Pop sends the selected text to the service above only when you use an AI action, and never sends anything in the background. How the service handles the text is governed by its privacy policy.";
+"隐私" = "Privacy";
+"连接正常：%@" = "Connected: %@";
+
+/* AnnotationEditor.swift */
+"截图标注" = "Annotate Screenshot";
+"已复制" = "Copied";
+"Pop 截图" = "Pop Screenshot";
+"已存到「下载」" = "Saved to Downloads";
+"存储失败" = "Couldn’t save";
+"工具" = "Tool";
+"粗细" = "Width";
+"细" = "Thin";
+"中" = "Medium";
+"粗" = "Thick";
+"不加背景" = "No Background";
+"背景" = "Background";
+"给截图加渐变背景、圆角和阴影" = "Add a gradient background, rounded corners and a shadow";
+"撤销（⌘Z）" = "Undo (⌘Z)";
+"存储" = "Save";
+"存到「下载」（⌘S）" = "Save to Downloads (⌘S)";
+"复制标注后的图片（⌘C 或回车）" = "Copy the annotated image (⌘C or Return)";
+"输入文字，回车完成" = "Type text, press Return when done";
+
+/* AnnotationModel.swift */
+"晴空" = "Sky";
+"晚霞" = "Sunset";
+"薄荷" = "Mint";
+"葡萄" = "Grape";
+"石墨" = "Graphite";
+"纸白" = "Paper";
+"箭头" = "Arrow";
+"方框" = "Rectangle";
+"椭圆" = "Ellipse";
+"画笔" = "Pen";
+"文字" = "Text";
+"马赛克" = "Pixelate";
+"序号" = "Counter";
+
+/* AppController.swift */
+"Pop 不认识这个链接：%@" = "Pop doesn’t recognize this link: %@";
+"关于 Pop" = "About Pop";
+"隐藏 Pop" = "Hide Pop";
+"退出 Pop" = "Quit Pop";
+"编辑" = "Edit";
+"撤销" = "Undo";
+"重做" = "Redo";
+"剪切" = "Cut";
+"拷贝" = "Copy";
+"粘贴" = "Paste";
+"全选" = "Select All";
+"窗口" = "Window";
+"关闭" = "Close";
+"最小化" = "Minimize";
+
+/* AppSettings.swift */
+"长按右键" = "Hold right click";
+"修饰键 + 右键" = "Modifier + right click";
+"鼠标中键" = "Middle click";
+"不用鼠标唤起" = "No mouse trigger";
+"不使用" = "None";
+"选中颜色值" = "Color value selected";
+"选中单个词" = "Single word selected";
+"选中外文" = "Non-Chinese text selected";
+"选中中文" = "Chinese text selected";
+"选中链接" = "Link selected";
+"选中邮箱" = "Email address selected";
+"选中算式" = "Math expression selected";
+"选中带单位的数值" = "Measurement selected";
+"选中时间戳" = "Timestamp selected";
+"选中日期时间" = "Date or time selected";
+"选中数字" = "Number selected";
+"选中 JSON" = "JSON selected";
+"选中文件" = "Files selected";
+"选中图片" = "Image selected";
+"其他任意文本" = "Any other text";
+"自动识别" = "Detect automatically";
+"百度" = "Baidu";
+"一直保存" = "Forever";
+"%lld 天" = "%lld days";
+"系统内置（离线）" = "Built-in (offline)";
+"自己填的接口" = "Custom API";
+
+/* BatchRename.swift */
+"编号" = "Numbering";
+"替换文字" = "Replace Text";
+"加前后缀" = "Add Prefix/Suffix";
+"拍摄时间" = "Capture Date";
+"大小写" = "Case";
+"全部小写" = "all lowercase";
+"全部大写" = "ALL UPPERCASE";
+"首字母大写" = "Capitalized";
+"正则表达式有误" = "The regular expression is invalid";
+"名字不能是空的" = "The name can’t be empty";
+"名字里不能有 / 或 :" = "Names can’t contain / or :";
+"以 . 开头的文件会被隐藏" = "Files starting with . are hidden";
+"名字太长了" = "The name is too long";
+"和另一个文件重名" = "Same name as another file";
+"文件夹里已经有这个名字" = "The folder already has an item with this name";
+"有的名字不能用" = "Some names can’t be used";
+"改名失败：%@" = "Couldn’t rename: %@";
+
+/* BuiltinPlugins.swift */
+"转换" = "Convert";
+"开发" = "Developer";
+"屏幕与图片" = "Screen & Images";
+"文件和系统" = "Files & System";
+"其他" = "Other";
+"翻译选中的文字：默认用系统离线翻译，卡片上可以换成 AI 或 DeepL，或者几家一起对比" = "Translate the selected text with offline System Translation by default; switch to AI or DeepL on the card, or compare them";
+"没有可翻译的文字" = "No text to translate";
+"用默认浏览器搜索选中的文字" = "Search the selected text in your default browser";
+"没有可搜索的文字" = "No text to search";
+"在浏览器中打开链接，或给邮箱写邮件" = "Open the link in your browser, or write to the email address";
+"没有识别到链接" = "No link found";
+"计算" = "Calculate";
+"计算选中的算式，支持 %@ 和括号" = "Calculate the selected expression; supports %@ and parentheses";
+"无法计算这个算式" = "Can’t calculate this expression";
+"计算结果" = "Result";
+"纯文本复制" = "Copy as Plain Text";
+"去掉格式，只把文字复制到剪贴板" = "Copy just the text to the clipboard, without formatting";
+"已复制纯文本" = "Copied as plain text";
+"JSON 格式化" = "Format JSON";
+"格式化或压缩选中的 JSON" = "Format or minify the selected JSON";
+"不是合法的 JSON" = "Not valid JSON";
+"复制压缩版" = "Copy Minified";
+"时间转换" = "Time";
+"Unix 时间戳（秒/毫秒）和日期时间互相转换" = "Convert between Unix timestamps (seconds/milliseconds) and dates";
+"不是有效的时间" = "Not a valid time";
+"复制路径" = "Copy Path";
+"复制选中文件的完整路径" = "Copy the full path of the selected files";
+"没有选中文件" = "No files selected";
+"已复制路径" = "Path copied";
+"已复制 %lld 个路径" = "Copied %lld paths";
+"在访达中显示" = "Show in Finder";
+"在访达中定位选中的文件" = "Reveal the selected files in Finder";
+"设置" = "Settings";
+"打开 Pop 设置" = "Open Pop Settings";
+"常用短语" = "Snippets";
+"从存好的短语里选一条粘贴到当前 App，可以用 {date}、{clipboard}、{selection} 这样的占位符" = "Paste a saved snippet into the current app; supports placeholders such as {date}, {clipboard} and {selection}";
+"剪贴板" = "Clipboard";
+"打开剪贴板历史，选一条粘贴" = "Open clipboard history and paste an item";
+"全部功能" = "All Actions";
+"列出所有能处理当前内容的功能，可以搜索" = "List every action that can handle the current content, with search";
+
+/* Cards.swift */
+"关闭（Esc）" = "Close (Esc)";
+"复制 %@" = "Copy %@";
+"把结果粘贴回原来的 App，替换选中的文字（⌘↩）" = "Paste the result back into the app, replacing the selected text (⌘↩)";
+"粘贴回原来的 App（替换选中的文字）" = "Paste back into the app (replacing the selected text)";
+"系统翻译暂不支持「%@」" = "System Translation doesn’t support “%@” yet";
+"翻译失败：%@" = "Translation failed: %@";
+"译成%@" = "To %@";
+"换一种语言重新翻译" = "Translate into another language";
+"对比" = "Compare";
+"换一个翻译引擎，或者把几家的译文放在一起对比" = "Switch translation engines, or compare several translations side by side";
+"复制译文" = "Copy Translation";
+"用译文替换选中的文字（⌘↩）" = "Replace the selected text with the translation (⌘↩)";
+"把译文贴在屏幕最前面，边看原文边对照" = "Pin the translation on top of everything to compare with the original";
+"把这个词和译文存到生词本，之后可以复习" = "Save this word and its translation to your vocabulary to review later";
+"翻译中…" = "Translating…";
+"需要先下载「%@」的离线语言包。" = "The offline languages for “%@” need to be downloaded first.";
+"去下载语言包…" = "Download Languages…";
+"去设置…" = "Open Settings…";
+
+/* CharacterInspector.swift */
+"不换行空格" = "No-break space";
+"软连字符" = "Soft hyphen";
+"字形连接符" = "Combining grapheme joiner";
+"阿拉伯字母标记" = "Arabic letter mark";
+"韩文填充符" = "Hangul filler";
+"高棉文隐藏元音" = "Khmer inherent vowel";
+"蒙古文元音分隔符" = "Mongolian vowel separator";
+"零宽空格" = "Zero-width space";
+"零宽不连字" = "Zero-width non-joiner";
+"零宽连字" = "Zero-width joiner";
+"从左到右标记" = "Left-to-right mark";
+"从右到左标记" = "Right-to-left mark";
+"行分隔符" = "Line separator";
+"段分隔符" = "Paragraph separator";
+"双向文字控制" = "Bidirectional control";
+"字连接符" = "Word joiner";
+"不可见运算符" = "Invisible operator";
+"双向文字隔离" = "Bidirectional isolate";
+"制表符" = "Tab";
+"换行" = "Line feed";
+"回车" = "Carriage return";
+"空格" = "Space";
+"全角空格" = "Ideographic space";
+"（没有名称）" = "(No name)";
+"%lld · %@ · %lld 处" = "%lld · %@ · %lld times";
+"有 %lld 个看不见的字符：%@" = "%lld invisible characters: %@";
+"去掉后替换原文" = "Remove and Replace";
+"去掉后复制" = "Remove and Copy";
+"没有看不见的字符" = "No invisible characters";
+"复制码点" = "Copy Code Points";
+"字符信息" = "Character Info";
+"%@ · %@ · %lld 处" = "%@ · %@ · %lld times";
+
+/* ClipboardHistoryView.swift */
+"全部" = "All";
+"图片" = "Image";
+"文件" = "Files";
+"固定" = "Pin";
+"剪贴板历史" = "Clipboard History";
+"搜索" = "Search";
+"⏎ 粘贴 · ⌘1–9 快速粘贴 · ⌘ 点选多条 · ⌘P 固定 · ⌘⌫ 删除 · 右键更多" = "⏎ Paste · ⌘1–9 Quick paste · ⌘-click to select several · ⌘P Pin · ⌘⌫ Delete · Right-click for more";
+"已选 %lld 条 · ⏎ 按顺序合在一起粘贴 · ⌘C 合在一起复制 · Esc 取消" = "%lld selected · ⏎ Paste together in order · ⌘C Copy together · Esc Cancel";
+"剪贴板历史已关闭，打开后 Pop 会在本机记录你复制过的内容。" = "Clipboard history is off. Turn it on and Pop keeps what you copy on this Mac.";
+"去设置里打开" = "Turn On in Settings";
+"%lld 条" = "%lld items";
+"只复制" = "Copy Only";
+"加入多选" = "Add to Selection";
+"移出多选" = "Remove from Selection";
+"存为常用短语" = "Save as Snippet";
+"识别表格" = "Recognize Table";
+"标注…" = "Annotate…";
+"取消固定" = "Unpin";
+"删除" = "Delete";
+"还没有记录，复制点什么试试" = "Nothing here yet. Copy something to try it.";
+"没有匹配的记录" = "No matching items";
+"图片里的文字：\n" = "Text in image:\n";
+"图片 · %@" = "Image · %@";
+"图里有「%@」" = "Image contains “%@”";
+
+/* ClipboardSettingsView.swift */
+"记录剪贴板历史" = "Keep clipboard history";
+"打开历史的快捷键" = "Shortcut to open history";
+"在历史面板里输入文字搜索，↑↓ 选择，回车粘贴到当前 App，⌘1–9 直接粘贴前 9 条，⌘P 固定常用的内容。圆盘里的「剪贴板」格子和菜单栏图标也能打开它。⌘⇧V 在部分 App 里是「粘贴并匹配样式」，介意的话可以换一个快捷键。" = "In the history panel, type to search, use ↑↓ to choose and Return to paste into the current app. ⌘1–9 paste the first 9 items and ⌘P pins an item. The Clipboard slot on the ring and the menu bar icon open it too. Some apps use ⌘⇧V for Paste and Match Style; pick another shortcut if that matters to you.";
+"保存时间" = "Keep for";
+"最多保存" = "Keep up to";
+"记录图片" = "Keep images";
+"搜索图片里的文字" = "Search text in images";
+"在本机识别历史里图片上的文字（不联网），搜索时一起找" = "Recognizes text in images on this Mac (offline) and includes it in searches";
+"已保存" = "Stored";
+"%lld 条，共 %@" = "%lld items, %@ total";
+"立即清理过期记录" = "Clean Up Expired Items Now";
+"清空历史…" = "Clear History…";
+"保存" = "Save";
+"历史只保存在这台 Mac 上（~/Library/Application Support/Pop/Clipboard），不会上传到 iCloud。超过保存时间或条数上限的记录每小时自动清理一次，固定的记录不会被清理。图片里的文字也是在这台 Mac 上识别的，不联网。" = "History is stored only on this Mac (~/Library/Application Support/Pop/Clipboard) and never uploaded to iCloud. Items older than the time limit or beyond the item limit are cleaned up every hour; pinned items are kept. Text in images is also recognized on this Mac, offline.";
+"复制链接时去掉跟踪参数" = "Remove tracking parameters from copied links";
+"复制的内容只是一个网址、而且带着 utm_source、fbclid、spm 这类跟踪参数时，自动换成去掉这些参数的网址，打开的还是同一个页面。不开剪贴板历史也能用。" = "When you copy a single URL with tracking parameters such as utm_source, fbclid or spm, Pop replaces it with the same URL without them; it still opens the same page. Works even when clipboard history is off.";
+"不记录这些 App 里复制的内容" = "Don’t keep items copied in these apps";
+"密码管理器把内容标记为「敏感」时，本来就不会被记录；这里可以再加上其他不想记录的 App。" = "Items that password managers mark as sensitive are never kept. Add other apps you don’t want recorded here.";
+"清空剪贴板历史？" = "Clear clipboard history?";
+"删除后无法恢复。" = "This can’t be undone.";
+"清空（保留固定的）" = "Clear (Keep Pinned)";
+"全部清空" = "Clear All";
+
+/* ClipboardStore.swift */
+"无法创建文件夹：%@" = "Couldn’t create the folder: %@";
+"无法打开数据库" = "Couldn’t open the database";
+
+/* CloudSync.swift */
+"未开启" = "Off";
+"当前构建未启用 iCloud" = "iCloud isn’t enabled in this build";
+"没有登录 iCloud（登录后会自动同步）" = "Not signed in to iCloud (syncs automatically after you sign in)";
+"已开启" = "On";
+"iCloud 存储空间超出配额" = "iCloud storage quota exceeded";
+"iCloud 账号已退出" = "Signed out of iCloud";
+"iCloud 账号已切换" = "iCloud account changed";
+
+/* CodeStats.swift */
+"C/C++ 头文件" = "C/C++ header";
+"批处理" = "Batch";
+"汇编" = "Assembly";
+"| 语言 | 文件 | 行数 | 空行 | 代码行 |" = "| Language | Files | Lines | Blank | Code |";
+"| 合计 | %lld | %@ | %@ | %@ |" = "| Total | %lld | %@ | %@ | %@ |";
+"| 合计 | %lld | %lld | %lld | %lld |" = "| Total | %lld | %lld | %lld | %lld |";
+
+/* ColorContrast.swift */
+"通过" = "Pass";
+"不通过" = "Fail";
+"对比度" = "Contrast";
+"普通文字" = "Normal text";
+"大号文字" = "Large text";
+"对白色 %@，对黑色 %@" = "On white %@, on black %@";
+
+/* ContactSheet.swift */
+"缩略图太大了，画不出来" = "The contact sheet is too large to draw";
+"时长 %@" = "Duration %@";
+"存储缩略图失败" = "Couldn’t save the contact sheet";
+
+/* CountdownTimer.swift */
+"%@的计时到了" = "Your %@ timer is done";
+"时间到" = "Time’s Up";
+"时间到：%@" = "Time’s up: %@";
+"计时还剩 %@（到 %@）" = "Timer: %@ left (until %@)";
+"%@ 秒" = "%@ s";
+"%lld 分钟" = "%lld min";
+"%lld 分 %lld 秒" = "%lld min %lld s";
+"%lld 小时" = "%lld hr";
+"%lld 小时 %lld 分钟" = "%lld hr %lld min";
+"%lld 小时 %lld 分 %lld 秒" = "%lld hr %lld min %lld s";
+
+/* DataFormats.swift */
+"第 %@ 行：%@" = "Line %@: %@";
+"缩进里不能有制表符" = "Indentation can’t contain tabs";
+"只支持一个文档（第二个 --- 之后的内容读不了）" = "Only one document is supported (content after the second --- can’t be read)";
+"缩进不对" = "Wrong indentation";
+"列表项要比上面的键多缩进，或者放在键的下一行" = "List items must be indented more than the key above, or start on the next line";
+"这里应该是「键: 值」" = "Expected “key: value” here";
+"键「%@」重复了" = "Duplicate key “%@”";
+"不支持锚点和引用（& 和 *）" = "Anchors and aliases (& and *) aren’t supported";
+"不支持标签（!）" = "Tags (!) aren’t supported";
+"[ ] 或 { } 的写法不对" = "Invalid [ ] or { }";
+"引号没有配对" = "Unmatched quote";
+"引号后面多了「%@」" = "Unexpected “%@” after the quote";
+
+/* DevPlugins.swift */
+"链接解析" = "Parse Link";
+"拆开链接的协议、主机、路径和每个参数（解码后），去掉 utm_source 这类跟踪参数" = "Split a link into scheme, host, path and decoded parameters, and remove tracking parameters such as utm_source";
+"复制干净的链接" = "Copy Clean Link";
+"这个链接里没有跟踪参数" = "This link has no tracking parameters";
+"上面是去掉跟踪参数后的链接，可以直接替换原文" = "Above is the link without tracking parameters; you can replace the original with it";
+"；这是短链接，点「展开短链接」会访问一次它的服务器，看最后跳到哪里" = ". This is a short link: Expand Short Link visits its server once to see where it ends up";
+"代码截图" = "Code Screenshot";
+"把选中的代码画成一张图片（深色编辑器、语法着色、渐变背景），可以复制、存储或贴到屏幕上" = "Render the selected code as an image (dark editor, syntax highlighting, gradient background) to copy, save or pin";
+"没能画出这段代码" = "Couldn’t render this code";
+"按住拖动预览图也能拖到别的 App 里" = "You can also drag the preview into another app";
+"复制图片" = "Copy Image";
+"Pop 代码" = "Pop Code";
+"Cron 表达式" = "Cron Expression";
+"把 cron 表达式（比如 */15 9-17 * * 1-5）说成中文，列出接下来几次运行的时间" = "Explain a cron expression (e.g. */15 9-17 * * 1-5) in words and list the next run times";
+"不是有效的 cron 表达式" = "Not a valid cron expression";
+"第 %lld 次" = "Run %lld";
+"五年内都不会运行" = "Won’t run in the next five years";
+"接下来几次（本机时区 %@）" = "Next runs (local time zone %@)";
+"JWT 解码" = "Decode JWT";
+"解码选中的 JWT，列出签发者、过期时间等声明（只解码，不验证签名）" = "Decode the selected JWT and list claims such as issuer and expiry (decoding only; the signature isn’t verified)";
+"不是有效的 JWT" = "Not a valid JWT";
+"只是解码，没有验证签名" = "Decoded only; the signature wasn’t verified";
+"复制头部" = "Copy Header";
+"把选中的 Markdown 转成带格式的文字复制下来（标题、粗体、列表、链接……），粘贴到文稿、邮件、备忘录里保留格式" = "Copy the selected Markdown as formatted text (headings, bold, lists, links…) that keeps its formatting in documents, Mail and Notes";
+"把选中的 Markdown 显示成排好版的样子（标题、列表、粗体、代码……），可以复制为富文本" = "Show the selected Markdown as formatted text (headings, lists, bold, code…), and copy it as rich text";
+"没能解析这段 Markdown" = "Couldn’t parse this Markdown";
+"把网页、文档里选中的带格式文字转成 Markdown：标题、列表、链接、粗体、代码、表格" = "Convert formatted text selected in web pages and documents to Markdown: headings, lists, links, bold, code, tables";
+"没能拷贝选中的内容，确认文字还选着再试一次" = "Couldn’t copy the selection. Make sure the text is still selected and try again.";
+"选中的内容没有带格式（标题、列表、链接这些），不用转换" = "The selection has no formatting (headings, lists, links…), so there’s nothing to convert";
+"根据选中的 JSON 生成 TypeScript、Swift、Go、Kotlin 的类型定义" = "Generate TypeScript, Swift, Go and Kotlin type definitions from the selected JSON";
+"JSON 里没有对象，不用生成类型定义" = "The JSON has no objects, so there are no types to generate";
+"查看每个字符的 Unicode 码点、名称和编码；找出并去掉零宽空格这类看不见的字符" = "See each character’s Unicode code point, name and encoding; find and remove invisible characters such as zero-width spaces";
+"正则测试" = "Regex Tester";
+"在选中的文字里试正则表达式：实时标出每处匹配、列出分组，也可以试替换" = "Try regular expressions on the selected text: live highlighting of matches, groups and replacements";
+
+/* DevTools.swift */
+"协议" = "Scheme";
+"主机" = "Host";
+"端口" = "Port";
+"路径" = "Path";
+"片段" = "Fragment";
+"算法" = "Algorithm";
+"签发者" = "Issuer";
+"主题" = "Subject";
+"受众" = "Audience";
+"签发时间" = "Issued at";
+"生效时间" = "Not before";
+"过期时间" = "Expires";
+"（已过期）" = " (expired)";
+"（%@过期）" = " (expires %@)";
+
+/* DiskUsageView.swift */
+"按层级看" = "By Folder";
+"最大的文件" = "Largest Files";
+"没能移到废纸篓：%@" = "Couldn’t move to the Trash: %@";
+"已把「%@」移到废纸篓，腾出 %@，可以从废纸篓放回" = "Moved “%@” to the Trash, freeing %@. You can put it back from the Trash.";
+"正在看里面有什么…" = "Looking inside…";
+"已经看了 %lld 个文件，一共 %@…" = "Checked %lld files, %@ so far…";
+"%@，%lld 个文件" = "%@, %lld files";
+"文件太多，只看了前 %lld 个" = "Too many files; only the first %lld were checked";
+"上一层" = "Up One Level";
+"这里是空的" = "This folder is empty";
+"……还有 %lld 项" = "…and %lld more";
+"%lld 个文件，点一下进去看" = "%lld files. Click to look inside.";
+"移到废纸篓" = "Move to Trash";
+
+/* DuplicatesView.swift */
+"有 %lld 个没能移走：%@" = "%lld couldn’t be moved: %@";
+"已把 %lld 个文件移到废纸篓，可以从废纸篓放回" = "Moved %lld files to the Trash. You can put them back from the Trash.";
+"%lld 个文件夹" = "%lld folders";
+"正在列出文件，已经找到 %lld 个…" = "Listing files, %lld found so far…";
+"正在比较内容：%@ / %@" = "Comparing contents: %@ / %@";
+"（文件太多，只看了前 %lld 个）" = " (Too many files; only the first %lld were checked.)";
+"看了 %lld 个文件，没有内容完全一样的。%@" = "Checked %lld files; none are identical.%@";
+"看了 %lld 个文件，有 %lld 组内容完全一样，每组只留一个可以腾出 %@。%@" = "Checked %lld files and found %lld groups of identical files. Keeping one of each frees up %@.%@";
+"每组只留一个" = "Keep One of Each";
+"每组留下最早的那个，其余的移到废纸篓（可以从废纸篓放回）" = "Keeps the oldest file in each group and moves the rest to the Trash (you can put them back)";
+"%lld 个，每个 %@" = "%lld files, %@ each";
+"只留一个" = "Keep One";
+"留" = "Keep";
+"正在比较内容：%lld / %lld" = "Comparing contents: %lld / %lld";
+
+/* FileInfo.swift */
+"类型" = "Type";
+"至少 " = "at least ";
+"大小" = "Size";
+"文件数" = "Files";
+"%@%lld 个" = "%@%lld";
+"创建时间" = "Created";
+"修改时间" = "Modified";
+"位置" = "Location";
+"选中" = "Selected";
+"%lld 项" = "%lld items";
+"总大小" = "Total size";
+"%@（%@ 字节）" = "%@ (%@ bytes)";
+"尺寸" = "Dimensions";
+"页数" = "Pages";
+"%lld 页" = "%lld pages";
+"时长" = "Duration";
+"画面" = "Video";
+
+/* FilePlugins.swift */
+"把选中的文件或文件夹压缩成 zip，存在原来的文件夹里" = "Compress the selected files or folders into a zip in the same folder";
+"选中的文件不在同一个文件夹里" = "The selected files aren’t in the same folder";
+"归档" = "Archive";
+"压缩失败：%@" = "Couldn’t compress: %@";
+"已压缩成 %@" = "Compressed to %@";
+"超时了" = "Timed out";
+"退出码 %lld" = "Exit code %lld";
+"解压" = "Unzip";
+"把选中的 zip 解压到旁边的同名文件夹里" = "Unzip the selected zip files into folders with the same name next to them";
+"没有选中 zip 文件" = "No zip files selected";
+"解压「%@」失败：%@" = "Couldn’t unzip “%@”: %@";
+"已解压到「%@」" = "Unzipped to “%@”";
+"已解压 %lld 个文件" = "Unzipped %lld files";
+"表格转换" = "Convert Table";
+"从表格软件复制的文字、CSV、Markdown 表格互相转换，也能转成 JSON" = "Convert between text copied from spreadsheets, CSV and Markdown tables, or to JSON";
+"这段文字不像表格：需要至少两行两列，并且每行的列数一样。" = "This text doesn’t look like a table: it needs at least two rows and two columns, with the same number of columns in each row.";
+"%lld 行 × %@ 列（第一行当作表头）" = "%lld rows × %@ columns (first row as header)";
+"把选中的图片和 PDF 按文件名顺序合成一个 PDF；只选了一个 PDF 时可以把每页存成图片、复制里面的文字、取出其中几页或者拆开、加密码或者去掉密码，或者压缩" = "Combine the selected images and PDFs into one PDF in file name order. With a single PDF, save each page as an image, copy its text, extract or split pages, add or remove a password, or compress it";
+"选中的文件里没有 PDF 或图片" = "No PDFs or images among the selected files";
+"%@ 等 %lld 个文件" = "%@ and %lld more";
+"已合成 %@ 页的 PDF" = "Created a %@-page PDF";
+"有密码，先去掉密码才能取页、压缩或者复制文字" = "Password-protected. Remove the password to extract pages, compress or copy text.";
+"去掉密码…" = "Remove Password…";
+"每页存成图片" = "Save Pages as Images";
+"%@ 页，没有文字层（扫描件可以先存成图片，再用「识别文字」）" = "%@ pages, no text layer (for scans, save pages as images and use Recognize Text)";
+"%@ 页，%lld 个字" = "%@ pages, %lld characters";
+"复制全部文字" = "Copy All Text";
+"取出几页…" = "Extract Pages…";
+"加密码…" = "Add Password…";
+"暂存架" = "Shelf";
+"把选中的文件放到暂存架上，之后再一起拖到别的地方；没选中文件时打开暂存架" = "Put the selected files on the Shelf to drag them elsewhere later; with no files selected, open the Shelf";
+"文件信息" = "File Info";
+"文件的类型、大小（文件夹算上里面所有文件）、创建和修改时间，图片尺寸和拍摄信息（相机、参数、拍摄地点）、PDF 页数、音视频时长" = "Type, size (including everything in folders), creation and modification dates, image dimensions and capture info (camera, exposure, location), PDF page count, audio and video duration";
+"读不到「%@」的信息" = "Can’t read info for “%@”";
+"在地图中打开" = "Open in Maps";
+"%lld 行 × %lld 列（第一行当作表头）" = "%lld rows × %lld columns (first row as header)";
+"%lld 页，%lld 个字" = "%lld pages, %lld characters";
+"%lld 页，没有文字层（扫描件可以先存成图片，再用「识别文字」）" = "%lld pages, no text layer (for scans, save pages as images and use Recognize Text)";
+"已合成 %lld 页的 PDF" = "Created a %lld-page PDF";
+
+/* FileShelf.swift */
+"清空暂存架（不会删除文件）" = "Clear the Shelf (files aren’t deleted)";
+"收起（文件还留在架子上）" = "Hide (files stay on the Shelf)";
+"把文件拖到这里" = "Drag files here";
+"拖走这个文件" = "Drag this file";
+"拖走全部 %lld 个文件" = "Drag all %lld files";
+"拖到访达、邮件或者聊天窗口里" = "Drag to Finder, Mail or a chat window";
+"按住拖到别的地方" = "Drag to move elsewhere";
+"从架子上拿掉" = "Remove from Shelf";
+
+/* FolderCompare.swift */
+"第一个 " = "First: ";
+"第二个 " = "Second: ";
+"……还有 %lld 个" = "…and %lld more";
+"内容不同 %lld" = "Different %lld";
+"只在「%@」里 %lld" = "Only in “%@” %lld";
+"一样的 %@ 个，内容不同 %lld 个，只在一边有的 %lld 个；隐藏文件和 App 这类包里面的文件不比较" = "%@ identical, %lld different, %lld on one side only; hidden files and files inside packages such as apps aren’t compared";
+"，文件太多只比了前 %lld 个" = "; too many files, only the first %lld were compared";
+"两个文件夹里的 %@ 个文件完全一样" = "The %@ files in both folders are identical";
+"比较文件夹" = "Compare Folders";
+"一样的 %lld 个，内容不同 %lld 个，只在一边有的 %lld 个；隐藏文件和 App 这类包里面的文件不比较" = "%lld identical, %lld different, %lld on one side only; hidden files and files inside packages such as apps aren’t compared";
+"两个文件夹里的 %lld 个文件完全一样" = "The %lld files in both folders are identical";
+
+/* FormatPlugins.swift */
+"YAML 和 JSON" = "YAML ↔ JSON";
+"选中 JSON 转成 YAML，选中 YAML 转成 JSON，键的顺序不变" = "Convert selected JSON to YAML or YAML to JSON, keeping key order";
+"没有选中文字" = "No text selected";
+"JSON 转 YAML" = "JSON to YAML";
+"YAML 转 JSON" = "YAML to JSON";
+"读不了这段 YAML：%@" = "Can’t read this YAML: %@";
+"XML 格式化" = "Format XML";
+"格式化或压缩选中的 XML（也认 SVG、plist、XHTML）" = "Format or minify the selected XML (SVG, plist and XHTML too)";
+"不是合法的 XML" = "Not valid XML";
+"SQL 格式化" = "Format SQL";
+"把选中的 SQL 按子句分行、关键字大写、子查询缩进，也可以压成一行" = "Put each clause of the selected SQL on its own line, uppercase keywords and indent subqueries, or squeeze it onto one line";
+"没有可以格式化的 SQL" = "No SQL to format";
+"复制成一行" = "Copy as One Line";
+"Base64 图片" = "Base64 Image";
+"把 Base64 或 data: 开头的图片数据显示成图片，可以复制、保存、贴到屏幕" = "Show Base64 or data: image data as an image to copy, save or pin";
+"解不出图片" = "Can’t decode an image";
+"格式" = "Format";
+"存到「下载」" = "Save to Downloads";
+
+/* HeadlessRunner.swift */
+"「%@」处理不了这段文字" = "“%@” can’t handle this text";
+"「%@」要在 Pop 的界面里用，快捷指令里拿不到它的结果" = "“%@” works in Pop’s own interface; Shortcuts can’t get its result";
+"快捷指令里用不了系统的离线翻译：把「引擎」选成 AI 或 DeepL，或者用快捷指令自带的「翻译文本」" = "System Translation isn’t available in Shortcuts. Choose AI or DeepL as the engine, or use the built-in Translate Text action.";
+"%@ 没有返回译文" = "%@ returned no translation";
+"「%@」要在 AI 卡片里提问；快捷指令里可以用「AI 润色」「AI 总结」这类直接执行的功能" = "“%@” asks questions on the AI card. In Shortcuts, use actions that run directly, such as AI Polish or AI Summary.";
+"AI 没有返回内容" = "The AI returned nothing";
+
+/* HotKeySettingsView.swift */
+"给常用的功能设置全局快捷键" = "Global shortcuts for frequently used actions";
+"按下快捷键时，Pop 读取当前选中的内容，直接执行这个功能，不弹圆盘；截图翻译、屏幕取色这类不需要选中内容的功能马上执行。点右边的按钮后按下组合键（至少带 ⌘、⌥、⌃ 中的一个，F1–F20 可以单独用），按 Esc 取消，按 ⌫ 清除。" = "When you press a shortcut, Pop reads the current selection and runs the action directly without showing the ring. Actions that don’t need a selection, such as Translate Screenshot or Pick Color, run right away. Click the button on the right and press a key combination (with at least one of ⌘, ⌥ or ⌃; F1–F20 work alone). Press Esc to cancel or ⌫ to clear.";
+"和唤起圆盘的快捷键重复了" = "Same as the shortcut that opens the ring";
+"和剪贴板历史的快捷键重复了" = "Same as the clipboard history shortcut";
+"按下快捷键…" = "Press shortcut…";
+"设置快捷键" = "Set Shortcut";
+
+/* IDNumber.swift */
+"居民身份证" = "Resident ID Card";
+"港澳台居民居住证" = "HK/Macao/Taiwan Residence Permit";
+"15 位身份证" = "15-Digit ID Card";
+"统一社会信用代码" = "Unified Social Credit Code";
+"银行卡号" = "Bank Card Number";
+"校验" = "Check digit";
+"地区" = "Region";
+"18 位号码" = "18-digit number";
+"出生日期" = "Date of birth";
+"%@ 年 %@ 月 %@ 日" = "%@-%@-%@";
+"年龄" = "Age";
+"%@ 岁" = "%@ years";
+"性别" = "Sex";
+"男" = "Male";
+"女" = "Female";
+"登记管理部门" = "Registration authority";
+"机构类别" = "Organization type";
+"登记地" = "Registered in";
+"组织机构代码" = "Organization code";
+"银联" = "UnionPay";
+"卡组织" = "Card network";
+"位数" = "Digits";
+"%lld 位" = "%lld digits";
+"分组" = "Grouped";
+"15 位身份证没有校验位，下面是它对应的 18 位号码" = "15-digit ID numbers have no check digit; the matching 18-digit number is below";
+"校验通过" = "The check digit is valid";
+"校验不通过：按前面的数字，最后一位应该是 %@，可能输错了" = "Invalid check digit: based on the other digits, the last one should be %@. It may be mistyped.";
+"校验不通过，可能输错了（也有少数卡号不用这种校验）" = "Invalid check digit; it may be mistyped (a few card numbers don’t use this check)";
+"只根据号码本身推算，不联网查询" = "Derived from the number itself; nothing is looked up online";
+"%lld 岁" = "%lld years";
+"%lld 年 %lld 月 %lld 日" = "%lld-%lld-%lld";
+
+/* IDPhoto.swift */
+"白底" = "White";
+"蓝底" = "Blue";
+"红底" = "Red";
+"原尺寸" = "Original Size";
+"一寸" = "1-inch";
+"二寸" = "2-inch";
+"抠图失败：%@" = "Couldn’t remove the background: %@";
+"照片里没有找到人像" = "No person found in the photo";
+"无法生成抠好的图片" = "Couldn’t create the cut-out image";
+"存不了「%@」" = "Can’t save “%@”";
+"读不了这张照片" = "Can’t read this photo";
+"没有找到人脸，一寸、二寸按照片中间裁剪" = "No face found; 1-inch and 2-inch sizes are cropped from the center";
+"还没抠好图" = "The background isn’t removed yet";
+"无法生成照片" = "Couldn’t create the photo";
+
+/* IDPhotoView.swift */
+"抠图在本机进行，不上传照片" = "The background is removed on this Mac; the photo isn’t uploaded";
+"一寸 295×413、二寸 413×579 像素（300 dpi）；另存一份放在原图旁边，原图不动" = "1-inch is 295×413 and 2-inch is 413×579 pixels (300 dpi). A copy is saved next to the original, which stays unchanged.";
+"正在抠图…" = "Removing background…";
+"底色" = "Background";
+"存到原图旁边" = "Save Next to Original";
+
+/* ImageAnimation.swift */
+"至少选两张图片" = "Select at least two images";
+"一次最多合成 %lld 张" = "Up to %lld images at a time";
+" 动图" = " Animated";
+"这台 Mac 不支持存成 GIF" = "This Mac can’t save GIFs";
+"合成动图失败" = "Couldn’t create the animated image";
+"存储「%@」失败" = "Couldn’t save “%@”";
+
+/* ImageConverter.swift */
+"转成 PNG" = "Convert to PNG";
+"转成 JPEG" = "Convert to JPEG";
+"转成 HEIC" = "Convert to HEIC";
+"缩小一半" = "Half Size";
+"压缩" = "Compress";
+"向左转" = "Rotate Left";
+"向右转" = "Rotate Right";
+"左右翻转" = "Flip Horizontal";
+"去掉位置信息" = "Remove Location";
+"去掉拍摄信息" = "Remove Capture Info";
+"这台 Mac 不支持存成 %@" = "This Mac can’t save %@";
+"这种格式" = "this format";
+"没能去掉「%@」的拍摄信息" = "Couldn’t remove the capture info from “%@”";
+"没能去掉「%@」的位置信息" = "Couldn’t remove the location from “%@”";
+" 缩小" = " Half Size";
+" 压缩" = " Compressed";
+" 向左转" = " Rotated Left";
+" 向右转" = " Rotated Right";
+" 翻转" = " Flipped";
+" 无位置" = " No Location";
+" 无拍摄信息" = " No Capture Info";
+
+/* ImageSizeLimit.swift */
+"「%@」压不到 %lld 以内" = "“%@” can’t be compressed under %lld";
+"「%@」压不到 %@ 以内" = "“%@” can’t be compressed under %@";
+
+/* ImageSizeLimitView.swift */
+"存成 JPEG：先降低画质，还不够就缩小尺寸，另存一份，原图不动。" = "Saves a JPEG copy, lowering the quality first and then the size if needed. The original stays unchanged.";
+"现在一共 %@。" = " Currently %@ in total.";
+"压缩到指定大小" = "Compress to Size";
+"其他大小" = "Other size";
+
+/* ImageStitcher.swift */
+"竖着拼接" = "Stitch Vertically";
+"横着拼接" = "Stitch Horizontally";
+"一次最多拼 %lld 张" = "Up to %lld images at a time";
+"拼出来的图太大了" = "The stitched image is too large";
+" 拼接" = " Stitched";
+
+/* ImageWatermark.swift */
+"仅供办理业务使用，他用无效" = "For this purpose only. Not valid for any other use.";
+"「%@」有密码，先用「PDF → 去掉密码」再加水印" = "“%@” is password-protected. Remove the password with PDF → Remove Password first.";
+" 水印" = " Watermark";
+"「%@」加水印失败" = "Couldn’t add a watermark to “%@”";
+
+/* InfoExtractor.swift */
+"链接" = "Link";
+"邮箱" = "Email";
+"电话" = "Phone";
+"IP 地址" = "IP Address";
+"复制全部%@" = "Copy Every %@";
+"打开全部链接" = "Open All Links";
+"%@（只列出前 %lld 项，复制全部时包括所有的）" = "%@ (only the first %lld are listed; Copy All includes all of them)";
+"提取信息" = "Extract Info";
+
+/* JSONTypes.swift */
+"示例里只有 null 或空数组，看不出类型" = "Only null or empty arrays in the sample; the type can’t be inferred";
+"示例里的类型不固定" = "The type varies in the sample";
+
+/* KeepAwake.swift */
+"一直保持唤醒，直到手动停止或退出 Pop" = "Keeping awake until you stop it or quit Pop";
+"保持唤醒到 %@（还剩 %@）" = "Keeping awake until %@ (%@ left)";
+"%lld 小时 %@ 分钟" = "%lld hr %@ min";
+
+/* LineTools.swift */
+"拆成多行" = "Split into Lines";
+"逗号隔开" = "Comma-Separated";
+"单引号" = "Single-Quoted";
+"双引号" = "Double-Quoted";
+"JSON 数组" = "JSON Array";
+"去掉序号" = "Remove Numbering";
+"加序号" = "Add Numbering";
+"去掉引号" = "Remove Quotes";
+"倒序" = "Reverse";
+"打乱顺序" = "Shuffle";
+
+/* LinkExpander.swift */
+"跳转次数太多" = "Too many redirects";
+"这个链接没有跳转" = "This link doesn’t redirect";
+"跳转了 %lld 次" = "Redirected %lld times";
+"，已去掉跟踪参数" = "; tracking parameters removed";
+"第 %lld 跳" = "Hop %lld";
+"展开短链接" = "Expand Short Link";
+"打开链接" = "Open Link";
+
+/* LunarCalendar.swift */
+"第 %@ 周 · 全年第 %@ 天" = "Week %@ · Day %@ of the year";
+"第 %lld 周 · 全年第 %lld 天" = "Week %lld · Day %lld of the year";
+
+/* ManifestPlugin.swift */
+"未命名插件" = "Untitled Plugin";
+"「%@」的网址模板无效" = "The URL template of “%@” is invalid";
+"「%@」运行失败：%@" = "“%@” failed: %@";
+"网址模板无效" = "Invalid URL template";
+"「%@」已完成" = "“%@” is done";
+"「%@」没有输出" = "“%@” produced no output";
+"已复制结果" = "Result copied";
+"选中的不是文字，无法替换" = "The selection isn’t text and can’t be replaced";
+"「%@」没有输出，原文保持不变" = "“%@” produced no output; the original is unchanged";
+"已完成" = "Done";
+"运行超时" = "Timed out";
+"脚本退出码 %lld" = "Script exit code %lld";
+"无法准备输入：%@" = "Couldn’t prepare the input: %@";
+"快捷指令运行超时" = "The shortcut timed out";
+"快捷指令「%@」运行失败" = "The shortcut “%@” failed";
+"无法运行 %@：%@" = "Couldn’t run %@: %@";
+"无法创建 JavaScript 运行环境" = "Couldn’t create a JavaScript environment";
+"未知错误" = "Unknown error";
+"第 %lld 行：%@" = "Line %lld: %@";
+"脚本退出码 %d" = "Script exit code %d";
+
+/* MediaFilePlugins.swift */
+"拼接图片" = "Stitch Images";
+"把选中的几张图片按文件名的顺序竖着或者横着拼成一张，或者合成一张动图，存在第一张旁边" = "Stitch the selected images vertically or horizontally in file name order, or make an animated image, saved next to the first one";
+"选中两张以上的图片才能拼接" = "Select at least two images to stitch";
+"……还有 %lld 张" = "…and %lld more";
+"%lld 张图片按上面的顺序拼接；宽度（横着拼时是高度）不一样时按最小的那张缩放。合成动图时每张停 %@ 秒，画面大小按第一张" = "%lld images are stitched in the order above; if widths (heights when horizontal) differ, they’re scaled to the smallest. Animated images show each frame for %@ s at the size of the first image.";
+"合成动图" = "Make Animated Image";
+"加水印" = "Watermark";
+"给选中的图片或 PDF 斜着铺满一层半透明的文字（比如「仅供办理业务使用」），另存一份放在原文件旁边" = "Tile semi-transparent text diagonally across the selected images or PDFs and save copies next to the originals";
+"没有选中图片或 PDF" = "No images or PDFs selected";
+"证件照" = "ID Photo";
+"把人像照片换成白底、蓝底或红底，按人脸位置裁成一寸、二寸（300 dpi）；在本机处理，另存一份放在原图旁边" = "Give a portrait a white, blue or red background and crop it around the face to 1-inch or 2-inch ID sizes (300 dpi); processed on this Mac and saved as a copy next to the original";
+"没有选中照片" = "No photo selected";
+"把录音、视频里说的话转成文字和 SRT 字幕，存在原文件旁边；普通话、英语、粤语、日语，这台 Mac 支持时在本机识别" = "Turn speech in recordings and videos into text and SRT subtitles saved next to the original; Mandarin, English, Cantonese and Japanese, recognized on this Mac when it supports it";
+"没有选中录音或视频" = "No recording or video selected";
+"这台 Mac 上用不了语音识别" = "Speech recognition isn’t available on this Mac";
+"说的是哪种话？" = "Which language is spoken?";
+"识别完，文字（.txt）和字幕（.srt）存在原文件旁边；长录音要等一会儿" = "When done, the text (.txt) and subtitles (.srt) are saved next to the original. Long recordings take a while.";
+"视频转换" = "Convert Video";
+"把选中的视频转成 GIF、转成 MP4、压缩到 720p、提取音频，或者均匀取 16 帧拼成一张缩略图；结果存在原视频旁边" = "Convert the selected videos to GIF or MP4, compress to 720p, extract audio, or make a contact sheet of 16 evenly spaced frames; results are saved next to the originals";
+"没有选中视频文件" = "No video files selected";
+"GIF 每秒 %lld 帧、宽度不超过 %lld，最多转前 %lld 秒" = "GIFs are %lld fps, at most %lld wide, and cover up to the first %lld seconds";
+"截取一段…" = "Trim…";
+"%lld 个视频" = "%lld videos";
+"转换后存在原视频旁边；%@" = "Saved next to the original video. %@";
+"截取片段" = "Trim";
+"截取选中的音频或视频的一段（写上开始和结束的时间），存在原文件旁边" = "Cut a range from the selected audio or video (by start and end time), saved next to the original";
+"没有选中音频或视频文件" = "No audio or video files selected";
+"批量重命名" = "Batch Rename";
+"给选中的文件统一改名：编号、替换文字、加前后缀、按照片的拍摄时间、改大小写，先看预览再改，改完可以撤销" = "Rename the selected files together: numbering, find and replace, prefix and suffix, photo capture date, case. Preview first and undo afterwards.";
+"%lld 张图片按上面的顺序拼接；宽度（横着拼时是高度）不一样时按最小的那张缩放。合成动图时每张停 %lld 秒，画面大小按第一张" = "%lld images are stitched in the order above; if widths (heights when horizontal) differ, they’re scaled to the smallest. Animated images show each frame for %lld s at the size of the first image.";
+
+/* MediaPlugins.swift */
+"文字识别失败：%@" = "Text recognition failed: %@";
+"合并换行后复制" = "Copy with Lines Joined";
+"识别选中图片里的文字（离线）" = "Recognize text in the selected images (offline)";
+"无法读取图片" = "Can’t read the image";
+"没有识别到文字。如果截到的只有桌面背景，请在「系统设置 → 隐私与安全性 → 录屏与系统录音」里允许 Pop。" = "No text found. If the capture shows only the desktop background, allow Pop in System Settings → Privacy & Security → Screen & System Audio Recording.";
+"无法读取截图" = "Can’t read the screenshot";
+"截图识字" = "Screenshot OCR";
+"框选屏幕上的一块区域，识别里面的文字" = "Select an area of the screen and recognize its text";
+"截图翻译" = "Translate Screenshot";
+"框选屏幕上的一块区域，识别里面的文字并翻译（离线）" = "Select an area of the screen, recognize its text and translate it (offline)";
+"框选屏幕上的一块区域（或者用选中的图片），画箭头、方框、文字、马赛克、序号，再复制、存储或贴到屏幕上" = "Select an area of the screen (or use the selected image), draw arrows, boxes, text, pixelation and numbered markers, then copy, save or pin it";
+"贴图" = "Pin";
+"把选中的图片或文字贴在屏幕最前面；什么都没选中时先框选一块屏幕" = "Pin the selected image or text on top of all windows; with nothing selected, select an area of the screen first";
+"图片里没有找到可以抠出来的主体" = "No subject found in the image";
+"抠图" = "Remove Background";
+"去掉选中图片的背景，只留下人、动物或物品（离线）" = "Remove the background of the selected image, keeping only people, animals or objects (offline)";
+"Pop 抠图" = "Pop Cutout";
+" 抠图" = " Cutout";
+"背景已去掉，复制或存储的 PNG 保留透明" = "Background removed. Copied or saved PNGs keep transparency.";
+"隔空投送" = "AirDrop";
+"用隔空投送把选中的文件、图片、链接或文字发到附近的 iPhone、iPad 或 Mac" = "Send the selected files, images, links or text to a nearby iPhone, iPad or Mac with AirDrop";
+"没有可以发送的内容" = "Nothing to send";
+"现在用不了隔空投送。请确认无线局域网和蓝牙都已打开，「隔空投送」没有被关闭。" = "AirDrop isn’t available right now. Make sure Wi-Fi and Bluetooth are on and AirDrop isn’t turned off.";
+"传到手机" = "Send to Phone";
+"手机扫码下载选中的文件、图片（文件夹先打包成 zip）或者拿到选中的文字，也能从手机传文件到「下载」文件夹；手机和 Mac 连同一个 Wi-Fi 就行，安卓手机也能用" = "Scan a QR code with your phone to download the selected files or images (folders are zipped first) or get the selected text, and upload files from the phone to Downloads. The phone and Mac just need to be on the same Wi-Fi; Android works too.";
+"屏幕取色" = "Pick Color";
+"吸取屏幕上任意位置的颜色，自动复制 HEX 值" = "Pick a color anywhere on the screen and copy its HEX value";
+"无法读取这个颜色" = "Can’t read this color";
+"已复制 %@" = "Copied %@";
+"网络名称" = "Network name";
+"加密方式" = "Security";
+"无（开放网络）" = "None (open network)";
+"Wi-Fi 二维码" = "Wi-Fi QR Code";
+"这是一个隐藏的网络" = "This is a hidden network";
+"扫码结果" = "Scan Result";
+"找到 %lld 个码" = "Found %lld codes";
+"二维码" = "QR Code";
+"把文字或链接生成二维码；选中图片时识别里面的二维码和条形码" = "Generate a QR code from text or a link; with an image selected, read its QR codes and barcodes";
+"没有内容" = "No content";
+"内容太长，放不进一个二维码" = "Too long to fit in a QR code";
+"%lld 个字符" = "%lld characters";
+"图片里没有找到二维码或条形码" = "No QR code or barcode found in the image";
+"扫码" = "Scan Code";
+"框选屏幕上的二维码或条形码，识别里面的内容；链接可以直接打开，Wi-Fi 二维码列出密码" = "Select a QR code or barcode on screen to read it; links can be opened and Wi-Fi codes show the password";
+"没有识别到二维码或条形码。框选时把整个码都框进去；如果框到的只有桌面背景，请在「系统设置 → 隐私与安全性 → 录屏与系统录音」里允许 Pop。" = "No QR code or barcode found. Include the whole code in the selection; if it shows only the desktop background, allow Pop in System Settings → Privacy & Security → Screen & System Audio Recording.";
+"找出图片里的主要颜色，按面积从大到小列出色值，点一下复制" = "Find the main colors in an image, listed by area; click to copy a value";
+"图片是全透明的，取不出颜色" = "The image is fully transparent; there are no colors";
+"在终端打开" = "Open in Terminal";
+"在「终端」里打开选中的文件夹（选中文件时打开它所在的文件夹）" = "Open the selected folder in Terminal (for files, the folder they’re in)";
+"文件不存在" = "The file doesn’t exist";
+"找不到「终端」App" = "Can’t find the Terminal app";
+
+/* MediaTrim.swift */
+" 片段" = " Clip";
+"这台 Mac 截取不了「%@」" = "This Mac can’t trim “%@”";
+"截取「%@」失败：%@" = "Couldn’t trim “%@”: %@";
+
+/* MediaTrimView.swift */
+"一共 %@。写上开始和结束的时间，比如 0:10-1:25（1:25- 是到结尾）" = "%@ in total. Enter a start and end time, e.g. 0:10-1:25 (1:25- goes to the end).";
+"时间写得不对，或者超出了 0:00–%@" = "Invalid time, or outside 0:00–%@";
+"从 %@ 到 %@，一共 %@" = "From %@ to %@, %@ in total";
+"开始-结束，比如 0:10-1:25" = "Start–end, e.g. 0:10-1:25";
+"截取这一段" = "Trim to This Range";
+
+/* Notifier.swift */
+"Pop 有新版本 %@" = "Pop %@ is available";
+"点「立即更新」自动下载安装并重新启动，点通知查看更新内容。" = "Click Update Now to download, install and restart automatically, or click the notification to see what’s new.";
+
+/* NumberStats.swift */
+"合计" = "Sum";
+"平均" = "Average";
+"中位数" = "Median";
+"最大" = "Max";
+"最小" = "Min";
+"个数" = "Count";
+
+/* OnDeviceModel.swift */
+"这台 Mac 上用不了系统内置的模型，可以在「设置 → AI」里改用自己填的接口。" = "The built-in model isn’t available on this Mac. You can switch to a custom API in Settings → AI.";
+"系统内置的模型出错了：%@" = "The built-in model failed: %@";
+"要先在「系统设置 → Apple 智能与 Siri」里打开 Apple 智能" = "Turn on Apple Intelligence in System Settings → Apple Intelligence & Siri first";
+"系统模型还在下载，稍后再试" = "The system model is still downloading. Try again later.";
+"系统模型现在用不了" = "The system model isn’t available right now";
+"\n\n（原文太长，只处理了前 %lld 个字）" = "\n\n(The text was too long; only the first %lld characters were processed.)";
+
+/* OpenWithPlugin.swift */
+"打开方式" = "Open With";
+"选一个 App 打开选中的文件或链接，比如换一个浏览器打开链接" = "Choose an app to open the selected file or link, such as another browser";
+"没有可以打开的文件或链接" = "No file or link to open";
+"没有找到能打开「%@」的 App" = "No app can open “%@”";
+"第一个是默认的 App；按 1–9 直接选" = "The first one is the default app. Press 1–9 to choose.";
+
+/* OverlayDemo.swift */
+"字数统计" = "Text Statistics";
+"字符" = "Characters";
+"单词" = "Words";
+"行" = "Lines";
+"文本对比" = "Compare Text";
+"剪贴板 → 选中的文字：删去 %lld 行，新增 %lld 行" = "Clipboard → selection: %lld lines removed, %lld lines added";
+"图片配色" = "Image Colors";
+"按面积从大到小；点色块复制色值" = "Largest area first; click a swatch to copy its value";
+"占 %lld%%" = "%lld%%";
+"Markdown 预览" = "Markdown Preview";
+"复制为富文本" = "Copy as Rich Text";
+"JSON 转代码" = "JSON to Code";
+"%lld 个类型；字段是否可选、能否为空按示例推断" = "%lld types; optional and nullable fields are inferred from the sample";
+"转成 Markdown" = "Convert to Markdown";
+"日期" = "Date";
+"Pop 设置" = "Pop Settings";
+
+/* PDFPagesView.swift */
+"一共 %lld 页。写上要取出的页码，比如 1-3, 5, 8-（8- 是第 8 页到最后）" = "%lld pages in total. Enter the pages to extract, e.g. 1-3, 5, 8- (8- is page 8 to the end).";
+"页码写得不对，或者不在 1–%lld 之间" = "Invalid pages, or not between 1 and %lld";
+"%@，一共 %lld 页" = "%@, %lld pages in total";
+"PDF 页面" = "PDF Pages";
+"页码，比如 1-3, 5, 8-" = "Pages, e.g. 1-3, 5, 8-";
+"每页存成一个 PDF" = "One PDF per page";
+"取出这几页" = "Extract Pages";
+
+/* PDFPasswordView.swift */
+"两次输入的密码不一样" = "The passwords don’t match";
+"另存一份打开时要输入密码的 PDF，原文件不动。密码忘了就打不开了，记得记下来" = "Saves a copy that needs a password to open; the original stays unchanged. If you forget the password, the copy can’t be opened, so write it down.";
+"输入打开这份 PDF 的密码，另存一份不用密码就能打开的，原文件不动" = "Enter the password that opens this PDF to save a copy that opens without one. The original stays unchanged.";
+"给 PDF 加密码" = "Add a Password to the PDF";
+"去掉 PDF 的密码" = "Remove the PDF’s Password";
+"再输一次" = "Confirm";
+"存一份加密的" = "Save Encrypted Copy";
+"存一份没有密码的" = "Save Copy Without Password";
+
+/* PDFTools.swift */
+"「%@」有密码，先解锁再处理" = "“%@” is password-protected. Unlock it first.";
+"没有可以合成的页面" = "No pages to combine";
+"写不进「%@」" = "Can’t write “%@”";
+"「%@」里没有页面" = "“%@” has no pages";
+"第 %lld 页渲染失败" = "Couldn’t render page %lld";
+"没有第 %lld 页" = "There’s no page %lld";
+"没有选中页面" = "No pages selected";
+"密码不能是空的" = "The password can’t be empty";
+"「%@」没有密码" = "“%@” has no password";
+"密码不对" = "Wrong password";
+"这份 PDF 还限制了打印、复制这些操作，要输入所有者密码才能去掉" = "This PDF also restricts printing and copying; enter the owner password to remove the protection";
+"没能去掉密码" = "Couldn’t remove the password";
+"第 %@ 页" = "Pages %@";
+
+/* PhoneShare.swift */
+"下载" = "Download";
+"点一下全选，再长按拷贝" = "Tap to select all, then press and hold to copy";
+"照片：点缩略图打开大图，长按存到相册" = "Photos: tap a thumbnail to open it, press and hold to save it to Photos";
+"存到手机" = "Save to Phone";
+"来自「%@」上的 Pop" = "From Pop on “%@”";
+"传到这台 Mac" = "Send to This Mac";
+"选择文件" = "Choose Files";
+"文件会存进 Mac 的「下载」文件夹。Mac 上停止共享后，这个网页就打不开了。" = "Files are saved to the Mac’s Downloads folder. This page stops working when sharing stops on the Mac.";
+"正在传 {name}：{percent}" = "Sending {name}: {percent}";
+"{name}（连接断了）" = "{name} (connection lost)";
+"传完了，在 Mac 的「下载」文件夹里" = "Done. Files are in the Mac’s Downloads folder.";
+"网页服务没能启动" = "The web server couldn’t start";
+"请求格式不对" = "Bad request";
+"缺少文件大小" = "Missing file size";
+"没有这个网页" = "Page not found";
+"文件不见了" = "The file is gone";
+"读不了这个文件" = "Can’t read this file";
+"来自手机" = "From Phone";
+"Mac 上的空间不够" = "Not enough space on the Mac";
+"Mac 上存不了这个文件" = "The Mac can’t save this file";
+"Mac 上写不进这个文件" = "The Mac can’t write this file";
+"这台 Mac 没有连上 Wi-Fi 或者网线，手机访问不到" = "This Mac isn’t connected to Wi-Fi or Ethernet, so your phone can’t reach it";
+"网页服务没能启动：%@" = "The web server couldn’t start: %@";
+"正在传到手机（%lld 个文件）" = "Sending to phone (%lld files)";
+"正在接收手机传来的文件" = "Receiving files from phone";
+"正在传到手机（一段文字）" = "Sending to phone (text)";
+"传到手机已停止（%lld 分钟没人访问）" = "Stopped sending to phone (no access for %lld minutes)";
+"手机下载了「%@」" = "Phone downloaded “%@”";
+"收到「%@」，在「下载」文件夹里" = "Received “%@” in Downloads";
+"读不了这张图片" = "Can’t read this image";
+"「%@」没能打包成 zip" = "Couldn’t zip “%@”";
+"……一共 %lld 个" = "…%lld in total";
+"可以下载" = "Available";
+"用手机相机扫码，在网页上点「下载」存到手机；也能从手机传文件过来" = "Scan with your phone’s camera and tap Download on the page to save to your phone. You can also send files from your phone.";
+"用手机相机扫码，网页上有这段文字，长按就能拷贝；也能从手机传文件过来" = "Scan with your phone’s camera; the page shows this text, which you can press and hold to copy. You can also send files from your phone.";
+"用手机相机扫码，在网页上选文件传到这台 Mac 的「下载」文件夹" = "Scan with your phone’s camera and choose files on the page to send them to this Mac’s Downloads folder";
+"手机要和 Mac 连同一个 Wi-Fi。关掉卡片后继续共享，可以在菜单栏里停止；%lld 分钟没人访问自动停止" = "Your phone must be on the same Wi-Fi as the Mac. Sharing continues after you close this card; stop it from the menu bar. It stops automatically after %lld minutes without access.";
+"停止共享" = "Stop Sharing";
+
+/* PhotoMetadata.swift */
+"相机" = "Camera";
+"镜头" = "Lens";
+"拍摄参数" = "Exposure";
+"拍摄地点" = "Location";
+"海拔" = "Altitude";
+"%lld 米" = "%lld m";
+"照片拍摄地点" = "Photo location";
+"%@ mm（等效 %@ mm）" = "%@ mm (%@ mm equivalent)";
+"等效 %lld mm" = "%lld mm equivalent";
+"1/%@ 秒" = "1/%@ s";
+"%lld 秒" = "%lld s";
+"等效 %@ mm" = "%@ mm equivalent";
+
+/* PinBoard.swift */
+"Pop 贴图" = "Pop Pin";
+"没有识别到文字" = "No text found";
+"恢复大小" = "Actual Size";
+"透明度" = "Opacity";
+"关闭全部贴图" = "Close All Pins";
+
+/* PluginChooserView.swift */
+"↑↓ 选择 · ⏎ 执行" = "↑↓ Choose · ⏎ Run";
+"搜索功能，比如 fy 找到翻译" = "Search actions";
+"没有匹配的功能" = "No matching actions";
+"最近用过" = "Recently Used";
+"插件" = "Plugins";
+
+/* PluginLibrary.swift */
+"连不上插件库" = "Can’t connect to the plugin library";
+"插件库的索引读不出来" = "Can’t read the plugin library index";
+"「%@」要更新 Pop 才能安装" = "“%@” requires a newer version of Pop";
+"下载不了「%@」" = "Can’t download “%@”";
+"下载的「%@」和插件库记录的校验值对不上，没有安装" = "The downloaded “%@” doesn’t match the checksum in the library, so it wasn’t installed";
+"「%@」不是有效的插件文件" = "“%@” isn’t a valid plugin file";
+"「%@」的插件 ID 和插件库记录的不一样，没有安装" = "The plugin ID of “%@” doesn’t match the library, so it wasn’t installed";
+"「%@」有问题：%@" = "“%@” has a problem: %@";
+"连不上插件库：%@" = "Can’t connect to the plugin library: %@";
+"插件库返回了错误（%lld）" = "The plugin library returned an error (%lld)";
+
+/* PluginLibraryView.swift */
+"插件库" = "Plugin Library";
+"别人做好的插件，点「安装」就能用" = "Plugins made by others. Click Install to use one.";
+"搜索，支持拼音首字母" = "Search";
+"下载后先核对 sha256，对得上才装。装好的插件在「我的插件」里，可以编辑、停用或者删除。" = "Each download is checked against its sha256 before it’s installed. Installed plugins appear in My Plugins, where you can edit, disable or delete them.";
+"在 GitHub 上看" = "View on GitHub";
+"完成" = "Done";
+"没有装上" = "Couldn’t Install";
+"好" = "OK";
+"正在读取插件库…" = "Loading plugin library…";
+"重试" = "Try Again";
+"插件库里还没有插件" = "The plugin library is empty";
+"没有匹配的插件" = "No matching plugins";
+"「%@」已经更新" = "“%@” was updated";
+"装好了「%@」：在圆盘的「全部功能」里能找到，也可以到「圆盘」里拖到想要的位置" = "Installed “%@”. Find it in All Actions on the ring, or drag it into place in Ring settings.";
+"「%@」会在这台 Mac 上运行 Shell 脚本" = "“%@” runs a shell script on this Mac";
+"每次用它都会运行下面这段脚本，脚本能读写你的文件。只装信得过的插件。" = "The script below runs every time you use it and can read and write your files. Install only plugins you trust.";
+"安装" = "Install";
+"Shell 脚本，会在这台 Mac 上运行命令" = "Shell script that runs commands on this Mac";
+"新类型的插件" = "New plugin type";
+"作者：%@" = "By %@";
+"更新" = "Update";
+"已安装" = "Installed";
+"要更新 Pop 才能装" = "Requires a newer Pop";
+
+/* PluginManifest.swift */
+"打开网址" = "Open URL";
+"Shell 脚本" = "Shell Script";
+"快捷指令" = "Shortcut";
+"AI 指令" = "AI Prompt";
+"显示结果卡片" = "Show Result Card";
+"复制到剪贴板" = "Copy to Clipboard";
+"替换选中的文字" = "Replace Selected Text";
+"轻提示" = "Brief Message";
+"不显示" = "Nothing";
+"请填写名称" = "Enter a name";
+"请填写网址" = "Enter a URL";
+"网址需要以 https:// 之类的协议开头" = "The URL must start with a scheme such as https://";
+"请填写脚本" = "Enter a script";
+"请填写快捷指令名称" = "Enter a shortcut name";
+"请填写给 AI 的指令" = "Enter a prompt for the AI";
+"网址（空白）" = "URL (Blank)";
+"新的网页插件" = "New Web Plugin";
+"网址：GitHub 搜索" = "URL: GitHub Search";
+"GitHub 搜索" = "GitHub Search";
+"在 GitHub 上搜索选中的文字" = "Search GitHub for the selected text";
+"网址：维基百科" = "URL: Wikipedia";
+"维基百科" = "Wikipedia";
+"在维基百科中查找选中的词条" = "Look up the selected term on Wikipedia";
+"网址：在地图中查找" = "URL: Look Up in Maps";
+"地图" = "Maps";
+"在「地图」App 中查找选中的地址" = "Look up the selected address in the Maps app";
+"Shell：按行排序去重" = "Shell: Sort and Remove Duplicate Lines";
+"排序去重" = "Sort Unique";
+"把选中的多行文字排序并去掉重复行" = "Sort the selected lines and remove duplicates";
+"Shell：环境变量示例" = "Shell: Environment Variable Example";
+"字数（Shell）" = "Character Count (Shell)";
+"演示如何读取选中的内容" = "Shows how to read the selection";
+"JavaScript：反转文字" = "JavaScript: Reverse Text";
+"反转文字" = "Reverse Text";
+"把选中的文字倒过来" = "Reverse the selected text";
+"// input 是选中的文字，返回值会作为结果\nfunction run(input) {\n  return Array.from(input).reverse().join('')\n}" = "// input is the selected text; the return value is the result\nfunction run(input) {\n  return Array.from(input).reverse().join('')\n}";
+"JavaScript：列出 JSON 的键" = "JavaScript: List JSON Keys";
+"JSON 键名" = "JSON Keys";
+"列出选中 JSON 对象的所有键" = "List all keys of the selected JSON object";
+"AI：改写成正式的语气" = "AI: Rewrite Formally";
+"正式一点" = "More Formal";
+"让 AI 把选中的文字改写得正式、礼貌" = "Have AI rewrite the selected text in a formal, polite tone";
+"把下面的文字改写得更正式、礼貌，保持原来的语言和意思，只输出改写后的文字：\n\n{text}" = "Rewrite the following text to be more formal and polite, keeping its original language and meaning. Output only the rewritten text:\n\n{text}";
+"AI：帮我回复" = "AI: Draft a Reply";
+"帮我回复" = "Draft a Reply";
+"让 AI 替选中的消息拟一段回复" = "Have AI draft a reply to the selected message";
+"下面是别人发给我的消息，帮我拟一段得体、简洁的回复，用消息原来的语言：\n\n{text}" = "Here is a message someone sent me. Draft an appropriate, concise reply in the message’s language:\n\n{text}";
+"运行快捷指令" = "Run Shortcut";
+"把选中的文字交给快捷指令处理" = "Pass the selected text to a shortcut";
+"我的快捷指令" = "My Shortcut";
+
+/* PluginSettings.swift */
+"还没有自己的插件。可以到「插件库」里挑现成的装上，也可以从模板新建：用网址模板接入任何网站的搜索，用 Shell 或 JavaScript 脚本处理选中的文字，或者交给快捷指令。" = "No plugins yet. Install one from the Plugin Library, or start from a template: search any website with a URL template, process the selected text with a shell or JavaScript script, or hand it to a shortcut.";
+"插件库…" = "Plugin Library…";
+"新建插件" = "New Plugin";
+"导入…" = "Import…";
+"打开插件文件夹" = "Open Plugins Folder";
+"我的插件" = "My Plugins";
+"每个插件是插件文件夹里的一个 JSON 文件，可以直接编辑、拷给别人；打开 iCloud 同步后会同步到你的其他 Mac。" = "Each plugin is a JSON file in the plugins folder that you can edit directly or share. With iCloud sync on, plugins sync to your other Macs.";
+"搜索内置功能" = "Search built-in actions";
+"搜索内置功能，支持拼音首字母" = "Search built-in actions";
+"没有匹配的内置功能" = "No matching built-in actions";
+"拷贝链接" = "Copy Link";
+"关掉的功能会从圆盘上移除，也不会再被直达规则调用。打开后到「圆盘」里拖到想要的位置，或者在圆盘的「全部功能」里找到它。右键一个功能可以拷贝它的 pop:// 链接，给快捷指令和脚本用。" = "Actions you turn off are removed from the ring and no longer used by rules. After turning one on, drag it into place in Ring settings or find it in All Actions on the ring. Right-click an action to copy its pop:// link for Shortcuts and scripts.";
+"内置功能 · %@" = "Built-in · %@";
+"搜索引擎" = "Search engine";
+"操作没有完成" = "The Operation Couldn’t Be Completed";
+"删除插件「%@」？" = "Delete the plugin “%@”?";
+"插件文件会被删除；打开了 iCloud 同步的话，其他 Mac 上的这个插件也会删除。" = "The plugin file will be deleted. With iCloud sync on, the plugin is also deleted on your other Macs.";
+"启用" = "Enabled";
+"导出…" = "Export…";
+"基本信息" = "Basics";
+"名称" = "Name";
+"图标" = "Icon";
+"SF Symbol 名称，比如 globe" = "SF Symbol name, e.g. globe";
+"说明" = "Description";
+"可选" = "Optional";
+"结果" = "Result";
+"最长运行 %lld 秒" = "Runs for up to %lld seconds";
+"动作" = "Action";
+"正则" = "Regex";
+"可选，比如 ^[A-Z]{2,}$" = "Optional, e.g. ^[A-Z]{2,}$";
+"什么时候可用" = "Available When";
+"勾选能处理的内容类型；一个都不勾表示随时可用（不需要选中内容）。填了正则的话，选中的文字还要能匹配它。" = "Check the kinds of content it handles; with none checked, it’s always available (no selection needed). If you enter a regex, the selected text must also match it.";
+"试运行" = "Test Run";
+"输入" = "Input";
+"这段内容不满足「什么时候可用」，在圆盘里不会出现" = "This content doesn’t meet “Available When”, so the plugin won’t appear on the ring";
+"添加" = "Add";
+"快捷指令的名称" = "Shortcut name";
+"选择" = "Choose";
+"{text} 会换成编码后的选中文字，{raw} 换成原文。可以用任何网址，也可以用 App 的链接（比如 maps://?q={text}）。" = "{text} is replaced with the URL-encoded selection and {raw} with the original text. Any URL works, including app links (e.g. maps://?q={text}).";
+"用 zsh 运行。选中的文字从标准输入传入，也可以读环境变量 $POP_TEXT；选中文件时 $POP_FILES 是每行一个路径。标准输出就是结果，退出码不为 0 时显示错误输出。" = "Runs with zsh. The selected text comes in on standard input and in the $POP_TEXT environment variable; when files are selected, $POP_FILES lists one path per line. Standard output is the result; if the exit code isn’t 0, standard error is shown.";
+"定义 function run(input, files) 并返回结果（返回对象会自动转成 JSON），也可以直接写一个表达式。脚本在隔离的环境里运行，不能访问网络和文件。" = "Define function run(input, files) and return the result (objects are converted to JSON), or just write an expression. Scripts run in an isolated environment without network or file access.";
+"选中的文字作为快捷指令的输入，快捷指令的输出就是结果。第一次运行时系统可能会请求权限。" = "The selected text is the shortcut’s input and its output is the result. macOS may ask for permission the first time.";
+"指令和选中的文字一起发给「设置 → AI」里填写的服务，{text} 换成选中的文字（没写的话文字接在指令后面）。结果选「显示结果卡片」时一边生成一边显示。" = "The prompt is sent with the selected text to the service set in Settings → AI. {text} is replaced with the selection (without it, the text is appended to the prompt). With Show Result Card, the result streams in as it’s generated.";
+"（没有输出）" = "(No output)";
+
+/* PluginStore.swift */
+"不是有效的插件文件" = "Not a valid plugin file";
+"插件 ID「%@」无效，只能包含字母、数字、点、横线和下划线，也不能和内置功能重名" = "Invalid plugin ID “%@”. Use only letters, digits, dots, hyphens and underscores, and don’t reuse a built-in action’s ID.";
+"其他文件" = "another file";
+"和 %@ 的插件 ID 重复" = "Same plugin ID as %@";
+"插件 ID 无效" = "Invalid plugin ID";
+
+/* PopCoordinator.swift */
+"Pop 已暂停" = "Pop is paused";
+"没有「%@」这个功能" = "There’s no action “%@”";
+"「%@」处理不了链接里的内容" = "“%@” can’t handle the content in the link";
+"用「%@」处理链接里的内容？" = "Use “%@” on the content in the link?";
+"一个 pop:// 链接要用这个插件处理下面的内容。它会运行你写的脚本或快捷指令，不认识这个链接的话点「取消」。\n\n%@" = "A pop:// link wants to use this plugin on the content below. It will run your script or shortcut. If you don’t recognize this link, click Cancel.\n\n%@";
+"运行" = "Run";
+"取消" = "Cancel";
+"没有选中内容" = "Nothing selected";
+"「%@」处理不了选中的内容" = "“%@” can’t handle the selection";
+"识别文字" = "Recognize Text";
+"没能完成" = "Couldn’t Finish";
+"已复制图片" = "Image copied";
+"存储失败：%@" = "Couldn’t save: %@";
+"已加入生词本" = "Added to Vocabulary";
+"生词本里已经有了，换成了这次的释义" = "Already in Vocabulary; updated with this definition";
+"保持唤醒 %@" = "Keeping awake for %@";
+"一直保持唤醒" = "Keeping awake indefinitely";
+"没能保持唤醒" = "Couldn’t keep awake";
+"已停止保持唤醒" = "Stopped keeping awake";
+"没能转换这段 Markdown" = "Couldn’t convert this Markdown";
+"已复制为富文本" = "Copied as rich text";
+"开始计时 %@" = "Timer started: %@";
+"已取消计时" = "Timer canceled";
+"已停止传到手机" = "Stopped sending to phone";
+"展开失败：%@" = "Couldn’t expand: %@";
+" 的页面" = " Pages";
+"已存成 %lld 张图片" = "Saved as %lld images";
+"读不了「%@」" = "Can’t read “%@”";
+"中的 %lld 页" = "%lld pages";
+"已取出 %lld 页" = "Extracted %lld pages";
+" 的每一页" = " Single Pages";
+"已拆成 %lld 个 PDF" = "Split into %lld PDFs";
+" 加密" = " Encrypted";
+" 无密码" = " No Password";
+"已另存一份加了密码的 PDF" = "Saved a password-protected copy of the PDF";
+"已另存一份没有密码的 PDF" = "Saved a copy of the PDF without a password";
+"正在压缩 PDF…" = "Compressing PDF…";
+"已压缩：%@ → %@" = "Compressed: %@ → %@";
+"这个 PDF 已经很小了，压缩不了多少" = "This PDF is already small and can’t be compressed much";
+"转换了 %lld 张，%lld 张失败：%@" = "Converted %lld images, %lld failed: %@";
+"已存到原图旁边" = "Saved next to the original";
+"已转换 %lld 张" = "Converted %lld images";
+"已拼成一张，存在第一张旁边" = "Stitched and saved next to the first image";
+"已合成动图，存在第一张旁边" = "Animated image saved next to the first image";
+"读不到「%@」的时长" = "Can’t read the duration of “%@”";
+"正在截取…" = "Trimming…";
+"已截取 %@" = "Trimmed %@";
+"转换了 %lld 个，%lld 个失败：%@" = "Converted %lld, %lld failed: %@";
+"已转换 %lld 个视频" = "Converted %lld videos";
+"已存成「%@」" = "Saved as “%@”";
+"要先在「系统设置 → 隐私与安全性 → 语音识别」里允许 Pop" = "Allow Pop in System Settings → Privacy & Security → Speech Recognition first";
+"正在识别「%@」里说的话…" = "Transcribing “%@”…";
+"已加到提醒事项" = "Added to Reminders";
+"已加到日历" = "Added to Calendar";
+"Pop 生词本.%@" = "Pop Vocabulary.%@";
+"导出失败：%@" = "Export failed: %@";
+"加好了 %lld 个，%lld 个失败：%@" = "Watermarked %lld, %lld failed: %@";
+"已给 %lld 个文件加上水印" = "Watermarked %lld files";
+"已给 %lld 张图片加上水印" = "Watermarked %lld images";
+"压好了 %lld 张，%lld 张失败：%@" = "Compressed %lld images, %lld failed: %@";
+"已压缩到 %@" = "Compressed to %@";
+"已压缩 %lld 张，都在 %@ 以内" = "Compressed %lld images, all under %@";
+"无法读取这张图片" = "Can’t read this image";
+"已存为常用短语" = "Saved as a snippet";
+"图片里没有识别到文字" = "No text found in the image";
+
+/* RegexTester.swift */
+"表达式写得不对：括号、方括号是否成对，转义是否完整？" = "Invalid expression. Check that parentheses and brackets match and escapes are complete.";
+"匹配太久被停下了，表达式里可能有嵌套的重复（比如 (a+)+）" = "Matching took too long and was stopped. The expression may have nested repetition (such as (a+)+).";
+"数字" = "Number";
+"中文" = "Chinese";
+"英文单词" = "English word";
+"手机号" = "Mobile number";
+"网址" = "URL";
+"空行" = "Blank line";
+"行首尾空白" = "Leading/trailing spaces";
+"（空）" = "(Empty)";
+"（未参与）" = "(no match)";
+
+/* RegexTesterView.swift */
+"表达式有误" = "Invalid expression";
+"%lld+ 处匹配" = "%lld+ matches";
+"%lld 处匹配" = "%lld matches";
+"正则表达式，比如 \\d+" = "Regular expression, e.g. \\d+";
+"常用" = "Presets";
+"忽略大小写" = "Ignore case";
+"^ $ 匹配每一行" = "^ $ match each line";
+". 也匹配换行" = ". matches newlines";
+"替换为（$1 是第一个分组，$0 是整个匹配）" = "Replace with ($1 is the first group, $0 the whole match)";
+"复制所有匹配" = "Copy All Matches";
+"复制表达式" = "Copy Expression";
+"复制替换结果" = "Copy Replaced Text";
+
+/* RegionPicker.swift */
+"拖出要录的区域 · 单击录窗口 · 回车录整个屏幕 · Esc 取消" = "Drag to choose an area · Click a window · Return for the whole screen · Esc to cancel";
+"录上电脑里的声音" = "Record the Mac’s sound";
+"显示鼠标点击" = "Show clicks";
+"单击录这个窗口 · %@" = "Click to record this window · %@";
+"单击或按回车录整个屏幕" = "Click or press Return to record the whole screen";
+
+/* ReminderCardView.swift */
+" · 今天" = " · today";
+" · 明天" = " · tomorrow";
+" · 后天" = " · in 2 days";
+" · %lld 天后" = " · in %lld days";
+" · 已经过去了" = " · already past";
+"没认出时间，先按明天上午 9 点" = "No time found; using tomorrow at 9:00 AM";
+"要做的事" = "To-do";
+"指定时间" = "Set a time";
+"加到日历" = "Add to Calendar";
+
+/* ReminderService.swift */
+"没能申请提醒事项的权限：%@" = "Couldn’t request access to Reminders: %@";
+"没有提醒事项的权限：在「系统设置 → 隐私与安全性 → 提醒事项」里打开 Pop" = "No access to Reminders. Turn on Pop in System Settings → Privacy & Security → Reminders.";
+"没有找到提醒事项列表，先在「提醒事项」App 里建一个" = "No reminder list found. Create one in the Reminders app first.";
+"没能保存：%@" = "Couldn’t save: %@";
+"没能申请日历的权限：%@" = "Couldn’t request access to Calendar: %@";
+"没有日历的权限：在「系统设置 → 隐私与安全性 → 日历」里打开 Pop" = "No access to Calendar. Turn on Pop in System Settings → Privacy & Security → Calendars.";
+"没有找到可以添加日程的日历" = "No calendar that accepts new events was found";
+
+/* RenameCardView.swift */
+"%lld 个名字不能用：%@" = "%lld names can’t be used: %@";
+"名字都没有变" = "No names change";
+"会改 %lld 个文件的名字" = "Renames %lld files";
+"方式" = "Method";
+"名字（后面接编号，可以不填）" = "Name (numbers are appended; optional)";
+"从 %lld 开始" = "Start at %lld";
+"查找" = "Find";
+"替换为（$1 是第一个分组）" = "Replace with ($1 is the first group)";
+"替换为" = "Replace with";
+"加在前面" = "Add before";
+"加在后面（扩展名前）" = "Add after (before the extension)";
+"照片按拍摄时间命名，比如 2026-09-27 17.42.18；没有拍摄时间的按修改时间，同一秒的后面加编号。" = "Photos are named by when they were taken, e.g. 2026-09-27 17.42.18. Files without a capture date use the modification date; files from the same second get a number.";
+"正在改名…" = "Renaming…";
+"重命名" = "Rename";
+"已重命名 %lld 个文件" = "Renamed %lld files";
+"正在撤销…" = "Undoing…";
+
+/* RingMenuView.swift */
+"读取中…" = "Reading…";
+"可以在设置里放上功能" = "Assign an action in Settings";
+"当前内容用不了" = "Not available for this content";
+"要先选中文字" = "Select text first";
+"要先选中外文" = "Select non-Chinese text first";
+"要先选中文件" = "Select files first";
+"要先选中图片文件" = "Select image files first";
+"要先选中图片" = "Select an image first";
+"要先选中链接" = "Select a link first";
+"要先选中邮箱" = "Select an email address first";
+"要先选中JSON" = "Select JSON first";
+"要先选中算式" = "Select a math expression first";
+"要先选中数字" = "Select a number first";
+"要先选中颜色值" = "Select a color value first";
+"要先选中时间戳" = "Select a timestamp first";
+"要先选中日期" = "Select a date first";
+"要先选中带单位的数" = "Select a measurement first";
+"要先选中一个词" = "Select a word first";
+"要先选中内容" = "Select something first";
+
+/* ScreenRecorder.swift */
+"找不到要录的屏幕" = "Can’t find the screen to record";
+"录屏没能开始：%@" = "Couldn’t start recording: %@";
+"录屏失败：%@" = "Recording failed: %@";
+"没有录下来" = "Nothing was recorded";
+"正在保存…" = "Saving…";
+
+/* ScreenRecording.swift */
+"要先在「系统设置 → 隐私与安全性 → 录屏与系统录音」里允许 Pop，允许后重新打开 Pop" = "Allow Pop in System Settings → Privacy & Security → Screen & System Audio Recording first, then reopen Pop";
+"录屏 %@" = "Screen Recording %@";
+"录好了" = "Recording Finished";
+"%@ · %@ × %@ · 存在「%@」" = "%@ · %@ × %@ · saved in “%@”";
+"打开" = "Open";
+
+/* ScreenRuler.swift */
+"找不到屏幕" = "No screen found";
+"截不到屏幕。请在「系统设置 → 隐私与安全性 → 录屏与系统录音」里允许 Pop。" = "Can’t capture the screen. Allow Pop in System Settings → Privacy & Security → Screen & System Audio Recording.";
+"单击复制尺寸 · 拖动量一块区域 · Esc 退出" = "Click to copy the size · Drag to measure an area · Esc to exit";
+
+/* SelectionContent.swift */
+"文本" = "Text";
+"外文" = "Other language";
+"算式" = "Math";
+"时间戳" = "Timestamp";
+"单个词" = "Word";
+"颜色" = "Color";
+"日期时间" = "Date & time";
+"图片文件" = "Image files";
+"带单位的数值" = "Measurement";
+"未选中内容" = "Nothing selected";
+"%lld 个文件" = "%lld files";
+"%lld 字" = "%lld characters";
+
+/* SelectionToolbar.swift */
+"更多" = "More";
+
+/* SettingsBackup.swift */
+"读不了这个文件：不是 Pop 导出的设置，或者文件已经损坏" = "Can’t read this file: it isn’t exported Pop settings, or it’s damaged";
+"这不是 Pop 导出的设置文件" = "This isn’t a Pop settings file";
+"Pop 设置 %@.json" = "Pop Settings %@.json";
+"圆盘、直达规则、唤起方式和快捷键、翻译、剪贴板、AI 接口设置" = "ring, rules, trigger and shortcuts, translation, clipboard and AI API settings";
+"%lld 条常用短语" = "%lld snippets";
+"%lld 个自己写的插件" = "%lld of your plugins";
+
+/* SettingsPanes.swift */
+"快速上手" = "Getting Started";
+"授予辅助功能权限" = "Grant Accessibility permission";
+"Pop 要靠它识别长按右键、读取选中的内容，所有处理都在本机完成。" = "Pop needs it to detect a right-button hold and read the selection. Everything is processed on this Mac.";
+"按住右键，不要松开" = "Hold down the right mouse button";
+"菜单栏里的 ◎ 就是 Pop" = "The ◎ in the menu bar is Pop";
+"点它可以打开设置、暂停或退出。菜单栏图标太多时可能被刘海挡住；macOS 26 也可能在「系统设置 → 菜单栏」里把它隐藏了。找不到图标时，再次打开 Pop 应用就会弹出这个窗口。" = "Click it to open Settings, pause or quit. With many menu bar icons it may be hidden behind the notch, and macOS 26 may hide it in System Settings → Menu Bar. If you can’t find it, open the Pop app again to bring up this window.";
+"权限" = "Permissions";
+"去授权" = "Grant Access";
+"重启 Pop" = "Restart Pop";
+"列表里已经有 Pop、开关也打开了，但还是不生效？多半是更新后签名变了：先清除旧的授权记录，再授权一次。" = "Pop is in the list and switched on but still doesn’t work? Its signature probably changed with an update. Reset the old permission and grant it again.";
+"清除旧的授权记录" = "Reset Old Permission";
+"鼠标" = "Mouse";
+"长按时长" = "Hold duration";
+"松开右键后圆盘保持打开" = "Keep the ring open after releasing the button";
+"修饰键" = "Modifier key";
+"键盘快捷键" = "Keyboard shortcut";
+"拖着文件左右晃几下，打开暂存架" = "Shake while dragging files to open the Shelf";
+"唤起方式" = "Trigger";
+"选中文字后显示工具条" = "Show a toolbar after selecting text";
+"选中文字后" = "After Selecting Text";
+"拖着选中一段文字、双击选词或者三击选段后，在选区上方显示圆盘里前几个能处理这段文字的功能，点一下就执行，点「更多」打开完整的圆盘。只用辅助功能读取选中的文字，不碰剪贴板，读不到选区的 App 里不会出现；上面列出的 App 里也不出现。" = "After you drag to select text, double-click a word or triple-click a paragraph, the first few ring actions that can handle it appear above the selection. Click one to run it, or click More to open the full ring. The selection is read through Accessibility without touching the clipboard; the toolbar doesn’t appear in apps where the selection can’t be read, or in the apps listed above.";
+"排除的 App" = "Excluded Apps";
+"在这些 App 里不响应鼠标唤起，比如依赖右键拖拽的游戏、远程桌面和虚拟机。" = "The mouse trigger is ignored in these apps, e.g. games that use right-dragging, remote desktops and virtual machines.";
+"登录时自动启动" = "Open at login";
+"恢复默认设置" = "Restore Defaults";
+"在圆心松开时圆盘保持打开，可以再用鼠标点选，点圆心或按 Esc 关闭。" = "Releasing in the center keeps the ring open so you can click an action; click the center or press Esc to close it.";
+"在圆心松开就关闭圆盘；想松开后再用鼠标点选的话，打开「松开右键后圆盘保持打开」。" = "Releasing in the center closes the ring. To click an action after releasing, turn on “Keep the ring open after releasing the button”.";
+"长按右键：短按仍然是系统右键菜单，按住超过设定时长才唤起 Pop。圆盘出来后按住不放，往某个方向一划再松开，就执行那一格的功能；" = "Hold right click: a short click still opens the context menu; Pop appears only when you hold longer than the set duration. Once the ring appears, keep holding, flick toward a slot and release to run that action. ";
+"按住时往某个方向一划再松开，可以直接执行那一格的功能；点一下的话圆盘保持打开，用鼠标点选，点圆心或按 Esc 关闭。" = "While holding, flick toward a slot and release to run that action. After a single click the ring stays open; click an action, or click the center or press Esc to close it.";
+"只用键盘快捷键唤起：圆盘出来后用鼠标点选，或者按数字键选择，Esc 关闭。" = "Keyboard shortcut only: once the ring appears, click an action or press its number key; Esc closes it.";
+"需要辅助功能权限" = "Accessibility permission needed";
+"已获得辅助功能权限，Pop 已就绪" = "Accessibility permission granted. Pop is ready.";
+"已授权，但鼠标拦截还没生效" = "Permission granted, but the mouse trigger isn’t active yet";
+"点「去授权」，在「系统设置 → 隐私与安全性 → 辅助功能」里打开 Pop。授权后不用重启，几秒内自动生效。" = "Click Grant Access and turn on Pop in System Settings → Privacy & Security → Accessibility. No restart is needed; it takes effect within seconds.";
+"偶尔刚授权时系统还没放行，点「重启 Pop」即可。" = "Right after granting, macOS sometimes needs a moment. Click Restart Pop.";
+"所有处理都在本机完成。" = "Everything is processed on this Mac.";
+"往要用的功能方向一划再松开，或者松开后再点选" = "flick toward the action you want and release, or release and then click";
+"按住不放往要用的功能方向一划再松开即可，在圆心松开就关闭" = "keep holding, flick toward the action you want and release; releasing in the center closes it";
+"按住鼠标右键约 %lld 毫秒：选中了外文会直接翻译；其他情况弹出圆盘，%@。普通点一下右键仍然是系统菜单。" = "Hold the right mouse button for about %lld ms. Selected text in another language is translated right away; otherwise the ring appears: %@. A normal right click still opens the context menu.";
+"按住 %@ 再点鼠标右键唤起 Pop。" = "Hold %@ and right-click to open Pop.";
+"点击鼠标中键唤起 Pop。" = "Click the middle mouse button to open Pop.";
+"鼠标唤起已关闭，可以在下面设置一个键盘快捷键。" = "The mouse trigger is off. You can set a keyboard shortcut below.";
+"用键盘快捷键 %@ 唤起 Pop。" = "Press %@ to open Pop.";
+"添加 App…" = "Add App…";
+"已安装的功能" = "Installed Actions";
+"拖到右边的格子上放置；拖到已占用的格子会互换位置。" = "Drag onto a slot on the right. Dropping on a used slot swaps them.";
+"格子数" = "Slots";
+"%lld 格" = "%lld slots";
+"格子上点右键可以直接选择功能或清空。" = "Right-click a slot to choose an action or clear it.";
+"恢复默认布局" = "Restore Default Layout";
+"和默认圆盘一样" = "Same as Default Ring";
+"圆盘" = "Ring";
+"默认（所有 App）" = "Default (All Apps)";
+"为 App 单独设置…" = "Customize for an App…";
+"这个 App 改回用默认圆盘" = "Use the default ring for this app";
+"单独设置" = "Customize";
+"第 %lld 格" = "Slot %lld";
+"未放置" = "Not placed";
+"0 号格在正上方\n顺时针排列" = "Slot 0 is at the top,\nthen clockwise";
+"空" = "Empty";
+"清空这一格" = "Clear This Slot";
+"空格子" = "Empty slot";
+"选中的内容满足条件时，不弹圆盘，直接执行对应功能" = "When the selection matches a condition, run the action directly instead of showing the ring";
+"从上到下依次匹配。没有命中任何规则、或者什么都没选中时，弹出圆盘。" = "Rules are checked from top to bottom. If none matches, or nothing is selected, the ring appears.";
+"（弹出圆盘）" = "(Show ring)";
+"默认用" = "Default engine";
+"翻译引擎" = "Translation Engine";
+"系统翻译用 macOS 自带的离线翻译：不联网、不收费、原文不离开这台 Mac，但长段落译得比较生硬。AI 翻译用「设置 → AI」里的模型；DeepL 要填自己的 API Key。选的引擎现在用不了时（还没填 Key、AI 没设置好）先用系统翻译。翻译卡片上可以临时换引擎，也可以选「对比」把几家的译文放在一起看。" = "System Translation uses the offline translation built into macOS: free, no network, and your text never leaves this Mac, though long paragraphs can read stiffly. AI Translation uses the model in Settings → AI; DeepL needs your own API key. If the chosen engine isn’t available (no key yet, AI not set up), System Translation is used. On the translation card you can switch engines, or choose Compare to see several translations side by side.";
+"目标语言" = "Target Language";
+"外文译为" = "Translate other languages to";
+"中文译为" = "Translate Chinese to";
+"到 DeepL 官网申请 API Key（有免费版），填在这里。只有用 DeepL 翻译时才把原文发给 DeepL；Key 只存在这台 Mac 的钥匙串里，不跟设置一起同步。" = "Get an API key on the DeepL website (there’s a free plan) and enter it here. Text is sent to DeepL only when you translate with DeepL. The key stays in this Mac’s keychain and doesn’t sync with your settings.";
+"离线语言包" = "Offline Languages";
+"系统翻译第一次翻译某个语言组合前，需要先下载对应的语言包，也可以在「系统设置 → 通用 → 语言与地区 → 翻译语言」里管理。" = "System Translation needs to download a language pair before translating it for the first time. You can also manage them in System Settings → General → Language & Region → Translation Languages.";
+"粘贴 DeepL 的 API Key" = "Paste your DeepL API key";
+"申请 API Key" = "Get an API Key";
+"可以用了：Hello → %@" = "Works: Hello → %@";
+"原文" = "From";
+"译文" = "To";
+"下载语言包" = "Download Languages";
+"语言包已就绪" = "Languages are ready";
+"下载没有完成：%@" = "Download didn’t finish: %@";
+"正在检查…" = "Checking…";
+"未下载" = "Not downloaded";
+"不支持这个语言组合" = "This language pair isn’t supported";
+"未知状态" = "Unknown";
+"通过 iCloud 同步设置" = "Sync settings with iCloud";
+"状态" = "Status";
+"上次同步" = "Last synced";
+"云端配置来自" = "Cloud settings from";
+"立即同步" = "Sync Now";
+"同步圆盘布局、已安装的功能、自己添加的插件、直达规则、唤起方式、翻译和剪贴板设置（剪贴板历史本身只留在本机）。数据存在你自己的 iCloud 账号里（iCloud 键值存储），Pop 没有任何服务器。多台 Mac 都改过时，以最后一次修改为准。" = "Syncs the ring layout, installed actions, your plugins, rules, trigger, translation and clipboard settings (clipboard history itself stays on this Mac). Data is stored in your own iCloud account (iCloud key-value storage); Pop has no servers. If several Macs make changes, the latest one wins.";
+"当前构建没有 iCloud 能力：需要用付费开发者账号签名，并使用带 iCloud 的 entitlements（见 README）。" = "This build doesn’t include iCloud. It must be signed with a paid developer account using the iCloud entitlements (see the README).";
+"导出设置…" = "Export Settings…";
+"导入设置…" = "Import Settings…";
+"导出和导入" = "Export and Import";
+"把设置和自己写的插件存成一个文件，在另一台 Mac 上导入；没有 iCloud 同步的版本也能这样搬过去。AI 的 API Key 只在本机钥匙串里，不会导出。" = "Save your settings and plugins to a file and import it on another Mac, even with builds that don’t sync through iCloud. The AI API key stays in this Mac’s keychain and isn’t exported.";
+"已导出到「%@」" = "Exported to “%@”";
+"读不了这个文件：%@" = "Can’t read this file: %@";
+"导入「%@」？" = "Import “%@”?";
+"会替换现在的%@。同名的插件会被覆盖，其他插件保留。" = "This replaces your current %@. Plugins with the same name are overwritten; other plugins are kept.";
+"导入" = "Import";
+"已导入" = "Imported";
+"已导入，但这些插件没能保存：%@" = "Imported, but these plugins couldn’t be saved: %@";
+
+/* SettingsWindow.swift */
+"通用" = "General";
+"功能" = "Actions";
+"直达规则" = "Rules";
+"快捷键" = "Shortcuts";
+"同步" = "Sync";
+
+/* SmallTools.swift */
+"相差" = "Difference";
+"折合" = "Equals";
+"%lld 周" = "%lld weeks";
+" %@ 天" = " %@ days";
+"%@ 年 " = "%@ years ";
+"%@ 个月 " = "%@ months ";
+"也就是" = "That is";
+"首尾都算" = "Counting both ends";
+"工作日" = "Workdays";
+"%lld 天（周一到周五，不算节假日）" = "%lld days (Monday to Friday, not counting holidays)";
+"…（太多了，没有全部列出）" = "… (too many to list)";
+"- …（太多了，没有全部列出）" = "- … (too many to list)";
+" %lld 天" = " %lld days";
+"%lld 个月 " = "%lld months ";
+"%lld 年 " = "%lld years ";
+
+/* SnippetPickerView.swift */
+"↑↓ 选择 · ⏎ 粘贴" = "↑↓ Choose · ⏎ Paste";
+"还没有常用短语。在「设置 → 剪贴板」里添加，写一次就能反复粘贴，还可以用 {date}、{clipboard} 这样的占位符。" = "No snippets yet. Add them in Settings → Clipboard: write once, paste any time, with placeholders such as {date} and {clipboard}.";
+"去添加" = "Add Snippets";
+"搜索短语" = "Search snippets";
+"没有匹配的短语" = "No matching snippets";
+
+/* SnippetSettingsView.swift */
+"还没有短语。" = "No snippets yet.";
+"上移" = "Move Up";
+"下移" = "Move Down";
+"添加短语…" = "Add Snippet…";
+"在圆盘的「常用短语」里选一条就粘贴到当前 App，排在前面的可以用 ⌘1–9 直接粘贴；也可以在「快捷键」里给它设一个快捷键。粘贴完剪贴板会恢复原样。" = "Choose a snippet from Snippets on the ring to paste it into the current app; ⌘1–9 paste the first ones. You can also give it a shortcut in Shortcuts. The clipboard is restored after pasting.";
+"添加短语" = "Add Snippet";
+"编辑短语" = "Edit Snippet";
+"标题（可选）" = "Title (optional)";
+"可以用的占位符（粘贴时换成当时的内容）：" = "Placeholders (replaced when pasting):";
+
+/* Snippets.swift */
+"今天的日期" = "Today’s date";
+"邮件结尾" = "Email sign-off";
+"祝好！\n\n{date}" = "Best regards,\n\n{date}";
+"今天的日期，比如 2026-09-29" = "Today’s date, e.g. 2026-09-29";
+"现在的时间，比如 14:30" = "Current time, e.g. 14:30";
+"日期和时间" = "Date and time";
+"星期几" = "Day of the week";
+"剪贴板里的文字" = "Text on the clipboard";
+"唤起时选中的文字" = "Text selected when Pop opened";
+
+/* StatusItemController.swift */
+"安装新版本 %@…" = "Install Version %@…";
+"授予辅助功能权限…" = "Grant Accessibility Permission…";
+"剪贴板历史…" = "Clipboard History…";
+"暂存架（%lld）" = "Shelf (%lld)";
+"关闭全部贴图（%lld）" = "Close All Pins (%lld)";
+"停止保持唤醒" = "Stop Keeping Awake";
+"停止传到手机" = "Stop Sending to Phone";
+"恢复 Pop" = "Resume Pop";
+"暂停 Pop" = "Pause Pop";
+"设置…" = "Settings…";
+"检查更新…" = "Check for Updates…";
+"停止录屏（%@）" = "Stop Recording (%@)";
+
+/* SystemPlugins.swift */
+"保持唤醒" = "Keep Awake";
+"一段时间内不让屏幕变暗、电脑睡眠，适合看文档、演示、等下载" = "Keep the display on and the Mac awake for a while: for reading, presenting or waiting for downloads";
+"一直保持" = "Indefinitely";
+"选一个时长，这段时间里屏幕不会变暗，电脑也不会自己睡眠；合上盖子照常睡眠。" = "Choose a duration. During it, the display won’t dim and the Mac won’t sleep on its own; closing the lid still puts it to sleep.";
+"重新选一个时长会从现在开始算" = "Choosing another duration starts counting from now";
+"屏幕标尺" = "Screen Ruler";
+"定格屏幕，量出指针处到上下左右边缘的距离，拖动量一块区域的宽高；单击复制尺寸" = "Freeze the screen and measure distances from the pointer to the edges around it; drag to measure an area; click to copy the size";
+"计时器" = "Timer";
+"倒计时：选一个时长，或者选中「25 分钟」「1:30」这样的文字直接开始；到点时响一声、发通知" = "Countdown: choose a duration, or select text such as “25 min” or “1:30” to start right away. Plays a sound and sends a notification when time’s up.";
+"取消计时" = "Cancel Timer";
+"选一个时长开始倒计时；到点时响一声、发一条通知。也可以选中「25 分钟」「1:30」这样的文字再用它。" = "Choose a duration to start a countdown. When time’s up, Pop plays a sound and sends a notification. You can also select text such as “25 min” or “1:30” and use the timer.";
+"录屏" = "Record Screen";
+"拖出一块区域、单击选一个窗口或者按回车录整个屏幕，存成 MP4；可以录上电脑里的声音、显示鼠标点击，录好能接着转成 GIF。正在录的时候再用一次就停止" = "Drag out an area, click a window or press Return to record the whole screen as MP4; can include the Mac’s sound and show clicks, and the recording can then be turned into a GIF. Use it again while recording to stop";
+
+/* TableConverter.swift */
+"制表符分隔" = "Tab-Separated";
+
+/* TableOCR.swift */
+"%lld 行 × %@ 列" = "%lld rows × %@ columns";
+"；图片里还有 %@ 个表格，这里只显示第一个" = "; the image has %@ more tables, only the first is shown";
+"%lld 行 × %lld 列" = "%lld rows × %lld columns";
+"；图片里还有 %lld 个表格，这里只显示第一个" = "; the image has %lld more tables, only the first is shown";
+
+/* TablePlugins.swift */
+"识别截图或图片里的表格，转成 Markdown 表格、CSV 或者制表符分隔（macOS 26；更早的系统按普通文字识别）" = "Recognize a table in a screenshot or image as a Markdown table, CSV or tab-separated text (macOS 26; earlier versions recognize plain text)";
+"没有找到表格，下面是识别到的文字" = "No table found; here’s the recognized text";
+"识别表格失败：%@" = "Table recognition failed: %@";
+"按表格识别需要 macOS 26，这里按普通文字识别" = "Recognizing tables requires macOS 26; recognized as plain text";
+
+/* TextCleanup.swift */
+"合并换行" = "Join Lines";
+"去掉空行" = "Remove Blank Lines";
+"去多余空格" = "Remove Extra Spaces";
+"中英文空格" = "Space Chinese and Latin";
+"全角转半角" = "Full-Width to Half-Width";
+"去掉看不见的字符" = "Remove Invisible Characters";
+"转为繁体" = "To Traditional Chinese";
+"转为简体" = "To Simplified Chinese";
+"拼音" = "Pinyin";
+"无调拼音" = "Pinyin Without Tones";
+"按行排序" = "Sort Lines";
+"按行去重" = "Remove Duplicate Lines";
+
+/* TextDiffView.swift */
+"⋯ %lld 行相同 ⋯" = "⋯ %lld identical lines ⋯";
+
+/* TextPlugins.swift */
+"词典" = "Dictionary";
+"用系统「词典」查询选中的单词或词语" = "Look up the selected word or phrase in the system Dictionary";
+"没有可查询的词" = "No word to look up";
+"在词典中打开" = "Open in Dictionary";
+"系统词典里没有找到「%@」。可以在「词典」App 的设置里启用更多词典。" = "“%@” wasn’t found in the system dictionaries. You can turn on more dictionaries in the Dictionary app’s settings.";
+"加入生词本" = "Add to Vocabulary";
+"朗读" = "Speak";
+"用系统语音朗读选中的文字，朗读中再用一次就停止" = "Read the selected text aloud with the system voice; use it again to stop";
+"已停止朗读" = "Stopped speaking";
+"没有可朗读的文字" = "No text to read aloud";
+"正在朗读…" = "Speaking…";
+"大写、小写、驼峰、下划线等写法互相转换" = "Convert between uppercase, lowercase, camelCase, snake_case and more";
+"没有可以转换的字母" = "No letters to convert";
+"大小写转换" = "Change Case";
+"编码转换" = "Encode & Decode";
+"Base64、URL、Unicode、HTML 实体的编码和解码" = "Encode and decode Base64, URL, Unicode and HTML entities";
+"统计字符、汉字、单词、行数和阅读时间" = "Count characters, Chinese characters, words and lines, and estimate reading time";
+"数字统计" = "Number Statistics";
+"选中一列或一串数字，算出合计、平均、中位数、最大、最小" = "Get the sum, average, median, max and min of a list of numbers";
+"需要至少两个数：一列（每行一个，前面可以有文字），或者一行用逗号、空格隔开" = "Needs at least two numbers: a column (one per line, optionally after some text) or one line separated by commas or spaces";
+"共 %lld 个数" = "%lld numbers";
+"拼写检查" = "Spell Check";
+"找出外文里拼错的词，给出改法，可以直接换成改好的文字（系统自带的拼写检查，离线）" = "Find misspelled words and suggest corrections you can apply directly (built-in macOS spell checking, offline)";
+"没有发现拼写错误" = "No spelling mistakes found";
+"（没有建议）" = "(No suggestions)";
+"发现 %lld 处拼写问题；上面是按第一个建议改好的文字" = "Found %lld spelling issues; above is the text corrected with the first suggestions";
+"发现 %lld 处可能拼错的词，没有找到改法" = "Found %lld possibly misspelled words without suggestions";
+"把选中的文字和剪贴板里的文字对比，标出删去和新增的地方" = "Compare the selected text with the text on the clipboard and mark deletions and additions";
+"剪贴板里没有文字。先复制一段文字，再选中另一段，用「文本对比」看两段有什么不同。" = "There’s no text on the clipboard. Copy some text, select another piece, and use Compare Text to see the differences.";
+"剪贴板里的文字太长了" = "The text on the clipboard is too long";
+"两段文字完全相同" = "The two texts are identical";
+"剪贴板 → 选中的文字：删去 %lld 行，新增 %lld 行。红色是只在剪贴板里有的，绿色是只在选中的文字里有的。" = "Clipboard → selection: %lld lines removed, %lld lines added. Red is only on the clipboard; green is only in the selection.";
+"哈希" = "Hash";
+"计算文字或文件的 MD5、SHA-1、SHA-256、SHA-512" = "Compute MD5, SHA-1, SHA-256 and SHA-512 of text or files";
+"文件夹没法计算哈希，请选择文件" = "Folders can’t be hashed. Select files.";
+"读取文件失败：%@" = "Couldn’t read the file: %@";
+"SHA-256（%lld 个文件）" = "SHA-256 (%lld files)";
+"哈希（UTF-8）" = "Hash (UTF-8)";
+"数字转换" = "Numbers";
+"进制转换、千分位、人民币大写" = "Bases, thousands separators, RMB in words";
+"不是有效的数字" = "Not a valid number";
+"颜色转换" = "Convert Color";
+"HEX、RGB、HSL、SwiftUI 颜色写法互相转换，列出由浅到深的色阶" = "Convert between HEX, RGB, HSL and SwiftUI colors, with a light-to-dark scale";
+"不是有效的颜色值" = "Not a valid color value";
+"选中两个颜色（比如「#333333 #FFFFFF」），算出文字和背景的对比度，看是否达到 WCAG 的 AA、AAA" = "Select two colors (e.g. “#333333 #FFFFFF”) to get the text/background contrast ratio and whether it meets WCAG AA and AAA";
+"需要两个颜色值，比如「#333333 #FFFFFF」" = "Needs two color values, e.g. “#333333 #FFFFFF”";
+"前一个当文字颜色，后一个当背景；大号文字指 18pt 以上，或 14pt 以上的粗体" = "The first is the text color, the second the background; large text means 18pt or larger, or bold 14pt or larger";
+"随机生成" = "Random";
+"生成 UUID、密码和随机数字，可以直接粘贴到当前输入框" = "Generate UUIDs, passwords and random numbers to paste into the current field";
+"收集箱" = "Inbox";
+"把选中的文字追加到「文稿/Pop 收集箱.md」" = "Append the selected text to “Documents/Pop 收集箱.md”";
+"已记到收集箱" = "Added to Inbox";
+"写入收集箱失败：%@" = "Couldn’t write to the Inbox: %@";
+"单位换算" = "Convert Units";
+"长度、重量、温度、体积、面积、速度、数据大小和传输速率互相换算，认得斤、亩等市制单位" = "Convert length, weight, temperature, volume, area, speed, data size and data rate, including Chinese units such as jin and mu";
+"没有识别到带单位的数值" = "No measurement found";
+"没有可以换算的单位" = "No units to convert to";
+"文字整理" = "Clean Up Text";
+"合并换行、去掉空行和多余空格、中英文之间加空格、全角转半角、简繁转换、拼音、按行排序去重" = "Join lines, remove blank lines and extra spaces, space Chinese and Latin text, full-width to half-width, Simplified ↔ Traditional Chinese, Pinyin, sort and deduplicate lines";
+"这段文字没有需要整理的地方" = "Nothing to clean up in this text";
+"从一段文字里找出链接、邮箱、电话号码和 IP 地址，逐个复制或者一起复制" = "Find links, email addresses, phone numbers and IP addresses in text and copy them one by one or together";
+"没有找到链接、邮箱、电话号码或 IP 地址" = "No links, email addresses, phone numbers or IP addresses found";
+"证件号码" = "ID Numbers";
+"身份证号、统一社会信用代码、银行卡号：检查校验位，读出出生日期、年龄、性别、地区和登记管理部门，不联网" = "Chinese ID numbers, unified social credit codes and bank card numbers: check the check digit and read out birth date, age, sex, region and registration authority, offline";
+"没有认出身份证号、统一社会信用代码或银行卡号" = "No ID number, credit code or bank card number found";
+"按行处理" = "Lines";
+"一列文字加引号和逗号（SQL 的 IN 列表）、转 JSON 数组、加减序号、倒序、打乱；一行用逗号隔开的拆成多行" = "Quote and comma-separate a list (for SQL IN), convert to a JSON array, add or remove numbering, reverse, shuffle; split a comma-separated line into lines";
+"需要至少两项：一行一项，或者一行里用逗号隔开" = "Needs at least two items: one per line, or separated by commas on one line";
+"这些内容没有可以转换的写法" = "No conversions available for this content";
+"共 %lld 项" = "%lld items";
+"加到提醒事项" = "Add to Reminders";
+"从选中的文字里认出时间（明天下午 3 点、周五、10 月 8 日、半小时后……），加到「提醒事项」或者「日历」" = "Find a time in the selected Chinese text (明天下午 3 点, 周五, 10 月 8 日, 半小时后…) and add it to Reminders or Calendar";
+
+/* TextTransforms.swift */
+"大写" = "UPPERCASE";
+"小写" = "lowercase";
+"Base64 解码" = "Base64 Decoded";
+"URL 解码" = "URL Decoded";
+"Unicode 还原" = "Unicode Unescaped";
+"HTML 还原" = "HTML Unescaped";
+"Base64 编码" = "Base64 Encoded";
+"URL 编码" = "URL Encoded";
+"Unicode 转义" = "Unicode Escaped";
+"HTML 转义" = "HTML Escaped";
+"不到 1 分钟" = "Under 1 minute";
+"约 %lld 分钟" = "About %lld minutes";
+"不含空白" = "Without spaces";
+"汉字" = "Chinese characters";
+"词" = "Words";
+"UTF-8 字节" = "UTF-8 bytes";
+"阅读时间" = "Reading time";
+"十进制" = "Decimal";
+"十六进制" = "Hexadecimal";
+"八进制" = "Octal";
+"二进制" = "Binary";
+"千分位" = "Grouped";
+"英文读法" = "In English";
+"中文读法" = "In Chinese";
+"人民币大写" = "RMB in words";
+"本地时间" = "Local time";
+"Unix 秒" = "Unix seconds";
+"Unix 毫秒" = "Unix milliseconds";
+"距今" = "Relative";
+"星期" = "Weekday";
+"农历" = "Chinese lunar date";
+"第几周" = "Week";
+"北京" = "Beijing";
+"东京" = "Tokyo";
+"伦敦" = "London";
+"纽约" = "New York";
+"旧金山" = "San Francisco";
+"UUID 小写" = "UUID lowercase";
+"密码" = "Password";
+"密码 无符号" = "Password without symbols";
+"6 位数字" = "6 digits";
+
+/* ToolPlugins.swift */
+"日期计算" = "Date Difference";
+"选中两个日期（比如「2026-09-29 到 2026-12-25」），算出相差多少天、几周、几个月，其中有多少个工作日" = "Select two dates (e.g. “2026-09-29 to 2026-12-25”) to get the days, weeks and months between them and how many are workdays";
+"需要两个日期，比如「2026-09-29 到 2026-12-25」" = "Needs two dates, e.g. “2026-09-29 to 2026-12-25”";
+"从 %@ 到 %@" = "From %@ to %@";
+"目录结构" = "Folder Tree";
+"把选中文件夹里的目录结构写成树形或者 Markdown 列表，贴进文档、README 或者发给别人" = "Write the structure of the selected folder as a tree or Markdown list for docs, READMEs or sharing";
+"没有选中文件夹" = "No folder selected";
+"%@ 个文件夹，%lld 个文件；最多展开 3 层，隐藏文件不列出" = "%@ folders, %lld files; up to 3 levels deep, hidden files not listed";
+"，太多了没有全部列出" = "; too many to list them all";
+"树形" = "Tree";
+"Markdown 列表" = "Markdown List";
+"Markdown 目录" = "Markdown Table of Contents";
+"按选中的 Markdown 里的标题生成目录，点链接能跳到对应的标题（锚点和 GitHub 的写法一样）" = "Create a table of contents from the headings in the selected Markdown, with links to each heading (GitHub-style anchors)";
+"没有找到 # 开头的标题" = "No headings starting with # found";
+"%lld 个标题" = "%lld headings";
+"查找重复文件" = "Find Duplicates";
+"在选中的文件夹里找出内容完全一样的文件，每组留一个，其余的移到废纸篓" = "Find files with identical contents in the selected folders; keep one of each and move the rest to the Trash";
+"占用空间" = "Disk Usage";
+"看选中的文件夹里哪些东西最占地方：按层级一层层点进去，或者直接列出最大的文件，不要的可以移到废纸篓" = "See what takes the most space in the selected folder: drill down level by level or list the largest files, and move what you don’t need to the Trash";
+"代码行数" = "Lines of Code";
+"按语言统计选中的文件夹里有多少个代码文件、多少行，可以复制成 Markdown 表格" = "Count code files and lines per language in the selected folders; copy as a Markdown table";
+"选中的文件夹里没有认得出的代码文件" = "No recognized code files in the selected folders";
+"%@ 个文件，%@ 行（空行 %@ 行）；不算隐藏文件夹和 node_modules 这类依赖" = "%@ files, %@ lines (%@ blank); hidden folders and dependencies such as node_modules aren’t counted";
+"，跳过 %@ 个太大或不是文字的文件" = "; skipped %@ files that are too large or not text";
+"，只数了前 %@ 个" = "; only the first %@ were counted";
+"%@ 行，%@ 个文件" = "%@ lines, %@ files";
+"比较选中的两个文件夹：哪些文件只在一边有，哪些两边都有但内容不一样" = "Compare the two selected folders: which files are only on one side, and which differ";
+"选中两个文件夹才能比较" = "Select two folders to compare";
+"%lld 个文件夹，%lld 个文件；最多展开 3 层，隐藏文件不列出" = "%lld folders, %lld files; up to 3 levels deep, hidden files not listed";
+"，跳过 %lld 个太大或不是文字的文件" = "; skipped %lld files that are too large or not text";
+
+/* Transcriber.swift */
+"普通话" = "Mandarin";
+"英语" = "English";
+"粤语" = "Cantonese";
+"日语" = "Japanese";
+"这台 Mac 认不了这种语言" = "This Mac can’t recognize this language";
+"语音识别现在用不了，稍后再试" = "Speech recognition isn’t available right now. Try again later.";
+"「%@」里没有声音" = "“%@” has no audio";
+"读不了「%@」里的声音" = "Can’t read the audio in “%@”";
+"读不了「%@」里的声音：%@" = "Can’t read the audio in “%@”: %@";
+"没有听到有人说话" = "No speech was heard";
+"要先在「系统设置 → 键盘 → 听写」里打开听写，才能在本机识别" = "Turn on Dictation in System Settings → Keyboard → Dictation to recognize speech on this Mac";
+"识别失败：%@" = "Recognition failed: %@";
+"存不了识别结果：%@" = "Can’t save the transcript: %@";
+"文字和字幕已经存在「%@」旁边" = "The text and subtitles were saved next to “%@”";
+"；这台 Mac 不能在本机识别这种话，用的是苹果的服务器" = "; this Mac can’t recognize this language on its own, so Apple’s servers were used";
+"语音转文字" = "Transcribe";
+"字幕 SRT" = "SRT Subtitles";
+
+/* TranslationEngines.swift */
+"系统" = "System";
+"系统翻译（离线）" = "System Translation (offline)";
+"AI 翻译" = "AI Translation";
+"无法识别原文的语言" = "Can’t detect the language of the text";
+"无法确认语言包状态" = "Can’t check the language download status";
+"先在「设置 → 翻译」里填上 DeepL 的 API Key" = "Enter your DeepL API key in Settings → Translate first";
+"DeepL 不能译成%@" = "DeepL can’t translate to %@";
+"DeepL 的 API Key 不对，到「设置 → 翻译」里检查一下" = "Wrong DeepL API key. Check it in Settings → Translate.";
+"文字太长，DeepL 一次翻不了" = "The text is too long for DeepL to translate at once";
+"DeepL 请求太频繁了，稍后再试" = "Too many DeepL requests. Try again later.";
+"DeepL 这个月的字数额度用完了" = "Your DeepL character quota for this month is used up";
+"DeepL 暂时出了问题（%lld），稍后再试" = "DeepL had a problem (%lld). Try again later.";
+"DeepL 返回了错误：%@" = "DeepL returned an error: %@";
+"DeepL 返回了错误（%lld）" = "DeepL returned an error (%lld)";
+"连不上 DeepL：%@" = "Can’t connect to DeepL: %@";
+"DeepL 返回的内容读不出来" = "Can’t read DeepL’s response";
+"先在「设置 → 翻译」里设置好%@" = "Set up %@ in Settings → Translate first";
+"没有设置联网的翻译引擎" = "No online translation engine is set up";
+"系统翻译在卡片上直接进行" = "System Translation runs directly on the card";
+
+/* UnitConverter.swift */
+"长度" = "Length";
+"重量" = "Weight";
+"温度" = "Temperature";
+"体积" = "Volume";
+"面积" = "Area";
+"速度" = "Speed";
+"数据大小" = "Data size";
+"传输速率" = "Data rate";
+"毫米" = "Millimeters";
+"厘米" = "Centimeters";
+"米" = "Meters";
+"千米" = "Kilometers";
+"英寸" = "Inches";
+"英尺" = "Feet";
+"码" = "Yards";
+"英里" = "Miles";
+"海里" = "Nautical miles";
+"尺（市尺）" = "Chi (Chinese foot)";
+"里（市里）" = "Li (Chinese mile)";
+"毫克" = "Milligrams";
+"克" = "Grams";
+"千克" = "Kilograms";
+"吨" = "Metric tons";
+"磅" = "Pounds";
+"盎司" = "Ounces";
+"克拉" = "Carats";
+"斤" = "Jin (Chinese pound)";
+"两" = "Liang (Chinese ounce)";
+"摄氏度" = "Celsius";
+"华氏度" = "Fahrenheit";
+"开尔文" = "Kelvin";
+"毫升" = "Milliliters";
+"升" = "Liters";
+"立方米" = "Cubic meters";
+"加仑（美）" = "Gallons (US)";
+"夸脱" = "Quarts";
+"品脱" = "Pints";
+"杯（美）" = "Cups (US)";
+"液量盎司" = "Fluid ounces";
+"汤匙" = "Tablespoons";
+"茶匙" = "Teaspoons";
+"平方厘米" = "Square centimeters";
+"平方米" = "Square meters";
+"平方千米" = "Square kilometers";
+"公顷" = "Hectares";
+"平方英尺" = "Square feet";
+"平方英寸" = "Square inches";
+"英亩" = "Acres";
+"平方英里" = "Square miles";
+"亩" = "Mu (Chinese acre)";
+"米/秒" = "Meters/second";
+"千米/时" = "Kilometers/hour";
+"英里/时" = "Miles/hour";
+"节" = "Knots";
+"比特" = "Bits";
+"字节" = "Bytes";
+"Kb（千比特）" = "Kb (kilobits)";
+"Mb（兆比特）" = "Mb (megabits)";
+"Gb（吉比特）" = "Gb (gigabits)";
+"英尺英寸" = "Feet and inches";
+
+/* UpdateChecker.swift */
+"GitHub 返回了 %lld" = "GitHub returned %lld";
+"读不懂 GitHub 返回的内容" = "Can’t read GitHub’s response";
+"这个版本没有可以直接安装的附件，请到发布页手动下载" = "This version has no installable attachment. Please download it from the release page.";
+"校验文件里没有这个附件的校验和" = "The checksum file has no checksum for this attachment";
+"下载的文件校验和不对，可能没下载完整或者被篡改了" = "The downloaded file’s checksum doesn’t match. It may be incomplete or tampered with.";
+"解压失败：%@" = "Couldn’t unzip: %@";
+"压缩包里没有 Pop.app" = "The archive doesn’t contain Pop.app";
+"下载的程序不对：%@" = "The downloaded app is wrong: %@";
+"替换程序失败：%@" = "Couldn’t replace the app: %@";
+"已取消授权，Pop 没有改动" = "Authorization was canceled. Pop wasn’t changed.";
+"macOS 不允许 Pop 替换自己：到「系统设置 → 隐私与安全性 → App 管理」里打开 Pop，再点重试" = "macOS doesn’t allow Pop to replace itself. Turn on Pop in System Settings → Privacy & Security → App Management, then try again.";
+"新版本和当前版本不是用同一个证书签名的，为了安全没有安装。可以到发布页确认后手动下载" = "The new version isn’t signed with the same certificate as this one, so it wasn’t installed. You can check the release page and download it manually.";
+
+/* UpdateInstaller.swift */
+"「应用程序」" = "Applications";
+"个人的「应用程序」（~/Applications）" = "your personal Applications folder (~/Applications)";
+"读不到 Info.plist" = "Can’t read Info.plist";
+"Bundle ID 是 %@" = "Bundle ID is %@";
+"版本是 %@，不是 %@" = "Version is %@, not %@";
+"签名校验失败：%@" = "Signature check failed: %@";
+"超时" = "Timed out";
+"退出码 %d" = "Exit code %d";
+
+/* UpdateSettingsView.swift */
+"版本" = "Version";
+"当前版本" = "Current version";
+"签名" = "Signature";
+"新版本（测试版）" = "New Version (Beta)";
+"新版本" = "New Version";
+"自动检查更新" = "Check for updates automatically";
+"也接收测试版（预发布版本）" = "Include beta versions (pre-releases)";
+"上次检查" = "Last checked";
+"检查更新" = "Check for Updates";
+"所有版本…" = "All Versions…";
+"新版本从 GitHub Releases 下载：先比对 SHA-256 校验和，再检查代码签名，确认无误后替换 Pop.app 并自动重新启动，设置、插件和剪贴板历史都会保留。打开自动检查时，启动后检查一次、之后每 6 小时一次，发现新版本会发通知，菜单栏图标也会变成下载箭头。" = "New versions are downloaded from GitHub Releases. Pop verifies the SHA-256 checksum and code signature, then replaces Pop.app and restarts; your settings, plugins and clipboard history are kept. With automatic checks on, Pop checks at launch and every 6 hours, sends a notification when there’s a new version, and the menu bar icon turns into a download arrow.";
+"当前是本地签名（ad-hoc）的测试包：每个版本的签名都不一样，更新后 macOS 会把它当成另一个程序，需要重新授权辅助功能。更新完 Pop 会自动打开设置，在「通用」里点「清除旧的授权记录」再授权一次即可。用固定的签名证书发布后就不用这一步了（见 README）。" = "This is an ad-hoc signed test build. Each version has a different signature, so after an update macOS treats it as a different app and Accessibility permission must be granted again. Pop opens Settings after updating; click Reset Old Permission in General and grant it again. Builds released with a fixed signing certificate don’t need this (see the README).";
+"请我喝杯咖啡" = "Buy Me a Coffee";
+"Pop 免费开源。觉得好用的话，可以用微信扫一扫请我喝杯咖啡 ☕" = "Pop is free and open source. If you find it useful, you can buy me a coffee by scanning this WeChat code ☕";
+"本地签名（ad-hoc）" = "Ad-hoc signed";
+"证书签名" = "Signed with a certificate";
+"还没有检查过" = "Never checked";
+"已是最新版本" = "Pop is up to date";
+"有新版本 %@（已跳过）" = "Version %@ is available (skipped)";
+"查看" = "View";
+"有新版本 %@" = "Version %@ is available";
+"正在下载 %lld%%" = "Downloading %lld%%";
+"正在下载…" = "Downloading…";
+"正在校验…" = "Verifying…";
+"正在安装，请不要退出 Pop…" = "Installing. Please don’t quit Pop…";
+"已更新到 %@，正在重新启动…" = "Updated to %@. Restarting…";
+"立即更新" = "Update Now";
+"跳过这个版本" = "Skip This Version";
+"在网页上查看" = "View on the Web";
+"这个版本没有附带校验文件，不能在 Pop 里直接安装，请到网页上下载。" = "This version has no checksum file, so it can’t be installed from Pop. Please download it from the web page.";
+"点一下放大" = "Click to enlarge";
+"微信赞赏码：请我喝杯咖啡" = "WeChat tip code: buy me a coffee";
+
+/* Updater.swift */
+"现在是从临时位置运行的，这次会装进%@" = "Pop is running from a temporary location; this update installs it in %@";
+"现在是从临时位置运行的，这次会装进%@，旧的那份移到废纸篓" = "Pop is running from a temporary location; this update installs it in %@ and moves the old copy to the Trash";
+"检查更新失败：%@" = "Couldn’t check for updates: %@";
+"不是从 Pop.app 运行的，没法在程序里更新" = "Pop isn’t running from Pop.app, so it can’t update itself";
+
+/* VideoConverter.swift */
+"转成 GIF" = "Convert to GIF";
+"转成 MP4" = "Convert to MP4";
+"压缩到 720p" = "Compress to 720p";
+"提取音频" = "Extract Audio";
+"正在转成 GIF…" = "Converting to GIF…";
+"正在转成 MP4…" = "Converting to MP4…";
+"正在压缩视频…" = "Compressing video…";
+"正在提取音频…" = "Extracting audio…";
+"已转成 GIF" = "Converted to GIF";
+"已转成 MP4" = "Converted to MP4";
+"已压缩到 720p" = "Compressed to 720p";
+"已提取音频" = "Audio extracted";
+" 转换" = " Converted";
+"「%@」没有声音" = "“%@” has no audio";
+"转换「%@」失败：%@" = "Couldn’t convert “%@”: %@";
+"这台 Mac 不支持这样转换" = "This Mac doesn’t support this conversion";
+"读不到视频的时长" = "Can’t read the video’s duration";
+"这个文件里没有画面" = "This file has no video";
+"没能从视频里取出画面" = "Couldn’t get frames from the video";
+"存储 GIF 失败" = "Couldn’t save the GIF";
+"视频比较长，只转了前 %lld 秒" = "The video is long; only the first %lld seconds were converted";
+"拼缩略图" = "Contact Sheet";
+"正在拼缩略图…" = "Making a contact sheet…";
+"已拼成缩略图" = "Contact sheet saved";
+" 缩略图" = " contact sheet";
+
+/* Vocabulary.swift */
+"CSV（表格软件）" = "CSV (spreadsheets)";
+"制表符分隔（Anki 导入）" = "Tab-separated (Anki import)";
+"单词,释义,语言,加入日期,已记住" = "Word,Definition,Language,Date Added,Learned";
+"是" = "Yes";
+"否" = "No";
+
+/* VocabularyPlugin.swift */
+"生词本" = "Vocabulary";
+"翻译卡片上加进来的单词和释义：搜索、朗读、一个个复习，也能导出成表格或者 Anki 能导入的文件" = "Words and definitions added from translation cards: search, listen, review one by one, or export as a spreadsheet or a file Anki can import";
+
+/* VocabularyView.swift */
+"%lld 个，%lld 个还没记住" = "%lld words, %lld not learned yet";
+"搜索单词或释义" = "Search words or definitions";
+"复习" = "Review";
+"一个个看还没记住的词，想一想再看释义" = "Go through the words you haven’t learned yet; think first, then reveal the definition";
+"导出" = "Export";
+"还没有生词。翻译卡片上点「加入生词本」，单词和释义就会存到这里。" = "No words yet. Click Add to Vocabulary on a translation card to save a word and its definition here.";
+"已经记住了" = "Learned";
+"复制单词" = "Copy Word";
+"复制单词和释义" = "Copy Word and Definition";
+"标记为还没记住" = "Mark as Not Learned";
+"标记为已经记住" = "Mark as Learned";
+"看释义" = "Show Definition";
+"还剩 %lld 个" = "%lld left";
+"还不熟" = "Not Yet";
+"记住了" = "Got It";
+"结束" = "Finish";
+
+/* WatermarkView.swift */
+"水印文字" = "Watermark text";
+"淡" = "Light";
+"浓" = "Strong";
+"斜着铺满整张图（PDF 每一页都铺），另存一份「原名 水印」放在原文件旁边，原文件不动" = "Tiled diagonally across the image (every page of a PDF) and saved as a copy named “Name Watermark” next to the original, which stays unchanged";
+"给 %lld 个文件加水印" = "Watermark %lld Files";
+"给 %lld 张图片加水印" = "Watermark %lld Images";
+"给 %lld %@加水印" = "Watermark %lld %@";
+
+/* WindowLayout.swift */
+"左半屏" = "Left Half";
+"右半屏" = "Right Half";
+"上半屏" = "Top Half";
+"下半屏" = "Bottom Half";
+"左三分之一" = "Left Third";
+"中间三分之一" = "Center Third";
+"右三分之一" = "Right Third";
+"最大化" = "Maximize";
+"居中" = "Center";
+"下一个显示器" = "Next Display";
+
+/* WindowMover.swift */
+"没有找到可以移动的窗口" = "No window to move";
+"读取不到窗口的位置" = "Can’t read the window’s position";
+"找不到显示器" = "No display found";
+"只接了一个显示器" = "Only one display is connected";
+"这个窗口不能移动" = "This window can’t be moved";
+
+/* WindowPlugins.swift */
+"窗口布局" = "Window Layout";
+"把当前窗口放到屏幕的左半边、右半边、三分之一、最大化、居中，或者移到另一个显示器" = "Move the current window to the left or right half, a third, maximize, center it, or move it to another display";
+"方向键放到半屏，回车最大化" = "Arrow keys for halves, Return to maximize";
+"图片转换" = "Convert Images";
+"把选中的图片文件转成 PNG、JPEG、HEIC，缩小一半、压缩体积或者压到指定大小以内，旋转、左右翻转，或者去掉照片里的位置和拍摄信息；结果存在原图旁边" = "Convert the selected images to PNG, JPEG or HEIC, halve their size, compress them (or under a given size), rotate, flip, or remove location and capture info; results are saved next to the originals";
+"没有选中图片文件" = "No image files selected";
+"%lld 张图片" = "%lld images";
+"压缩到指定大小…" = "Compress to Size…";
+"复制为 data URI" = "Copy as Data URI";
+"%@，转换后存在原图旁边" = "%@. Converted files are saved next to the originals.";
+
+/* 共用的文字和格式 */
+"Pop 功能" = "Pop Action";
+"用 Pop 处理文字" = "Process Text with Pop";
+"用 Pop 的一个功能处理一段文字，把结果交给下一个操作：计算、格式化 JSON、转换大小写、AI 润色……" = "Process text with one of Pop’s actions and pass the result to the next step: calculate, format JSON, change case, AI polish…";
+"用 ${function} 处理 ${text}" = "Process ${text} with ${function}";
+"语言" = "Language";
+"简体中文" = "简体中文";
+"繁體中文" = "繁體中文";
+"日本語" = "日本語";
+"用 Pop 翻译" = "Translate with Pop";
+"用 AI 或 DeepL 翻译一段文字，把译文交给下一个操作。没选引擎时用「设置 → 翻译」里的默认引擎。" = "Translate text with AI or DeepL and pass the translation to the next step. Without an engine, the default one in Settings → Translate is used.";
+"译成" = "To";
+"引擎" = "Engine";
+"用 Pop 翻译 ${text}" = "Translate ${text} with Pop";
+"处理文字" = "Process Text";
+"{name}（{reason}）" = "{name} ({reason})";
+"，" = ", ";
+"%@（⌘%@）" = "%@ (⌘%@)";
+"%@（%lld）" = "%@ (%lld)";
+"%@（%lld）：%@" = "%@ (%lld): %@";
+"、" = ", ";
+"%@：%@" = "%@: %@";
+"%@（%@）" = "%@ (%@)";
+"；" = "; ";
+"%@（UTC%@）" = "%@ (UTC%@)";
+
+/* 0.28.0：证件照尺寸和冲印排版、macOS 26 的语音转写 */
+"，还有一张 6 寸排版（%lld 张）" = " and a 6-inch print sheet with %lld copies";
+"已存成「%@」%@" = "Saved as “%@”%@";
+"第一次识别这种话，要先下载系统的识别模型，稍等一会儿…" = "Downloading the system's speech model for this language. The first time takes a moment…";
+"小一寸" = "Small 1-inch";
+"大一寸" = "Large 1-inch";
+"小二寸" = "Small 2-inch";
+"排版" = "print sheet";
+"只换底色，大小不变；另存一份放在原图旁边，原图不动" = "Only the background changes and the size stays the same. A copy is saved next to the original, which stays untouched.";
+"%@ %lld×%lld 像素（300 dpi）；另存一份放在原图旁边，原图不动" = "%@: %lld × %lld pixels (300 dpi). A copy is saved next to the original, which stays untouched.";
+"另存 6 寸冲印排版" = "Also save a 6-inch print sheet";
+"在 6 寸相纸上排满这张照片，带裁切线，可以直接拿去冲印" = "Fills a 6-inch photo print with copies of this photo, with cut lines, ready to take to a print shop";
+
+/* 0.29.0：网页存档、裁剪图片 */
+"网页存档" = "Save Web Page";
+"把选中的网址整页存成一页长 PDF（文字能选、能搜）或者一张长图，放在「下载」里" = "Save the whole page at the selected URL to Downloads as one long PDF (with selectable, searchable text) or a long image";
+"只能存网页（http、https 开头的链接）" = "Only web pages can be saved (links that start with http or https)";
+"在后台打开这个网页，整页存到「下载」；要登录才能看的页面存下来是登录页" = "Opens the page in the background and saves the whole page to Downloads. A page that needs you to sign in is saved as the sign-in page.";
+"存成 PDF" = "Save as PDF";
+"存成长图" = "Save as Long Image";
+"正在打开网页…" = "Opening the web page…";
+"已存到「下载」：%@" = "Saved to Downloads: %@";
+"网页" = "Web Page";
+"网页没能画出来" = "Couldn’t render the web page";
+"网页是空的" = "The web page is empty";
+"网页太大了，画不出来" = "The web page is too large to render";
+"没有网址" = "No URL";
+"网页打开太慢，已经放弃" = "The web page took too long to open, so Pop gave up";
+"网页没能存下来：%@" = "Couldn’t save the web page: %@";
+"网页打不开：%@" = "Couldn’t open the web page: %@";
+"裁剪图片" = "Crop Image";
+"把选中的图片裁成 1:1、4:3、3:4、16:9、9:16，自动对准画面里的主体；另存一份放在原图旁边" = "Crop the selected images to 1:1, 4:3, 3:4, 16:9 or 9:16, centered on the subject; a copy is saved next to the original";
+"没有选中图片" = "No images selected";
+"把「%@」裁成哪种比例？" = "Crop “%@” to which ratio?";
+"把 %lld 张图片裁成哪种比例？" = "Crop %lld images to which ratio?";
+"在这个比例下裁出最大的一块，自动对准画面里的主体；另存一份放在原图旁边，原图不动" = "Crops the largest area with this ratio, centered on the subject. A copy is saved next to the original, which stays untouched.";
+"1:1 方形" = "1:1 Square";
+"1比1" = "1x1";
+"4比3" = "4x3";
+"3比4" = "3x4";
+"16比9" = "16x9";
+"9比16" = "9x16";
+"「%@」本来就是 %@" = "“%@” is already %@";
+"「%@」裁剪失败" = "Couldn’t crop “%@”";
+"裁好了 %lld 张，%lld 张失败：%@" = "Cropped %lld images, %lld failed: %@";
+"已裁成 %@，存在原图旁边" = "Cropped to %@ and saved next to the original";
+"已把 %lld 张裁成 %@" = "Cropped %lld images to %@";

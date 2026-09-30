@@ -70,7 +70,7 @@ struct PluginChooserView: View {
     @Namespace private var selectionSpace
 
     var body: some View {
-        CardContainer(title: "全部功能", subtitle: "↑↓ 选择 · ⏎ 执行", onClose: onClose) {
+        CardContainer(title: String(localized: "全部功能"), subtitle: String(localized: "↑↓ 选择 · ⏎ 执行"), onClose: onClose) {
             TextField("搜索功能，比如 fy 找到翻译", text: $model.query)
                 .textFieldStyle(.roundedBorder)
                 .focused($searchFocused)

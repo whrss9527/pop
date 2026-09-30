@@ -35,7 +35,9 @@ enum ScreenRecording {
         let message: String
     }
 
-    static let permissionHint = "要先在「系统设置 → 隐私与安全性 → 录屏与系统录音」里允许 Pop，允许后重新打开 Pop"
+    static var permissionHint: String {
+        String(localized: "要先在「系统设置 → 隐私与安全性 → 录屏与系统录音」里允许 Pop，允许后重新打开 Pop")
+    }
 
     /// 屏幕上的一个窗口（CGWindowList 给的：左上角为原点的全局坐标）
     struct WindowInfo: Equatable {
@@ -97,7 +99,8 @@ enum ScreenRecording {
         let formatter = DateFormatter()
         formatter.locale = Locale(identifier: "en_US_POSIX")
         formatter.dateFormat = "yyyy-MM-dd HH.mm.ss"
-        return "录屏 " + formatter.string(from: date)
+        let stamp = formatter.string(from: date)
+        return String(localized: "录屏 \(stamp)")
     }
 
     /// 系统截屏设置的存放位置（「截屏」App 的「选项」里改的）
@@ -130,11 +133,15 @@ enum ScreenRecording {
     /// 录好以后的卡片：可以接着转成 GIF、截取一段
     static func card(_ clip: Clip) -> ResultCard {
         let folder = FileManager.default.displayName(atPath: clip.url.deletingLastPathComponent().path(percentEncoded: false))
-        return ResultCard(title: "录好了", body: clip.url.lastPathComponent,
-                          detail: "\(durationText(clip.duration)) · \(clip.width) × \(clip.height) · 存在「\(folder)」",
+        // 像素数先转成文字再插进去，不然英文界面会加上千分位
+        let duration = durationText(clip.duration)
+        let width = String(clip.width)
+        let height = String(clip.height)
+        return ResultCard(title: String(localized: "录好了"), body: clip.url.lastPathComponent,
+                          detail: String(localized: "\(duration) · \(width) × \(height) · 存在「\(folder)」"),
                           buttons: [CardButton(title: VideoConverter.Operation.gif.title, action: .convertVideos([clip.url], .gif)),
-                                    CardButton(title: "截取一段…", action: .trimMedia(clip.url)),
-                                    CardButton(title: "打开", action: .open(clip.url)),
-                                    CardButton(title: "在访达中显示", action: .reveal(clip.url))])
+                                    CardButton(title: String(localized: "截取一段…"), action: .trimMedia(clip.url)),
+                                    CardButton(title: String(localized: "打开"), action: .open(clip.url)),
+                                    CardButton(title: String(localized: "在访达中显示"), action: .reveal(clip.url))])
     }
 }

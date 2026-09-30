@@ -39,7 +39,8 @@ final class BatchRenameTests: XCTestCase {
     func testReplaceAffixAndCase() {
         var rule = BatchRename.Rule(mode: .replace)
         rule.find = "IMG_"
-        XCTAssertEqual(names(plan(["IMG_0001.JPG", "照片.jpg"], rule)), ["0001.JPG", "照片.jpg"])
+        // 文件按名字排序，中文和英文谁在前面跟着系统语言，这里只比较有哪些名字
+        XCTAssertEqual(Set(names(plan(["IMG_0001.JPG", "照片.jpg"], rule))), ["0001.JPG", "照片.jpg"])
         XCTAssertEqual(plan(["IMG_0001.JPG", "照片.jpg"], rule).changes.count, 1)
 
         rule.useRegex = true
@@ -53,7 +54,7 @@ final class BatchRenameTests: XCTestCase {
         var affix = BatchRename.Rule(mode: .affix)
         affix.prefix = "2026 "
         affix.suffix = " 定稿"
-        XCTAssertEqual(names(plan(["报告.pdf", "archive.tar.gz"], affix)), ["2026 archive.tar 定稿.gz", "2026 报告 定稿.pdf"])
+        XCTAssertEqual(Set(names(plan(["报告.pdf", "archive.tar.gz"], affix))), ["2026 archive.tar 定稿.gz", "2026 报告 定稿.pdf"])
 
         var letters = BatchRename.Rule(mode: .letterCase)
         letters.letterCase = .upper

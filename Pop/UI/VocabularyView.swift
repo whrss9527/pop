@@ -73,11 +73,11 @@ struct VocabularyView: View {
 
     private var subtitle: String {
         let learning = store.entries.filter { !$0.mastered }.count
-        return store.entries.isEmpty ? "" : "\(store.entries.count) 个，\(learning) 个还没记住"
+        return store.entries.isEmpty ? "" : String(localized: "\(store.entries.count) 个，\(learning) 个还没记住")
     }
 
     var body: some View {
-        CardContainer(title: "生词本", subtitle: subtitle, width: 440, onClose: onClose) {
+        CardContainer(title: String(localized: "生词本"), subtitle: subtitle, width: 440, onClose: onClose) {
             if let entry = model.reviewing {
                 review(entry)
             } else {
@@ -155,7 +155,7 @@ struct VocabularyView: View {
         .contextMenu {
             Button("复制单词") { onCopy(entry.word) }
             Button("复制单词和释义") { onCopy("\(entry.word)\t\(entry.translation)") }
-            Button(entry.mastered ? "标记为还没记住" : "标记为已经记住") { store.setMastered(entry.id, !entry.mastered) }
+            Button(entry.mastered ? String(localized: "标记为还没记住") : String(localized: "标记为已经记住")) { store.setMastered(entry.id, !entry.mastered) }
             Divider()
             Button("删除") { store.remove([entry.id]) }
         }

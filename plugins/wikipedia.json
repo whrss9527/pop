@@ -4,6 +4,12 @@
   "name": "维基百科",
   "symbol": "book",
   "summary": "在中文维基百科里查词条",
+  "localized": {
+    "en": {
+      "name": "Wikipedia (Chinese)",
+      "summary": "Look up the selection on Chinese Wikipedia"
+    }
+  },
   "match": {
     "kinds": [
       "text"

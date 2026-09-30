@@ -42,9 +42,9 @@ enum CaseConverter {
         guard let first = lower.first else { return [] }
         let capitalized = lower.map { String($0.prefix(1)).uppercased() + String($0.dropFirst()) }
         return [
-            ResultCard.Row(label: "大写", value: text.uppercased()),
-            ResultCard.Row(label: "小写", value: text.lowercased()),
-            ResultCard.Row(label: "首字母大写", value: text.capitalized),
+            ResultCard.Row(label: String(localized: "大写"), value: text.uppercased()),
+            ResultCard.Row(label: String(localized: "小写"), value: text.lowercased()),
+            ResultCard.Row(label: String(localized: "首字母大写"), value: text.capitalized),
             ResultCard.Row(label: "camelCase", value: first + capitalized.dropFirst().joined()),
             ResultCard.Row(label: "PascalCase", value: capitalized.joined()),
             ResultCard.Row(label: "snake_case", value: lower.joined(separator: "_")),
@@ -61,26 +61,26 @@ enum TextCodec {
     static func conversions(_ text: String) -> [ResultCard.Row] {
         var rows: [ResultCard.Row] = []
         if let decoded = base64Decode(text), decoded != text {
-            rows.append(ResultCard.Row(label: "Base64 解码", value: decoded))
+            rows.append(ResultCard.Row(label: String(localized: "Base64 解码"), value: decoded))
         }
         if let decoded = urlDecode(text), decoded != text {
-            rows.append(ResultCard.Row(label: "URL 解码", value: decoded))
+            rows.append(ResultCard.Row(label: String(localized: "URL 解码"), value: decoded))
         }
         if let decoded = unicodeUnescape(text), decoded != text {
-            rows.append(ResultCard.Row(label: "Unicode 还原", value: decoded))
+            rows.append(ResultCard.Row(label: String(localized: "Unicode 还原"), value: decoded))
         }
         if let decoded = htmlUnescape(text), decoded != text {
-            rows.append(ResultCard.Row(label: "HTML 还原", value: decoded))
+            rows.append(ResultCard.Row(label: String(localized: "HTML 还原"), value: decoded))
         }
-        rows.append(ResultCard.Row(label: "Base64 编码", value: base64Encode(text)))
-        rows.append(ResultCard.Row(label: "URL 编码", value: urlEncode(text)))
+        rows.append(ResultCard.Row(label: String(localized: "Base64 编码"), value: base64Encode(text)))
+        rows.append(ResultCard.Row(label: String(localized: "URL 编码"), value: urlEncode(text)))
         let unicode = unicodeEscape(text)
         if unicode != text {
-            rows.append(ResultCard.Row(label: "Unicode 转义", value: unicode))
+            rows.append(ResultCard.Row(label: String(localized: "Unicode 转义"), value: unicode))
         }
         let html = htmlEscape(text)
         if html != text {
-            rows.append(ResultCard.Row(label: "HTML 转义", value: html))
+            rows.append(ResultCard.Row(label: String(localized: "HTML 转义"), value: html))
         }
         return rows
     }
@@ -262,21 +262,21 @@ struct TextStatistics: Equatable {
     }
 
     var readingTime: String {
-        readingMinutes < 1 ? "不到 1 分钟" : "约 \(Int(readingMinutes.rounded())) 分钟"
+        readingMinutes < 1 ? String(localized: "不到 1 分钟") : String(localized: "约 \(Int(readingMinutes.rounded())) 分钟")
     }
 
     var rows: [ResultCard.Row] {
         var rows = [
-            ResultCard.Row(label: "字符", value: "\(characters)"),
-            ResultCard.Row(label: "不含空白", value: "\(nonWhitespace)"),
+            ResultCard.Row(label: String(localized: "字符"), value: "\(characters)"),
+            ResultCard.Row(label: String(localized: "不含空白"), value: "\(nonWhitespace)"),
         ]
         if chinese > 0 {
-            rows.append(ResultCard.Row(label: "汉字", value: "\(chinese)"))
+            rows.append(ResultCard.Row(label: String(localized: "汉字"), value: "\(chinese)"))
         }
-        rows.append(ResultCard.Row(label: "词", value: "\(words)"))
-        rows.append(ResultCard.Row(label: "行", value: "\(lines)"))
-        rows.append(ResultCard.Row(label: "UTF-8 字节", value: "\(utf8Bytes)"))
-        rows.append(ResultCard.Row(label: "阅读时间", value: readingTime))
+        rows.append(ResultCard.Row(label: String(localized: "词"), value: "\(words)"))
+        rows.append(ResultCard.Row(label: String(localized: "行"), value: "\(lines)"))
+        rows.append(ResultCard.Row(label: String(localized: "UTF-8 字节"), value: "\(utf8Bytes)"))
+        rows.append(ResultCard.Row(label: String(localized: "阅读时间"), value: readingTime))
         return rows
     }
 }
@@ -376,20 +376,20 @@ enum NumberConverter {
     static func rows(for number: ParsedNumber) -> [ResultCard.Row] {
         var rows: [ResultCard.Row] = []
         if let value = number.integer {
-            rows.append(ResultCard.Row(label: "十进制", value: String(value)))
-            rows.append(ResultCard.Row(label: "十六进制", value: signed(value, radix: 16, prefix: "0x")))
-            rows.append(ResultCard.Row(label: "八进制", value: signed(value, radix: 8, prefix: "0o")))
-            rows.append(ResultCard.Row(label: "二进制", value: signed(value, radix: 2, prefix: "0b")))
+            rows.append(ResultCard.Row(label: String(localized: "十进制"), value: String(value)))
+            rows.append(ResultCard.Row(label: String(localized: "十六进制"), value: signed(value, radix: 16, prefix: "0x")))
+            rows.append(ResultCard.Row(label: String(localized: "八进制"), value: signed(value, radix: 8, prefix: "0o")))
+            rows.append(ResultCard.Row(label: String(localized: "二进制"), value: signed(value, radix: 2, prefix: "0b")))
         }
-        rows.append(ResultCard.Row(label: "千分位", value: grouped(number.decimal)))
+        rows.append(ResultCard.Row(label: String(localized: "千分位"), value: grouped(number.decimal)))
         if let english = spelledOut(number.decimal, locale: "en_US") {
-            rows.append(ResultCard.Row(label: "英文读法", value: english))
+            rows.append(ResultCard.Row(label: String(localized: "英文读法"), value: english))
         }
         if let chinese = spelledOut(number.decimal, locale: "zh_CN") {
-            rows.append(ResultCard.Row(label: "中文读法", value: chinese))
+            rows.append(ResultCard.Row(label: String(localized: "中文读法"), value: chinese))
         }
         if let uppercase = rmbUppercase(number.decimal) {
-            rows.append(ResultCard.Row(label: "人民币大写", value: uppercase))
+            rows.append(ResultCard.Row(label: String(localized: "人民币大写"), value: uppercase))
         }
         return rows
     }
@@ -732,10 +732,10 @@ enum DateParser {
         let seconds = Int64(date.timeIntervalSince1970.rounded(.down))
         let milliseconds = Int64((date.timeIntervalSince1970 * 1000).rounded())
         let relative = RelativeDateTimeFormatter()
-        relative.locale = Locale(identifier: "zh_CN")
+        relative.locale = Localization.locale
         relative.unitsStyle = .full
         let weekday = DateFormatter()
-        weekday.locale = Locale(identifier: "zh_CN")
+        weekday.locale = Localization.locale
         weekday.timeZone = timeZone
         weekday.dateFormat = "EEEE"
         let clock = DateFormatter()
@@ -748,27 +748,27 @@ enum DateParser {
             return ResultCard.Row(label: city, value: clock.string(from: date))
         }
         var rows = [
-            ResultCard.Row(label: "本地时间", value: TimestampConverter.localString(date, timeZone: timeZone)),
+            ResultCard.Row(label: String(localized: "本地时间"), value: TimestampConverter.localString(date, timeZone: timeZone)),
             ResultCard.Row(label: "UTC", value: TimestampConverter.isoString(date)),
-            ResultCard.Row(label: "Unix 秒", value: String(seconds)),
-            ResultCard.Row(label: "Unix 毫秒", value: String(milliseconds)),
-            ResultCard.Row(label: "距今", value: relative.localizedString(for: date, relativeTo: now)),
-            ResultCard.Row(label: "星期", value: weekday.string(from: date)),
+            ResultCard.Row(label: String(localized: "Unix 秒"), value: String(seconds)),
+            ResultCard.Row(label: String(localized: "Unix 毫秒"), value: String(milliseconds)),
+            ResultCard.Row(label: String(localized: "距今"), value: relative.localizedString(for: date, relativeTo: now)),
+            ResultCard.Row(label: String(localized: "星期"), value: weekday.string(from: date)),
         ]
         if let lunar = LunarCalendar.describe(date, timeZone: timeZone) {
-            rows.append(ResultCard.Row(label: "农历", value: lunar))
+            rows.append(ResultCard.Row(label: String(localized: "农历"), value: lunar))
         }
-        rows.append(ResultCard.Row(label: "第几周", value: LunarCalendar.weekAndDay(date, timeZone: timeZone)))
+        rows.append(ResultCard.Row(label: String(localized: "第几周"), value: LunarCalendar.weekAndDay(date, timeZone: timeZone)))
         return rows + cities
     }
 
     /// 时间转换卡片上列出的城市
     static let worldClocks: [(city: String, zone: String)] = [
-        ("北京", "Asia/Shanghai"),
-        ("东京", "Asia/Tokyo"),
-        ("伦敦", "Europe/London"),
-        ("纽约", "America/New_York"),
-        ("旧金山", "America/Los_Angeles"),
+        (String(localized: "北京"), "Asia/Shanghai"),
+        (String(localized: "东京"), "Asia/Tokyo"),
+        (String(localized: "伦敦"), "Europe/London"),
+        (String(localized: "纽约"), "America/New_York"),
+        (String(localized: "旧金山"), "America/Los_Angeles"),
     ]
 }
 
@@ -808,10 +808,10 @@ enum RandomGenerator {
         let uuid = UUID().uuidString
         return [
             ResultCard.Row(label: "UUID", value: uuid),
-            ResultCard.Row(label: "UUID 小写", value: uuid.lowercased()),
-            ResultCard.Row(label: "密码", value: password()),
-            ResultCard.Row(label: "密码 无符号", value: password(length: 20, includeSymbols: false)),
-            ResultCard.Row(label: "6 位数字", value: String(format: "%06ld", Int.random(in: 0..<1_000_000))),
+            ResultCard.Row(label: String(localized: "UUID 小写"), value: uuid.lowercased()),
+            ResultCard.Row(label: String(localized: "密码"), value: password()),
+            ResultCard.Row(label: String(localized: "密码 无符号"), value: password(length: 20, includeSymbols: false)),
+            ResultCard.Row(label: String(localized: "6 位数字"), value: String(format: "%06ld", Int.random(in: 0..<1_000_000))),
         ]
     }
 }

@@ -295,9 +295,9 @@ private final class PickerView: NSView {
         if dragRect != nil {
             label = size
         } else if hoveringWindow {
-            label = "单击录这个窗口 · \(size)"
+            label = String(localized: "单击录这个窗口 · \(size)")
         } else {
-            label = "单击或按回车录整个屏幕"
+            label = String(localized: "单击或按回车录整个屏幕")
         }
         drawLabel(label, below: hole)
     }

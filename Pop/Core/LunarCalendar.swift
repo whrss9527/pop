@@ -76,6 +76,6 @@ enum LunarCalendar {
         var gregorian = Calendar(identifier: .gregorian)
         gregorian.timeZone = timeZone
         let day = gregorian.ordinality(of: .day, in: .year, for: date) ?? 0
-        return "第 \(week) 周 · 全年第 \(day) 天"
+        return String(localized: "第 \(week) 周 · 全年第 \(day) 天")
     }
 }

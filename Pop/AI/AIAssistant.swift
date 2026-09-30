@@ -11,10 +11,10 @@ enum AIAction: String, CaseIterable, Identifiable {
 
     var title: String {
         switch self {
-        case .polish: return "润色"
-        case .summarize: return "总结"
-        case .explain: return "解释"
-        case .translate: return "翻译"
+        case .polish: return String(localized: "润色")
+        case .summarize: return String(localized: "总结")
+        case .explain: return String(localized: "解释")
+        case .translate: return String(localized: "翻译")
         }
     }
 
@@ -93,14 +93,14 @@ struct AIPlugin: PopPlugin {
     let action: AIAction?
 
     static let all = [
-        AIPlugin(id: BuiltinPluginID.aiAssistant, name: "AI 助手", symbol: "sparkles",
-                 summary: "就选中的文字提问，或者让 AI 润色、总结、解释、翻译（先在「设置 → AI」里填写接口）", action: nil),
-        AIPlugin(id: BuiltinPluginID.aiPolish, name: "AI 润色", symbol: "wand.and.rays",
-                 summary: "让 AI 改正错别字和不通顺的地方，可以直接替换原文", action: .polish),
-        AIPlugin(id: BuiltinPluginID.aiSummarize, name: "AI 总结", symbol: "list.bullet.rectangle",
-                 summary: "让 AI 用几条要点总结选中的内容", action: .summarize),
-        AIPlugin(id: BuiltinPluginID.aiExplain, name: "AI 解释", symbol: "questionmark.bubble",
-                 summary: "让 AI 解释选中的内容，补充背景和术语", action: .explain),
+        AIPlugin(id: BuiltinPluginID.aiAssistant, name: String(localized: "AI 助手"), symbol: "sparkles",
+                 summary: String(localized: "就选中的文字提问，或者让 AI 润色、总结、解释、翻译（先在「设置 → AI」里填写接口）"), action: nil),
+        AIPlugin(id: BuiltinPluginID.aiPolish, name: String(localized: "AI 润色"), symbol: "wand.and.rays",
+                 summary: String(localized: "让 AI 改正错别字和不通顺的地方，可以直接替换原文"), action: .polish),
+        AIPlugin(id: BuiltinPluginID.aiSummarize, name: String(localized: "AI 总结"), symbol: "list.bullet.rectangle",
+                 summary: String(localized: "让 AI 用几条要点总结选中的内容"), action: .summarize),
+        AIPlugin(id: BuiltinPluginID.aiExplain, name: String(localized: "AI 解释"), symbol: "questionmark.bubble",
+                 summary: String(localized: "让 AI 解释选中的内容，补充背景和术语"), action: .explain),
     ]
 
     init(id: String, name: String, symbol: String, summary: String, action: AIAction?) {
@@ -109,7 +109,7 @@ struct AIPlugin: PopPlugin {
     }
 
     @MainActor func run(_ content: ClassifiedContent, context: PluginContext) async -> PluginOutcome {
-        guard let text = content.text else { return .failure("没有文字") }
+        guard let text = content.text else { return .failure(String(localized: "没有文字")) }
         return .ai(AIRequestSpec(text: text, action: action))
     }
 }

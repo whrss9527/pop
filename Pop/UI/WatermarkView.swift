@@ -21,9 +21,14 @@ final class WatermarkModel: ObservableObject {
         schedulePreview()
     }
 
-    /// 「张图片」或者（有 PDF 时）「个文件」
-    var unit: String {
-        files.contains(where: ImageWatermark.isPDF) ? "个文件" : "张图片"
+    /// 有 PDF 时说「几个文件」，都是图片时说「几张图片」
+    var hasPDF: Bool {
+        files.contains(where: ImageWatermark.isPDF)
+    }
+
+    /// 「3 张图片」或者（有 PDF 时）「3 个文件」
+    func countLabel(_ count: Int) -> String {
+        hasPDF ? String(localized: "\(count) 个文件") : String(localized: "\(count) 张图片")
     }
 
     var canApply: Bool {
@@ -57,11 +62,11 @@ struct WatermarkView: View {
     var onClose: () -> Void
 
     private var subtitle: String {
-        model.files.count == 1 ? model.files[0].lastPathComponent : "\(model.files.count) \(model.unit)"
+        model.files.count == 1 ? model.files[0].lastPathComponent : model.countLabel(model.files.count)
     }
 
     var body: some View {
-        CardContainer(title: "加水印", subtitle: subtitle, width: 420, onClose: onClose) {
+        CardContainer(title: String(localized: "加水印"), subtitle: subtitle, width: 420, onClose: onClose) {
             ZStack {
                 RoundedRectangle(cornerRadius: 8)
                     .fill(Color.primary.opacity(0.05))
@@ -95,7 +100,9 @@ struct WatermarkView: View {
                 .fixedSize(horizontal: false, vertical: true)
             HStack(spacing: 8) {
                 Spacer()
-                Button(model.files.count == 1 ? "加水印" : "给 \(model.files.count) \(model.unit)加水印", action: onApply)
+                Button(model.files.count == 1 ? String(localized: "加水印")
+                       : model.hasPDF ? String(localized: "给 \(model.files.count) 个文件加水印")
+                       : String(localized: "给 \(model.files.count) 张图片加水印"), action: onApply)
                     .keyboardShortcut(.defaultAction)
                     .disabled(!model.canApply)
             }

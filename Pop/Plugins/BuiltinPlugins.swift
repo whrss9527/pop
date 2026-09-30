@@ -117,13 +117,13 @@ enum BuiltinCategory: CaseIterable, Identifiable {
 
     var title: String {
         switch self {
-        case .text: return "文字"
+        case .text: return String(localized: "文字")
         case .ai: return "AI"
-        case .convert: return "转换"
-        case .developer: return "开发"
-        case .screen: return "屏幕与图片"
-        case .files: return "文件和系统"
-        case .other: return "其他"
+        case .convert: return String(localized: "转换")
+        case .developer: return String(localized: "开发")
+        case .screen: return String(localized: "屏幕与图片")
+        case .files: return String(localized: "文件和系统")
+        case .other: return String(localized: "其他")
         }
     }
 
@@ -184,22 +184,22 @@ func runInBackground<T>(_ work: @escaping () -> T) async -> T {
 }
 
 struct TranslatePlugin: PopPlugin {
-    let info = PluginInfo(id: BuiltinPluginID.translate, name: "翻译", symbol: "character.bubble",
-                          summary: "翻译选中的文字：默认用系统离线翻译，卡片上可以换成 AI 或 DeepL，或者几家一起对比", accepts: [.text])
+    let info = PluginInfo(id: BuiltinPluginID.translate, name: String(localized: "翻译"), symbol: "character.bubble",
+                          summary: String(localized: "翻译选中的文字：默认用系统离线翻译，卡片上可以换成 AI 或 DeepL，或者几家一起对比"), accepts: [.text])
 
     @MainActor func run(_ content: ClassifiedContent, context: PluginContext) async -> PluginOutcome {
-        guard let text = content.text else { return .failure("没有可翻译的文字") }
+        guard let text = content.text else { return .failure(String(localized: "没有可翻译的文字")) }
         return .translate(text: text, language: content.language)
     }
 }
 
 struct WebSearchPlugin: PopPlugin {
-    let info = PluginInfo(id: BuiltinPluginID.search, name: "搜索", symbol: "magnifyingglass",
-                          summary: "用默认浏览器搜索选中的文字", accepts: [.text])
+    let info = PluginInfo(id: BuiltinPluginID.search, name: String(localized: "搜索"), symbol: "magnifyingglass",
+                          summary: String(localized: "用默认浏览器搜索选中的文字"), accepts: [.text])
 
     @MainActor func run(_ content: ClassifiedContent, context: PluginContext) async -> PluginOutcome {
         guard let text = content.text, let url = context.settings.searchEngine.searchURL(for: text) else {
-            return .failure("没有可搜索的文字")
+            return .failure(String(localized: "没有可搜索的文字"))
         }
         NSWorkspace.shared.open(url)
         return .done(toast: nil)
@@ -207,97 +207,100 @@ struct WebSearchPlugin: PopPlugin {
 }
 
 struct OpenLinkPlugin: PopPlugin {
-    let info = PluginInfo(id: BuiltinPluginID.openURL, name: "打开链接", symbol: "safari",
-                          summary: "在浏览器中打开链接，或给邮箱写邮件", accepts: [.url, .email])
+    let info = PluginInfo(id: BuiltinPluginID.openURL, name: String(localized: "打开链接"), symbol: "safari",
+                          summary: String(localized: "在浏览器中打开链接，或给邮箱写邮件"), accepts: [.url, .email])
 
     @MainActor func run(_ content: ClassifiedContent, context: PluginContext) async -> PluginOutcome {
-        guard let url = content.url else { return .failure("没有识别到链接") }
+        guard let url = content.url else { return .failure(String(localized: "没有识别到链接")) }
         NSWorkspace.shared.open(url)
         return .done(toast: nil)
     }
 }
 
 struct CalculatorPlugin: PopPlugin {
-    let info = PluginInfo(id: BuiltinPluginID.calculate, name: "计算", symbol: "function",
-                          summary: "计算选中的算式，支持 + - × ÷ ^ % 和括号", accepts: [.math])
+    /// 说明里列出的运算符（放在翻译的参数里：翻译文字里单独的 % 会被当成格式符）
+    static let operators = "+ - × ÷ ^ %"
+
+    let info = PluginInfo(id: BuiltinPluginID.calculate, name: String(localized: "计算"), symbol: "function",
+                          summary: String(localized: "计算选中的算式，支持 \(CalculatorPlugin.operators) 和括号"), accepts: [.math])
 
     @MainActor func run(_ content: ClassifiedContent, context: PluginContext) async -> PluginOutcome {
         guard let text = content.text, let value = Calculator.evaluate(text) else {
-            return .failure("无法计算这个算式")
+            return .failure(String(localized: "无法计算这个算式"))
         }
         let result = Calculator.format(value)
-        return .card(ResultCard(title: "计算结果", body: result, detail: text, monospaced: true,
+        return .card(ResultCard(title: String(localized: "计算结果"), body: result, detail: text, monospaced: true,
                                 copyText: result, replaceText: result))
     }
 }
 
 struct CopyPlainTextPlugin: PopPlugin {
-    let info = PluginInfo(id: BuiltinPluginID.copyPlain, name: "纯文本复制", symbol: "doc.on.clipboard",
-                          summary: "去掉格式，只把文字复制到剪贴板", accepts: [.text])
+    let info = PluginInfo(id: BuiltinPluginID.copyPlain, name: String(localized: "纯文本复制"), symbol: "doc.on.clipboard",
+                          summary: String(localized: "去掉格式，只把文字复制到剪贴板"), accepts: [.text])
 
     @MainActor func run(_ content: ClassifiedContent, context: PluginContext) async -> PluginOutcome {
-        guard let text = content.text else { return .failure("没有文字") }
+        guard let text = content.text else { return .failure(String(localized: "没有文字")) }
         PasteboardWriter.copy(text)
-        return .done(toast: "已复制纯文本")
+        return .done(toast: String(localized: "已复制纯文本"))
     }
 }
 
 struct FormatJSONPlugin: PopPlugin {
-    let info = PluginInfo(id: BuiltinPluginID.formatJSON, name: "JSON 格式化", symbol: "curlybraces",
-                          summary: "格式化或压缩选中的 JSON", accepts: [.json])
+    let info = PluginInfo(id: BuiltinPluginID.formatJSON, name: String(localized: "JSON 格式化"), symbol: "curlybraces",
+                          summary: String(localized: "格式化或压缩选中的 JSON"), accepts: [.json])
 
     @MainActor func run(_ content: ClassifiedContent, context: PluginContext) async -> PluginOutcome {
         guard let text = content.text, let pretty = JSONFormatter.prettyPrinted(text) else {
-            return .failure("不是合法的 JSON")
+            return .failure(String(localized: "不是合法的 JSON"))
         }
         var buttons: [CardButton] = []
         if let minified = JSONFormatter.minified(text) {
-            buttons.append(CardButton(title: "复制压缩版", action: .copy(minified)))
+            buttons.append(CardButton(title: String(localized: "复制压缩版"), action: .copy(minified)))
         }
-        return .card(ResultCard(title: "JSON 格式化", body: pretty, monospaced: true,
+        return .card(ResultCard(title: String(localized: "JSON 格式化"), body: pretty, monospaced: true,
                                 copyText: pretty, replaceText: pretty, buttons: buttons))
     }
 }
 
 struct TimestampPlugin: PopPlugin {
-    let info = PluginInfo(id: BuiltinPluginID.timestamp, name: "时间转换", symbol: "clock",
-                          summary: "Unix 时间戳（秒/毫秒）和日期时间互相转换", accepts: [.timestamp, .dateTime])
+    let info = PluginInfo(id: BuiltinPluginID.timestamp, name: String(localized: "时间转换"), symbol: "clock",
+                          summary: String(localized: "Unix 时间戳（秒/毫秒）和日期时间互相转换"), accepts: [.timestamp, .dateTime])
 
     @MainActor func run(_ content: ClassifiedContent, context: PluginContext) async -> PluginOutcome {
         guard let text = content.text,
               let date = TimestampConverter.date(from: text) ?? DateParser.parse(text) else {
-            return .failure("不是有效的时间")
+            return .failure(String(localized: "不是有效的时间"))
         }
-        return .card(ResultCard(title: "时间转换", body: TimestampConverter.localString(date), monospaced: true,
+        return .card(ResultCard(title: String(localized: "时间转换"), body: TimestampConverter.localString(date), monospaced: true,
                                 rows: DateParser.rows(for: date), rowsReplaceable: true))
     }
 }
 
 struct CopyPathPlugin: PopPlugin {
-    let info = PluginInfo(id: BuiltinPluginID.copyPath, name: "复制路径", symbol: "folder",
-                          summary: "复制选中文件的完整路径", accepts: [.files])
+    let info = PluginInfo(id: BuiltinPluginID.copyPath, name: String(localized: "复制路径"), symbol: "folder",
+                          summary: String(localized: "复制选中文件的完整路径"), accepts: [.files])
 
     @MainActor func run(_ content: ClassifiedContent, context: PluginContext) async -> PluginOutcome {
-        guard !content.files.isEmpty else { return .failure("没有选中文件") }
+        guard !content.files.isEmpty else { return .failure(String(localized: "没有选中文件")) }
         PasteboardWriter.copy(content.files.map { $0.path(percentEncoded: false) }.joined(separator: "\n"))
-        return .done(toast: content.files.count == 1 ? "已复制路径" : "已复制 \(content.files.count) 个路径")
+        return .done(toast: content.files.count == 1 ? String(localized: "已复制路径") : String(localized: "已复制 \(content.files.count) 个路径"))
     }
 }
 
 struct RevealInFinderPlugin: PopPlugin {
-    let info = PluginInfo(id: BuiltinPluginID.revealInFinder, name: "在访达中显示", symbol: "macwindow",
-                          summary: "在访达中定位选中的文件", accepts: [.files])
+    let info = PluginInfo(id: BuiltinPluginID.revealInFinder, name: String(localized: "在访达中显示"), symbol: "macwindow",
+                          summary: String(localized: "在访达中定位选中的文件"), accepts: [.files])
 
     @MainActor func run(_ content: ClassifiedContent, context: PluginContext) async -> PluginOutcome {
-        guard !content.files.isEmpty else { return .failure("没有选中文件") }
+        guard !content.files.isEmpty else { return .failure(String(localized: "没有选中文件")) }
         NSWorkspace.shared.activateFileViewerSelecting(content.files)
         return .done(toast: nil)
     }
 }
 
 struct OpenSettingsPlugin: PopPlugin {
-    let info = PluginInfo(id: BuiltinPluginID.settings, name: "设置", symbol: "gearshape",
-                          summary: "打开 Pop 设置", accepts: [])
+    let info = PluginInfo(id: BuiltinPluginID.settings, name: String(localized: "设置"), symbol: "gearshape",
+                          summary: String(localized: "打开 Pop 设置"), accepts: [])
 
     @MainActor func run(_ content: ClassifiedContent, context: PluginContext) async -> PluginOutcome {
         context.openSettings()
@@ -306,8 +309,8 @@ struct OpenSettingsPlugin: PopPlugin {
 }
 
 struct SnippetsPlugin: PopPlugin {
-    let info = PluginInfo(id: BuiltinPluginID.snippets, name: "常用短语", symbol: "text.bubble",
-                          summary: "从存好的短语里选一条粘贴到当前 App，可以用 {date}、{clipboard}、{selection} 这样的占位符",
+    let info = PluginInfo(id: BuiltinPluginID.snippets, name: String(localized: "常用短语"), symbol: "text.bubble",
+                          summary: String(localized: "从存好的短语里选一条粘贴到当前 App，可以用 {date}、{clipboard}、{selection} 这样的占位符"),
                           accepts: [], optionalContent: true)
 
     @MainActor func run(_ content: ClassifiedContent, context: PluginContext) async -> PluginOutcome {
@@ -316,8 +319,8 @@ struct SnippetsPlugin: PopPlugin {
 }
 
 struct ClipboardHistoryPlugin: PopPlugin {
-    let info = PluginInfo(id: BuiltinPluginID.clipboardHistory, name: "剪贴板", symbol: "list.clipboard",
-                          summary: "打开剪贴板历史，选一条粘贴", accepts: [])
+    let info = PluginInfo(id: BuiltinPluginID.clipboardHistory, name: String(localized: "剪贴板"), symbol: "list.clipboard",
+                          summary: String(localized: "打开剪贴板历史，选一条粘贴"), accepts: [])
 
     @MainActor func run(_ content: ClassifiedContent, context: PluginContext) async -> PluginOutcome {
         .showClipboardHistory
@@ -325,8 +328,8 @@ struct ClipboardHistoryPlugin: PopPlugin {
 }
 
 struct AllPluginsPlugin: PopPlugin {
-    let info = PluginInfo(id: BuiltinPluginID.allPlugins, name: "全部功能", symbol: "square.grid.2x2",
-                          summary: "列出所有能处理当前内容的功能，可以搜索", accepts: [])
+    let info = PluginInfo(id: BuiltinPluginID.allPlugins, name: String(localized: "全部功能"), symbol: "square.grid.2x2",
+                          summary: String(localized: "列出所有能处理当前内容的功能，可以搜索"), accepts: [])
 
     @MainActor func run(_ content: ClassifiedContent, context: PluginContext) async -> PluginOutcome {
         .showAllPlugins

@@ -137,7 +137,7 @@ enum DuplicateFinder {
                 try FileManager.default.trashItem(at: url, resultingItemURL: nil)
                 moved.append(url)
             } catch {
-                failures.append("\(url.lastPathComponent)：\(error.localizedDescription)")
+                failures.append(String(localized: "\(url.lastPathComponent)：\(error.localizedDescription)"))
             }
         }
         return (moved, failures)

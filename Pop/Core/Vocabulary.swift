@@ -53,8 +53,8 @@ final class VocabularyStore: ObservableObject {
 
         var title: String {
             switch self {
-            case .csv: return "CSV（表格软件）"
-            case .anki: return "制表符分隔（Anki 导入）"
+            case .csv: return String(localized: "CSV（表格软件）")
+            case .anki: return String(localized: "制表符分隔（Anki 导入）")
             }
         }
 
@@ -147,10 +147,10 @@ final class VocabularyStore: ObservableObject {
         case .csv:
             let formatter = ISO8601DateFormatter()
             formatter.formatOptions = [.withFullDate]
-            let header = "单词,释义,语言,加入日期,已记住"
+            let header = String(localized: "单词,释义,语言,加入日期,已记住")
             let lines = entries.map { entry in
                 [entry.word, entry.translation, entry.sourceLanguage ?? "", formatter.string(from: entry.added),
-                 entry.mastered ? "是" : "否"].map(csvField).joined(separator: ",")
+                 entry.mastered ? String(localized: "是") : String(localized: "否")].map(csvField).joined(separator: ",")
             }
             return ([header] + lines).joined(separator: "\n") + "\n"
         case .anki:

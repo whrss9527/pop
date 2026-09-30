@@ -77,46 +77,46 @@ final class StatusItemController: NSObject, NSMenuDelegate {
         menu.removeAllItems()
         let state = stateProvider()
         if let elapsed = state.recordingElapsed {
-            addItem(to: menu, title: "停止录屏（\(elapsed)）", action: #selector(stopRecording))
+            addItem(to: menu, title: String(localized: "停止录屏（\(elapsed)）"), action: #selector(stopRecording))
             menu.addItem(.separator())
         }
         if let version = state.pendingUpdateVersion {
-            addItem(to: menu, title: "安装新版本 \(version)…", action: #selector(installUpdate))
+            addItem(to: menu, title: String(localized: "安装新版本 \(version)…"), action: #selector(installUpdate))
             menu.addItem(.separator())
         }
         if !state.isTrusted {
-            addItem(to: menu, title: "授予辅助功能权限…", action: #selector(grantPermission))
+            addItem(to: menu, title: String(localized: "授予辅助功能权限…"), action: #selector(grantPermission))
             menu.addItem(.separator())
         }
-        addItem(to: menu, title: "剪贴板历史…", action: #selector(showClipboard))
-        addItem(to: menu, title: state.shelfCount > 0 ? "暂存架（\(state.shelfCount)）" : "暂存架", action: #selector(showShelf))
+        addItem(to: menu, title: String(localized: "剪贴板历史…"), action: #selector(showClipboard))
+        addItem(to: menu, title: state.shelfCount > 0 ? String(localized: "暂存架（\(state.shelfCount)）") : String(localized: "暂存架"), action: #selector(showShelf))
         if state.pinCount > 0 {
-            addItem(to: menu, title: "关闭全部贴图（\(state.pinCount)）", action: #selector(closeAllPins))
+            addItem(to: menu, title: String(localized: "关闭全部贴图（\(state.pinCount)）"), action: #selector(closeAllPins))
         }
         if let status = state.keepAwakeStatus {
             let info = NSMenuItem(title: status, action: nil, keyEquivalent: "")
             info.isEnabled = false
             menu.addItem(info)
-            addItem(to: menu, title: "停止保持唤醒", action: #selector(stopKeepAwake))
+            addItem(to: menu, title: String(localized: "停止保持唤醒"), action: #selector(stopKeepAwake))
         }
         if let status = state.timerStatus {
             let info = NSMenuItem(title: status, action: nil, keyEquivalent: "")
             info.isEnabled = false
             menu.addItem(info)
-            addItem(to: menu, title: "取消计时", action: #selector(cancelTimer))
+            addItem(to: menu, title: String(localized: "取消计时"), action: #selector(cancelTimer))
         }
         if let status = state.phoneShareStatus {
             let info = NSMenuItem(title: status, action: nil, keyEquivalent: "")
             info.isEnabled = false
             menu.addItem(info)
-            addItem(to: menu, title: "停止传到手机", action: #selector(stopPhoneShare))
+            addItem(to: menu, title: String(localized: "停止传到手机"), action: #selector(stopPhoneShare))
         }
-        addItem(to: menu, title: state.isPaused ? "恢复 Pop" : "暂停 Pop", action: #selector(togglePause))
+        addItem(to: menu, title: state.isPaused ? String(localized: "恢复 Pop") : String(localized: "暂停 Pop"), action: #selector(togglePause))
         menu.addItem(.separator())
-        addItem(to: menu, title: "设置…", action: #selector(openSettings), key: ",")
-        addItem(to: menu, title: "检查更新…", action: #selector(checkForUpdates))
+        addItem(to: menu, title: String(localized: "设置…"), action: #selector(openSettings), key: ",")
+        addItem(to: menu, title: String(localized: "检查更新…"), action: #selector(checkForUpdates))
         menu.addItem(.separator())
-        menu.addItem(NSMenuItem(title: "退出 Pop", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q"))
+        menu.addItem(NSMenuItem(title: String(localized: "退出 Pop"), action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q"))
     }
 
     private func addItem(to menu: NSMenu, title: String, action: Selector, key: String = "") {

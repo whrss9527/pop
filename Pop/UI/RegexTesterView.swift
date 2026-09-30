@@ -90,14 +90,14 @@ struct RegexTesterView: View {
     @FocusState private var patternFocused: Bool
 
     private var subtitle: String {
-        if model.result.error != nil { return "表达式有误" }
+        if model.result.error != nil { return String(localized: "表达式有误") }
         guard !model.pattern.isEmpty else { return "" }
         let count = model.result.matches.count
-        return model.result.truncated ? "\(count)+ 处匹配" : "\(count) 处匹配"
+        return model.result.truncated ? String(localized: "\(count)+ 处匹配") : String(localized: "\(count) 处匹配")
     }
 
     var body: some View {
-        CardContainer(title: "正则测试", subtitle: subtitle, width: 520, onClose: onClose) {
+        CardContainer(title: String(localized: "正则测试"), subtitle: subtitle, width: 520, onClose: onClose) {
             HStack(spacing: 6) {
                 TextField("正则表达式，比如 \\d+", text: $model.pattern)
                     .textFieldStyle(.roundedBorder)
