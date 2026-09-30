@@ -1,0 +1,18 @@
+{
+  "format": 1,
+  "id": "github-search",
+  "name": "GitHub 搜索",
+  "symbol": "chevron.left.forwardslash.chevron.right",
+  "summary": "在 GitHub 上搜索选中的文字，找相关的仓库",
+  "match": {
+    "kinds": [
+      "text"
+    ],
+    "maxLength": 200
+  },
+  "action": {
+    "type": "url",
+    "template": "https://github.com/search?q={text}&type=repositories"
+  },
+  "output": "none"
+}

@@ -14,6 +14,8 @@ SCALE="${3:-6}"
 mkdir -p "$OUT"
 OUT="$(cd "$OUT" && pwd)"
 WORK="$(mktemp -d -t pop-screenshots)"
+# 插件库读仓库里的索引，不联网
+PLUGIN_INDEX="file://$(cd "$(dirname "$0")/.." && pwd)/plugins/index.json"
 
 pkill -x Pop 2>/dev/null || true
 for _ in $(seq 1 20); do
@@ -40,7 +42,7 @@ run_demo() {
     sleep 0.5
   done
   open -n --env POP_DEMO=1 --env "POP_ANIMATION_SCALE=${scale}" --env "POP_DEMO_LOG=${log}" \
-    --env "POP_APPEARANCE=${appearance}" "$APP"
+    --env "POP_APPEARANCE=${appearance}" --env "POP_PLUGIN_INDEX_URL=${PLUGIN_INDEX}" "$APP"
   python3 - "$log" "$WORK" "$OUT" "$scale" "$appearance" "$prefix" <<'PY'
 import os, subprocess, sys, time
 
@@ -94,6 +96,7 @@ plan = [
     ("settings-plugins", [0.5]),
     ("settings-ai", [0.5]),
     ("settings-hotKeys", [0.5]),
+    ("settings-pluginLibrary", [0.8]),
 ]
 if appearance == "dark":
     # 深色外观只拍停下来之后的样子
@@ -105,7 +108,8 @@ if appearance == "dark":
             ("reminder", [3.0]), ("table", [3.0]), ("photo", [3.0]), ("rename", [3.0]), ("sql", [3.0]), ("vocabulary", [3.0]),
             ("duplicates", [3.0]), ("pdfPages", [3.0]), ("diskUsage", [3.0]), ("pdfPassword", [3.0]),
             ("toolbar", [1.2]), ("annotate", [1.5]),
-            ("settings-plugins", [0.5]), ("settings-ai", [0.5]), ("settings-hotKeys", [0.5])]
+            ("settings-plugins", [0.5]), ("settings-ai", [0.5]), ("settings-hotKeys", [0.5]),
+            ("settings-pluginLibrary", [0.8])]
 factor = scale / 6.0
 
 def markers():

@@ -1,0 +1,18 @@
+{
+  "format": 1,
+  "id": "can-i-use",
+  "name": "Can I use",
+  "symbol": "checkmark.seal",
+  "summary": "查一个网页特性在各个浏览器里能不能用",
+  "match": {
+    "kinds": [
+      "text"
+    ],
+    "maxLength": 200
+  },
+  "action": {
+    "type": "url",
+    "template": "https://caniuse.com/?search={text}"
+  },
+  "output": "none"
+}

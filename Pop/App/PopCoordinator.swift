@@ -5,6 +5,8 @@ import os
 @MainActor
 final class PopCoordinator: MouseTriggerDelegate {
     var openSettings: (SettingsTab?) -> Void = { _ in }
+    /// 打开设置里的插件库（演示截图用）
+    var openPluginLibrary: () -> Void = {}
     var isPaused = false
 
     private let settingsStore: SettingsStore

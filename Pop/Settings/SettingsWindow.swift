@@ -49,6 +49,8 @@ enum SettingsTab: String, CaseIterable, Identifiable, Hashable {
 @MainActor
 final class SettingsNavigation: ObservableObject {
     @Published var tab: SettingsTab = .general
+    /// 「功能」页上打开着插件库
+    @Published var showsPluginLibrary = false
 }
 
 /// 设置窗口用 AppKit 自己管理：菜单栏 App 从 AppKit 代码里打开 SwiftUI Settings 场景并不可靠。
@@ -64,6 +66,12 @@ final class SettingsWindowController: NSObject, NSWindowDelegate {
     }
 
     var isVisible: Bool { window?.isVisible ?? false }
+
+    /// 打开「功能」页上的插件库
+    func showPluginLibrary() {
+        show(tab: .plugins)
+        navigation.showsPluginLibrary = true
+    }
 
     func show(tab: SettingsTab? = nil) {
         if let tab {
@@ -127,7 +135,7 @@ struct SettingsRootView: View {
         switch tab {
         case .general: GeneralSettingsView()
         case .ring: RingSettingsView(catalog: catalog)
-        case .plugins: PluginsSettingsView(catalog: catalog)
+        case .plugins: PluginsSettingsView(catalog: catalog, showsLibrary: $navigation.showsPluginLibrary)
         case .rules: RulesSettingsView(catalog: catalog)
         case .hotKeys: HotKeySettingsView(catalog: catalog)
         case .clipboard: ClipboardSettingsView()
