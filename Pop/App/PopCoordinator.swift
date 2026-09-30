@@ -1015,7 +1015,7 @@ final class PopCoordinator: MouseTriggerDelegate {
             } else if outputs.count > 1 {
                 message = String(localized: "已转换 \(outputs.count) 个视频")
             } else {
-                message = ([operation.done] + notes).joined(separator: "；")
+                message = ([operation.done] + notes).joined(separator: String(localized: "；"))
             }
             // 转换要一会儿：这期间又唤起了 Pop 的话不去打断，结果在访达里已经选中了
             if self.session == nil {

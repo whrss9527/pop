@@ -213,8 +213,11 @@ struct OpenLinkPlugin: PopPlugin {
 }
 
 struct CalculatorPlugin: PopPlugin {
+    /// 说明里列出的运算符（放在翻译的参数里：翻译文字里单独的 % 会被当成格式符）
+    static let operators = "+ - × ÷ ^ %"
+
     let info = PluginInfo(id: BuiltinPluginID.calculate, name: String(localized: "计算"), symbol: "function",
-                          summary: String(localized: "计算选中的算式，支持 + - × ÷ ^ % 和括号"), accepts: [.math])
+                          summary: String(localized: "计算选中的算式，支持 \(CalculatorPlugin.operators) 和括号"), accepts: [.math])
 
     @MainActor func run(_ content: ClassifiedContent, context: PluginContext) async -> PluginOutcome {
         guard let text = content.text, let value = Calculator.evaluate(text) else {

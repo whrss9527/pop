@@ -363,7 +363,7 @@ struct ClipboardRow: View {
             HStack(spacing: 6) {
                 Image(systemName: item.fileURLs.count > 1 ? "doc.on.doc" : "doc")
                     .foregroundStyle(.secondary)
-                Text(item.fileURLs.map(\.lastPathComponent).joined(separator: "、"))
+                Text(item.fileURLs.map(\.lastPathComponent).joinedAsList())
                     .font(.system(size: 12))
                     .lineLimit(2)
             }

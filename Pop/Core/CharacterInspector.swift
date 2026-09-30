@@ -165,7 +165,7 @@ enum CharacterInspector {
         var detail: String?
         if !found.isEmpty {
             let total = found.reduce(0) { $0 + $1.count }
-            let kinds = found.map { "\($0.name) ×\($0.count)" }.joined(separator: "、")
+            let kinds = found.map { "\($0.name) ×\($0.count)" }.joinedAsList()
             detail = String(localized: "有 \(total) 个看不见的字符：\(kinds)")
             let cleaned = removingInvisibles(text)
             buttons.append(CardButton(title: String(localized: "去掉后替换原文"), action: .replace(cleaned)))
