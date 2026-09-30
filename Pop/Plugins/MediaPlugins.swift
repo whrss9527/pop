@@ -359,6 +359,31 @@ struct AirDropPlugin: PopPlugin {
     }
 }
 
+/// 传到手机：在局域网里开一个临时网页，手机扫码下载选中的文件，也能把手机里的文件传到 Mac
+struct SendToPhonePlugin: PopPlugin {
+    let info = PluginInfo(id: BuiltinPluginID.sendToPhone, name: "传到手机", symbol: "iphone.radiowaves.left.and.right",
+                          summary: "手机扫码下载选中的文件、图片（文件夹先打包成 zip）或者拿到选中的文字，也能从手机传文件到「下载」文件夹；手机和 Mac 连同一个 Wi-Fi 就行，安卓手机也能用",
+                          accepts: [], optionalContent: true)
+
+    @MainActor func run(_ content: ClassifiedContent, context: PluginContext) async -> PluginOutcome {
+        let prepared: (files: [URL], text: String?, scratch: URL?)
+        do {
+            prepared = try await PhoneShare.prepare(content)
+        } catch {
+            return .failure((error as? PhoneShare.Failure)?.message ?? error.localizedDescription)
+        }
+        do {
+            let address = try await PhoneShare.shared.share(prepared.files, text: prepared.text, scratch: prepared.scratch)
+            return .card(PhoneShare.card(address: address, files: prepared.files, text: prepared.text))
+        } catch {
+            if let scratch = prepared.scratch {
+                try? FileManager.default.removeItem(at: scratch)
+            }
+            return .failure((error as? PhoneShare.Failure)?.message ?? error.localizedDescription)
+        }
+    }
+}
+
 // MARK: - 取色
 
 extension ColorValue {

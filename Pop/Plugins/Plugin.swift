@@ -81,6 +81,8 @@ enum ContentCheck: Hashable {
     case twoFolders
     /// Markdown 里至少有两个标题
     case markdownHeadings
+    /// 身份证号、统一社会信用代码或者银行卡号
+    case idNumber
 
     func matches(_ subject: String) -> Bool {
         switch self {
@@ -115,6 +117,8 @@ enum ContentCheck: Hashable {
             return paths.count == 2 && paths.allSatisfy(FolderTree.isFolder)
         case .markdownHeadings:
             return MarkdownTOC.headings(in: subject).count >= 2
+        case .idNumber:
+            return IDNumber.parse(subject) != nil
         }
     }
 }
@@ -170,6 +174,8 @@ enum CardAction: Equatable {
     /// 开始倒计时（秒）
     case startTimer(seconds: TimeInterval)
     case cancelTimer
+    /// 停止「传到手机」
+    case stopPhoneShare
 }
 
 struct CardButton: Equatable, Identifiable {

@@ -140,7 +140,8 @@ final class AppController {
                                               pinCount: PinBoard.shared.count,
                                               keepAwakeStatus: KeepAwake.shared.statusText(),
                                               shelfCount: FileShelf.shared.files.count,
-                                              timerStatus: CountdownTimer.shared.statusText())
+                                              timerStatus: CountdownTimer.shared.statusText(),
+                                              phoneShareStatus: PhoneShare.shared.statusText())
         }
         statusItem.onCloseAllPins = {
             PinBoard.shared.closeAll()
@@ -153,6 +154,12 @@ final class AppController {
         }
         statusItem.onCancelTimer = {
             CountdownTimer.shared.cancel()
+        }
+        statusItem.onStopPhoneShare = {
+            PhoneShare.shared.stop()
+        }
+        PhoneShare.shared.onMessage = { [weak self] message in
+            self?.coordinator.showToast(message, at: NSEvent.mouseLocation)
         }
         CountdownTimer.shared.onFinish = { [weak self] message in
             self?.coordinator.showToast(message, at: NSEvent.mouseLocation)
