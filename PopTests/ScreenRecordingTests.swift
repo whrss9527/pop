@@ -102,6 +102,8 @@ final class ScreenRecordingTests: XCTestCase {
         XCTAssertEqual(ScreenRecording.Options.saved(in: defaults), ScreenRecording.Options())
         ScreenRecording.Options(audio: .microphone, showClicks: true).save(in: defaults)
         XCTAssertEqual(ScreenRecording.Options.saved(in: defaults), ScreenRecording.Options(audio: .microphone, showClicks: true))
+        ScreenRecording.Options(audio: .off, showKeys: true).save(in: defaults)
+        XCTAssertEqual(ScreenRecording.Options.saved(in: defaults), ScreenRecording.Options(audio: .off, showKeys: true))
         XCTAssertEqual(ScreenRecording.Audio.allCases.map(\.title), ["不录声音", "电脑里的声音", "麦克风"])
     }
 

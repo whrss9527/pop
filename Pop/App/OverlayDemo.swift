@@ -433,7 +433,7 @@ enum OverlayDemo {
                              anchor: center)
             step("cropImage")
 
-            // 录屏：先是选区域的界面（截屏幕上方的提示条），再是录的时候的边框和控制面板，最后是录好的卡片
+            // 录屏：先是选区域的界面（截屏幕上方的提示条），再是录的时候的边框、控制面板和按键显示，最后是录好的卡片
             await pause(1.4 * unit)
             overlay.hide()
             Task { @MainActor in
@@ -445,11 +445,13 @@ enum OverlayDemo {
             await pause(1.4 * unit)
             RegionPicker.cancel()
             logRegion(cardRegion, screen: screen)
-            let hideIndicators = ScreenRecorder.shared.showIndicatorsForDemo(
-                region: CGRect(x: center.x - 150, y: center.y - 380, width: 560, height: 320), screen: screen, elapsed: "00:12")
+            let recordRegion = CGRect(x: center.x - 150, y: center.y - 380, width: 560, height: 320)
+            let hideIndicators = ScreenRecorder.shared.showIndicatorsForDemo(region: recordRegion, screen: screen, elapsed: "00:12")
+            KeystrokeOverlay.shared.showForDemo("⌘Z ×3", in: recordRegion)
             step("screenRecord-recording")
             await pause(1.4 * unit)
             hideIndicators()
+            KeystrokeOverlay.shared.stop()
             let clip = ScreenRecording.Clip(url: FileManager.default.temporaryDirectory.appending(path: "pop-demo/录屏 2026-09-30 15.30.12.mp4"),
                                             duration: 12, width: 1280, height: 720)
             overlay.showCard(ResultCardView(card: ScreenRecording.card(clip), onAction: { _ in }, onMore: {}, onClose: {}), anchor: center)
