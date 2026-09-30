@@ -115,6 +115,18 @@ final class ScreenPenModel: ObservableObject {
         strokes.append(stroke)
     }
 
+    /// 用 tool 和 color 依次经过这些点画一笔
+    func draw(_ tool: ScreenPenTool, color: AnnotationColor, through points: [CGPoint], at time: TimeInterval) {
+        guard let first = points.first else { return }
+        self.tool = tool
+        self.color = color
+        begin(at: first)
+        for point in points.dropFirst() {
+            drag(to: point)
+        }
+        end(at: time)
+    }
+
     func undo() {
         if current != nil {
             current = nil

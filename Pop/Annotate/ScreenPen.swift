@@ -46,10 +46,13 @@ final class ScreenPen {
     }
 
     /// 演示用：摆出画布、工具栏和几笔示例，不抢焦点；返回工具栏的位置
-    func showForDemo(on screen: NSScreen, draw: (ScreenPenModel) -> Void) -> CGRect? {
+    func showForDemo(on screen: NSScreen, strokes: [(tool: ScreenPenTool, color: AnnotationColor, points: [CGPoint])]) -> CGRect? {
         stop()
         present(on: screen)
-        draw(model)
+        for stroke in strokes {
+            model.draw(stroke.tool, color: stroke.color, through: stroke.points, at: ProcessInfo.processInfo.systemUptime)
+        }
+        model.tool = .arrow
         toolbar?.sharingType = .readOnly
         return toolbar?.frame
     }

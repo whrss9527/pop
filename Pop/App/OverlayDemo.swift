@@ -508,23 +508,13 @@ enum OverlayDemo {
                 func onScreen(_ x: CGFloat, _ y: CGFloat) -> CGPoint {
                     CGPoint(x: pinFrame.minX - screen.frame.minX + x, y: screen.frame.maxY - pinFrame.maxY + y)
                 }
-                let toolbar = ScreenPen.shared.showForDemo(on: screen) { pen in
-                    func stroke(_ tool: ScreenPenTool, _ color: AnnotationColor, _ points: [CGPoint]) {
-                        pen.tool = tool
-                        pen.color = color
-                        pen.begin(at: points[0])
-                        for point in points.dropFirst() {
-                            pen.drag(to: point)
-                        }
-                        pen.end(at: ProcessInfo.processInfo.systemUptime)
-                    }
-                    stroke(.highlighter, .yellow, [onScreen(62, 111), onScreen(224, 111)])
-                    stroke(.pen, .blue, [onScreen(64, 148), onScreen(88, 152), onScreen(112, 146), onScreen(136, 152),
-                                         onScreen(160, 146), onScreen(184, 151)])
-                    stroke(.ellipse, .red, [onScreen(286, 192), onScreen(430, 252)])
-                    stroke(.arrow, .red, [onScreen(150, 262), onScreen(280, 232)])
-                    pen.tool = .arrow
-                }
+                let toolbar = ScreenPen.shared.showForDemo(on: screen, strokes: [
+                    (.highlighter, .yellow, [onScreen(62, 111), onScreen(224, 111)]),
+                    (.pen, .blue, [onScreen(64, 148), onScreen(88, 152), onScreen(112, 146), onScreen(136, 152),
+                                   onScreen(160, 146), onScreen(184, 151)]),
+                    (.ellipse, .red, [onScreen(286, 192), onScreen(430, 252)]),
+                    (.arrow, .red, [onScreen(150, 262), onScreen(280, 232)]),
+                ])
                 logRegion(pinFrame.union(toolbar ?? pinFrame).insetBy(dx: -24, dy: -20), screen: screen)
             }
             step("screenPen")
