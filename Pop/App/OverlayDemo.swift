@@ -496,6 +496,42 @@ enum OverlayDemo {
             }
             step("scrollCapture")
 
+            // 屏幕画笔：贴一张示例截图当作屏幕上的内容，荧光笔划出邮箱、画笔在手机号下面画波浪线、椭圆圈出按钮、箭头指过去；
+            // 截图区域包括屏幕上方的工具栏
+            await pause(1.4 * unit)
+            overlay.hide()
+            let pinCenter = CGPoint(x: visible.midX.rounded(), y: (visible.maxY - 260).rounded())
+            if let capture = sampleScreenshot() {
+                PinBoard.shared.pin(image: NSImage(cgImage: capture.image, size: CGSize(width: 480, height: 300)), around: pinCenter)
+                let pinFrame = CGRect(x: pinCenter.x - 240, y: pinCenter.y - 150, width: 480, height: 300)
+                // 示例图上的点（左上角为原点）换成画布上的点
+                func onScreen(_ x: CGFloat, _ y: CGFloat) -> CGPoint {
+                    CGPoint(x: pinFrame.minX - screen.frame.minX + x, y: screen.frame.maxY - pinFrame.maxY + y)
+                }
+                let toolbar = ScreenPen.shared.showForDemo(on: screen) { pen in
+                    func stroke(_ tool: ScreenPenTool, _ color: AnnotationColor, _ points: [CGPoint]) {
+                        pen.tool = tool
+                        pen.color = color
+                        pen.begin(at: points[0])
+                        for point in points.dropFirst() {
+                            pen.drag(to: point)
+                        }
+                        pen.end(at: ProcessInfo.processInfo.systemUptime)
+                    }
+                    stroke(.highlighter, .yellow, [onScreen(62, 111), onScreen(224, 111)])
+                    stroke(.pen, .blue, [onScreen(64, 148), onScreen(88, 152), onScreen(112, 146), onScreen(136, 152),
+                                         onScreen(160, 146), onScreen(184, 151)])
+                    stroke(.ellipse, .red, [onScreen(286, 192), onScreen(430, 252)])
+                    stroke(.arrow, .red, [onScreen(150, 262), onScreen(280, 232)])
+                    pen.tool = .arrow
+                }
+                logRegion(pinFrame.union(toolbar ?? pinFrame).insetBy(dx: -24, dy: -20), screen: screen)
+            }
+            step("screenPen")
+            await pause(1.4 * unit)
+            ScreenPen.shared.stop()
+            PinBoard.shared.closeAll()
+
             // 截图标注窗口：拿一张画好的示例图，标上方框、箭头、文字、马赛克和序号；截图区域换成标注窗口
             await pause(1.4 * unit)
             overlay.hide()

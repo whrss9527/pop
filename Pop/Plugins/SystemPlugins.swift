@@ -107,6 +107,24 @@ struct ShowKeystrokesPlugin: PopPlugin {
     }
 }
 
+// MARK: - 屏幕画笔
+
+struct ScreenPenPlugin: PopPlugin {
+    let info = PluginInfo(id: BuiltinPluginID.screenPen, name: String(localized: "屏幕画笔"), symbol: "scribble.variable",
+                          summary: String(localized: "演示、录教程时直接在屏幕上画：画笔、荧光笔、箭头、方框、椭圆，笔迹可以几秒后自动消失，也可以留着去操作下面的窗口，录屏时一起录进去；Esc 或再用一次结束"),
+                          accepts: [], hidesOverlay: true)
+
+    @MainActor func run(_ content: ClassifiedContent, context: PluginContext) async -> PluginOutcome {
+        let pen = ScreenPen.shared
+        if pen.isActive {
+            pen.stop()
+        } else {
+            pen.start(near: context.anchor ?? NSEvent.mouseLocation)
+        }
+        return .done(toast: nil)
+    }
+}
+
 // MARK: - 清洁键盘
 
 struct KeyboardCleanerPlugin: PopPlugin {
