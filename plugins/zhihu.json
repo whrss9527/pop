@@ -4,6 +4,12 @@
   "name": "知乎",
   "symbol": "bubble.left.and.bubble.right",
   "summary": "在知乎上搜问题和回答",
+  "localized": {
+    "en": {
+      "name": "Zhihu",
+      "summary": "Search Zhihu for questions and answers"
+    }
+  },
   "match": {
     "kinds": [
       "text"

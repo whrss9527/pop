@@ -114,6 +114,7 @@ Pop 是一个 macOS 菜单栏效率工具：在任意 App 里**长按鼠标右�
   "name": "GitHub 搜索",
   "symbol": "magnifyingglass",
   "summary": "在 GitHub 上搜索选中的文字",
+  "localized": { "en": { "name": "GitHub Search", "summary": "Search GitHub for the selected text" } },
   "match": { "kinds": ["text"], "pattern": null },
   "action": { "type": "url", "template": "https://github.com/search?q={text}" },
   "output": "none"
@@ -124,6 +125,7 @@ Pop 是一个 macOS 菜单栏效率工具：在任意 App 里**长按鼠标右�
 | --- | --- |
 | `id` | 插件 ID，也是文件名；只能用字母、数字、`.`、`-`、`_`，不能和内置功能重名。手写文件时可以省略，用文件名代替 |
 | `name` / `symbol` / `summary` | 圆盘和列表里显示的名称、[SF Symbol](https://developer.apple.com/sf-symbols/) 图标名和说明 |
+| `localized` | 可选，其他语言的名称和说明，键是语言代码：`{"en": {"name": "GitHub Search", "summary": "Search GitHub for the selected text"}}`。Pop 的界面是这种语言时（`zh-Hant-HK` 这样带地区的先找自己，再找 `zh-Hant`、`zh`）用它代替 `name` 和 `summary`，没写的语言显示 `name` 和 `summary` |
 | `match.kinds` | 能处理的内容类型：`text`、`foreignText`、`chineseText`、`word`、`url`、`email`、`json`、`number`、`measurement`（带单位的数值）、`color`、`dateTime`、`timestamp`、`math`、`files`、`imageFile`、`image`；为空表示随时可用 |
 | `match.pattern` | 可选的正则，选中的文字（或文件路径）要能匹配它 |
 | `action.type` | `url`：打开网址，`{text}` 换成编码后的文字、`{raw}` 换成原文；`shell`：用 zsh 运行 `script`，文字从标准输入传入，也可以读 `$POP_TEXT`、`$POP_FILES`；`javascript`：在 JavaScriptCore 里运行 `script`，定义 `function run(input, files)` 返回结果；`shortcut`：把文字交给名为 `shortcut` 的快捷指令；`ai`：把 `prompt` 里的指令和选中的文字一起发给「设置 → AI」里的服务，`{text}` 换成选中的文字（没写的话文字接在指令后面），结果显示在卡片里时一边生成一边显示 |

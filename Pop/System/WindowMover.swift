@@ -8,23 +8,23 @@ enum WindowMover {
     /// 把 pid 这个 App 当前的窗口放到 layout 指定的位置；失败时返回给用户看的原因。
     static func apply(_ layout: WindowLayout, pid: pid_t) -> String? {
         let app = AXUIElementCreateApplication(pid)
-        guard let window = focusedWindow(of: app) else { return "没有找到可以移动的窗口" }
-        guard let quartzFrame = frame(of: window) else { return "读取不到窗口的位置" }
+        guard let window = focusedWindow(of: app) else { return String(localized: "没有找到可以移动的窗口") }
+        guard let quartzFrame = frame(of: window) else { return String(localized: "读取不到窗口的位置") }
         let current = convert(quartzFrame)
         let screens = NSScreen.screens
-        guard !screens.isEmpty else { return "找不到显示器" }
+        guard !screens.isEmpty else { return String(localized: "找不到显示器") }
         let index = WindowLayout.screenIndex(for: current, among: screens.map(\.frame)) ?? 0
         let visible = screens[index].visibleFrame
         let target: CGRect
         if layout == .nextDisplay {
-            guard screens.count > 1 else { return "只接了一个显示器" }
+            guard screens.count > 1 else { return String(localized: "只接了一个显示器") }
             target = WindowLayout.moved(current, from: visible, to: screens[(index + 1) % screens.count].visibleFrame)
         } else {
             target = layout.frame(for: current, in: visible)
         }
         let quartzTarget = convert(target)
         // 先挪位置再改大小，最后再挪一次：有的 App 改大小时以左上角为准，或者限制了最小尺寸
-        guard setPosition(quartzTarget.origin, of: window) else { return "这个窗口不能移动" }
+        guard setPosition(quartzTarget.origin, of: window) else { return String(localized: "这个窗口不能移动") }
         setSize(quartzTarget.size, of: window)
         setPosition(quartzTarget.origin, of: window)
         return nil

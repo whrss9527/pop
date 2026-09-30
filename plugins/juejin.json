@@ -4,6 +4,12 @@
   "name": "掘金",
   "symbol": "doc.text.magnifyingglass",
   "summary": "在掘金上搜技术文章",
+  "localized": {
+    "en": {
+      "name": "Juejin",
+      "summary": "Search Juejin for tech articles"
+    }
+  },
   "match": {
     "kinds": [
       "text"

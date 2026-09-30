@@ -17,8 +17,8 @@ final class DiskUsageModel: ObservableObject {
 
         var title: String {
             switch self {
-            case .folders: return "按层级看"
-            case .largest: return "最大的文件"
+            case .folders: return String(localized: "按层级看")
+            case .largest: return String(localized: "最大的文件")
             }
         }
     }
@@ -101,12 +101,12 @@ final class DiskUsageModel: ObservableObject {
         guard let result else { return }
         let outcome = DuplicateFinder.trash([item.url])
         if let failure = outcome.failures.first {
-            message = "没能移到废纸篓：\(failure)"
+            message = String(localized: "没能移到废纸篓：\(failure)")
             return
         }
         phase = .done(DiskUsage.removing(item, from: result))
         items.removeAll { $0.url == item.url }
-        message = "已把「\(item.url.lastPathComponent)」移到废纸篓，腾出 \(FileInfo.shortSize(item.size))，可以从废纸篓放回"
+        message = String(localized: "已把「\(item.url.lastPathComponent)」移到废纸篓，腾出 \(FileInfo.shortSize(item.size))，可以从废纸篓放回")
     }
 
     private func reload() async {
@@ -128,7 +128,7 @@ struct DiskUsageView: View {
     private let shown = 200
 
     var body: some View {
-        CardContainer(title: "占用空间", subtitle: model.current.lastPathComponent, width: 480, onClose: {
+        CardContainer(title: String(localized: "占用空间"), subtitle: model.current.lastPathComponent, width: 480, onClose: {
             model.cancel()
             onClose()
         }) {
@@ -137,8 +137,8 @@ struct DiskUsageView: View {
                 HStack(spacing: 10) {
                     ProgressView()
                         .controlSize(.small)
-                    Text(progress.files == 0 ? "正在看里面有什么…"
-                        : "已经看了 \(progress.files) 个文件，一共 \(FileInfo.shortSize(progress.size))…")
+                    Text(progress.files == 0 ? String(localized: "正在看里面有什么…")
+                        : String(localized: "已经看了 \(progress.files) 个文件，一共 \(FileInfo.shortSize(progress.size))…"))
                         .font(.callout)
                         .foregroundStyle(.secondary)
                 }
@@ -181,7 +181,7 @@ struct DiskUsageView: View {
         }
 
         if result.truncated || model.message != nil {
-            Text(model.message ?? "文件太多，只看了前 \(DiskUsage.fileLimit) 个")
+            Text(model.message ?? String(localized: "文件太多，只看了前 \(DiskUsage.fileLimit) 个"))
                 .font(.caption)
                 .foregroundStyle(.secondary)
                 .lineLimit(2)
@@ -241,7 +241,7 @@ struct DiskUsageView: View {
     private func row(_ item: DiskUsage.Item, total: Int64, relativeTo root: URL?) -> some View {
         let share = total > 0 ? Double(item.size) / Double(total) : 0
         let fraction = min(max(share, 0), 1)
-        let tip: String = item.isFolder ? "\(item.files) 个文件，点一下进去看" : item.url.path(percentEncoded: false)
+        let tip: String = item.isFolder ? String(localized: "\(item.files) 个文件，点一下进去看") : item.url.path(percentEncoded: false)
         return HStack(spacing: 8) {
             Image(systemName: item.isFolder ? "folder.fill" : "doc")
                 .foregroundStyle(item.isFolder ? Color.accentColor : Color.secondary)

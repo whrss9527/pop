@@ -199,11 +199,11 @@ final class PopCoordinator: MouseTriggerDelegate {
         }
         let anchor = NSEvent.mouseLocation
         guard !isPaused else {
-            overlay.showToast("Pop 已暂停", anchor: anchor)
+            overlay.showToast(String(localized: "Pop 已暂停"), anchor: anchor)
             return
         }
         guard let plugin = registry.plugin(id: pluginID) else {
-            overlay.showToast("没有「\(pluginID)」这个功能", anchor: anchor)
+            overlay.showToast(String(localized: "没有「\(pluginID)」这个功能"), anchor: anchor)
             return
         }
         guard text != nil || !files.isEmpty else {
@@ -213,7 +213,7 @@ final class PopCoordinator: MouseTriggerDelegate {
         let raw: SelectionContent = files.isEmpty ? .text(text ?? "") : .files(files)
         let content = ContentClassifier.classify(raw)
         guard plugin.info.canHandle(content) else {
-            overlay.showToast("「\(plugin.info.name)」处理不了链接里的内容", anchor: anchor)
+            overlay.showToast(String(localized: "「\(plugin.info.name)」处理不了链接里的内容"), anchor: anchor)
             return
         }
         // 问之前先记下前台 App：弹出确认框时 Pop 会到前台
@@ -231,12 +231,12 @@ final class PopCoordinator: MouseTriggerDelegate {
 
     private static func confirmLinkRun(_ name: String, content: String) -> Bool {
         let alert = NSAlert()
-        alert.messageText = "用「\(name)」处理链接里的内容？"
+        alert.messageText = String(localized: "用「\(name)」处理链接里的内容？")
         let excerpt = content.count > 300 ? String(content.prefix(300)) + "…" : content
-        alert.informativeText = "一个 pop:// 链接要用这个插件处理下面的内容。它会运行你写的脚本或快捷指令，不认识这个链接的话点「取消」。\n\n\(excerpt)"
+        alert.informativeText = String(localized: "一个 pop:// 链接要用这个插件处理下面的内容。它会运行你写的脚本或快捷指令，不认识这个链接的话点「取消」。\n\n\(excerpt)")
         alert.alertStyle = .warning
-        alert.addButton(withTitle: "运行")
-        alert.addButton(withTitle: "取消")
+        alert.addButton(withTitle: String(localized: "运行"))
+        alert.addButton(withTitle: String(localized: "取消"))
         NSApp.activate()
         return alert.runModal() == .alertFirstButtonReturn
     }
@@ -264,7 +264,7 @@ final class PopCoordinator: MouseTriggerDelegate {
             if plugin.info.canHandle(content) {
                 self.run(pluginID)
             } else {
-                self.finish(toast: content.isEmpty ? "没有选中内容" : "「\(plugin.info.name)」处理不了选中的内容")
+                self.finish(toast: content.isEmpty ? String(localized: "没有选中内容") : String(localized: "「\(plugin.info.name)」处理不了选中的内容"))
             }
         }
     }
@@ -383,7 +383,7 @@ final class PopCoordinator: MouseTriggerDelegate {
     func showRecognizedText(_ text: String, at point: CGPoint) {
         endSession()
         session = Session(anchor: point, pid: nil, sourceAppName: nil, buttonHeld: false, content: .empty)
-        present(.card(TextRecognizer.card(title: "识别文字", text: text)))
+        present(.card(TextRecognizer.card(title: String(localized: "识别文字"), text: text)))
     }
 
     // MARK: - 流程
@@ -574,7 +574,7 @@ final class PopCoordinator: MouseTriggerDelegate {
         case .trimMedia(let file):
             presentTrim(file)
         case .failure(let message):
-            overlay.showCard(ResultCardView(card: ResultCard(title: "没能完成", body: message),
+            overlay.showCard(ResultCardView(card: ResultCard(title: String(localized: "没能完成"), body: message),
                                             onAction: { [weak self] action in self?.perform(action) },
                                             onMore: moreAction(for: current),
                                             onClose: { [weak self] in self?.endSession() }),
@@ -600,13 +600,13 @@ final class PopCoordinator: MouseTriggerDelegate {
             NSWorkspace.shared.activateFileViewerSelecting([url])
         case .copyImage(let png):
             PasteboardWriter.copy(png: png)
-            finish(toast: "已复制图片")
+            finish(toast: String(localized: "已复制图片"))
         case .saveImage(let png, let name):
             do {
                 _ = try ImageFiles.saveToDownloads(png, name: name)
-                finish(toast: "已存到「下载」")
+                finish(toast: String(localized: "已存到「下载」"))
             } catch {
-                present(.failure("存储失败：\(error.localizedDescription)"))
+                present(.failure(String(localized: "存储失败：\(error.localizedDescription)")))
             }
         case .pinImage(let png):
             let anchor = session?.anchor ?? NSEvent.mouseLocation
@@ -620,7 +620,7 @@ final class PopCoordinator: MouseTriggerDelegate {
             present(.translate(text: text, language: ContentClassifier.dominantLanguage(text)))
         case .addToVocabulary(let word, let translation, let source, let target):
             let isNew = VocabularyStore.shared.add(word: word, translation: translation, sourceLanguage: source, targetLanguage: target)
-            finish(toast: isNew ? "已加入生词本" : "生词本里已经有了，换成了这次的释义")
+            finish(toast: isNew ? String(localized: "已加入生词本") : String(localized: "生词本里已经有了，换成了这次的释义"))
         case .convertImages(let files, let operation):
             convertImages(files, operation)
         case .stitchImages(let files, let direction):
@@ -643,28 +643,28 @@ final class PopCoordinator: MouseTriggerDelegate {
             presentTrim(file)
         case .keepAwake(let minutes):
             let started = KeepAwake.shared.start(minutes: minutes)
-            finish(toast: started ? (minutes.map { "保持唤醒 \(KeepAwake.title(minutes: $0))" } ?? "一直保持唤醒") : "没能保持唤醒")
+            finish(toast: started ? (minutes.map { String(localized: "保持唤醒 \(KeepAwake.title(minutes: $0))") } ?? String(localized: "一直保持唤醒")) : String(localized: "没能保持唤醒"))
         case .stopKeepAwake:
             KeepAwake.shared.stop()
-            finish(toast: "已停止保持唤醒")
+            finish(toast: String(localized: "已停止保持唤醒"))
         case .copyRichText(let markdown):
             guard let rich = MarkdownRichText.render(markdown) else {
-                present(.failure("没能转换这段 Markdown"))
+                present(.failure(String(localized: "没能转换这段 Markdown")))
                 return
             }
             MarkdownRichText.copy(rich)
-            finish(toast: "已复制为富文本")
+            finish(toast: String(localized: "已复制为富文本"))
         case .expandLink(let url):
             expandLink(url)
         case .startTimer(let seconds):
             CountdownTimer.shared.start(seconds: seconds)
-            finish(toast: "开始计时 \(CountdownTimer.title(seconds: seconds))")
+            finish(toast: String(localized: "开始计时 \(CountdownTimer.title(seconds: seconds))"))
         case .cancelTimer:
             CountdownTimer.shared.cancel()
-            finish(toast: "已取消计时")
+            finish(toast: String(localized: "已取消计时"))
         case .stopPhoneShare:
             PhoneShare.shared.stop()
-            finish(toast: "已停止传到手机")
+            finish(toast: String(localized: "已停止传到手机"))
         }
     }
 
@@ -678,7 +678,7 @@ final class PopCoordinator: MouseTriggerDelegate {
                 let expansion = try await LinkExpander.expand(url)
                 outcome = .card(LinkExpander.card(for: expansion))
             } catch {
-                outcome = .failure("展开失败：\(LinkExpander.describe(error))")
+                outcome = .failure(String(localized: "展开失败：\(LinkExpander.describe(error))"))
             }
             guard let self, self.session?.id == sessionID else { return }
             self.present(outcome)
@@ -690,7 +690,7 @@ final class PopCoordinator: MouseTriggerDelegate {
         let anchor = session?.anchor ?? NSEvent.mouseLocation
         endSession()
         let folder = FileNames.available(in: pdf.deletingLastPathComponent(),
-                                         base: pdf.deletingPathExtension().lastPathComponent + " 的页面")
+                                         base: pdf.deletingPathExtension().lastPathComponent + String(localized: " 的页面"))
         Task { [weak self] in
             let result = await runInBackground { () -> Result<[URL], PDFTools.Failure> in
                 do {
@@ -705,7 +705,7 @@ final class PopCoordinator: MouseTriggerDelegate {
             switch result {
             case .success(let pages):
                 NSWorkspace.shared.activateFileViewerSelecting([folder])
-                self.showToast("已存成 \(pages.count) 张图片", at: anchor)
+                self.showToast(String(localized: "已存成 \(pages.count) 张图片"), at: anchor)
             case .failure(let failure):
                 self.showToast(failure.message, at: anchor)
             }
@@ -717,7 +717,7 @@ final class PopCoordinator: MouseTriggerDelegate {
         guard let current = session else { return }
         stopPointerTracking()
         guard let count = (try? PDFTools.open(pdf))?.pageCount, count > 0 else {
-            present(.failure("读不了「\(pdf.lastPathComponent)」"))
+            present(.failure(String(localized: "读不了「\(pdf.lastPathComponent)」")))
             return
         }
         let model = PDFPagesModel(pdf: pdf, pageCount: count)
@@ -734,7 +734,7 @@ final class PopCoordinator: MouseTriggerDelegate {
         let base = pdf.deletingPathExtension().lastPathComponent
         // 页码写得很长时文件名只写页数
         let described = PDFTools.describe(pages)
-        let label = described.count <= 30 ? described : "中的 \(pages.count) 页"
+        let label = described.count <= 30 ? described : String(localized: "中的 \(pages.count) 页")
         let destination = FileNames.available(in: pdf.deletingLastPathComponent(), base: "\(base) \(label)", extension: "pdf")
         Task { [weak self] in
             let failure = await runInBackground { () -> String? in
@@ -751,7 +751,7 @@ final class PopCoordinator: MouseTriggerDelegate {
                 self.showToast(failure, at: anchor)
             } else {
                 NSWorkspace.shared.activateFileViewerSelecting([destination])
-                self.showToast("已取出 \(pages.count) 页", at: anchor)
+                self.showToast(String(localized: "已取出 \(pages.count) 页"), at: anchor)
             }
         }
     }
@@ -760,7 +760,7 @@ final class PopCoordinator: MouseTriggerDelegate {
         let anchor = session?.anchor ?? NSEvent.mouseLocation
         endSession()
         let folder = FileNames.available(in: pdf.deletingLastPathComponent(),
-                                         base: pdf.deletingPathExtension().lastPathComponent + " 的每一页")
+                                         base: pdf.deletingPathExtension().lastPathComponent + String(localized: " 的每一页"))
         Task { [weak self] in
             let result = await runInBackground { () -> Result<[URL], PDFTools.Failure> in
                 do {
@@ -775,7 +775,7 @@ final class PopCoordinator: MouseTriggerDelegate {
             switch result {
             case .success(let files):
                 NSWorkspace.shared.activateFileViewerSelecting([folder])
-                self.showToast("已拆成 \(files.count) 个 PDF", at: anchor)
+                self.showToast(String(localized: "已拆成 \(files.count) 个 PDF"), at: anchor)
             case .failure(let failure):
                 self.showToast(failure.message, at: anchor)
             }
@@ -797,7 +797,7 @@ final class PopCoordinator: MouseTriggerDelegate {
         let pdf = model.pdf
         let adding = model.mode == .add
         let destination = FileNames.available(in: pdf.deletingLastPathComponent(),
-                                              base: pdf.deletingPathExtension().lastPathComponent + (adding ? " 加密" : " 无密码"),
+                                              base: pdf.deletingPathExtension().lastPathComponent + (adding ? String(localized: " 加密") : String(localized: " 无密码")),
                                               extension: "pdf")
         Task { [weak self] in
             let failure = await runInBackground { () -> String? in
@@ -822,14 +822,14 @@ final class PopCoordinator: MouseTriggerDelegate {
             let anchor = self.session?.anchor ?? NSEvent.mouseLocation
             self.endSession()
             NSWorkspace.shared.activateFileViewerSelecting([destination])
-            self.showToast(adding ? "已另存一份加了密码的 PDF" : "已另存一份没有密码的 PDF", at: anchor)
+            self.showToast(adding ? String(localized: "已另存一份加了密码的 PDF") : String(localized: "已另存一份没有密码的 PDF"), at: anchor)
         }
     }
 
     /// 在后台压缩 PDF；小了才留下，在访达里选中
     private func compressPDF(_ pdf: URL) {
         let anchor = session?.anchor ?? NSEvent.mouseLocation
-        showToast("正在压缩 PDF…", at: anchor)
+        showToast(String(localized: "正在压缩 PDF…"), at: anchor)
         Task { [weak self] in
             let result = await runInBackground { () -> Result<PDFTools.Compression, PDFTools.Failure> in
                 do {
@@ -845,10 +845,10 @@ final class PopCoordinator: MouseTriggerDelegate {
             switch result {
             case .success(let compression) where compression.worthwhile:
                 NSWorkspace.shared.activateFileViewerSelecting([compression.url])
-                message = "已压缩：\(FileInfo.shortSize(compression.before)) → \(FileInfo.shortSize(compression.after))"
+                message = String(localized: "已压缩：\(FileInfo.shortSize(compression.before)) → \(FileInfo.shortSize(compression.after))")
             case .success(let compression):
                 try? FileManager.default.removeItem(at: compression.url)
-                message = "这个 PDF 已经很小了，压缩不了多少"
+                message = String(localized: "这个 PDF 已经很小了，压缩不了多少")
             case .failure(let failure):
                 message = failure.message
             }
@@ -883,9 +883,9 @@ final class PopCoordinator: MouseTriggerDelegate {
             }
             let message: String
             if let failure = failures.first {
-                message = outputs.isEmpty ? failure : "转换了 \(outputs.count) 张，\(failures.count) 张失败：\(failure)"
+                message = outputs.isEmpty ? failure : String(localized: "转换了 \(outputs.count) 张，\(failures.count) 张失败：\(failure)")
             } else {
-                message = outputs.count == 1 ? "已存到原图旁边" : "已转换 \(outputs.count) 张"
+                message = outputs.count == 1 ? String(localized: "已存到原图旁边") : String(localized: "已转换 \(outputs.count) 张")
             }
             self.showToast(message, at: anchor)
         }
@@ -909,7 +909,7 @@ final class PopCoordinator: MouseTriggerDelegate {
             switch result {
             case .success(let output):
                 NSWorkspace.shared.activateFileViewerSelecting([output])
-                self.showToast("已拼成一张，存在第一张旁边", at: anchor)
+                self.showToast(String(localized: "已拼成一张，存在第一张旁边"), at: anchor)
             case .failure(let failure):
                 self.showToast(failure.message, at: anchor)
             }
@@ -934,7 +934,7 @@ final class PopCoordinator: MouseTriggerDelegate {
             switch result {
             case .success(let output):
                 NSWorkspace.shared.activateFileViewerSelecting([output])
-                self.showToast("已合成动图，存在第一张旁边", at: anchor)
+                self.showToast(String(localized: "已合成动图，存在第一张旁边"), at: anchor)
             case .failure(let failure):
                 self.showToast(failure.message, at: anchor)
             }
@@ -949,7 +949,7 @@ final class PopCoordinator: MouseTriggerDelegate {
             let duration = await MediaTrim.duration(of: file)
             guard let self, self.session?.id == current.id else { return }
             guard let duration else {
-                self.present(.failure("读不到「\(file.lastPathComponent)」的时长"))
+                self.present(.failure(String(localized: "读不到「\(file.lastPathComponent)」的时长")))
                 return
             }
             let model = MediaTrimModel(file: file, duration: duration)
@@ -963,13 +963,13 @@ final class PopCoordinator: MouseTriggerDelegate {
     private func trim(_ file: URL, _ range: ClosedRange<Double>) {
         let anchor = session?.anchor ?? NSEvent.mouseLocation
         endSession()
-        showToast("正在截取…", at: anchor)
+        showToast(String(localized: "正在截取…"), at: anchor)
         Task { [weak self] in
             let message: String
             do {
                 let output = try await MediaTrim.trim(file, range: range)
                 NSWorkspace.shared.activateFileViewerSelecting([output])
-                message = "已截取 \(MediaTrim.label(range.upperBound - range.lowerBound))"
+                message = String(localized: "已截取 \(MediaTrim.label(range.upperBound - range.lowerBound))")
             } catch {
                 message = (error as? MediaTrim.Failure)?.message ?? error.localizedDescription
             }
@@ -1006,9 +1006,9 @@ final class PopCoordinator: MouseTriggerDelegate {
             }
             let message: String
             if let failure = failures.first {
-                message = outputs.isEmpty ? failure : "转换了 \(outputs.count) 个，\(failures.count) 个失败：\(failure)"
+                message = outputs.isEmpty ? failure : String(localized: "转换了 \(outputs.count) 个，\(failures.count) 个失败：\(failure)")
             } else if outputs.count > 1 {
-                message = "已转换 \(outputs.count) 个视频"
+                message = String(localized: "已转换 \(outputs.count) 个视频")
             } else {
                 message = ([operation.done] + notes).joined(separator: "；")
             }
@@ -1138,7 +1138,7 @@ final class PopCoordinator: MouseTriggerDelegate {
                     case .calendar:
                         try await ReminderService.addEvent(title: title, date: date, hasTime: hasTime, notes: notes)
                     }
-                    self?.finish(toast: target == .reminder ? "已加到提醒事项" : "已加到日历")
+                    self?.finish(toast: target == .reminder ? String(localized: "已加到提醒事项") : String(localized: "已加到日历"))
                 } catch {
                     draft.isSaving = false
                     draft.errorMessage = (error as? ReminderService.Failure)?.message ?? error.localizedDescription
@@ -1168,14 +1168,14 @@ final class PopCoordinator: MouseTriggerDelegate {
         let text = (format == .csv ? "\u{FEFF}" : "") + VocabularyStore.export(VocabularyStore.shared.entries, as: format)
         NSApp.activate()
         let panel = NSSavePanel()
-        panel.nameFieldStringValue = "Pop 生词本.\(format.fileExtension)"
+        panel.nameFieldStringValue = String(localized: "Pop 生词本.\(format.fileExtension)")
         panel.allowedContentTypes = [format.contentType]
         guard panel.runModal() == .OK, let url = panel.url else { return }
         do {
             try text.write(to: url, atomically: true, encoding: .utf8)
             NSWorkspace.shared.activateFileViewerSelecting([url])
         } catch {
-            showToast("导出失败：\(error.localizedDescription)", at: NSEvent.mouseLocation)
+            showToast(String(localized: "导出失败：\(error.localizedDescription)"), at: NSEvent.mouseLocation)
         }
     }
 
@@ -1216,9 +1216,9 @@ final class PopCoordinator: MouseTriggerDelegate {
             }
             let message: String
             if let failure = result.failures.first {
-                message = result.outputs.isEmpty ? failure : "加好了 \(result.outputs.count) 张，\(result.failures.count) 张失败：\(failure)"
+                message = result.outputs.isEmpty ? failure : String(localized: "加好了 \(result.outputs.count) 张，\(result.failures.count) 张失败：\(failure)")
             } else {
-                message = "已给 \(result.outputs.count) 张图片加上水印"
+                message = String(localized: "已给 \(result.outputs.count) 张图片加上水印")
             }
             self.showToast(message, at: anchor)
         }
@@ -1256,11 +1256,11 @@ final class PopCoordinator: MouseTriggerDelegate {
             }
             let message: String
             if let failure = result.failures.first {
-                message = result.outputs.isEmpty ? failure : "压好了 \(result.outputs.count) 张，\(result.failures.count) 张失败：\(failure)"
+                message = result.outputs.isEmpty ? failure : String(localized: "压好了 \(result.outputs.count) 张，\(result.failures.count) 张失败：\(failure)")
             } else if result.outputs.count == 1 {
-                message = "已压缩到 \(FileInfo.shortSize(Int64(result.outputs[0].bytes)))"
+                message = String(localized: "已压缩到 \(FileInfo.shortSize(Int64(result.outputs[0].bytes)))")
             } else {
-                message = "已压缩 \(result.outputs.count) 张，都在 \(ImageConverter.sizeLabel(limit)) 以内"
+                message = String(localized: "已压缩 \(result.outputs.count) 张，都在 \(ImageConverter.sizeLabel(limit)) 以内")
             }
             self.showToast(message, at: anchor)
         }
@@ -1387,7 +1387,7 @@ final class PopCoordinator: MouseTriggerDelegate {
         let anchor = session?.anchor ?? NSEvent.mouseLocation
         guard let url = clipboard.store.imageURL(for: item), let data = try? Data(contentsOf: url),
               let image = TextRecognizer.cgImage(from: data) else {
-            present(.failure("无法读取这张图片"))
+            present(.failure(String(localized: "无法读取这张图片")))
             return
         }
         endSession()
@@ -1402,13 +1402,13 @@ final class PopCoordinator: MouseTriggerDelegate {
             guard !settings.snippets.contains(where: { $0.text == text }) else { return }
             settings.snippets.append(Snippet(title: "", text: text))
         }
-        finish(toast: "已存为常用短语")
+        finish(toast: String(localized: "已存为常用短语"))
     }
 
     /// 识别剪贴板历史里某张图片上的文字
     private func recognizeFromHistory(_ item: ClipboardItem) {
         guard let url = clipboard.store.imageURL(for: item), let image = TextRecognizer.cgImage(contentsOf: url) else {
-            present(.failure("无法读取这张图片"))
+            present(.failure(String(localized: "无法读取这张图片")))
             return
         }
         let sessionID = session?.id
@@ -1417,9 +1417,9 @@ final class PopCoordinator: MouseTriggerDelegate {
             guard let self, self.session?.id == sessionID else { return }
             switch result {
             case .success(let text) where !text.isEmpty:
-                self.present(.card(TextRecognizer.card(title: "识别文字", text: text)))
+                self.present(.card(TextRecognizer.card(title: String(localized: "识别文字"), text: text)))
             case .success:
-                self.present(.failure("图片里没有识别到文字"))
+                self.present(.failure(String(localized: "图片里没有识别到文字")))
             case .failure(let error):
                 self.present(.failure(error.message))
             }
@@ -1429,7 +1429,7 @@ final class PopCoordinator: MouseTriggerDelegate {
     /// 剪贴板历史里的图片按表格识别（macOS 26；更早的系统按普通文字识别）
     private func recognizeTableFromHistory(_ item: ClipboardItem) {
         guard let url = clipboard.store.imageURL(for: item), let image = TextRecognizer.cgImage(contentsOf: url) else {
-            present(.failure("无法读取这张图片"))
+            present(.failure(String(localized: "无法读取这张图片")))
             return
         }
         let sessionID = session?.id
@@ -1484,7 +1484,7 @@ final class PopCoordinator: MouseTriggerDelegate {
 
     private func copy(_ text: String) {
         PasteboardWriter.copy(text)
-        finish(toast: "已复制")
+        finish(toast: String(localized: "已复制"))
     }
 
     /// 结束这次唤起，在原来的位置显示一句提示

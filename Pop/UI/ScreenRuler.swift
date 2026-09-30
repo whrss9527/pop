@@ -14,10 +14,10 @@ final class ScreenRuler {
         current?.close()
         let point = NSEvent.mouseLocation
         guard let screen = NSScreen.screens.first(where: { NSMouseInRect(point, $0.frame, false) }) ?? NSScreen.main else {
-            return "找不到屏幕"
+            return String(localized: "找不到屏幕")
         }
         guard let image = await capture(screen), let finder = EdgeFinder(image: image) else {
-            return "截不到屏幕。请在「系统设置 → 隐私与安全性 → 录屏与系统录音」里允许 Pop。"
+            return String(localized: "截不到屏幕。请在「系统设置 → 隐私与安全性 → 录屏与系统录音」里允许 Pop。")
         }
         let ruler = ScreenRuler(screen: screen, image: image, finder: finder)
         current = ruler
@@ -39,7 +39,7 @@ final class ScreenRuler {
         close()
         guard let measured else { return }
         PasteboardWriter.copy(measured)
-        PinBoard.shared.onToast?("已复制 \(measured)", point)
+        PinBoard.shared.onToast?(String(localized: "已复制 \(measured)"), point)
     }
 
     private func close() {
@@ -290,7 +290,7 @@ private final class RulerView: NSView {
             .font: NSFont.systemFont(ofSize: 12, weight: .medium),
             .foregroundColor: NSColor.white,
         ]
-        let string = NSAttributedString(string: "单击复制尺寸 · 拖动量一块区域 · Esc 退出", attributes: attributes)
+        let string = NSAttributedString(string: String(localized: "单击复制尺寸 · 拖动量一块区域 · Esc 退出"), attributes: attributes)
         let size = string.size()
         let box = CGRect(x: bounds.midX - size.width / 2 - 12, y: 44, width: size.width + 24, height: size.height + 10)
         NSColor.black.withAlphaComponent(0.7).setFill()

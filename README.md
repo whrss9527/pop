@@ -116,6 +116,7 @@ Create one from a template in Settings → Actions → My Plugins, or put a JSON
   "name": "GitHub Search",
   "symbol": "magnifyingglass",
   "summary": "Search GitHub for the selected text",
+  "localized": { "zh-Hans": { "name": "GitHub 搜索", "summary": "在 GitHub 上搜索选中的文字" } },
   "match": { "kinds": ["text"], "pattern": null },
   "action": { "type": "url", "template": "https://github.com/search?q={text}" },
   "output": "none"
@@ -126,6 +127,7 @@ Create one from a template in Settings → Actions → My Plugins, or put a JSON
 | --- | --- |
 | `id` | Plugin ID, also the file name. Letters, digits, `.`, `-` and `_` only, and it can't match a built-in action. You can leave it out in hand-written files; the file name is used instead |
 | `name` / `symbol` / `summary` | The name, [SF Symbol](https://developer.apple.com/sf-symbols/) icon name and description shown on the ring and in lists |
+| `localized` | Optional names and descriptions in other languages, keyed by language code: `{"en": {"name": "GitHub Search", "summary": "…"}, "zh-Hans": {"name": "GitHub 搜索"}}`. When Pop's interface is in that language (a regional code such as `zh-Hant-HK` falls back to `zh-Hant`, then `zh`), they replace `name` and `summary`; otherwise `name` and `summary` are shown |
 | `match.kinds` | Kinds of content it handles: `text`, `foreignText`, `chineseText`, `word`, `url`, `email`, `json`, `number`, `measurement`, `color`, `dateTime`, `timestamp`, `math`, `files`, `imageFile`, `image`. Empty means always available |
 | `match.pattern` | Optional regex that the selected text (or file path) must match |
 | `action.type` | `url`: open a URL, with `{text}` replaced by the URL-encoded text and `{raw}` by the original text. `shell`: run `script` with zsh; the text comes in on standard input and in `$POP_TEXT` and `$POP_FILES`. `javascript`: run `script` in JavaScriptCore; define `function run(input, files)` and return the result. `shortcut`: pass the text to the shortcut named `shortcut`. `ai`: send the instructions in `prompt` together with the selected text to the service in Settings → AI; `{text}` is replaced with the selection (without it, the text is appended to the prompt), and results shown on a card stream in as they're generated |

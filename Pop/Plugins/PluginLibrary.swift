@@ -39,9 +39,20 @@ struct PluginIndex: Decodable, Equatable {
         var url: String
         /// 插件文件的 SHA-256，小写十六进制
         var sha256: String
+        /// 其他语言的名称和说明，写法和插件文件里的 localized 一样
+        var localized: [String: PluginManifest.LocalizedText]? = nil
 
         private enum CodingKeys: String, CodingKey {
-            case id, name, summary, author, symbol, type, url, sha256
+            case id, name, summary, author, symbol, type, url, sha256, localized
+        }
+
+        /// 按界面语言显示的名称和说明
+        var displayName: String {
+            PluginManifest.localizedValue(localized, \.name) ?? name
+        }
+
+        var displaySummary: String {
+            PluginManifest.localizedValue(localized, \.summary) ?? summary
         }
 
         init(id: String, name: String, summary: String = "", author: String = "", symbol: String = PluginManifest.defaultSymbol,
@@ -67,6 +78,7 @@ struct PluginIndex: Decodable, Equatable {
             author = c.lenient(.author, default: "")
             symbol = c.lenient(.symbol, default: PluginManifest.defaultSymbol)
             type = c.lenient(.type, default: PluginManifest.Action.Kind.url.rawValue)
+            localized = c.lenient(.localized, default: [String: PluginManifest.LocalizedText]?.none)
             if name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
                 name = id
             }
@@ -101,7 +113,8 @@ struct PluginIndex: Decodable, Equatable {
         let trimmed = query.trimmingCharacters(in: .whitespaces)
         guard !trimmed.isEmpty else { return plugins }
         return plugins.filter { entry in
-            SearchText.matches(trimmed, keys: SearchText.keys(for: entry.name) + [entry.summary.lowercased(), entry.author.lowercased()])
+            SearchText.matches(trimmed, keys: SearchText.keys(for: entry.name) + SearchText.keys(for: entry.displayName)
+                               + [entry.summary.lowercased(), entry.displaySummary.lowercased(), entry.author.lowercased()])
         }
     }
 }

@@ -99,6 +99,29 @@ final class PluginLibraryTests: XCTestCase {
         XCTAssertEqual(try JSONDecoder().decode(PluginIndex.self, from: Data("{}".utf8)).plugins, [])
     }
 
+    func testLocalizedNamesFollowTheInterfaceLanguage() throws {
+        let data = Data(#"{"id": "demo", "name": "豆瓣", "summary": "搜书", "localized": {"en": {"name": "Douban", "summary": " "}, "ja": 3}}"#.utf8)
+        let manifest = try JSONDecoder().decode(PluginManifest.self, from: data)
+        // 写错的语言让整个 localized 读不出来，不影响插件本身
+        XCTAssertEqual(manifest.name, "豆瓣")
+        let good = Data(#"{"id": "demo", "name": "豆瓣", "summary": "搜书", "localized": {"en": {"name": "Douban", "summary": " "}}}"#.utf8)
+        let localized = try JSONDecoder().decode(PluginManifest.self, from: good).localized
+        XCTAssertEqual(PluginManifest.localizedValue(localized, \.name, languages: ["en"]), "Douban")
+        XCTAssertEqual(PluginManifest.localizedValue(localized, \.name, languages: ["en-GB"]), "Douban")
+        XCTAssertNil(PluginManifest.localizedValue(localized, \.name, languages: ["zh-Hans"]))
+        XCTAssertNil(PluginManifest.localizedValue(localized, \.summary, languages: ["en"]), "空白的说明用原来的")
+        // 测试用中文界面：显示原来的名字
+        XCTAssertEqual(try JSONDecoder().decode(PluginManifest.self, from: good).displayName, "豆瓣")
+        // 保存时去掉空白的翻译，没有翻译就不写 localized
+        var manifest2 = try JSONDecoder().decode(PluginManifest.self, from: good)
+        manifest2 = manifest2.normalized()
+        XCTAssertEqual(manifest2.localized, ["en": PluginManifest.LocalizedText(name: "Douban", summary: nil)])
+        manifest2.localized = ["en": PluginManifest.LocalizedText(name: " ", summary: nil)]
+        XCTAssertNil(manifest2.normalized().localized)
+        let encoded = try JSONEncoder().encode(PluginManifest(name: "没有翻译"))
+        XCTAssertFalse(String(decoding: encoded, as: UTF8.self).contains("localized"))
+    }
+
     func testCandidateURLs() {
         let catalog = PluginLibrary.Catalog(index: PluginIndex(plugins: []), source: mirror)
         let relative = PluginIndex.Entry(id: "a", name: "A", url: "a.json", sha256: "00")
@@ -266,6 +289,8 @@ final class PluginLibraryTests: XCTestCase {
             XCTAssertEqual(manifest.name, entry.name, entry.id)
             XCTAssertEqual(manifest.summary, entry.summary, entry.id)
             XCTAssertEqual(manifest.symbol, entry.symbol, entry.id)
+            XCTAssertEqual(manifest.localized, entry.localized, "\(entry.id)：localized 要和插件文件里的一样")
+            XCTAssertFalse(entry.localized?["en"]?.name?.isEmpty ?? true, "\(entry.id)：要有英文名称")
             XCTAssertEqual(manifest.action.type.rawValue, entry.type, entry.id)
             XCTAssertFalse(entry.author.isEmpty, entry.id)
             XCTAssertNotNil(NSImage(systemSymbolName: entry.symbol, accessibilityDescription: nil), "\(entry.id)：没有 \(entry.symbol) 这个图标")

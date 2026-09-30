@@ -4,6 +4,12 @@
   "name": "MDN",
   "symbol": "globe",
   "summary": "在 MDN 上查 HTML、CSS、JavaScript 和 Web API 的文档",
+  "localized": {
+    "en": {
+      "name": "MDN",
+      "summary": "Look up HTML, CSS, JavaScript and Web API docs on MDN"
+    }
+  },
   "match": {
     "kinds": [
       "text"

@@ -212,7 +212,7 @@ private struct ShelfDragAll: View {
             }
             .frame(width: 56, height: 46)
             VStack(alignment: .leading, spacing: 2) {
-                Text(files.count == 1 ? "拖走这个文件" : "拖走全部 \(files.count) 个文件")
+                Text(files.count == 1 ? String(localized: "拖走这个文件") : String(localized: "拖走全部 \(files.count) 个文件"))
                     .font(.callout)
                 Text("拖到访达、邮件或者聊天窗口里")
                     .font(.caption)

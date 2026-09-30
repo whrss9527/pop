@@ -23,10 +23,10 @@ final class MediaTrimModel: ObservableObject {
 
     var summary: String {
         if input.trimmingCharacters(in: .whitespaces).isEmpty {
-            return "一共 \(MediaTrim.label(duration))。写上开始和结束的时间，比如 0:10-1:25（1:25- 是到结尾）"
+            return String(localized: "一共 \(MediaTrim.label(duration))。写上开始和结束的时间，比如 0:10-1:25（1:25- 是到结尾）")
         }
-        guard let range else { return "时间写得不对，或者超出了 0:00–\(MediaTrim.label(duration))" }
-        return "从 \(MediaTrim.label(range.lowerBound)) 到 \(MediaTrim.label(range.upperBound))，一共 \(MediaTrim.label(range.upperBound - range.lowerBound))"
+        guard let range else { return String(localized: "时间写得不对，或者超出了 0:00–\(MediaTrim.label(duration))") }
+        return String(localized: "从 \(MediaTrim.label(range.lowerBound)) 到 \(MediaTrim.label(range.upperBound))，一共 \(MediaTrim.label(range.upperBound - range.lowerBound))")
     }
 }
 
@@ -37,7 +37,7 @@ struct MediaTrimView: View {
     @FocusState private var focused: Bool
 
     var body: some View {
-        CardContainer(title: "截取片段", subtitle: model.file.lastPathComponent, width: 400, onClose: onClose) {
+        CardContainer(title: String(localized: "截取片段"), subtitle: model.file.lastPathComponent, width: 400, onClose: onClose) {
             TextField("开始-结束，比如 0:10-1:25", text: $model.input)
                 .textFieldStyle(.roundedBorder)
                 .focused($focused)

@@ -107,8 +107,8 @@ struct PluginLibraryView: View {
                     store.update { $0.setInstalled(saved.id, true) }
                 }
                 notice = isUpdate
-                    ? String(localized: "「\(saved.name)」已经更新")
-                    : String(localized: "装好了「\(saved.name)」：在圆盘的「全部功能」里能找到，也可以到「圆盘」里拖到想要的位置")
+                    ? String(localized: "「\(saved.displayName)」已经更新")
+                    : String(localized: "装好了「\(saved.displayName)」：在圆盘的「全部功能」里能找到，也可以到「圆盘」里拖到想要的位置")
             } catch {
                 errorMessage = (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
             }
@@ -118,7 +118,7 @@ struct PluginLibraryView: View {
     /// 运行 Shell 脚本的插件，装之前先给用户看一眼脚本
     private func confirmScript(_ manifest: PluginManifest) -> Bool {
         let alert = NSAlert()
-        alert.messageText = String(localized: "「\(manifest.name)」会在这台 Mac 上运行 Shell 脚本")
+        alert.messageText = String(localized: "「\(manifest.displayName)」会在这台 Mac 上运行 Shell 脚本")
         alert.informativeText = String(localized: "每次用它都会运行下面这段脚本，脚本能读写你的文件。只装信得过的插件。")
         alert.alertStyle = .warning
         let scroll = NSTextView.scrollableTextView()
@@ -147,9 +147,9 @@ struct PluginLibraryRow: View {
             Image(systemName: symbol)
                 .frame(width: 22)
             VStack(alignment: .leading, spacing: 2) {
-                Text(entry.name)
-                if !entry.summary.isEmpty {
-                    Text(entry.summary)
+                Text(entry.displayName)
+                if !entry.displaySummary.isEmpty {
+                    Text(entry.displaySummary)
                         .font(.caption)
                         .foregroundStyle(.secondary)
                         .fixedSize(horizontal: false, vertical: true)

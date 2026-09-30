@@ -36,11 +36,11 @@ final class CountdownTimer: ObservableObject {
     }
 
     private func finish() {
-        let message = "\(Self.title(seconds: duration))的计时到了"
+        let message = String(localized: "\(Self.title(seconds: duration))的计时到了")
         cancel()
         NSSound(named: "Glass")?.play()
-        Notifier.shared.showReminder(title: "时间到", body: message)
-        onFinish("时间到：\(message)")
+        Notifier.shared.showReminder(title: String(localized: "时间到"), body: message)
+        onFinish(String(localized: "时间到：\(message)"))
     }
 
     /// 「计时还剩 12:34（到 15:30）」；没在计时时为 nil
@@ -49,7 +49,7 @@ final class CountdownTimer: ObservableObject {
         let remaining = max(Int(endsAt.timeIntervalSince(now).rounded(.up)), 0)
         let formatter = DateFormatter()
         formatter.dateFormat = "HH:mm"
-        return "计时还剩 \(Self.clock(remaining))（到 \(formatter.string(from: endsAt))）"
+        return String(localized: "计时还剩 \(Self.clock(remaining))（到 \(formatter.string(from: endsAt))）")
     }
 
     /// 90 → 「1:30」，3700 → 「1:01:40」
@@ -67,12 +67,12 @@ final class CountdownTimer: ObservableObject {
         let minutes = total % 3600 / 60
         let rest = total % 60
         switch (hours, minutes, rest) {
-        case (0, 0, _): return "\(rest) 秒"
-        case (0, _, 0): return "\(minutes) 分钟"
-        case (0, _, _): return "\(minutes) 分 \(rest) 秒"
-        case (_, 0, 0): return "\(hours) 小时"
-        case (_, _, 0): return "\(hours) 小时 \(minutes) 分钟"
-        default: return "\(hours) 小时 \(minutes) 分 \(rest) 秒"
+        case (0, 0, _): return String(localized: "\(rest) 秒")
+        case (0, _, 0): return String(localized: "\(minutes) 分钟")
+        case (0, _, _): return String(localized: "\(minutes) 分 \(rest) 秒")
+        case (_, 0, 0): return String(localized: "\(hours) 小时")
+        case (_, _, 0): return String(localized: "\(hours) 小时 \(minutes) 分钟")
+        default: return String(localized: "\(hours) 小时 \(minutes) 分 \(rest) 秒")
         }
     }
 }

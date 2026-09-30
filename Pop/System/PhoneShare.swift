@@ -158,21 +158,21 @@ enum LANSharePage {
             let thumbnail = item.preview && position < 30
                 ? "<a href=\"\(link)?view=1\"><img src=\"\(link)?view=1\" alt=\"\" loading=\"lazy\" onerror=\"this.remove()\"></a>"
                 : "<span class=\"icon\">📄</span>"
-            return "<li>\(thumbnail)<div class=\"info\"><span class=\"name\">\(escape(item.name))</span><span class=\"size\">\(sizeLabel(item.size))</span></div><a class=\"button\" href=\"\(link)\" download>下载</a></li>"
+            return "<li>\(thumbnail)<div class=\"info\"><span class=\"name\">\(escape(item.name))</span><span class=\"size\">\(sizeLabel(item.size))</span></div><a class=\"button\" href=\"\(link)\" download>\(escape(String(localized: "下载")))</a></li>"
         }.joined(separator: "\n")
         var shared = ""
         if let text, !text.isEmpty {
             // 纯 http 的网页用不了剪贴板接口：放在文本框里，点一下全选，长按拷贝
             let lineCount = min(max(text.split(separator: "\n", omittingEmptySubsequences: false).count, 2), 10)
             let link = URL(string: text).flatMap { $0.scheme == "http" || $0.scheme == "https" ? $0 : nil }
-            shared = "<section><h2>文字</h2><textarea readonly rows=\"\(lineCount)\" onfocus=\"this.select()\">\(escape(text))</textarea>"
-                + (link.map { "<p><a class=\"button\" href=\"\(escape($0.absoluteString))\">打开链接</a></p>" } ?? "")
-                + "<p class=\"hint\">点一下全选，再长按拷贝</p></section>"
+            shared = "<section><h2>\(escape(String(localized: "文字")))</h2><textarea readonly rows=\"\(lineCount)\" onfocus=\"this.select()\">\(escape(text))</textarea>"
+                + (link.map { "<p><a class=\"button\" href=\"\(escape($0.absoluteString))\">\(escape(String(localized: "打开链接")))</a></p>" } ?? "")
+                + "<p class=\"hint\">\(escape(String(localized: "点一下全选，再长按拷贝")))</p></section>"
         }
-        let photoHint = items.contains(where: \.preview) ? "<p class=\"hint\">照片：点缩略图打开大图，长按存到相册</p>" : ""
+        let photoHint = items.contains(where: \.preview) ? "<p class=\"hint\">\(escape(String(localized: "照片：点缩略图打开大图，长按存到相册")))</p>" : ""
         let downloads = items.isEmpty ? "" : """
         <section>
-        <h2>存到手机</h2>
+        <h2>\(escape(String(localized: "存到手机")))</h2>
         <ul>
         \(rows)
         </ul>
@@ -181,11 +181,11 @@ enum LANSharePage {
         """
         return #"""
         <!doctype html>
-        <html lang="zh-CN">
+        <html lang="\#(Localization.isChinese ? "zh-CN" : "en")">
         <head>
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
-        <title>Pop · 传到手机</title>
+        <title>Pop · \#(escape(String(localized: "传到手机")))</title>
         <style>
         :root { color-scheme: light dark; --bg: #f5f5f7; --card: #ffffff; --text: #1d1d1f; --muted: #6e6e73; --accent: #0a84ff; --line: rgba(0,0,0,0.08); }
         @media (prefers-color-scheme: dark) { :root { --bg: #000000; --card: #1c1c1e; --text: #f5f5f7; --muted: #98989d; --line: rgba(255,255,255,0.1); } }
@@ -217,20 +217,21 @@ enum LANSharePage {
         </head>
         <body>
         <main>
-        <h1>传到手机</h1>
-        <p class="from">来自「\#(escape(computerName))」上的 Pop</p>
+        <h1>\#(escape(String(localized: "传到手机")))</h1>
+        <p class="from">\#(escape(String(localized: "来自「\(computerName)」上的 Pop")))</p>
         \#(shared)
         \#(downloads)
         <section>
-        <h2>传到这台 Mac</h2>
-        <label class="button pick">选择文件<input id="pick" type="file" multiple></label>
+        <h2>\#(escape(String(localized: "传到这台 Mac")))</h2>
+        <label class="button pick">\#(escape(String(localized: "选择文件")))<input id="pick" type="file" multiple></label>
         <p id="progress"></p>
         <ul id="done"></ul>
         </section>
-        <p class="note">文件会存进 Mac 的「下载」文件夹。Mac 上停止共享后，这个网页就打不开了。</p>
+        <p class="note">\#(escape(String(localized: "文件会存进 Mac 的「下载」文件夹。Mac 上停止共享后，这个网页就打不开了。")))</p>
         </main>
         <script>
         const base = "\#(base)";
+        const texts = \#(scriptTexts());
         const pick = document.getElementById("pick");
         const progress = document.getElementById("progress");
         const done = document.getElementById("done");
@@ -245,15 +246,15 @@ enum LANSharePage {
             request.open("PUT", base + "/u?name=" + encodeURIComponent(file.name));
             request.upload.onprogress = function (event) {
               if (event.lengthComputable) {
-                progress.textContent = "正在传 " + file.name + "：" + Math.round(event.loaded / event.total * 100) + "%";
+                progress.textContent = texts.sending.replace("{name}", file.name).replace("{percent}", Math.round(event.loaded / event.total * 100));
               }
             };
             request.onload = function () {
-              note(request.status === 200 ? "✅ " + file.name : "❌ " + file.name + "（" + request.responseText + "）");
+              note(request.status === 200 ? "✅ " + file.name : "❌ " + texts.failed.replace("{name}", file.name).replace("{reason}", request.responseText));
               resolve();
             };
             request.onerror = function () {
-              note("❌ " + file.name + "（连接断了）");
+              note("❌ " + texts.disconnected.replace("{name}", file.name));
               resolve();
             };
             request.send(file);
@@ -264,13 +265,27 @@ enum LANSharePage {
           for (const file of files) {
             await send(file);
           }
-          progress.textContent = files.length ? "传完了，在 Mac 的「下载」文件夹里" : "";
+          progress.textContent = files.length ? texts.finished : "";
           pick.value = "";
         });
         </script>
         </body>
         </html>
         """#
+    }
+
+    /// 网页脚本里用到的文字（JSON，{name} 这类占位符在脚本里替换）
+    private static func scriptTexts() -> String {
+        let texts = [
+            "sending": String(localized: "正在传 {name}：{percent}%"),
+            "failed": String(localized: "{name}（{reason}）"),
+            "disconnected": String(localized: "{name}（连接断了）"),
+            "finished": String(localized: "传完了，在 Mac 的「下载」文件夹里"),
+        ]
+        guard let data = try? JSONSerialization.data(withJSONObject: texts, options: [.sortedKeys]),
+              let json = String(data: data, encoding: .utf8) else { return "{}" }
+        // 放在 <script> 里：把 < 转义，文字里就不会出现 </script>
+        return json.replacingOccurrences(of: "<", with: "\\u003c")
     }
 
     static func escape(_ text: String) -> String {
@@ -308,7 +323,7 @@ final class LANShareServer: @unchecked Sendable {
     enum Failure: LocalizedError {
         case stopped
 
-        var errorDescription: String? { "网页服务没能启动" }
+        var errorDescription: String? { String(localized: "网页服务没能启动") }
     }
 
     let token: String
@@ -447,7 +462,7 @@ final class LANShareServer: @unchecked Sendable {
     private func handle(head: Data, body: Data, connection: NWConnection) {
         lastActivity = Date()
         guard let request = HTTPRequestHead(head) else {
-            return respond(connection, status: 400, text: "请求格式不对")
+            return respond(connection, status: 400, text: String(localized: "请求格式不对"))
         }
         switch LANShareRoute.resolve(request, token: token, fileCount: files.count) {
         case .page:
@@ -458,14 +473,14 @@ final class LANShareServer: @unchecked Sendable {
             sendFile(files[index], inline: inline, connection: connection)
         case .upload(let name):
             guard let length = request.contentLength else {
-                return respond(connection, status: 411, text: "缺少文件大小")
+                return respond(connection, status: 411, text: String(localized: "缺少文件大小"))
             }
             if request.headers["expect"]?.lowercased() == "100-continue" {
                 connection.send(content: Data("HTTP/1.1 100 Continue\r\n\r\n".utf8), completion: .contentProcessed { _ in })
             }
             receiveUpload(name: name, length: length, initial: body, connection: connection)
         case .notFound:
-            respond(connection, status: 404, text: "没有这个网页")
+            respond(connection, status: 404, text: String(localized: "没有这个网页"))
         }
     }
 
@@ -521,11 +536,11 @@ final class LANShareServer: @unchecked Sendable {
 
     private func sendFile(_ file: SharedFile, inline: Bool, connection: NWConnection) {
         guard let handle = try? FileHandle(forReadingFrom: file.url) else {
-            return respond(connection, status: 404, text: "文件不见了")
+            return respond(connection, status: 404, text: String(localized: "文件不见了"))
         }
         guard let size = try? handle.seekToEnd(), (try? handle.seek(toOffset: 0)) != nil else {
             try? handle.close()
-            return respond(connection, status: 500, text: "读不了这个文件")
+            return respond(connection, status: 500, text: String(localized: "读不了这个文件"))
         }
         let head = Self.responseHead(status: 200, headers: [("Content-Type", Self.mimeType(for: file.name)),
                                                             ("Content-Length", String(size)),
@@ -623,7 +638,7 @@ final class LANShareServer: @unchecked Sendable {
             base = String(base.prefix(120))
         }
         if base.isEmpty {
-            base = "来自手机"
+            base = String(localized: "来自手机")
         }
         return (base, ext.isEmpty || ext.count > 12 ? nil : ext)
     }
@@ -635,12 +650,12 @@ final class LANShareServer: @unchecked Sendable {
             try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
             if let free = try? folder.resourceValues(forKeys: [.volumeAvailableCapacityForImportantUsageKey])
                 .volumeAvailableCapacityForImportantUsage, Int64(length) > free {
-                return respond(connection, status: 507, text: "Mac 上的空间不够")
+                return respond(connection, status: 507, text: String(localized: "Mac 上的空间不够"))
             }
             upload = try Upload(name: name, length: length, near: folder)
             try upload.append(initial)
         } catch {
-            return respond(connection, status: 500, text: "Mac 上存不了这个文件")
+            return respond(connection, status: 500, text: String(localized: "Mac 上存不了这个文件"))
         }
         receiveBody(upload, connection: connection)
     }
@@ -661,7 +676,7 @@ final class LANShareServer: @unchecked Sendable {
                     try upload.append(data)
                 } catch {
                     upload.discard()
-                    return self.respond(connection, status: 500, text: "Mac 上写不进这个文件")
+                    return self.respond(connection, status: 500, text: String(localized: "Mac 上写不进这个文件"))
                 }
             }
             if upload.remaining == 0 {
@@ -683,7 +698,7 @@ final class LANShareServer: @unchecked Sendable {
             try FileManager.default.moveItem(at: upload.file, to: destination)
         } catch {
             upload.discard()
-            return respond(connection, status: 500, text: "Mac 上存不了这个文件")
+            return respond(connection, status: 500, text: String(localized: "Mac 上存不了这个文件"))
         }
         try? FileManager.default.removeItem(at: upload.folder)
         onEvent(.received(destination))
@@ -747,7 +762,7 @@ final class PhoneShare: ObservableObject {
             return address
         }
         guard let host = LANAddress.candidates().first else {
-            throw Failure(message: "这台 Mac 没有连上 Wi-Fi 或者网线，手机访问不到")
+            throw Failure(message: String(localized: "这台 Mac 没有连上 Wi-Fi 或者网线，手机访问不到"))
         }
         let fresh = LANShareServer(files: shared, text: text, uploadFolder: Self.uploadFolder,
                                    computerName: LANAddress.computerName()) { [weak self] event in
@@ -762,11 +777,11 @@ final class PhoneShare: ObservableObject {
             port = try await fresh.start()
         } catch {
             fresh.stop()
-            throw Failure(message: "网页服务没能启动：\(error.localizedDescription)")
+            throw Failure(message: String(localized: "网页服务没能启动：\(error.localizedDescription)"))
         }
         guard let url = URL(string: "http://\(host):\(port)/\(fresh.token)/") else {
             fresh.stop()
-            throw Failure(message: "网页服务没能启动")
+            throw Failure(message: String(localized: "网页服务没能启动"))
         }
         // 等待期间别的地方已经开始共享了：用先开的那个
         if let existing = self.server, let address {
@@ -805,9 +820,9 @@ final class PhoneShare: ObservableObject {
     func statusText() -> String? {
         guard isSharing else { return nil }
         if !files.isEmpty {
-            return "正在传到手机（\(files.count) 个文件）"
+            return String(localized: "正在传到手机（\(files.count) 个文件）")
         }
-        return text == nil ? "正在接收手机传来的文件" : "正在传到手机（一段文字）"
+        return text == nil ? String(localized: "正在接收手机传来的文件") : String(localized: "正在传到手机（一段文字）")
     }
 
     private func replaceScratch(with folder: URL?) {
@@ -820,15 +835,15 @@ final class PhoneShare: ObservableObject {
     private func checkIdle() {
         guard let server, server.idleInterval() > Self.idleLimit else { return }
         stop()
-        onMessage("传到手机已停止（\(Int(Self.idleLimit / 60)) 分钟没人访问）")
+        onMessage(String(localized: "传到手机已停止（\(Int(Self.idleLimit / 60)) 分钟没人访问）"))
     }
 
     private func handle(_ event: LANShareServer.Event) {
         switch event {
         case .downloaded(let name):
-            onMessage("手机下载了「\(name)」")
+            onMessage(String(localized: "手机下载了「\(name)」"))
         case .received(let url):
-            onMessage("收到「\(url.lastPathComponent)」，在「下载」文件夹里")
+            onMessage(String(localized: "收到「\(url.lastPathComponent)」，在「下载」文件夹里"))
         }
     }
 
@@ -866,8 +881,8 @@ final class PhoneShare: ObservableObject {
         let fileManager = FileManager.default
         if case .image(let data) = content.selection {
             let png = data.starts(with: [0x89, 0x50, 0x4E, 0x47]) ? data : NSBitmapImageRep(data: data)?.representation(using: .png, properties: [:])
-            guard let png else { throw Failure(message: "读不了这张图片") }
-            let url = try scratchFolder().appending(path: ImageFiles.timestampedName("图片") + ".png")
+            guard let png else { throw Failure(message: String(localized: "读不了这张图片")) }
+            let url = try scratchFolder().appending(path: ImageFiles.timestampedName(String(localized: "图片")) + ".png")
             try png.write(to: url)
             files.append(url)
         }
@@ -885,7 +900,7 @@ final class PhoneShare: ObservableObject {
                                                              file.path(percentEncoded: false), zip.path(percentEncoded: false)],
                                                  stdin: nil, environment: [:], timeout: 600)
             guard case .success(let output) = result, output.status == 0 else {
-                throw Failure(message: "「\(file.lastPathComponent)」没能打包成 zip")
+                throw Failure(message: String(localized: "「\(file.lastPathComponent)」没能打包成 zip"))
             }
             files.append(zip)
         }
@@ -894,28 +909,28 @@ final class PhoneShare: ObservableObject {
     /// 结果卡片：二维码、网址、能下载的文件
     static func card(address: URL, files: [URL], text: String? = nil) -> ResultCard {
         let link = address.absoluteString
-        var rows = [ResultCard.Row(label: "网址", value: link)]
+        var rows = [ResultCard.Row(label: String(localized: "网址"), value: link)]
         if !files.isEmpty {
             var names = files.prefix(4).map(\.lastPathComponent)
             if files.count > 4 {
-                names.append("……一共 \(files.count) 个")
+                names.append(String(localized: "……一共 \(files.count) 个"))
             }
-            rows.append(ResultCard.Row(label: "可以下载", value: names.joined(separator: "\n")))
+            rows.append(ResultCard.Row(label: String(localized: "可以下载"), value: names.joined(separator: "\n")))
         }
         if let text {
-            rows.append(ResultCard.Row(label: "文字", value: text))
+            rows.append(ResultCard.Row(label: String(localized: "文字"), value: text))
         }
         let body: String
         if !files.isEmpty {
-            body = "用手机相机扫码，在网页上点「下载」存到手机；也能从手机传文件过来"
+            body = String(localized: "用手机相机扫码，在网页上点「下载」存到手机；也能从手机传文件过来")
         } else if text != nil {
-            body = "用手机相机扫码，网页上有这段文字，长按就能拷贝；也能从手机传文件过来"
+            body = String(localized: "用手机相机扫码，网页上有这段文字，长按就能拷贝；也能从手机传文件过来")
         } else {
-            body = "用手机相机扫码，在网页上选文件传到这台 Mac 的「下载」文件夹"
+            body = String(localized: "用手机相机扫码，在网页上选文件传到这台 Mac 的「下载」文件夹")
         }
-        return ResultCard(title: "传到手机", body: body,
-                          detail: "手机要和 Mac 连同一个 Wi-Fi。关掉卡片后继续共享，可以在菜单栏里停止；\(Int(idleLimit / 60)) 分钟没人访问自动停止",
+        return ResultCard(title: String(localized: "传到手机"), body: body,
+                          detail: String(localized: "手机要和 Mac 连同一个 Wi-Fi。关掉卡片后继续共享，可以在菜单栏里停止；\(Int(idleLimit / 60)) 分钟没人访问自动停止"),
                           copyText: link, rows: rows, image: QRCode.generate(link),
-                          buttons: [CardButton(title: "停止共享", action: .stopPhoneShare)])
+                          buttons: [CardButton(title: String(localized: "停止共享"), action: .stopPhoneShare)])
     }
 }

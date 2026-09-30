@@ -20,7 +20,7 @@ final class Notifier: NSObject, UNUserNotificationCenterDelegate, @unchecked Sen
         guard available else { return }
         let center = UNUserNotificationCenter.current()
         center.delegate = self
-        let install = UNNotificationAction(identifier: Self.installUpdateAction, title: "立即更新", options: [])
+        let install = UNNotificationAction(identifier: Self.installUpdateAction, title: String(localized: "立即更新"), options: [])
         center.setNotificationCategories([
             UNNotificationCategory(identifier: Self.updateCategory, actions: [install], intentIdentifiers: [], options: []),
         ])
@@ -31,8 +31,8 @@ final class Notifier: NSObject, UNUserNotificationCenterDelegate, @unchecked Sen
         UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound]) { granted, _ in
             guard granted else { return }
             let content = UNMutableNotificationContent()
-            content.title = "Pop 有新版本 \(version)"
-            content.body = "点「立即更新」自动下载安装并重新启动，点通知查看更新内容。"
+            content.title = String(localized: "Pop 有新版本 \(version)")
+            content.body = String(localized: "点「立即更新」自动下载安装并重新启动，点通知查看更新内容。")
             content.categoryIdentifier = Notifier.updateCategory
             let request = UNNotificationRequest(identifier: "pop-update-\(version)", content: content, trigger: nil)
             UNUserNotificationCenter.current().add(request) { error in

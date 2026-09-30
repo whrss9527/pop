@@ -52,11 +52,11 @@ struct WatermarkView: View {
     var onClose: () -> Void
 
     private var subtitle: String {
-        model.files.count == 1 ? model.files[0].lastPathComponent : "\(model.files.count) 张图片"
+        model.files.count == 1 ? model.files[0].lastPathComponent : String(localized: "\(model.files.count) 张图片")
     }
 
     var body: some View {
-        CardContainer(title: "加水印", subtitle: subtitle, width: 420, onClose: onClose) {
+        CardContainer(title: String(localized: "加水印"), subtitle: subtitle, width: 420, onClose: onClose) {
             ZStack {
                 RoundedRectangle(cornerRadius: 8)
                     .fill(Color.primary.opacity(0.05))
@@ -90,7 +90,7 @@ struct WatermarkView: View {
                 .fixedSize(horizontal: false, vertical: true)
             HStack(spacing: 8) {
                 Spacer()
-                Button(model.files.count == 1 ? "加水印" : "给 \(model.files.count) 张图片加水印", action: onApply)
+                Button(model.files.count == 1 ? String(localized: "加水印") : String(localized: "给 \(model.files.count) 张图片加水印"), action: onApply)
                     .keyboardShortcut(.defaultAction)
                     .disabled(!model.canApply)
             }

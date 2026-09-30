@@ -211,7 +211,7 @@ struct PluginsSettingsView: View {
 
     private func delete(_ manifest: PluginManifest) {
         let alert = NSAlert()
-        alert.messageText = String(localized: "删除插件「\(manifest.name)」？")
+        alert.messageText = String(localized: "删除插件「\(manifest.displayName)」？")
         alert.informativeText = String(localized: "插件文件会被删除；打开了 iCloud 同步的话，其他 Mac 上的这个插件也会删除。")
         alert.alertStyle = .warning
         alert.addButton(withTitle: String(localized: "删除"))
@@ -240,7 +240,7 @@ struct UserPluginRow: View {
             Image(systemName: manifest.symbol)
                 .frame(width: 22)
             VStack(alignment: .leading, spacing: 2) {
-                Text(manifest.name)
+                Text(manifest.displayName)
                 Text(subtitle)
                     .font(.caption)
                     .foregroundStyle(.secondary)
@@ -266,7 +266,7 @@ struct UserPluginRow: View {
     }
 
     private var subtitle: String {
-        let detail = manifest.summary.isEmpty ? manifest.match.kinds.map(\.title).joinedAsList() : manifest.summary
+        let detail = manifest.displaySummary.isEmpty ? manifest.match.kinds.map(\.title).joinedAsList() : manifest.displaySummary
         return detail.isEmpty ? manifest.action.type.title : "\(manifest.action.type.title) · \(detail)"
     }
 }

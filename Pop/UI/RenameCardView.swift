@@ -96,10 +96,10 @@ final class RenameModel: ObservableObject {
     var summary: String {
         if let error = plan.error { return error }
         if let problem = plan.items.first(where: { $0.problem != nil })?.problem {
-            return plan.problems == 1 ? problem : "\(plan.problems) 个名字不能用：\(problem)"
+            return plan.problems == 1 ? problem : String(localized: "\(plan.problems) 个名字不能用：\(problem)")
         }
         let count = plan.changes.count
-        return count == 0 ? "名字都没有变" : "会改 \(count) 个文件的名字"
+        return count == 0 ? String(localized: "名字都没有变") : String(localized: "会改 \(count) 个文件的名字")
     }
 }
 
@@ -110,7 +110,7 @@ struct RenameCardView: View {
     @FocusState private var focused: Bool
 
     var body: some View {
-        CardContainer(title: "批量重命名", subtitle: "\(model.files.count) 个文件", width: 520, onClose: onClose) {
+        CardContainer(title: String(localized: "批量重命名"), subtitle: String(localized: "\(model.files.count) 个文件"), width: 520, onClose: onClose) {
             if model.renamed.isEmpty {
                 editor
             } else {
@@ -150,7 +150,7 @@ struct RenameCardView: View {
                 TextField("查找", text: $model.rule.find)
                     .textFieldStyle(.roundedBorder)
                     .focused($focused)
-                TextField(model.rule.useRegex ? "替换为（$1 是第一个分组）" : "替换为", text: $model.rule.replacement)
+                TextField(model.rule.useRegex ? String(localized: "替换为（$1 是第一个分组）") : String(localized: "替换为"), text: $model.rule.replacement)
                     .textFieldStyle(.roundedBorder)
                 Toggle("正则", isOn: $model.rule.useRegex)
                     .toggleStyle(.checkbox)
@@ -212,7 +212,7 @@ struct RenameCardView: View {
 
         HStack(spacing: 8) {
             Spacer()
-            Button(model.isWorking ? "正在改名…" : "重命名") { model.apply() }
+            Button(model.isWorking ? String(localized: "正在改名…") : String(localized: "重命名")) { model.apply() }
                 .keyboardShortcut(.defaultAction)
                 .disabled(!model.plan.canApply || model.isWorking)
         }
@@ -233,7 +233,7 @@ struct RenameCardView: View {
         }
         HStack(spacing: 8) {
             Button("在访达中显示") { onReveal(model.renamed.map(\.to)) }
-            Button(model.isWorking ? "正在撤销…" : "撤销") { model.undo() }
+            Button(model.isWorking ? String(localized: "正在撤销…") : String(localized: "撤销")) { model.undo() }
                 .disabled(model.isWorking)
         }
         .controlSize(.small)

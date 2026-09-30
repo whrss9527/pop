@@ -27,8 +27,43 @@ struct PluginManifest: Codable, Equatable, Identifiable {
     var output: Output = .card
     /// 最后修改时间（iCloud 同步用），精确到秒
     var modifiedAt: Date = .distantPast
+    /// 其他语言的名称和说明，键是语言代码：{"en": {"name": "GitHub Search", "summary": "…"}}。
+    /// 界面是这种语言时显示它，没写的语言用 name、summary。
+    var localized: [String: LocalizedText]? = nil
 
     static let defaultSymbol = "puzzlepiece.extension"
+
+    struct LocalizedText: Codable, Equatable {
+        var name: String?
+        var summary: String?
+    }
+
+    /// 按界面语言显示的名称
+    var displayName: String {
+        Self.localizedValue(localized, \.name) ?? name
+    }
+
+    /// 按界面语言显示的说明
+    var displaySummary: String {
+        Self.localizedValue(localized, \.summary) ?? summary
+    }
+
+    /// 先找界面语言（比如 en、zh-Hans），再找去掉地区的写法（zh-Hant-HK → zh-Hant → zh）
+    static func localizedValue(_ localized: [String: LocalizedText]?, _ field: KeyPath<LocalizedText, String?>,
+                               languages: [String] = Bundle.main.preferredLocalizations) -> String? {
+        guard let localized, !localized.isEmpty else { return nil }
+        for language in languages {
+            var code = language
+            while true {
+                if let value = localized[code]?[keyPath: field]?.trimmingCharacters(in: .whitespacesAndNewlines), !value.isEmpty {
+                    return value
+                }
+                guard let dash = code.lastIndex(of: "-") else { break }
+                code = String(code[..<dash])
+            }
+        }
+        return nil
+    }
 
     struct Match: Codable, Equatable {
         /// 能处理的内容类型；为空表示随时可用（不需要选中内容）
@@ -200,6 +235,7 @@ struct PluginManifest: Codable, Equatable, Identifiable {
         action = c.lenient(.action, default: Action())
         output = c.lenient(.output, default: .card)
         modifiedAt = c.lenient(.modifiedAt, default: .distantPast)
+        localized = c.lenient(.localized, default: [String: LocalizedText]?.none)
     }
 
     // MARK: - ID
@@ -228,6 +264,13 @@ struct PluginManifest: Codable, Equatable, Identifiable {
             copy.symbol = Self.defaultSymbol
         }
         copy.summary = summary.trimmingCharacters(in: .whitespacesAndNewlines)
+        let texts = (localized ?? [:]).compactMapValues { text -> LocalizedText? in
+            let name = text.name?.trimmingCharacters(in: .whitespacesAndNewlines)
+            let summary = text.summary?.trimmingCharacters(in: .whitespacesAndNewlines)
+            let trimmed = LocalizedText(name: name?.isEmpty == false ? name : nil, summary: summary?.isEmpty == false ? summary : nil)
+            return trimmed.name == nil && trimmed.summary == nil ? nil : trimmed
+        }
+        copy.localized = texts.isEmpty ? nil : texts
         let pattern = (match.pattern ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
         copy.match.pattern = pattern.isEmpty ? nil : pattern
         if let min = copy.match.minLength, min <= 0 {

@@ -4,6 +4,12 @@
   "name": "GitHub 搜索",
   "symbol": "chevron.left.forwardslash.chevron.right",
   "summary": "在 GitHub 上搜索选中的文字，找相关的仓库",
+  "localized": {
+    "en": {
+      "name": "GitHub Search",
+      "summary": "Search GitHub for the selected text to find related repositories"
+    }
+  },
   "match": {
     "kinds": [
       "text"

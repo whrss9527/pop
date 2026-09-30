@@ -9,7 +9,8 @@
       "symbol": "chevron.left.forwardslash.chevron.right",
       "type": "url",
       "url": "github-search.json",
-      "sha256": "bf93a89caf2ec118bf097848b119fa1e25c40faf69be1578ae7ada171c7e5697"
+      "localized": {"en": {"name": "GitHub Search", "summary": "Search GitHub for the selected text to find related repositories"}},
+      "sha256": "eaf8e32cb472e3abe4f1ad401de855905cb51bf9ea7457577d02e4f882c80308"
     },
     {
       "id": "douban",
@@ -19,7 +20,8 @@
       "symbol": "film",
       "type": "url",
       "url": "douban.json",
-      "sha256": "d47ea1ccf79da3279678aa85cd8791a1c89b6eb8ef2b89b568e5c5d6b793815d"
+      "localized": {"en": {"name": "Douban", "summary": "Search Douban for books, movies and music"}},
+      "sha256": "dd541bad067bcb747504b118f0e8b2b16df3d055e936bb1b9d54d08d305175ca"
     },
     {
       "id": "juejin",
@@ -29,7 +31,8 @@
       "symbol": "doc.text.magnifyingglass",
       "type": "url",
       "url": "juejin.json",
-      "sha256": "d03747738615b987f5f926cb0c7de03f263149ef909b7ad839c8d949c99393aa"
+      "localized": {"en": {"name": "Juejin", "summary": "Search Juejin for tech articles"}},
+      "sha256": "440cf3963e25091fe78d0e7b2506b2dbfbe1adf435952c5e85ea84d4eb09087c"
     },
     {
       "id": "mdn",
@@ -39,7 +42,8 @@
       "symbol": "globe",
       "type": "url",
       "url": "mdn.json",
-      "sha256": "b54b2e8400b67f99c61d85770699825fab8e6722bf00f8263dd98e67ed2c5ebb"
+      "localized": {"en": {"name": "MDN", "summary": "Look up HTML, CSS, JavaScript and Web API docs on MDN"}},
+      "sha256": "6d2f58380a59cabdff422a4f750771b91602102dc759eb2888fd846a9b7e95e3"
     },
     {
       "id": "stack-overflow",
@@ -49,7 +53,8 @@
       "symbol": "questionmark.bubble",
       "type": "url",
       "url": "stack-overflow.json",
-      "sha256": "a87d3ca1fe1084bf1e04d336b88391016c65167b96361f1b0614ccdacd21d2ff"
+      "localized": {"en": {"name": "Stack Overflow", "summary": "Search Stack Overflow for programming questions; select an error message to search it directly"}},
+      "sha256": "89da26e29dd339a64cf66b2122c6b4c4027640bf1719bd6355624ba8bd2315f5"
     },
     {
       "id": "zhihu",
@@ -59,7 +64,8 @@
       "symbol": "bubble.left.and.bubble.right",
       "type": "url",
       "url": "zhihu.json",
-      "sha256": "1f177b04dd296ef26a463511913f27de84ac99a6bba3404a14dbac8568680d20"
+      "localized": {"en": {"name": "Zhihu", "summary": "Search Zhihu for questions and answers"}},
+      "sha256": "99c7c63efde746f0e0291fb4e2932d68e154e219ad327125716b557ae0218653"
     },
     {
       "id": "bilibili",
@@ -69,7 +75,8 @@
       "symbol": "play.tv",
       "type": "url",
       "url": "bilibili.json",
-      "sha256": "2888e81858cb848896a98b27a7e779fb3091caebae720fb29bf608b98e7ae889"
+      "localized": {"en": {"name": "Bilibili", "summary": "Search Bilibili for videos"}},
+      "sha256": "d71f7d8217d79c51a1121bd43b1e8c3e150fe262358070ab6706c3072f23d3f5"
     },
     {
       "id": "wikipedia",
@@ -79,7 +86,8 @@
       "symbol": "book",
       "type": "url",
       "url": "wikipedia.json",
-      "sha256": "1c099ef9d26458d55abdbfb8618234571a0ec2c42e3152348a0b1c2c86d80cf1"
+      "localized": {"en": {"name": "Wikipedia (Chinese)", "summary": "Look up the selection on Chinese Wikipedia"}},
+      "sha256": "951d97af0b6dca4829ea95479216a9f51f8622cdedc2336e27e2d51a3af8a835"
     },
     {
       "id": "npm",
@@ -89,7 +97,8 @@
       "symbol": "shippingbox",
       "type": "url",
       "url": "npm.json",
-      "sha256": "908def2b49c454f8c5eb45f2087ff5b8f3523f4295a9ea3771d666172f553bb1"
+      "localized": {"en": {"name": "npm", "summary": "Search npm for JavaScript packages"}},
+      "sha256": "ad7c72a0d60d80b5b40f4ea969628dda8f169b7f1f82fe5c19967faa6a774dd4"
     },
     {
       "id": "can-i-use",
@@ -99,7 +108,8 @@
       "symbol": "checkmark.seal",
       "type": "url",
       "url": "can-i-use.json",
-      "sha256": "5d310e46b971ee8d6346c01b83e8752d2840adb54f139235d1e942c3c4e23abb"
+      "localized": {"en": {"name": "Can I use", "summary": "Check whether a web feature works in each browser"}},
+      "sha256": "7df05a1347b92938d6de14f75406c12c47a567da65a4912fe74db65dc8457dbd"
     }
   ]
 }

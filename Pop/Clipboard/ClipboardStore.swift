@@ -258,14 +258,14 @@ final class ClipboardStore: @unchecked Sendable {
         do {
             try FileManager.default.createDirectory(at: imagesDirectory, withIntermediateDirectories: true)
         } catch {
-            openError = "无法创建文件夹：\(error.localizedDescription)"
+            openError = String(localized: "无法创建文件夹：\(error.localizedDescription)")
             return
         }
         let path = directory.appending(path: "history.sqlite").path(percentEncoded: false)
         var opened: OpaquePointer?
         let flags = SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE | SQLITE_OPEN_FULLMUTEX
         guard sqlite3_open_v2(path, &opened, flags, nil) == SQLITE_OK, let handle = opened else {
-            openError = opened.map { String(cString: sqlite3_errmsg($0)) } ?? "无法打开数据库"
+            openError = opened.map { String(cString: sqlite3_errmsg($0)) } ?? String(localized: "无法打开数据库")
             sqlite3_close_v2(opened)
             return
         }

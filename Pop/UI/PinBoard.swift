@@ -298,16 +298,16 @@ final class PinWindow: NSPanel {
         case .text(let text):
             PasteboardWriter.copy(text)
         }
-        PinBoard.shared.onToast?("已复制", midPoint)
+        PinBoard.shared.onToast?(String(localized: "已复制"), midPoint)
     }
 
     @objc private func saveImage() {
         guard let png = model.png else { return }
         do {
-            _ = try ImageFiles.saveToDownloads(png, name: ImageFiles.timestampedName("Pop 贴图"))
-            PinBoard.shared.onToast?("已存到「下载」", midPoint)
+            _ = try ImageFiles.saveToDownloads(png, name: ImageFiles.timestampedName(String(localized: "Pop 贴图")))
+            PinBoard.shared.onToast?(String(localized: "已存到「下载」"), midPoint)
         } catch {
-            PinBoard.shared.onToast?("存储失败", midPoint)
+            PinBoard.shared.onToast?(String(localized: "存储失败"), midPoint)
         }
     }
 
@@ -320,7 +320,7 @@ final class PinWindow: NSPanel {
             case .success(let text) where !text.isEmpty:
                 PinBoard.shared.onRecognizedText?(text, point)
             case .success:
-                PinBoard.shared.onToast?("没有识别到文字", point)
+                PinBoard.shared.onToast?(String(localized: "没有识别到文字"), point)
             case .failure(let error):
                 PinBoard.shared.onToast?(error.message, point)
             }
@@ -378,15 +378,15 @@ final class PinWindow: NSPanel {
     func contextMenu() -> NSMenu {
         let menu = NSMenu()
         menu.autoenablesItems = false
-        addItem(to: menu, "复制", #selector(copyContent), key: "c")
+        addItem(to: menu, String(localized: "复制"), #selector(copyContent), key: "c")
         if model.isImage {
-            addItem(to: menu, "存到「下载」", #selector(saveImage), key: "s")
-            addItem(to: menu, "识别文字", #selector(recognizeText))
-            addItem(to: menu, "标注…", #selector(annotate))
+            addItem(to: menu, String(localized: "存到「下载」"), #selector(saveImage), key: "s")
+            addItem(to: menu, String(localized: "识别文字"), #selector(recognizeText))
+            addItem(to: menu, String(localized: "标注…"), #selector(annotate))
         }
         menu.addItem(.separator())
-        addItem(to: menu, "恢复大小", #selector(resetScale), key: "0")
-        let opacityItem = NSMenuItem(title: "透明度", action: nil, keyEquivalent: "")
+        addItem(to: menu, String(localized: "恢复大小"), #selector(resetScale), key: "0")
+        let opacityItem = NSMenuItem(title: String(localized: "透明度"), action: nil, keyEquivalent: "")
         let opacityMenu = NSMenu()
         for percent in [100, 80, 60, 40] {
             let item = NSMenuItem(title: "\(percent)%", action: #selector(chooseOpacity(_:)), keyEquivalent: "")
@@ -398,9 +398,9 @@ final class PinWindow: NSPanel {
         opacityItem.submenu = opacityMenu
         menu.addItem(opacityItem)
         menu.addItem(.separator())
-        addItem(to: menu, "关闭", #selector(closePin), key: "w")
+        addItem(to: menu, String(localized: "关闭"), #selector(closePin), key: "w")
         if PinBoard.shared.count > 1 {
-            addItem(to: menu, "关闭全部贴图", #selector(closeAllPins))
+            addItem(to: menu, String(localized: "关闭全部贴图"), #selector(closeAllPins))
         }
         return menu
     }

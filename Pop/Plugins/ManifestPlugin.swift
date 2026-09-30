@@ -7,9 +7,9 @@ struct ManifestPlugin: PopPlugin, Equatable {
 
     var info: PluginInfo {
         PluginInfo(id: manifest.id,
-                   name: manifest.name.isEmpty ? String(localized: "未命名插件") : manifest.name,
+                   name: manifest.displayName.isEmpty ? String(localized: "未命名插件") : manifest.displayName,
                    symbol: manifest.symbol,
-                   summary: manifest.summary.isEmpty ? manifest.action.type.title : manifest.summary,
+                   summary: manifest.displaySummary.isEmpty ? manifest.action.type.title : manifest.displaySummary,
                    accepts: Set(manifest.match.kinds),
                    pattern: manifest.match.pattern,
                    minLength: manifest.match.minLength,
