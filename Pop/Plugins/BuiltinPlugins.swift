@@ -93,6 +93,7 @@ enum BuiltinPlugins {
             ShelfPlugin(),
             OpenInTerminalPlugin(),
             KeepAwakePlugin(),
+            SystemActionsPlugin(),
             TimerPlugin(),
             ClipboardHistoryPlugin(),
             SnippetsPlugin(),
@@ -165,7 +166,7 @@ enum BuiltinCategory: CaseIterable, Identifiable {
                  BuiltinPluginID.transcribe,
                  BuiltinPluginID.shelf, BuiltinPluginID.airDrop, BuiltinPluginID.sendToPhone,
                  BuiltinPluginID.windowLayout,
-                 BuiltinPluginID.keepAwake, BuiltinPluginID.timer],
+                 BuiltinPluginID.keepAwake, BuiltinPluginID.systemActions, BuiltinPluginID.timer],
     ]
 
     /// 没有列出来的（剪贴板、全部功能、设置）都算「其他」

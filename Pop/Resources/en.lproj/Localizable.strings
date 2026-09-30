@@ -1510,6 +1510,32 @@
 "检查更新…" = "Check for Updates…";
 "停止录屏（%@）" = "Stop Recording (%@)";
 
+/* SystemActions.swift */
+"锁屏" = "Lock Screen";
+"熄屏" = "Turn Off Display";
+"睡眠" = "Sleep";
+"屏幕保护程序" = "Screen Saver";
+"隐藏桌面图标" = "Hide Desktop Icons";
+"显示桌面图标" = "Show Desktop Icons";
+"推出 %lld 个磁盘" = "Eject %lld Disks";
+"推出磁盘" = "Eject Disk";
+"系统操作" = "System Actions";
+"隐藏桌面图标会重新打开访达；推出前请先关掉磁盘上打开的文件" = "Hiding desktop icons relaunches Finder; close files that are open on a disk before ejecting it";
+"熄屏失败" = "Couldn’t turn off the display";
+"熄屏失败：%@" = "Couldn’t turn off the display: %@";
+"睡眠失败" = "Couldn’t go to sleep";
+"睡眠失败：%@" = "Couldn’t go to sleep: %@";
+"打不开屏幕保护程序：%@" = "Couldn’t open the screen saver: %@";
+"改不了访达的设置" = "Couldn’t change Finder’s settings";
+"改不了访达的设置：%@" = "Couldn’t change Finder’s settings: %@";
+"桌面图标又显示出来了" = "Desktop icons are showing again";
+"桌面图标已隐藏，再用一次就显示出来" = "Desktop icons are hidden; use it again to show them";
+"没有能推出的磁盘" = "No disks to eject";
+"已推出「%@」" = "Ejected “%@”";
+"已推出 %lld 个磁盘" = "Ejected %lld disks";
+"「%@」正在使用，推不出来；先关掉上面打开的文件再试" = "“%@” is in use and can’t be ejected; close the files open on it and try again";
+"%lld 个磁盘正在使用，推不出来：%@" = "%lld disks are in use and can’t be ejected: %@";
+
 /* SystemPlugins.swift */
 "保持唤醒" = "Keep Awake";
 "一段时间内不让屏幕变暗、电脑睡眠，适合看文档、演示、等下载" = "Keep the display on and the Mac awake for a while: for reading, presenting or waiting for downloads";
@@ -1524,6 +1550,7 @@
 "选一个时长开始倒计时；到点时响一声、发一条通知。也可以选中「25 分钟」「1:30」这样的文字再用它。" = "Choose a duration to start a countdown. When time’s up, Pop plays a sound and sends a notification. You can also select text such as “25 min” or “1:30” and use the timer.";
 "录屏" = "Record Screen";
 "拖出一块区域、单击选一个窗口或者按回车录整个屏幕，存成 MP4；可以录上电脑里的声音、显示鼠标点击，录好能接着转成 GIF。正在录的时候再用一次就停止" = "Drag out an area, click a window or press Return to record the whole screen as MP4; can include the Mac’s sound and show clicks, and the recording can then be turned into a GIF. Use it again while recording to stop";
+"锁屏、熄屏、睡眠、打开屏幕保护程序、隐藏或显示桌面图标、推出所有磁盘" = "Lock the screen, turn off the display, sleep, start the screen saver, hide or show desktop icons, or eject all disks";
 
 /* TableConverter.swift */
 "制表符分隔" = "Tab-Separated";

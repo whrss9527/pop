@@ -455,6 +455,13 @@ enum OverlayDemo {
             overlay.showCard(ResultCardView(card: ScreenRecording.card(clip), onAction: { _ in }, onMore: {}, onClose: {}), anchor: center)
             step("screenRecord")
 
+            // 系统操作：插着一个移动硬盘时的样子
+            await pause(1.4 * unit)
+            overlay.showCard(ResultCardView(card: SystemActions.card(desktopIconsVisible: true, ejectable: 1),
+                                            onAction: { _ in }, onMore: {}, onClose: {}),
+                             anchor: center)
+            step("systemActions")
+
             // 截图标注窗口：拿一张画好的示例图，标上方框、箭头、文字、马赛克和序号；截图区域换成标注窗口
             await pause(1.4 * unit)
             overlay.hide()

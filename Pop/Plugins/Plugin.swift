@@ -182,6 +182,8 @@ enum CardAction: Equatable {
     case captureWeb(URL, WebCapture.Format)
     /// 按比例裁剪图片，对准画面主体
     case cropImages([URL], SmartCrop.Ratio)
+    /// 锁屏、熄屏、隐藏桌面图标这类系统操作
+    case system(SystemAction)
 }
 
 struct CardButton: Equatable, Identifiable {
