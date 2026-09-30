@@ -133,7 +133,10 @@ final class WatermarkTests: XCTestCase {
         let preview = try XCTUnwrap(ImageWatermark.preview(pdf, text: "样张", opacity: 0.4, maxSide: 200))
         XCTAssertEqual(preview.height, 200)
         XCTAssertEqual(preview.width, 150)
-        XCTAssertGreaterThan(Canvas.darkPixels(preview, below: 200), 0)
+        // 预览很小，字的笔画被抗锯齿冲淡：和没有水印的第一页（灰度 242）比，有变暗的像素就行
+        let plain = try XCTUnwrap(ImageWatermark.preview(pdf, text: "", opacity: 0.4, maxSide: 200))
+        XCTAssertEqual(Canvas.darkPixels(plain, below: 236), 0)
+        XCTAssertGreaterThan(Canvas.darkPixels(preview, below: 236), 0)
     }
 
     @MainActor
