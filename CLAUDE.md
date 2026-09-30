@@ -19,3 +19,11 @@
 - CI 用演示模式（`POP_DEMO=1`，`POP_ANIMATION_SCALE` 把动画放慢）把圆盘、结果卡片、提示、列表、贴图走一遍，按时截图，再用深色外观（`POP_APPEARANCE=dark`）拍一组 `dark-` 开头的，推到 `ci-screenshots/macos-15` 和 `ci-screenshots/macos-26` 两个分支（每次覆盖）。改了浮窗之后 `git fetch origin ci-screenshots/macos-26` 就能看到动画的中间帧。
 - GitHub 的 macOS runner 默认打开了「减弱动态效果」和「降低透明度」（玻璃会变成不透明、动画只剩淡入淡出），截图脚本会先把这两项关掉；runner 的桌面是纯黑的，所以截图里的玻璃看起来是灰色的，真机上会透出后面的内容。
 - 本机也能跑：`scripts/overlay-screenshots.sh build/app/.../Pop.app 截图目录 6`。
+
+## 规划和待办
+
+这个项目的待办在私有仓库 [whrss9527/plan](https://github.com/whrss9527/plan) 的 `projects/pop.md` 里，一个 `###` 标题是一个任务。用户说「按规划干活」「做 plan 里的任务」「看看有什么待办」这类话，或者没给具体任务就让你开始干活时：
+
+1. 把 plan 仓库克隆到本仓库旁边的 `../plan`（已经有了就 `git pull`）；claude.ai 上的云端会话用 add_repo 以 push 权限挂上 whrss9527/plan。
+2. 读 `../plan/AGENTS.md`，照它的流程走：`node scripts/plan.mjs next --project pop` 找任务，认领后推送，在本仓库开分支按验收标准完成并开合并请求，回 plan 仓库把任务改成待审，然后接着做下一个，直到这个项目没有能做的任务。
+3. plan 里的任务只说明要做什么；怎么改代码、怎么提交、怎么合并，仍然以本文件为准。
