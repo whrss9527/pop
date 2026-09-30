@@ -110,6 +110,71 @@ final class IDPhotoTests: XCTestCase {
         XCTAssertEqual(try IDPhoto.save(image, beside: original, background: .white, size: .original).lastPathComponent, "照片 白底.jpg")
     }
 
+    func testSizesInPixels() {
+        XCTAssertEqual(IDPhoto.Size.allCases.map(\.title), ["原尺寸", "小一寸", "一寸", "大一寸", "小二寸", "二寸"])
+        XCTAssertEqual(IDPhoto.Size.smallOneInch.pixels.map { [$0.width, $0.height] }, [260, 378])
+        XCTAssertEqual(IDPhoto.Size.largeOneInch.pixels.map { [$0.width, $0.height] }, [390, 567])
+        XCTAssertEqual(IDPhoto.Size.smallTwoInch.pixels.map { [$0.width, $0.height] }, [413, 531])
+        XCTAssertNil(IDPhoto.Size.original.pixels)
+    }
+
+    func testPrintSheetFitsAsManyAsPossible() throws {
+        let cutout = try sampleCutout()
+        // 一寸：竖放排 3×4 = 12 张（横放只有 10 张）
+        let one = try XCTUnwrap(IDPhoto.compose(cutout, background: .blue, size: .oneInch))
+        let sheet = try XCTUnwrap(IDPhoto.printSheet(one))
+        XCTAssertEqual(sheet.copies, 12)
+        XCTAssertEqual(sheet.image.width, 1200)
+        XCTAssertEqual(sheet.image.height, 1800)
+        // 四周留白；左上角那张（x 133–428，y 38–451）的角上是蓝底
+        assertColor(try pixel(sheet.image, x: 5, y: 5), .white)
+        assertColor(try pixel(sheet.image, x: 140, y: 45), .blue)
+        // 二寸：横放、竖放都是 4 张，用横放
+        let two = try XCTUnwrap(IDPhoto.compose(cutout, background: .white, size: .twoInch))
+        let landscape = try XCTUnwrap(IDPhoto.printSheet(two))
+        XCTAssertEqual(landscape.copies, 4)
+        XCTAssertEqual(landscape.image.width, 1800)
+        XCTAssertEqual(landscape.image.height, 1200)
+        // 小一寸竖放 16 张
+        let small = try XCTUnwrap(IDPhoto.compose(cutout, background: .red, size: .smallOneInch))
+        XCTAssertEqual(IDPhoto.printSheet(small)?.copies, 16)
+        // 比相纸还大：放不下
+        let context = try XCTUnwrap(CGContext(data: nil, width: 1300, height: 1900, bitsPerComponent: 8, bytesPerRow: 0,
+                                              space: CGColorSpaceCreateDeviceRGB(), bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue))
+        XCTAssertNil(IDPhoto.printSheet(try XCTUnwrap(context.makeImage())))
+    }
+
+    @MainActor
+    func testSavesPhotoAndPrintSheet() async throws {
+        let folder = FileManager.default.temporaryDirectory.appending(path: "pop-id-photo-sheet-\(UUID().uuidString)")
+        try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+        let key = IDPhotoModel.printSheetKey
+        let hadValue = UserDefaults.standard.object(forKey: key) != nil
+        let oldValue = UserDefaults.standard.bool(forKey: key)
+        addTeardownBlock {
+            try? FileManager.default.removeItem(at: folder)
+            if hadValue {
+                UserDefaults.standard.set(oldValue, forKey: key)
+            } else {
+                UserDefaults.standard.removeObject(forKey: key)
+            }
+        }
+        let original = folder.appending(path: "照片.png")
+        let model = IDPhotoModel(file: original, cutout: try sampleCutout())
+        model.printSheet = true
+        let color = model.background.title
+        let result = try await model.save()
+        XCTAssertEqual(result.photo.lastPathComponent, "照片 \(color) 一寸.jpg")
+        XCTAssertEqual(result.sheet?.lastPathComponent, "照片 \(color) 一寸 排版.jpg")
+        XCTAssertEqual(result.copies, 12)
+        XCTAssertTrue(UserDefaults.standard.bool(forKey: key), "下次还勾着")
+        // 原尺寸不排版
+        model.size = .original
+        let plain = try await model.save()
+        XCTAssertEqual(plain.photo.lastPathComponent, "照片 \(color).jpg")
+        XCTAssertNil(plain.sheet)
+    }
+
     @MainActor
     func testCardPreviewsAndRemembersTheBackground() async throws {
         let key = IDPhotoModel.backgroundKey

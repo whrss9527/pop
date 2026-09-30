@@ -36,7 +36,10 @@ enum IDPhoto {
 
     enum Size: String, CaseIterable, Identifiable {
         case original
+        case smallOneInch
         case oneInch
+        case largeOneInch
+        case smallTwoInch
         case twoInch
 
         var id: String { rawValue }
@@ -44,19 +47,33 @@ enum IDPhoto {
         var title: String {
             switch self {
             case .original: return "原尺寸"
+            case .smallOneInch: return "小一寸"
             case .oneInch: return "一寸"
+            case .largeOneInch: return "大一寸"
+            case .smallTwoInch: return "小二寸"
             case .twoInch: return "二寸"
             }
         }
 
-        /// 300 dpi 下的像素：一寸 25×35 毫米，二寸 35×49 毫米
+        /// 300 dpi 下的像素：小一寸 22×32、一寸 25×35、大一寸 33×48、小二寸 35×45、二寸 35×49 毫米
         var pixels: (width: Int, height: Int)? {
             switch self {
             case .original: return nil
+            case .smallOneInch: return (260, 378)
             case .oneInch: return (295, 413)
+            case .largeOneInch: return (390, 567)
+            case .smallTwoInch: return (413, 531)
             case .twoInch: return (413, 579)
             }
         }
+    }
+
+    /// 存好的文件：照片，和（选了冲印排版时）6 寸相纸上排好的那张
+    struct Saved: Equatable {
+        var photo: URL
+        var sheet: URL?
+        /// 相纸上排了几张
+        var copies: Int
     }
 
     /// 抠好的人像：和原图一样大、背景透明；face 是人脸的位置（像素，左上角为原点）
@@ -180,9 +197,12 @@ enum IDPhoto {
         return context.makeImage()
     }
 
-    /// 另存成 JPEG 放在原图旁边：「原名 蓝底 一寸.jpg」，带 300 dpi 的打印尺寸
-    static func save(_ image: CGImage, beside url: URL, background: Background, size: Size) throws -> URL {
-        let base = url.deletingPathExtension().lastPathComponent + " " + background.title + (size == .original ? "" : " " + size.title)
+    /// 另存成 JPEG 放在原图旁边：「原名 蓝底 一寸.jpg」（suffix 是再加在后面的，比如「排版」），带 300 dpi 的打印尺寸
+    static func save(_ image: CGImage, beside url: URL, background: Background, size: Size, suffix: String? = nil) throws -> URL {
+        var base = url.deletingPathExtension().lastPathComponent + " " + background.title + (size == .original ? "" : " " + size.title)
+        if let suffix {
+            base += " " + suffix
+        }
         let output = FileNames.available(in: url.deletingLastPathComponent(), base: base, extension: "jpg")
         guard let destination = CGImageDestinationCreateWithURL(output as CFURL, UTType.jpeg.identifier as CFString, 1, nil) else {
             throw Failure(message: "存不了「\(output.lastPathComponent)」")
@@ -197,6 +217,46 @@ enum IDPhoto {
             throw Failure(message: "存不了「\(output.lastPathComponent)」")
         }
         return output
+    }
+
+    /// 6 寸相纸（4×6 英寸，300 dpi 下 1800×1200）上排满这张照片：横放、竖放哪种排得多用哪种，
+    /// 四周留 30 像素、照片之间留 24 像素，每张外面画一圈浅灰的裁切线。照片太大一张都放不下时返回 nil
+    static func printSheet(_ photo: CGImage) -> (image: CGImage, copies: Int)? {
+        let long = 1800
+        let short = 1200
+        let margin = 30
+        let gap = 24
+        func grid(width: Int, height: Int) -> (columns: Int, rows: Int) {
+            (max((width - 2 * margin + gap) / (photo.width + gap), 0), max((height - 2 * margin + gap) / (photo.height + gap), 0))
+        }
+        let landscape = grid(width: long, height: short)
+        let portrait = grid(width: short, height: long)
+        let useLandscape = landscape.columns * landscape.rows >= portrait.columns * portrait.rows
+        let width = useLandscape ? long : short
+        let height = useLandscape ? short : long
+        let layout = useLandscape ? landscape : portrait
+        guard layout.columns * layout.rows > 0,
+              let context = CGContext(data: nil, width: width, height: height, bitsPerComponent: 8, bytesPerRow: 0,
+                                      space: CGColorSpace(name: CGColorSpace.sRGB) ?? CGColorSpaceCreateDeviceRGB(),
+                                      bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue) else { return nil }
+        context.setFillColor(CGColor(gray: 1, alpha: 1))
+        context.fill(CGRect(x: 0, y: 0, width: width, height: height))
+        let gridWidth = layout.columns * photo.width + (layout.columns - 1) * gap
+        let gridHeight = layout.rows * photo.height + (layout.rows - 1) * gap
+        let left = (width - gridWidth) / 2
+        let bottom = (height - gridHeight) / 2
+        context.setStrokeColor(CGColor(gray: 0.78, alpha: 1))
+        context.setLineWidth(1)
+        for row in 0..<layout.rows {
+            for column in 0..<layout.columns {
+                let rect = CGRect(x: left + column * (photo.width + gap), y: bottom + row * (photo.height + gap),
+                                  width: photo.width, height: photo.height)
+                context.draw(photo, in: rect)
+                context.stroke(rect.insetBy(dx: -1.5, dy: -1.5))
+            }
+        }
+        guard let image = context.makeImage() else { return nil }
+        return (image, layout.columns * layout.rows)
     }
 }
 
@@ -213,6 +273,10 @@ final class IDPhotoModel: ObservableObject {
     @Published var size: IDPhoto.Size {
         didSet { render() }
     }
+    /// 另存一张 6 寸相纸上排好的，拿去冲印
+    @Published var printSheet: Bool {
+        didSet { UserDefaults.standard.set(printSheet, forKey: Self.printSheetKey) }
+    }
     @Published private(set) var preview: CGImage?
     /// 抠图失败、没找到人脸时的说明
     @Published private(set) var message: String?
@@ -220,12 +284,14 @@ final class IDPhotoModel: ObservableObject {
     private var generation = 0
 
     static let backgroundKey = "pop.idPhoto.background"
+    static let printSheetKey = "pop.idPhoto.printSheet"
 
     /// cutout 不为空时直接用（演示和测试），否则在后台抠图
     init(file: URL, cutout: IDPhoto.Cutout? = nil, size: IDPhoto.Size = .oneInch) {
         self.file = file
         background = UserDefaults.standard.string(forKey: Self.backgroundKey).flatMap(IDPhoto.Background.init(rawValue:)) ?? .blue
         self.size = size
+        printSheet = UserDefaults.standard.bool(forKey: Self.printSheetKey)
         if let cutout {
             accept(cutout)
         } else {
@@ -277,18 +343,24 @@ final class IDPhotoModel: ObservableObject {
         }
     }
 
-    /// 按现在选的底色和尺寸生成原大的照片，另存到原图旁边
-    func save() async throws -> URL {
+    /// 按现在选的底色和尺寸生成原大的照片，另存到原图旁边；选了冲印排版（原尺寸除外）再存一张 6 寸相纸
+    func save() async throws -> IDPhoto.Saved {
         guard let cutout else { throw IDPhoto.Failure(message: "还没抠好图") }
         let file = self.file
         let background = self.background
         let size = self.size
-        let result = await runInBackground { () -> Result<URL, IDPhoto.Failure> in
+        let wantsSheet = printSheet && size != .original
+        let result = await runInBackground { () -> Result<IDPhoto.Saved, IDPhoto.Failure> in
             guard let image = IDPhoto.compose(cutout, background: background, size: size) else {
                 return .failure(IDPhoto.Failure(message: "无法生成照片"))
             }
             do {
-                return .success(try IDPhoto.save(image, beside: file, background: background, size: size))
+                var saved = IDPhoto.Saved(photo: try IDPhoto.save(image, beside: file, background: background, size: size), sheet: nil, copies: 0)
+                if wantsSheet, let sheet = IDPhoto.printSheet(image) {
+                    saved.sheet = try IDPhoto.save(sheet.image, beside: file, background: background, size: size, suffix: "排版")
+                    saved.copies = sheet.copies
+                }
+                return .success(saved)
             } catch {
                 return .failure((error as? IDPhoto.Failure) ?? IDPhoto.Failure(message: error.localizedDescription))
             }
