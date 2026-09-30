@@ -693,6 +693,17 @@ final class PopCoordinator: MouseTriggerDelegate {
             cropImages(files, ratio)
         case .system(let action):
             runSystemAction(action)
+        case .textImage(let text, let style):
+            present(TextImagePlugin.outcome(text, style: style))
+        case .barcode(let text):
+            if let png = QRCode.barcode(text) {
+                present(.card(ResultCard(title: String(localized: "条形码"), body: text, detail: String(localized: "Code 128 条形码"), image: png,
+                                         buttons: [CardButton(title: String(localized: "复制图片"), action: .copyImage(png)),
+                                                   CardButton(title: String(localized: "存储"),
+                                                              action: .saveImage(png, name: ImageFiles.timestampedName(String(localized: "Pop 条形码"))))])))
+            } else {
+                present(.failure(String(localized: "只有英文字母、数字和常见符号能生成条形码，最多 80 个字")))
+            }
         }
     }
 

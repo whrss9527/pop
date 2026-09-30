@@ -462,6 +462,14 @@ enum OverlayDemo {
                              anchor: center)
             step("systemActions")
 
+            // 文字转图片：一段示例文字排成的长图
+            await pause(1.4 * unit)
+            let passage = "周五的发布会改到下午三点，地点不变。\n\n会前请把演示用的 Mac 更新到最新系统，提前半小时到场调试投屏。"
+            if case .card(let textCard) = TextImagePlugin.outcome(passage, style: .warm) {
+                overlay.showCard(ResultCardView(card: textCard, onAction: { _ in }, onMore: {}, onClose: {}), anchor: center)
+            }
+            step("textImage")
+
             // 截图标注窗口：拿一张画好的示例图，标上方框、箭头、文字、马赛克和序号；截图区域换成标注窗口
             await pause(1.4 * unit)
             overlay.hide()

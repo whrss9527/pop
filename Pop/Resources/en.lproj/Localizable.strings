@@ -823,7 +823,7 @@
 "扫码结果" = "Scan Result";
 "找到 %lld 个码" = "Found %lld codes";
 "二维码" = "QR Code";
-"把文字或链接生成二维码；选中图片时识别里面的二维码和条形码" = "Generate a QR code from text or a link; with an image selected, read its QR codes and barcodes";
+"把文字或链接生成二维码（英文字母和数字还能生成条形码）；选中图片时识别里面的二维码和条形码" = "Generate a QR code from text or a link (letters and digits can also become a barcode); with an image selected, read the QR codes and barcodes in it";
 "没有内容" = "No content";
 "内容太长，放不进一个二维码" = "Too long to fit in a QR code";
 "%lld 个字符" = "%lld characters";
@@ -837,6 +837,7 @@
 "在「终端」里打开选中的文件夹（选中文件时打开它所在的文件夹）" = "Open the selected folder in Terminal (for files, the folder they’re in)";
 "文件不存在" = "The file doesn’t exist";
 "找不到「终端」App" = "Can’t find the Terminal app";
+"条形码" = "Barcode";
 
 /* MediaTrim.swift */
 " 片段" = " Clip";
@@ -1206,6 +1207,9 @@
 "无法读取这张图片" = "Can’t read this image";
 "已存为常用短语" = "Saved as a snippet";
 "图片里没有识别到文字" = "No text found in the image";
+"Code 128 条形码" = "Code 128 barcode";
+"Pop 条形码" = "Pop Barcode";
+"只有英文字母、数字和常见符号能生成条形码，最多 80 个字" = "Only letters, digits and common symbols can become a barcode, up to 80 characters";
 
 /* RegexTester.swift */
 "表达式写得不对：括号、方括号是否成对，转义是否完整？" = "Invalid expression. Check that parentheses and brackets match and escapes are complete.";
@@ -1591,6 +1595,14 @@
 /* TextDiffView.swift */
 "⋯ %lld 行相同 ⋯" = "⋯ %lld identical lines ⋯";
 
+/* TextImage.swift */
+"米黄" = "Cream";
+"深色" = "Dark";
+"……（后面还有 %lld 字没画）" = "…(%lld more characters not drawn)";
+"Pop 文字" = "Pop Text";
+"文字转图片" = "Text to Image";
+"%lld 个字，图片宽 1080 像素；按住拖动预览图也能拖到别的 App 里" = "%lld characters, 1080 pixels wide; drag the preview into another app";
+
 /* TextPlugins.swift */
 "词典" = "Dictionary";
 "用系统「词典」查询选中的单词或词语" = "Look up the selected word or phrase in the system Dictionary";
@@ -1664,6 +1676,8 @@
 "共 %lld 项" = "%lld items";
 "加到提醒事项" = "Add to Reminders";
 "从选中的文字里认出时间（明天下午 3 点、周五、10 月 8 日、半小时后……），加到「提醒事项」或者「日历」" = "Find a time in the selected Chinese text (明天下午 3 点, 周五, 10 月 8 日, 半小时后…) and add it to Reminders or Calendar";
+"把选中的文字排成一张手机上看着舒服的长图（宽 1080 像素），白底、米黄、深色三种底色，可以复制、存储或贴到屏幕上" = "Lay out the selected text as a long image that reads well on a phone (1080 pixels wide) on a white, cream or dark background; copy it, save it or pin it to the screen";
+"没能把这段文字画成图片" = "Couldn’t turn this text into an image";
 
 /* TextTransforms.swift */
 "大写" = "UPPERCASE";
