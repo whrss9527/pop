@@ -2077,3 +2077,7 @@
 "裁好了 %lld 张，%lld 张失败：%@" = "Cropped %lld images, %lld failed: %@";
 "已裁成 %@，存在原图旁边" = "Cropped to %@ and saved next to the original";
 "已把 %lld 张裁成 %@" = "Cropped %lld images to %@";
+"界面语言" = "Language";
+"跟随系统" = "Follow System";
+"重新启动 Pop 后生效" = "Takes effect after Pop relaunches";
+"立即重新启动" = "Relaunch Now";
