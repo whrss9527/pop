@@ -147,6 +147,12 @@ enum CardAction: Equatable {
     case compressPDF(URL)
     /// 打开 PDF 页面卡片（取出几页、每页存成一个 PDF）
     case pdfPages(URL)
+    /// 打开 PDF 密码卡片：没有密码的加上密码，有密码的去掉
+    case pdfPassword(URL)
+    /// 把几张图片按顺序合成动图
+    case animateImages([URL])
+    /// 打开截取片段卡片
+    case trimMedia(URL)
     /// 保持唤醒一段时间（分钟）；nil 表示一直保持
     case keepAwake(minutes: Int?)
     case stopKeepAwake
@@ -242,6 +248,10 @@ enum PluginOutcome: Equatable {
     case showVocabulary
     /// 在这些文件夹里查找重复文件
     case findDuplicates([URL])
+    /// 看这个文件夹里各部分占了多少空间
+    case diskUsage(URL)
+    /// 打开截取片段卡片
+    case trimMedia(URL)
     case failure(String)
 }
 

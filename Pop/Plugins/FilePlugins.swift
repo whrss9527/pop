@@ -125,7 +125,7 @@ struct TableConvertPlugin: PopPlugin {
 
 struct PDFPlugin: PopPlugin {
     let info = PluginInfo(id: BuiltinPluginID.pdf, name: "PDF", symbol: "doc.richtext",
-                          summary: "把选中的图片和 PDF 按文件名顺序合成一个 PDF；只选了一个 PDF 时可以把每页存成图片、复制里面的文字、取出其中几页或者拆开，或者压缩",
+                          summary: "把选中的图片和 PDF 按文件名顺序合成一个 PDF；只选了一个 PDF 时可以把每页存成图片、复制里面的文字、取出其中几页或者拆开、加密码或者去掉密码，或者压缩",
                           accepts: [.files], pattern: #"(?im)\.(pdf|png|jpe?g|heic|heif|tiff?|gif|bmp|webp)$"#)
     /// 完成后在访达里选中结果（测试时换掉）
     var reveal: @MainActor ([URL]) -> Void = { NSWorkspace.shared.activateFileViewerSelecting($0) }
@@ -160,8 +160,12 @@ struct PDFPlugin: PopPlugin {
         }
     }
 
-    /// 一个 PDF：列出页数，可以把每页存成图片、复制全部文字
+    /// 一个 PDF：列出页数，可以把每页存成图片、复制全部文字；有密码的可以去掉密码
     @MainActor private func summary(of pdf: URL) async -> PluginOutcome {
+        if PDFTools.isLocked(pdf) {
+            return .card(ResultCard(title: "PDF", body: pdf.lastPathComponent, detail: "有密码，先去掉密码才能取页、压缩或者复制文字",
+                                    buttons: [CardButton(title: "去掉密码…", action: .pdfPassword(pdf))]))
+        }
         let result = await runInBackground { () -> Result<(pages: Int, text: String), PDFTools.Failure> in
             do {
                 let document = try PDFTools.open(pdf)
@@ -187,6 +191,7 @@ struct PDFPlugin: PopPlugin {
             if summary.pages > 1 {
                 buttons.append(CardButton(title: "取出几页…", action: .pdfPages(pdf)))
             }
+            buttons.append(CardButton(title: "加密码…", action: .pdfPassword(pdf)))
             buttons.append(CardButton(title: "压缩", action: .compressPDF(pdf)))
             return .card(ResultCard(title: "PDF", body: pdf.lastPathComponent, detail: detail, buttons: buttons))
         }

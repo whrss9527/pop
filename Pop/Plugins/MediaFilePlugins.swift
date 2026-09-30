@@ -4,7 +4,8 @@ import Foundation
 
 struct StitchImagesPlugin: PopPlugin {
     let info = PluginInfo(id: BuiltinPluginID.stitchImages, name: "拼接图片", symbol: "square.split.1x2",
-                          summary: "把选中的几张图片按文件名的顺序竖着或者横着拼成一张，存在第一张旁边", accepts: [.imageFile])
+                          summary: "把选中的几张图片按文件名的顺序竖着或者横着拼成一张，或者合成一张动图，存在第一张旁边",
+                          accepts: [.imageFile])
 
     @MainActor func run(_ content: ClassifiedContent, context: PluginContext) async -> PluginOutcome {
         let images = ImageStitcher.ordered(content.files.filter(ContentClassifier.isImageFile))
@@ -15,11 +16,14 @@ struct StitchImagesPlugin: PopPlugin {
         if images.count > shown {
             names.append("……还有 \(images.count - shown) 张")
         }
+        let delay = Int(ImageStitcher.gifFrameDelay)
+        let stitch = ImageStitcher.Direction.allCases.map { direction in
+            CardButton(title: direction.title, action: .stitchImages(images, direction))
+        }
         return .card(ResultCard(title: "拼接图片", body: names.joined(separator: "\n"),
-                                detail: "\(images.count) 张图片按上面的顺序拼接；宽度（横着拼时是高度）不一样时按最小的那张缩放",
-                                buttons: ImageStitcher.Direction.allCases.map { direction in
-                                    CardButton(title: direction.title, action: .stitchImages(images, direction))
-                                }))
+                                detail: "\(images.count) 张图片按上面的顺序拼接；宽度（横着拼时是高度）不一样时按最小的那张缩放。"
+                                    + "合成动图时每张停 \(delay) 秒，画面大小按第一张",
+                                buttons: stitch + [CardButton(title: "合成动图", action: .animateImages(images))]))
     }
 }
 
@@ -42,13 +46,30 @@ struct VideoConvertPlugin: PopPlugin {
             operation != .mp4 || !videos.allSatisfy { $0.pathExtension.lowercased() == "mp4" }
         }
         let gif = "GIF 每秒 \(Int(VideoConverter.gifFrameRate)) 帧、宽度不超过 \(Int(VideoConverter.gifMaxWidth))，最多转前 \(Int(VideoConverter.gifMaxDuration)) 秒"
+        var buttons = operations.map { operation in
+            CardButton(title: operation.title, action: .convertVideos(videos, operation))
+        }
+        if videos.count == 1 {
+            buttons.append(CardButton(title: "截取一段…", action: .trimMedia(first)))
+        }
         return .card(ResultCard(title: "视频转换",
                                 body: videos.count == 1 ? first.lastPathComponent : "\(videos.count) 个视频",
                                 detail: "转换后存在原视频旁边；\(gif)",
                                 rows: rows,
-                                buttons: operations.map { operation in
-                                    CardButton(title: operation.title, action: .convertVideos(videos, operation))
-                                }))
+                                buttons: buttons))
+    }
+}
+
+// MARK: - 截取片段
+
+struct TrimMediaPlugin: PopPlugin {
+    let info = PluginInfo(id: BuiltinPluginID.trimMedia, name: "截取片段", symbol: "scissors",
+                          summary: "截取选中的音频或视频的一段（写上开始和结束的时间），存在原文件旁边",
+                          accepts: [.files], pattern: #"(?im)\.(mov|mp4|m4v|3gp|m4a|mp3|wav|aiff?|aac|caf|flac)$"#)
+
+    @MainActor func run(_ content: ClassifiedContent, context: PluginContext) async -> PluginOutcome {
+        guard let file = content.files.first(where: MediaTrim.isMedia) else { return .failure("没有选中音频或视频文件") }
+        return .trimMedia(file)
     }
 }
 

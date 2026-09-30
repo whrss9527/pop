@@ -240,7 +240,43 @@ final class PDFToolsTests: XCTestCase {
         XCTAssertEqual(card.buttons.first?.action, .exportPDFPages(revealed.urls[0]))
         XCTAssertEqual(card.buttons.last?.action, .compressPDF(revealed.urls[0]))
         XCTAssertTrue(card.buttons.contains { $0.action == .pdfPages(revealed.urls[0]) })
+        XCTAssertTrue(card.buttons.contains { $0.action == .pdfPassword(revealed.urls[0]) })
         XCTAssertTrue(card.detail?.hasPrefix("2 页") == true, card.detail ?? "")
+    }
+
+    func testAddAndRemovePassword() throws {
+        let pdf = folder.appending(path: "合同.pdf")
+        try PDFTools.combine([try writePNG("a.png", width: 200, height: 100), try writePNG("b.png", width: 100, height: 200)],
+                             into: pdf)
+        XCTAssertFalse(PDFTools.isLocked(pdf))
+        let locked = folder.appending(path: "合同 加密.pdf")
+        try PDFTools.encrypt(pdf, password: "pop-2026", to: locked)
+        XCTAssertTrue(PDFTools.isLocked(locked))
+        XCTAssertThrowsError(try PDFTools.open(locked))
+        XCTAssertThrowsError(try PDFTools.encrypt(pdf, password: "", to: folder.appending(path: "x.pdf")))
+
+        let unlocked = folder.appending(path: "合同 无密码.pdf")
+        XCTAssertThrowsError(try PDFTools.removePassword(locked, password: "wrong", to: unlocked)) { error in
+            XCTAssertEqual(error as? PDFTools.Failure, PDFTools.Failure(message: "密码不对"))
+        }
+        try PDFTools.removePassword(locked, password: "pop-2026", to: unlocked)
+        let document = try XCTUnwrap(PDFDocument(url: unlocked))
+        XCTAssertFalse(document.isEncrypted)
+        XCTAssertEqual(document.pageCount, 2)
+        // 原来就没有密码的
+        XCTAssertThrowsError(try PDFTools.removePassword(unlocked, password: "pop-2026", to: folder.appending(path: "y.pdf")))
+    }
+
+    @MainActor
+    func testLockedPDFOffersToRemoveThePassword() async throws {
+        let pdf = folder.appending(path: "报告.pdf")
+        try PDFTools.combine([try writePNG("a.png", width: 200, height: 100)], into: pdf)
+        let locked = folder.appending(path: "报告 加密.pdf")
+        try PDFTools.encrypt(pdf, password: "secret", to: locked)
+        let context = PluginContext(settings: AppSettings(), openSettings: {})
+        let outcome = await PDFPlugin().run(ContentClassifier.classify(.files([locked])), context: context)
+        guard case .card(let card) = outcome else { return XCTFail("应该返回结果卡片") }
+        XCTAssertEqual(card.buttons.map(\.action), [.pdfPassword(locked)])
     }
 
     func testCompressShrinksImages() throws {
