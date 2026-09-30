@@ -50,7 +50,7 @@ struct RulerPlugin: PopPlugin {
 
 struct ScreenRecordPlugin: PopPlugin {
     let info = PluginInfo(id: BuiltinPluginID.screenRecord, name: String(localized: "录屏"), symbol: "record.circle",
-                          summary: String(localized: "拖出一块区域、单击选一个窗口或者按回车录整个屏幕，存成 MP4；可以录上电脑里的声音、显示鼠标点击，录好能接着转成 GIF。正在录的时候再用一次就停止"),
+                          summary: String(localized: "拖出一块区域、单击选一个窗口或者按回车录整个屏幕，存成 MP4；可以录上电脑里的声音或者麦克风、显示鼠标点击，录好能接着转成 GIF。正在录的时候再用一次就停止"),
                           accepts: [], hidesOverlay: true)
 
     @MainActor func run(_ content: ClassifiedContent, context: PluginContext) async -> PluginOutcome {

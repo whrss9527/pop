@@ -100,8 +100,18 @@ final class ScreenRecordingTests: XCTestCase {
     func testRemembersOptions() throws {
         let defaults = try XCTUnwrap(UserDefaults(suiteName: "pop-record-tests-\(UUID().uuidString)"))
         XCTAssertEqual(ScreenRecording.Options.saved(in: defaults), ScreenRecording.Options())
-        ScreenRecording.Options(systemAudio: true, showClicks: false).save(in: defaults)
-        XCTAssertEqual(ScreenRecording.Options.saved(in: defaults), ScreenRecording.Options(systemAudio: true, showClicks: false))
+        ScreenRecording.Options(audio: .microphone, showClicks: true).save(in: defaults)
+        XCTAssertEqual(ScreenRecording.Options.saved(in: defaults), ScreenRecording.Options(audio: .microphone, showClicks: true))
+        XCTAssertEqual(ScreenRecording.Audio.allCases.map(\.title), ["不录声音", "电脑里的声音", "麦克风"])
+    }
+
+    /// 0.30.0 存的是「录上电脑里的声音」的勾选
+    func testReadsTheOldSoundCheckbox() throws {
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: "pop-record-old-\(UUID().uuidString)"))
+        defaults.set(true, forKey: ScreenRecording.Options.systemAudioKey)
+        XCTAssertEqual(ScreenRecording.Options.saved(in: defaults).audio, .system)
+        defaults.set(ScreenRecording.Audio.off.rawValue, forKey: ScreenRecording.Options.audioKey)
+        XCTAssertEqual(ScreenRecording.Options.saved(in: defaults).audio, .off)
     }
 
     func testFinishedCard() {
