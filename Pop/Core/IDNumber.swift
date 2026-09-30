@@ -94,7 +94,7 @@ enum IDNumber {
         let permit = ["81", "82", "83"].contains(String(digits[0..<2]))
         var rows = [ResultCard.Row(label: String(localized: "校验"), value: isValid ? String(localized: "通过") : String(localized: "不通过"))]
         rows += personRows(birth: birth, genderDigit: digits[16], today: today)
-        rows.append(ResultCard.Row(label: String(localized: "地区"), value: "\(province)（\(String(digits[0..<6]))）"))
+        rows.append(ResultCard.Row(label: String(localized: "地区"), value: String(localized: "\(province)（\(String(digits[0..<6]))）")))
         return Info(kind: permit ? .residencePermit : .residentID, number: number, isValid: isValid,
                     expectedCheck: isValid ? nil : expected.map { String($0) }, rows: rows)
     }
@@ -108,7 +108,7 @@ enum IDNumber {
         let first17 = String(digits[0..<6]) + "19" + String(digits[6..<15])
         guard let check = residentCheck(first17) else { return nil }
         var rows = personRows(birth: birth, genderDigit: digits[14], today: today)
-        rows.append(ResultCard.Row(label: String(localized: "地区"), value: "\(province)（\(String(digits[0..<6]))）"))
+        rows.append(ResultCard.Row(label: String(localized: "地区"), value: String(localized: "\(province)（\(String(digits[0..<6]))）")))
         rows.append(ResultCard.Row(label: String(localized: "18 位号码"), value: first17 + String(check)))
         return Info(kind: .oldResidentID, number: number, isValid: true, expectedCheck: nil, rows: rows)
     }
@@ -180,7 +180,7 @@ enum IDNumber {
         }
         let region = String(characters[2..<8])
         if let province = provinces[String(region.prefix(2))] {
-            rows.append(ResultCard.Row(label: String(localized: "登记地"), value: "\(province)（\(region)）"))
+            rows.append(ResultCard.Row(label: String(localized: "登记地"), value: String(localized: "\(province)（\(region)）")))
         }
         rows.append(ResultCard.Row(label: String(localized: "组织机构代码"), value: String(characters[8..<16]) + "-" + String(characters[16])))
         return Info(kind: .creditCode, number: number, isValid: isValid, expectedCheck: isValid ? nil : String(expected), rows: rows)
@@ -261,7 +261,7 @@ enum IDNumber {
         } else {
             body = String(localized: "校验不通过，可能输错了（也有少数卡号不用这种校验）")
         }
-        let summary = ([info.kind.title + "：" + info.number] + info.rows.map { "\($0.label)：\($0.value)" }).joined(separator: "\n")
+        let summary = ([String(localized: "\(info.kind.title)：\(info.number)")] + info.rows.map { String(localized: "\($0.label)：\($0.value)") }).joined(separator: "\n")
         return ResultCard(title: info.kind.title, body: body, detail: String(localized: "只根据号码本身推算，不联网查询"), copyText: summary, rows: info.rows)
     }
 }

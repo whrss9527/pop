@@ -334,7 +334,7 @@ struct UnitConvertPlugin: PopPlugin {
         let rows = UnitConverter.rows(for: quantity)
         guard !rows.isEmpty else { return .failure(String(localized: "没有可以换算的单位")) }
         let source = UnitConverter.display(quantity.value, quantity.unit)
-        return .card(ResultCard(title: String(localized: "单位换算"), detail: "\(quantity.unit.category.title)：\(source)",
+        return .card(ResultCard(title: String(localized: "单位换算"), detail: String(localized: "\(quantity.unit.category.title)：\(source)"),
                                 rows: rows, rowsReplaceable: true))
     }
 }

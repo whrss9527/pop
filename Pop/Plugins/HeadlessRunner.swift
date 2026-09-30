@@ -65,7 +65,7 @@ enum HeadlessRunner {
             return tab.text
         }
         if !card.rows.isEmpty {
-            return card.rows.map { "\($0.label)：\($0.value)" }.joined(separator: "\n")
+            return card.rows.map { String(localized: "\($0.label)：\($0.value)") }.joined(separator: "\n")
         }
         return card.detail ?? card.title
     }

@@ -161,7 +161,7 @@ struct PhotoMetadata: Equatable {
         parser.dateFormat = "yyyy-MM-dd HH:mm:ss"
         let formatted = parser.string(from: date)
         guard let offset = nonEmpty(offset) else { return formatted }
-        return "\(formatted)（UTC\(offset)）"
+        return String(localized: "\(formatted)（UTC\(offset)）")
     }
 
     /// 最多保留一位小数，整数不带小数点
