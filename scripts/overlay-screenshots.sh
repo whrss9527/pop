@@ -109,6 +109,7 @@ plan = [
     ("scrollCapture-capturing", [0.6]),
     ("scrollCapture", [3.0]),
     ("screenPen", [3.0]),
+    ("presenting", [0.3, 3.0]),
     ("annotate", [1.5]),
     ("settings-plugins", [0.5]),
     ("settings-ai", [0.5]),
@@ -127,7 +128,7 @@ if appearance == "dark":
             ("toolbar", [1.2]), ("watermark", [3.0]), ("sendToPhone", [3.0]), ("idNumber", [3.0]), ("transcribe", [3.0]),
             ("idPhoto", [3.0]), ("webCapture", [3.0]), ("cropImage", [3.0]),
             ("screenRecord-picker", [1.0]), ("screenRecord-recording", [0.6]), ("screenRecord", [3.0]), ("systemActions", [3.0]), ("textImage", [3.0]),
-            ("menuShortcuts", [3.0]), ("scrollCapture", [3.0]), ("screenPen", [3.0]), ("annotate", [1.5]),
+            ("menuShortcuts", [3.0]), ("scrollCapture", [3.0]), ("screenPen", [3.0]), ("presenting", [3.0]), ("annotate", [1.5]),
             ("settings-plugins", [0.5]), ("settings-ai", [0.5]), ("settings-hotKeys", [0.5]),
             ("settings-pluginLibrary", [0.8])]
 factor = scale / 6.0

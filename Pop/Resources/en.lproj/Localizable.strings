@@ -2207,3 +2207,19 @@
 "笔迹几秒后自动消失" = "Fade strokes after a few seconds";
 "全部擦掉（⌫）" = "Erase everything (⌫)";
 "结束屏幕画笔（Esc）" = "Stop drawing (Esc)";
+
+/* 0.41.0：摄像头小窗、突出显示指针 */
+"摄像头小窗" = "Camera Bubble";
+"在屏幕角落用一个圆形小窗显示摄像头画面，录教程、演示时把自己也放进画面；拖动换位置，滚动或双击换大小，右键换形状和摄像头。再用一次关闭" = "Show the camera in a small round window in a corner of the screen, so you appear in tutorials and demos. Drag to move it, scroll or double-click to resize, right-click to change the shape or camera. Use it again to close";
+"没有找到摄像头" = "No camera found";
+"摄像头打不开：%@" = "Couldn’t open the camera: %@";
+"要先在「系统设置 → 隐私与安全性 → 摄像头」里允许 Pop，才能打开摄像头小窗" = "To open Camera Bubble, allow Pop in System Settings → Privacy & Security → Camera";
+"圆形" = "Circle";
+"圆角方形" = "Rounded Square";
+"小" = "Small";
+"大" = "Large";
+"关闭摄像头小窗" = "Close Camera Bubble";
+"突出显示指针" = "Highlight Pointer";
+"演示、录教程时在指针周围加一圈黄色光圈，按下鼠标时泛起波纹，让人一眼看到指针在哪；再用一次关闭" = "Put a yellow halo around the pointer that ripples when you click, so people can always find it in demos and tutorials. Use it again to turn it off";
+"不再突出显示指针" = "Stopped highlighting the pointer";
+"指针周围加上了光圈，再用一次就关闭" = "The pointer now has a halo; use it again to turn it off";
