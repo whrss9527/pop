@@ -69,6 +69,7 @@ plan = [
     ("ai", [0.6, 3.0]),
     ("layout", [3.0]),
     ("translate", [3.0]),
+    ("translate-compare", [3.0]),
     ("snippets", [0.6, 3.0]),
     ("diff", [3.0]),
     ("palette", [3.0]),
@@ -102,7 +103,7 @@ if appearance == "dark":
     # 深色外观只拍停下来之后的样子
     plan = [("loaded", [2.6]), ("slide", [3.0]), ("commit", [5.0]), ("toast", [1.2]), ("chooser", [4.0]),
             ("drag-clipboard", [2.4]), ("release", [3.5]), ("unit", [3.0]), ("pin", [3.0]), ("ai", [3.0]),
-            ("layout", [3.0]), ("translate", [3.0]), ("snippets", [3.0]), ("diff", [3.0]), ("palette", [3.0]),
+            ("layout", [3.0]), ("translate", [3.0]), ("translate-compare", [3.0]), ("snippets", [3.0]), ("diff", [3.0]), ("palette", [3.0]),
             ("shelf", [3.0]), ("openWith", [3.0]), ("markdown", [3.0]), ("extract", [3.0]), ("jsonTypes", [3.0]),
             ("toMarkdown", [3.0]), ("regex", [3.0]), ("history", [3.0]), ("history-search", [3.0]),
             ("reminder", [3.0]), ("table", [3.0]), ("photo", [3.0]), ("rename", [3.0]), ("sql", [3.0]), ("vocabulary", [3.0]),

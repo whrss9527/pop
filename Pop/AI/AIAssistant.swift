@@ -1,5 +1,4 @@
 import Foundation
-import Security
 
 /// AI 卡片上的常用指令
 enum AIAction: String, CaseIterable, Identifiable {
@@ -66,34 +65,17 @@ struct AIRequestSpec: Equatable {
 
 /// AI 功能的 API Key 存在这台 Mac 的钥匙串里，不跟设置一起同步。
 enum AIKeyStore {
-    private static let service = (Bundle.main.bundleIdentifier ?? "Pop") + ".ai"
-    private static let account = "api-key"
-
-    private static var baseQuery: [String: Any] {
-        [kSecClass as String: kSecClassGenericPassword,
-         kSecAttrService as String: service,
-         kSecAttrAccount as String: account]
-    }
+    private static let secret = KeychainSecret(service: (Bundle.main.bundleIdentifier ?? "Pop") + ".ai", account: "api-key",
+                                               label: "Pop AI API Key")
 
     static func read() -> String? {
-        var query = baseQuery
-        query[kSecReturnData as String] = true
-        query[kSecMatchLimit as String] = kSecMatchLimitOne
-        var item: CFTypeRef?
-        guard SecItemCopyMatching(query as CFDictionary, &item) == errSecSuccess, let data = item as? Data else { return nil }
-        return String(data: data, encoding: .utf8)
+        secret.read()
     }
 
     /// 保存（空字符串表示删除）。成功返回 true。
     @discardableResult
     static func save(_ key: String) -> Bool {
-        let trimmed = key.trimmingCharacters(in: .whitespacesAndNewlines)
-        SecItemDelete(baseQuery as CFDictionary)
-        guard !trimmed.isEmpty else { return true }
-        var attributes = baseQuery
-        attributes[kSecValueData as String] = Data(trimmed.utf8)
-        attributes[kSecAttrLabel as String] = "Pop AI API Key"
-        return SecItemAdd(attributes as CFDictionary, nil) == errSecSuccess
+        secret.save(key)
     }
 }
 

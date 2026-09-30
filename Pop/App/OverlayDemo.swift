@@ -144,6 +144,16 @@ enum OverlayDemo {
                                                  onDownload: {}, onClose: {}),
                              anchor: center)
 
+            // 翻译对比：AI 和 DeepL 用演示的译文，系统翻译照常检查语言包
+            await pause(1.4 * unit)
+            step("translate-compare")
+            let comparison = TranslationModel(text: "Liquid glass reflects and refracts what is behind it, so every control feels alive.",
+                                              sourceLanguage: "en", targetLanguage: "zh-Hans", services: demoTranslation)
+            comparison.switchMode(to: .compare)
+            overlay.showCard(TranslationCardView(model: comparison, canReplace: true, onAction: { _ in }, onMore: {},
+                                                 onDownload: {}, onOpenSettings: { _ in }, onClose: {}),
+                             anchor: center)
+
             // 常用短语列表
             await pause(1.4 * unit)
             step("snippets")
@@ -399,6 +409,25 @@ enum OverlayDemo {
 
             step("end")
         }
+    }
+
+    /// 翻译对比演示用的引擎：AI 和 DeepL 直接给出写好的译文，不联网
+    private static var demoTranslation: TranslationServices {
+        TranslationServices(
+            unavailableReason: { _ in nil },
+            translate: { engine, _, _ in
+                let translated = engine == .ai
+                    ? "液态玻璃会映出并折射身后的内容，让每个控件都显得生动。"
+                    : "液态玻璃反射和折射其背后的东西，因此每个控件都感觉栩栩如生。"
+                return AsyncThrowingStream { continuation in
+                    continuation.yield(translated)
+                    continuation.finish()
+                }
+            },
+            checkSystem: { text, source, target in
+                await SystemTranslation.status(text: text, source: source, target: target)
+            }
+        )
     }
 
     /// 剪贴板历史演示：放在临时文件夹里的几条示例记录，不碰真的历史；⌘ 点选了其中两条

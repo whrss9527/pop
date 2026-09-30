@@ -46,24 +46,30 @@ struct CardContainer<Content: View>: View {
 struct AdaptiveText: View {
     let text: String
     var monospaced = false
+    /// 几段排在一起时（翻译对比），长文本的滚动区域矮一些
+    var compact = false
 
     var body: some View {
         let content = Text(text)
             .font(monospaced ? .system(size: 12, design: .monospaced) : .body)
             .textSelection(.enabled)
             .frame(maxWidth: .infinity, alignment: .leading)
-        if Self.isLong(text) {
+        if Self.isLong(text, compact: compact) {
             ScrollView {
                 content.padding(.trailing, 6)
             }
-            .frame(height: 280)
+            .frame(height: compact ? 120 : 280)
         } else {
             content.fixedSize(horizontal: false, vertical: true)
         }
     }
 
-    static func isLong(_ text: String) -> Bool {
-        text.count > 600 || text.filter { $0 == "\n" }.count > 14
+    static func isLong(_ text: String, compact: Bool = false) -> Bool {
+        let lines = text.filter { $0 == "\n" }.count
+        if compact {
+            return text.count > 240 || lines > 6
+        }
+        return text.count > 600 || lines > 14
     }
 }
 
@@ -292,80 +298,189 @@ final class TranslationModel: ObservableObject {
         case checking
         case needsDownload
         case translating
+        /// 联网的引擎一边收一边显示
+        case partial(String)
         case done(String)
+        /// 引擎还没设置好（没填 DeepL 的 Key、AI 用不了），说明怎么设置
+        case unavailable(String)
         case failed(String)
+    }
+
+    /// 卡片上看一个引擎的译文，或者几个引擎的放在一起对比
+    enum Mode: Hashable {
+        case single(TranslationEngine)
+        case compare
     }
 
     let text: String
     let sourceCode: String?
     /// 译成哪种语言；卡片上可以临时换
     @Published private(set) var targetCode: String
-    @Published private(set) var phase: Phase = .checking
+    @Published private(set) var mode: Mode
+    /// 各个引擎的结果：换了引擎再换回来直接显示，换目标语言时清空
+    @Published private(set) var results: [TranslationEngine: Phase] = [:]
+    /// 系统翻译的会话配置，交给卡片上的 .translationTask 执行
     @Published private(set) var configuration: TranslationSession.Configuration?
 
-    init(text: String, sourceLanguage: String?, targetLanguage: String) {
+    private let services: TranslationServices
+    private var tasks: [TranslationEngine: Task<Void, Never>] = [:]
+    /// 换目标语言后，之前的请求回来了也不用
+    private var generation = 0
+
+    /// engine 是默认用的引擎；它现在用不了（没填 Key 之类）时先用系统翻译
+    init(text: String, sourceLanguage: String?, targetLanguage: String, engine: TranslationEngine = .system,
+         services: TranslationServices = .systemOnly) {
         self.text = text
         sourceCode = sourceLanguage
         targetCode = targetLanguage
+        self.services = services
+        mode = .single(services.unavailableReason(engine) == nil ? engine : .system)
     }
 
-    /// 换一种目标语言重新翻译
-    func switchTarget(to code: String) {
-        guard code != targetCode else { return }
-        targetCode = code
-        configuration = nil
-        phase = .checking
-        Task {
-            await prepare()
+    /// 正在看的引擎；对比时是 nil
+    var engine: TranslationEngine? {
+        if case .single(let engine) = mode {
+            return engine
         }
+        return nil
     }
 
     var pairDescription: String {
         "\(LanguageOption.name(for: sourceCode)) → \(LanguageOption.name(for: targetCode))"
     }
 
-    var translatedText: String? {
-        if case .done(let text) = phase { return text }
-        return nil
+    func phase(of engine: TranslationEngine) -> Phase {
+        results[engine] ?? .checking
     }
 
-    /// 先确认语言包已经装好。没装好时不在浮窗里弹系统下载框（非激活面板里显示不正常），而是引导去设置页下载。
-    func prepare() async {
-        guard phase == .checking else { return }
-        let target = Locale.Language(identifier: targetCode)
-        let source = sourceCode.map { Locale.Language(identifier: $0) }
-        let availability = LanguageAvailability()
-        let status: LanguageAvailability.Status
-        if let source {
-            status = await availability.status(from: source, to: target)
-        } else {
+    /// 正在看的引擎的状态
+    var phase: Phase {
+        phase(of: engine ?? .system)
+    }
+
+    /// 正在看的引擎翻译好的译文；对比时是 nil（每一家的译文单独复制）
+    var translatedText: String? {
+        guard let engine, case .done(let translated) = phase(of: engine) else { return nil }
+        return translated
+    }
+
+    /// 卡片出现时开始翻译
+    func start() {
+        runMissing()
+    }
+
+    /// 换一种目标语言重新翻译
+    func switchTarget(to code: String) {
+        guard code != targetCode else { return }
+        targetCode = code
+        generation += 1
+        for task in tasks.values {
+            task.cancel()
+        }
+        tasks = [:]
+        results = [:]
+        configuration = nil
+        runMissing()
+    }
+
+    /// 换引擎，或者切到对比：翻译过的直接显示，没翻译过的开始翻译
+    func switchMode(to newMode: Mode) {
+        guard newMode != mode else { return }
+        mode = newMode
+        runMissing()
+    }
+
+    /// 等正在跑的翻译都结束（测试用）
+    func waitUntilFinished() async {
+        for task in tasks.values {
+            await task.value
+        }
+    }
+
+    private func runMissing() {
+        let engines: [TranslationEngine]
+        switch mode {
+        case .single(let engine):
+            engines = [engine]
+        case .compare:
+            engines = TranslationEngine.allCases
+        }
+        for engine in engines where results[engine] == nil {
+            run(engine)
+        }
+    }
+
+    private func run(_ engine: TranslationEngine) {
+        if let reason = services.unavailableReason(engine) {
+            results[engine] = .unavailable(reason)
+            return
+        }
+        let generation = self.generation
+        if engine == .system {
+            results[engine] = .checking
+            tasks[engine] = Task { [weak self] in
+                await self?.prepareSystem(generation: generation)
+            }
+            return
+        }
+        results[engine] = .translating
+        let services = self.services
+        let text = self.text
+        let target = targetCode
+        tasks[engine] = Task { [weak self] in
+            var output = ""
             do {
-                status = try await availability.status(for: text, to: target)
+                let stream = try await services.translate(engine, text, target)
+                for try await piece in stream {
+                    output += piece
+                    guard let self, self.generation == generation else { return }
+                    self.results[engine] = .partial(output)
+                }
+                guard let self, self.generation == generation else { return }
+                let translated = output.trimmingCharacters(in: .whitespacesAndNewlines)
+                self.results[engine] = translated.isEmpty ? .failed("\(engine.title) 没有返回译文") : .done(translated)
             } catch {
-                phase = .failed("无法识别原文的语言")
-                return
+                guard let self, self.generation == generation, !Task.isCancelled else { return }
+                self.results[engine] = .failed(TranslationModel.describe(error))
             }
         }
+    }
+
+    /// 系统翻译先确认语言包已经装好。没装好时不在浮窗里弹系统下载框（非激活面板里显示不正常），而是引导去设置页下载。
+    private func prepareSystem(generation: Int) async {
+        let status = await services.checkSystem(text, sourceCode, targetCode)
+        guard self.generation == generation else { return }
         switch status {
         case .installed:
-            phase = .translating
-            configuration = TranslationSession.Configuration(source: source, target: target)
-        case .supported:
-            phase = .needsDownload
+            results[.system] = .translating
+            configuration = TranslationSession.Configuration(source: sourceCode.map { Locale.Language(identifier: $0) },
+                                                             target: Locale.Language(identifier: targetCode))
+        case .needsDownload:
+            results[.system] = .needsDownload
         case .unsupported:
-            phase = .failed("系统翻译暂不支持「\(pairDescription)」")
-        @unknown default:
-            phase = .failed("无法确认语言包状态")
+            results[.system] = .failed("系统翻译暂不支持「\(pairDescription)」")
+        case .failed(let message):
+            results[.system] = .failed(message)
         }
     }
 
     func translate(with session: TranslationSession) async {
+        let generation = self.generation
         do {
             let response = try await session.translate(text)
-            phase = .done(response.targetText)
+            guard self.generation == generation else { return }
+            results[.system] = .done(response.targetText)
         } catch {
-            phase = .failed("翻译失败：\(error.localizedDescription)")
+            guard self.generation == generation else { return }
+            results[.system] = .failed("翻译失败：\(error.localizedDescription)")
         }
+    }
+
+    private static func describe(_ error: Error) -> String {
+        if let failure = error as? DeepLClient.Failure {
+            return failure.message
+        }
+        return AIClient.describe(error)
     }
 }
 
@@ -376,11 +491,13 @@ struct TranslationCardView: View {
     var onAction: (CardAction) -> Void
     var onMore: (() -> Void)?
     var onDownload: () -> Void
+    /// 去设置里把引擎设置好（DeepL 的 Key 在「翻译」，AI 在「AI」）
+    var onOpenSettings: ((SettingsTab) -> Void)? = nil
     var onClose: () -> Void
 
     var body: some View {
         CardContainer(title: "翻译", subtitle: model.pairDescription, onClose: onClose) {
-            HStack(spacing: 6) {
+            HStack(spacing: 8) {
                 Menu {
                     ForEach(LanguageOption.translationTargets) { option in
                         Button(option.name) { model.switchTarget(to: option.id) }
@@ -393,6 +510,17 @@ struct TranslationCardView: View {
                 .fixedSize()
                 .help("换一种语言重新翻译")
                 Spacer()
+                Picker("翻译引擎", selection: modeBinding) {
+                    ForEach(TranslationEngine.allCases) { engine in
+                        Text(engine.title).tag(TranslationModel.Mode.single(engine))
+                    }
+                    Text("对比").tag(TranslationModel.Mode.compare)
+                }
+                .pickerStyle(.segmented)
+                .labelsHidden()
+                .controlSize(.small)
+                .fixedSize()
+                .help("换一个翻译引擎，或者把几家的译文放在一起对比")
             }
             .font(.callout)
             Text(model.text)
@@ -400,8 +528,12 @@ struct TranslationCardView: View {
                 .foregroundStyle(.secondary)
                 .lineLimit(3)
             Divider()
-            result
-                .animation(Motion.content, value: model.phase)
+            if model.mode == .compare {
+                comparison
+            } else {
+                result(model.phase, engine: model.engine ?? .system, compact: false)
+                    .animation(Motion.content, value: model.phase)
+            }
             FlowLayout(spacing: 8) {
                 if let translated = model.translatedText {
                     Button("复制译文") { onAction(.copy(translated)) }
@@ -432,13 +564,43 @@ struct TranslationCardView: View {
             await model.translate(with: session)
         }
         .task {
-            await model.prepare()
+            model.start()
         }
     }
 
+    private var modeBinding: Binding<TranslationModel.Mode> {
+        Binding(get: { model.mode }, set: { model.switchMode(to: $0) })
+    }
+
+    /// 几家的译文一段接一段排下来，每一段可以单独复制、替换原文
+    private var comparison: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            ForEach(TranslationEngine.allCases) { engine in
+                VStack(alignment: .leading, spacing: 4) {
+                    HStack(spacing: 8) {
+                        Text(engine.title)
+                            .font(.caption.weight(.semibold))
+                            .foregroundStyle(.secondary)
+                        Spacer()
+                        if case .done(let translated) = model.phase(of: engine) {
+                            Button("复制") { onAction(.copy(translated)) }
+                            if canReplace {
+                                Button("替换原文") { onAction(.replace(translated)) }
+                            }
+                        }
+                    }
+                    .buttonStyle(.borderless)
+                    .controlSize(.small)
+                    result(model.phase(of: engine), engine: engine, compact: true)
+                }
+            }
+        }
+        .animation(Motion.content, value: model.results)
+    }
+
     @ViewBuilder
-    private var result: some View {
-        switch model.phase {
+    private func result(_ phase: TranslationModel.Phase, engine: TranslationEngine, compact: Bool) -> some View {
+        switch phase {
         case .checking, .translating:
             HStack(spacing: 6) {
                 ProgressView()
@@ -455,9 +617,23 @@ struct TranslationCardView: View {
                     .controlSize(.small)
             }
             .transition(.opacity)
+        case .partial(let translated):
+            AdaptiveText(text: translated, compact: compact)
+                .foregroundStyle(.secondary)
         case .done(let translated):
-            AdaptiveText(text: translated)
+            AdaptiveText(text: translated, compact: compact)
                 .transition(.opacity)
+        case .unavailable(let message):
+            VStack(alignment: .leading, spacing: 6) {
+                Text(message)
+                    .font(.callout)
+                    .foregroundStyle(.secondary)
+                if let onOpenSettings {
+                    Button("去设置…") { onOpenSettings(engine == .ai ? .ai : .translation) }
+                        .controlSize(.small)
+                }
+            }
+            .transition(.opacity)
         case .failed(let message):
             Text(message)
                 .font(.callout)

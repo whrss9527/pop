@@ -454,7 +454,9 @@ final class PopCoordinator: MouseTriggerDelegate {
                              anchor: current.anchor)
         case .translate(let text, let language):
             let target = translationTarget(text: text, content: current.content, language: language)
-            let model = TranslationModel(text: text, sourceLanguage: language, targetLanguage: target)
+            let settings = settingsStore.settings
+            let model = TranslationModel(text: text, sourceLanguage: language, targetLanguage: target,
+                                         engine: settings.translation.engine, services: .live(ai: settings.ai))
             overlay.showCard(TranslationCardView(model: model,
                                                  canReplace: Self.isTextSelection(current.content) && current.content?.text == text,
                                                  onAction: { [weak self] action in self?.perform(action) },
@@ -462,6 +464,10 @@ final class PopCoordinator: MouseTriggerDelegate {
                                                  onDownload: { [weak self, weak model] in
                                                      // 卡片上可能换过目标语言
                                                      self?.downloadLanguagePack(source: language, target: model?.targetCode ?? target)
+                                                 },
+                                                 onOpenSettings: { [weak self] tab in
+                                                     self?.endSession()
+                                                     self?.openSettings(tab)
                                                  },
                                                  onClose: { [weak self] in self?.endSession() }),
                              anchor: current.anchor)

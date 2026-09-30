@@ -608,6 +608,19 @@ struct TranslationSettingsView: View {
 
     var body: some View {
         Form {
+            Section {
+                Picker("默认用", selection: store.binding(\.translation.engine)) {
+                    ForEach(TranslationEngine.allCases) { engine in
+                        Text(engine.longTitle).tag(engine)
+                    }
+                }
+            } header: {
+                Text("翻译引擎")
+            } footer: {
+                Text("系统翻译用 macOS 自带的离线翻译：不联网、不收费、原文不离开这台 Mac，但长段落译得比较生硬。AI 翻译用「设置 → AI」里的模型；DeepL 要填自己的 API Key。选的引擎现在用不了时（还没填 Key、AI 没设置好）先用系统翻译。翻译卡片上可以临时换引擎，也可以选「对比」把几家的译文放在一起看。")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
             Section("目标语言") {
                 Picker("外文译为", selection: store.binding(\.translation.foreignTarget)) {
                     ForEach(LanguageOption.translationTargets) { option in
@@ -621,16 +634,97 @@ struct TranslationSettingsView: View {
                 }
             }
             Section {
+                DeepLKeyView()
+            } header: {
+                Text("DeepL")
+            } footer: {
+                Text("到 DeepL 官网申请 API Key（有免费版），填在这里。只有用 DeepL 翻译时才把原文发给 DeepL；Key 只存在这台 Mac 的钥匙串里，不跟设置一起同步。")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+            Section {
                 LanguagePackView()
             } header: {
                 Text("离线语言包")
             } footer: {
-                Text("Pop 使用 macOS 自带的离线翻译：不联网、不收费、原文不离开这台 Mac。第一次翻译某个语言组合前，需要先下载对应的语言包，也可以在「系统设置 → 通用 → 语言与地区 → 翻译语言」里管理。")
+                Text("系统翻译第一次翻译某个语言组合前，需要先下载对应的语言包，也可以在「系统设置 → 通用 → 语言与地区 → 翻译语言」里管理。")
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
         }
         .formStyle(.grouped)
+    }
+}
+
+/// 填 DeepL 的 API Key，保存后翻一句试试
+struct DeepLKeyView: View {
+    @State private var key = ""
+    @State private var loaded = false
+    @State private var test: TestState = .idle
+
+    enum TestState: Equatable {
+        case idle
+        case testing
+        case succeeded(String)
+        case failed(String)
+    }
+
+    var body: some View {
+        Group {
+            SecureField("API Key", text: $key, prompt: Text("粘贴 DeepL 的 API Key"))
+                .onSubmit(save)
+            HStack(spacing: 8) {
+                Button("保存并测试", action: runTest)
+                    .disabled(test == .testing || key.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                status
+                Spacer()
+                Link("申请 API Key", destination: DeepLClient.signUpURL)
+            }
+        }
+        .onAppear {
+            guard !loaded else { return }
+            key = DeepLKeyStore.read() ?? ""
+            loaded = true
+        }
+        .onDisappear(perform: save)
+    }
+
+    @ViewBuilder
+    private var status: some View {
+        switch test {
+        case .idle:
+            EmptyView()
+        case .testing:
+            ProgressView()
+                .controlSize(.small)
+        case .succeeded(let reply):
+            Label("可以用了：Hello → \(reply)", systemImage: "checkmark.circle.fill")
+                .foregroundStyle(.green)
+                .lineLimit(1)
+        case .failed(let message):
+            Label(message, systemImage: "exclamationmark.triangle.fill")
+                .foregroundStyle(.red)
+                .lineLimit(3)
+        }
+    }
+
+    private func save() {
+        guard loaded else { return }
+        DeepLKeyStore.save(key)
+    }
+
+    private func runTest() {
+        save()
+        test = .testing
+        let key = self.key
+        Task {
+            do {
+                let reply = try await DeepLClient.translate("Hello", to: "zh-Hans", key: key)
+                test = .succeeded(String(reply.prefix(30)))
+            } catch {
+                test = .failed((error as? DeepLClient.Failure)?.message ?? error.localizedDescription)
+            }
+        }
     }
 }
 
