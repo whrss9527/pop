@@ -15,30 +15,30 @@ enum VideoConverter {
 
         var title: String {
             switch self {
-            case .gif: return "转成 GIF"
-            case .mp4: return "转成 MP4"
-            case .compress: return "压缩到 720p"
-            case .audio: return "提取音频"
+            case .gif: return String(localized: "转成 GIF")
+            case .mp4: return String(localized: "转成 MP4")
+            case .compress: return String(localized: "压缩到 720p")
+            case .audio: return String(localized: "提取音频")
             }
         }
 
         /// 开始转换时的提示
         var progress: String {
             switch self {
-            case .gif: return "正在转成 GIF…"
-            case .mp4: return "正在转成 MP4…"
-            case .compress: return "正在压缩视频…"
-            case .audio: return "正在提取音频…"
+            case .gif: return String(localized: "正在转成 GIF…")
+            case .mp4: return String(localized: "正在转成 MP4…")
+            case .compress: return String(localized: "正在压缩视频…")
+            case .audio: return String(localized: "正在提取音频…")
             }
         }
 
         /// 转换好了的提示
         var done: String {
             switch self {
-            case .gif: return "已转成 GIF"
-            case .mp4: return "已转成 MP4"
-            case .compress: return "已压缩到 720p"
-            case .audio: return "已提取音频"
+            case .gif: return String(localized: "已转成 GIF")
+            case .mp4: return String(localized: "已转成 MP4")
+            case .compress: return String(localized: "已压缩到 720p")
+            case .audio: return String(localized: "已提取音频")
             }
         }
 
@@ -73,7 +73,7 @@ enum VideoConverter {
         case .compress:
             base += " 720p"
         case .mp4 where url.pathExtension.lowercased() == operation.fileExtension:
-            base += " 转换"
+            base += String(localized: " 转换")
         default:
             break
         }
@@ -95,7 +95,7 @@ enum VideoConverter {
                 try await export(asset, preset: AVAssetExportPreset1280x720, to: output, as: .mp4)
             case .audio:
                 let tracks = try await asset.loadTracks(withMediaType: .audio)
-                guard !tracks.isEmpty else { throw Failure(message: "「\(url.lastPathComponent)」没有声音") }
+                guard !tracks.isEmpty else { throw Failure(message: String(localized: "「\(url.lastPathComponent)」没有声音")) }
                 try await export(asset, preset: AVAssetExportPresetAppleM4A, to: output, as: .m4a)
             }
             return (output, note)
@@ -104,13 +104,13 @@ enum VideoConverter {
             throw failure
         } catch {
             try? FileManager.default.removeItem(at: output)
-            throw Failure(message: "转换「\(url.lastPathComponent)」失败：\(error.localizedDescription)")
+            throw Failure(message: String(localized: "转换「\(url.lastPathComponent)」失败：\(error.localizedDescription)"))
         }
     }
 
     private static func export(_ asset: AVURLAsset, preset: String, to output: URL, as fileType: AVFileType) async throws {
         guard let session = AVAssetExportSession(asset: asset, presetName: preset) else {
-            throw Failure(message: "这台 Mac 不支持这样转换")
+            throw Failure(message: String(localized: "这台 Mac 不支持这样转换"))
         }
         session.shouldOptimizeForNetworkUse = true
         try await session.export(to: output, as: fileType)
@@ -119,9 +119,9 @@ enum VideoConverter {
     /// 按固定的帧率取画面，存成循环播放的 GIF；太长的只转前 60 秒
     private static func makeGIF(from asset: AVURLAsset, to output: URL) async throws -> String? {
         let duration = try await asset.load(.duration).seconds
-        guard duration.isFinite, duration > 0 else { throw Failure(message: "读不到视频的时长") }
+        guard duration.isFinite, duration > 0 else { throw Failure(message: String(localized: "读不到视频的时长")) }
         let videoTracks = try await asset.loadTracks(withMediaType: .video)
-        guard !videoTracks.isEmpty else { throw Failure(message: "这个文件里没有画面") }
+        guard !videoTracks.isEmpty else { throw Failure(message: String(localized: "这个文件里没有画面")) }
         let times = frameTimes(duration: min(duration, gifMaxDuration), frameRate: gifFrameRate)
         let generator = AVAssetImageGenerator(asset: asset)
         generator.appliesPreferredTrackTransform = true
@@ -134,7 +134,7 @@ enum VideoConverter {
 
         guard let destination = CGImageDestinationCreateWithURL(output as CFURL, UTType.gif.identifier as CFString,
                                                                 times.count, nil) else {
-            throw Failure(message: "这台 Mac 不支持存成 GIF")
+            throw Failure(message: String(localized: "这台 Mac 不支持存成 GIF"))
         }
         CGImageDestinationSetProperties(destination, [kCGImagePropertyGIFDictionary: [kCGImagePropertyGIFLoopCount: 0]] as CFDictionary)
         let delay = 1 / gifFrameRate
@@ -160,9 +160,9 @@ enum VideoConverter {
                 }
             }
         }
-        guard last != nil else { throw Failure(message: "没能从视频里取出画面") }
-        guard CGImageDestinationFinalize(destination) else { throw Failure(message: "存储 GIF 失败") }
-        return duration > gifMaxDuration ? "视频比较长，只转了前 \(Int(gifMaxDuration)) 秒" : nil
+        guard last != nil else { throw Failure(message: String(localized: "没能从视频里取出画面")) }
+        guard CGImageDestinationFinalize(destination) else { throw Failure(message: String(localized: "存储 GIF 失败")) }
+        return duration > gifMaxDuration ? String(localized: "视频比较长，只转了前 \(Int(gifMaxDuration)) 秒") : nil
     }
 
     /// 按帧率均匀取的时间点（秒）：从 0 开始，不超过视频的长度，至少一帧
@@ -177,17 +177,17 @@ enum VideoConverter {
         let asset = AVURLAsset(url: url)
         var rows: [ResultCard.Row] = []
         if let time = try? await asset.load(.duration), time.seconds.isFinite, time.seconds > 0 {
-            rows.append(ResultCard.Row(label: "时长", value: FileInfo.duration(time.seconds)))
+            rows.append(ResultCard.Row(label: String(localized: "时长"), value: FileInfo.duration(time.seconds)))
         }
         if let track = try? await asset.loadTracks(withMediaType: .video).first,
            let size = try? await track.load(.naturalSize), size.width > 0,
            let transform = try? await track.load(.preferredTransform) {
             // 手机竖着拍的视频画面是横着存的，按播放时的方向算
             let upright = size.applying(transform)
-            rows.append(ResultCard.Row(label: "画面", value: "\(Int(abs(upright.width).rounded())) × \(Int(abs(upright.height).rounded()))"))
+            rows.append(ResultCard.Row(label: String(localized: "画面"), value: "\(Int(abs(upright.width).rounded())) × \(Int(abs(upright.height).rounded()))"))
         }
         if let bytes = try? url.resourceValues(forKeys: [.fileSizeKey]).fileSize {
-            rows.append(ResultCard.Row(label: "大小", value: ByteCountFormatter.string(fromByteCount: Int64(bytes), countStyle: .file)))
+            rows.append(ResultCard.Row(label: String(localized: "大小"), value: ByteCountFormatter.string(fromByteCount: Int64(bytes), countStyle: .file)))
         }
         return rows
     }

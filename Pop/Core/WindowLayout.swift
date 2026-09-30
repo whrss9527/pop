@@ -17,16 +17,16 @@ enum WindowLayout: String, CaseIterable, Identifiable {
 
     var title: String {
         switch self {
-        case .leftHalf: return "左半屏"
-        case .rightHalf: return "右半屏"
-        case .topHalf: return "上半屏"
-        case .bottomHalf: return "下半屏"
-        case .leftThird: return "左三分之一"
-        case .centerThird: return "中间三分之一"
-        case .rightThird: return "右三分之一"
-        case .maximize: return "最大化"
-        case .center: return "居中"
-        case .nextDisplay: return "下一个显示器"
+        case .leftHalf: return String(localized: "左半屏")
+        case .rightHalf: return String(localized: "右半屏")
+        case .topHalf: return String(localized: "上半屏")
+        case .bottomHalf: return String(localized: "下半屏")
+        case .leftThird: return String(localized: "左三分之一")
+        case .centerThird: return String(localized: "中间三分之一")
+        case .rightThird: return String(localized: "右三分之一")
+        case .maximize: return String(localized: "最大化")
+        case .center: return String(localized: "居中")
+        case .nextDisplay: return String(localized: "下一个显示器")
         }
     }
 

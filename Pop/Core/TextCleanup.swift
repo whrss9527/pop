@@ -13,22 +13,22 @@ enum TextCleanup {
             guard let value, !value.isEmpty, value != text, !rows.contains(where: { $0.value == value }) else { return }
             rows.append(ResultCard.Row(label: label, value: value))
         }
-        add("合并换行", joinLines(text))
-        add("去掉空行", removeBlankLines(text))
-        add("去多余空格", collapseSpaces(text))
-        add("中英文空格", spaceBetweenCJKAndLatin(text))
-        add("全角转半角", halfWidth(text))
-        add("去掉看不见的字符", CharacterInspector.removingInvisibles(text))
+        add(String(localized: "合并换行"), joinLines(text))
+        add(String(localized: "去掉空行"), removeBlankLines(text))
+        add(String(localized: "去多余空格"), collapseSpaces(text))
+        add(String(localized: "中英文空格"), spaceBetweenCJKAndLatin(text))
+        add(String(localized: "全角转半角"), halfWidth(text))
+        add(String(localized: "去掉看不见的字符"), CharacterInspector.removingInvisibles(text))
         if ScriptProfile(text).han > 0 {
-            add("转为繁体", text.applyingTransform(StringTransform(rawValue: "Hans-Hant"), reverse: false))
-            add("转为简体", text.applyingTransform(StringTransform(rawValue: "Hant-Hans"), reverse: false))
+            add(String(localized: "转为繁体"), text.applyingTransform(StringTransform(rawValue: "Hans-Hant"), reverse: false))
+            add(String(localized: "转为简体"), text.applyingTransform(StringTransform(rawValue: "Hant-Hans"), reverse: false))
             if text.count <= 2000, let pinyin = pinyin(text) {
-                add("拼音", pinyin)
-                add("无调拼音", stripTones(pinyin))
+                add(String(localized: "拼音"), pinyin)
+                add(String(localized: "无调拼音"), stripTones(pinyin))
             }
         }
-        add("按行排序", sortLines(text))
-        add("按行去重", uniqueLines(text))
+        add(String(localized: "按行排序"), sortLines(text))
+        add(String(localized: "按行去重"), uniqueLines(text))
         return rows
     }
 

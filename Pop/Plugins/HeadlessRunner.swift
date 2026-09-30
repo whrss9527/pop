@@ -25,11 +25,11 @@ enum HeadlessRunner {
     static func run(pluginID: String, text: String, registry: PluginRegistry, settings: AppSettings,
                     services: TranslationServices) async -> Result<String, Failure> {
         guard let plugin = registry.plugin(id: pluginID) else {
-            return .failure(Failure("没有「\(pluginID)」这个功能"))
+            return .failure(Failure(String(localized: "没有「\(pluginID)」这个功能")))
         }
         let content = ContentClassifier.classify(.text(text))
         guard plugin.info.canHandle(content) else {
-            return .failure(Failure("「\(plugin.info.name)」处理不了这段文字"))
+            return .failure(Failure(String(localized: "「\(plugin.info.name)」处理不了这段文字")))
         }
         let outcome = await plugin.run(content, context: PluginContext(settings: settings, openSettings: {}))
         switch outcome {
@@ -46,7 +46,7 @@ enum HeadlessRunner {
         case .failure(let message):
             return .failure(Failure(message))
         default:
-            return .failure(Failure("「\(plugin.info.name)」要在 Pop 的界面里用，快捷指令里拿不到它的结果"))
+            return .failure(Failure(String(localized: "「\(plugin.info.name)」要在 Pop 的界面里用，快捷指令里拿不到它的结果")))
         }
     }
 
@@ -75,7 +75,7 @@ enum HeadlessRunner {
                           engine: TranslationEngine? = nil, target: String? = nil) async -> Result<String, Failure> {
         let chosen = engine ?? settings.translation.engine
         guard chosen != .system else {
-            return .failure(Failure("快捷指令里用不了系统的离线翻译：把「引擎」选成 AI 或 DeepL，或者用快捷指令自带的「翻译文本」"))
+            return .failure(Failure(String(localized: "快捷指令里用不了系统的离线翻译：把「引擎」选成 AI 或 DeepL，或者用快捷指令自带的「翻译文本」")))
         }
         if let reason = services.unavailableReason(chosen) {
             return .failure(Failure(reason))
@@ -88,7 +88,7 @@ enum HeadlessRunner {
                 output += piece
             }
             let translated = output.trimmingCharacters(in: .whitespacesAndNewlines)
-            return translated.isEmpty ? .failure(Failure("\(chosen.title) 没有返回译文")) : .success(translated)
+            return translated.isEmpty ? .failure(Failure(String(localized: "\(chosen.title) 没有返回译文"))) : .success(translated)
         } catch {
             return .failure(Failure(AIClient.describe(error)))
         }
@@ -108,12 +108,12 @@ enum HeadlessRunner {
         } else if let action = spec.action {
             messages = AIPrompt.messages(for: action, text: spec.text, translation: settings.translation)
         } else {
-            return .failure(Failure("「\(name)」要在 AI 卡片里提问；快捷指令里可以用「AI 润色」「AI 总结」这类直接执行的功能"))
+            return .failure(Failure(String(localized: "「\(name)」要在 AI 卡片里提问；快捷指令里可以用「AI 润色」「AI 总结」这类直接执行的功能")))
         }
         do {
             let answer = try await AIService.complete(messages, settings: settings.ai)
             let trimmed = answer.trimmingCharacters(in: .whitespacesAndNewlines)
-            return trimmed.isEmpty ? .failure(Failure("AI 没有返回内容")) : .success(trimmed)
+            return trimmed.isEmpty ? .failure(Failure(String(localized: "AI 没有返回内容"))) : .success(trimmed)
         } catch {
             return .failure(Failure(AIClient.describe(error)))
         }

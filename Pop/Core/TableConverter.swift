@@ -12,7 +12,7 @@ enum TableConverter {
             switch self {
             case .markdown: return "Markdown"
             case .csv: return "CSV"
-            case .tsv: return "制表符分隔"
+            case .tsv: return String(localized: "制表符分隔")
             case .json: return "JSON"
             }
         }

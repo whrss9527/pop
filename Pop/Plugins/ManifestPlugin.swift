@@ -7,7 +7,7 @@ struct ManifestPlugin: PopPlugin, Equatable {
 
     var info: PluginInfo {
         PluginInfo(id: manifest.id,
-                   name: manifest.name.isEmpty ? "未命名插件" : manifest.name,
+                   name: manifest.name.isEmpty ? String(localized: "未命名插件") : manifest.name,
                    symbol: manifest.symbol,
                    summary: manifest.summary.isEmpty ? manifest.action.type.title : manifest.summary,
                    accepts: Set(manifest.match.kinds),
@@ -61,7 +61,7 @@ enum ManifestRunner {
         let input = Input(content)
         if manifest.action.type == .url {
             guard let url = expandURL(manifest.action.template, input: input) else {
-                return .failure("「\(manifest.name)」的网址模板无效")
+                return .failure(String(localized: "「\(manifest.name)」的网址模板无效"))
             }
             NSWorkspace.shared.open(url)
             return .done(toast: nil)
@@ -75,7 +75,7 @@ enum ManifestRunner {
         case .success(let output):
             return present(output, manifest: manifest, canReplace: content.text != nil)
         case .failure(let error):
-            return .failure("「\(manifest.name)」运行失败：\(error.message)")
+            return .failure(String(localized: "「\(manifest.name)」运行失败：\(error.message)"))
         }
     }
 
@@ -84,7 +84,7 @@ enum ManifestRunner {
         switch action.type {
         case .url:
             guard let url = expandURL(action.template, input: input) else {
-                return .failure(PluginRunError("网址模板无效"))
+                return .failure(PluginRunError(String(localized: "网址模板无效")))
             }
             return .success(url.absoluteString)
         case .shell:
@@ -120,20 +120,20 @@ enum ManifestRunner {
     static func present(_ output: String, manifest: PluginManifest, canReplace: Bool) -> PluginOutcome {
         switch manifest.output {
         case .card:
-            guard !output.isEmpty else { return .done(toast: "「\(manifest.name)」已完成") }
+            guard !output.isEmpty else { return .done(toast: String(localized: "「\(manifest.name)」已完成")) }
             return .card(ResultCard(title: manifest.name, body: output, monospaced: true,
                                     copyText: output, replaceText: canReplace ? output : nil))
         case .copy:
-            guard !output.isEmpty else { return .failure("「\(manifest.name)」没有输出") }
+            guard !output.isEmpty else { return .failure(String(localized: "「\(manifest.name)」没有输出")) }
             PasteboardWriter.copy(output)
-            return .done(toast: "已复制结果")
+            return .done(toast: String(localized: "已复制结果"))
         case .replace:
-            guard canReplace else { return .failure("选中的不是文字，无法替换") }
-            guard !output.isEmpty else { return .failure("「\(manifest.name)」没有输出，原文保持不变") }
+            guard canReplace else { return .failure(String(localized: "选中的不是文字，无法替换")) }
+            guard !output.isEmpty else { return .failure(String(localized: "「\(manifest.name)」没有输出，原文保持不变")) }
             return .replace(output)
         case .toast:
             let firstLine = output.split(whereSeparator: \.isNewline).first.map(String.init) ?? ""
-            return .done(toast: firstLine.isEmpty ? "已完成" : String(firstLine.prefix(60)))
+            return .done(toast: firstLine.isEmpty ? String(localized: "已完成") : String(firstLine.prefix(60)))
         case .none:
             return .done(toast: nil)
         }
@@ -168,11 +168,11 @@ enum ManifestRunner {
 
     private static func scriptOutput(_ output: ProcessRunner.Output) -> Result<String, PluginRunError> {
         if output.timedOut {
-            return .failure(PluginRunError("运行超时"))
+            return .failure(PluginRunError(String(localized: "运行超时")))
         }
         guard output.status == 0 else {
             let message = output.stderr.trimmingCharacters(in: .whitespacesAndNewlines)
-            return .failure(PluginRunError(message.isEmpty ? "脚本退出码 \(output.status)" : String(message.prefix(500))))
+            return .failure(PluginRunError(message.isEmpty ? String(localized: "脚本退出码 \(output.status)") : String(message.prefix(500))))
         }
         return .success(trimTrailingNewlines(output.stdout))
     }
@@ -186,7 +186,7 @@ enum ManifestRunner {
             try fileManager.createDirectory(at: directory, withIntermediateDirectories: true)
             try Data(input.text.utf8).write(to: inputURL)
         } catch {
-            return .failure(PluginRunError("无法准备输入：\(error.localizedDescription)"))
+            return .failure(PluginRunError(String(localized: "无法准备输入：\(error.localizedDescription)")))
         }
         defer { try? fileManager.removeItem(at: directory) }
 
@@ -203,11 +203,11 @@ enum ManifestRunner {
             return .failure(error)
         case .success(let output):
             if output.timedOut {
-                return .failure(PluginRunError("快捷指令运行超时"))
+                return .failure(PluginRunError(String(localized: "快捷指令运行超时")))
             }
             guard output.status == 0 else {
                 let message = output.stderr.trimmingCharacters(in: .whitespacesAndNewlines)
-                return .failure(PluginRunError(message.isEmpty ? "快捷指令「\(name)」运行失败" : String(message.prefix(500))))
+                return .failure(PluginRunError(message.isEmpty ? String(localized: "快捷指令「\(name)」运行失败") : String(message.prefix(500))))
             }
             let text = (try? String(contentsOf: outputURL, encoding: .utf8)) ?? output.stdout
             return .success(trimTrailingNewlines(text))
@@ -276,7 +276,7 @@ enum ProcessRunner {
         do {
             try process.run()
         } catch {
-            return .failure(PluginRunError("无法运行 \(executable.lastPathComponent)：\(error.localizedDescription)"))
+            return .failure(PluginRunError(String(localized: "无法运行 \(executable.lastPathComponent)：\(error.localizedDescription)")))
         }
 
         let stdoutBox = DataBox()
@@ -366,7 +366,7 @@ enum JavaScriptRunner {
             }
             // 兜底：万一没能设置执行时间上限，也不让调用方一直等下去
             DispatchQueue.global().asyncAfter(deadline: .now() + timeout + 1) {
-                once.resume(.failure(PluginRunError("运行超时")))
+                once.resume(.failure(PluginRunError(String(localized: "运行超时"))))
             }
         }
     }
@@ -384,7 +384,7 @@ enum JavaScriptRunner {
 
     static func runSync(_ source: String, input: ManifestRunner.Input, timeout: TimeInterval) -> Result<String, PluginRunError> {
         guard let context = JSContext() else {
-            return .failure(PluginRunError("无法创建 JavaScript 运行环境"))
+            return .failure(PluginRunError(String(localized: "无法创建 JavaScript 运行环境")))
         }
         setExecutionTimeLimit(context, seconds: timeout)
 
@@ -429,9 +429,9 @@ enum JavaScriptRunner {
     }
 
     private static func describe(_ exception: JSValue) -> String {
-        let message = exception.toString() ?? "未知错误"
+        let message = exception.toString() ?? String(localized: "未知错误")
         if let line = exception.objectForKeyedSubscript("line"), line.isNumber {
-            return "第 \(line.toInt32()) 行：\(message)"
+            return String(localized: "第 \(Int(line.toInt32())) 行：\(message)")
         }
         return message
     }

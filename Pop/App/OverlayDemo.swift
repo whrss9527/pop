@@ -169,8 +169,7 @@ enum OverlayDemo {
             let diff = TextDiff.compare("长按右键唤起圆盘\n松开就执行\n支持 50 多个功能",
                                         "长按右键弹出圆盘\n松开就执行\n支持 60 多个功能\n还可以写自己的插件")
             overlay.showCard(ResultCardView(card: ResultCard(title: "文本对比",
-                                                             detail: "剪贴板 → 选中的文字：删去 \(diff.removedCount) 行，"
-                                                                 + "新增 \(diff.addedCount) 行",
+                                                             detail: "剪贴板 → 选中的文字：删去 \(diff.removedCount) 行，新增 \(diff.addedCount) 行",
                                                              copyText: diff.unifiedText, diff: diff),
                                             onAction: { _ in }, onMore: {}, onClose: {}),
                              anchor: center)
@@ -215,8 +214,7 @@ enum OverlayDemo {
 
             // 提取信息卡片
             await pause(1.4 * unit)
-            let notice = "联系 pop@example.com，电话 138-1234-5678；下载 https://github.com/whrss9527/pop/releases，"
-                + "文档在 www.example.com；测试机 192.168.1.20:8080，备用 support@example.com"
+            let notice = "联系 pop@example.com，电话 138-1234-5678；下载 https://github.com/whrss9527/pop/releases，文档在 www.example.com；测试机 192.168.1.20:8080，备用 support@example.com"
             overlay.showCard(ResultCardView(card: InfoExtractor.card(for: InfoExtractor.extract(notice)),
                                             onAction: { _ in }, onMore: {}, onClose: {}),
                              anchor: center)
@@ -237,9 +235,7 @@ enum OverlayDemo {
 
             // 网页内容转成 Markdown
             await pause(1.4 * unit)
-            let html = "<h2>发布说明</h2><p>这一版加了<strong>提取信息</strong>和<a href=\"https://github.com/whrss9527/pop\">JSON 转代码</a>。</p>"
-                + "<ul><li>支持 <code>HTML</code> 和 RTF</li><li>表格也能转</li></ul>"
-                + "<table><tr><th>功能</th><th>分类</th></tr><tr><td>按行处理</td><td>文字</td></tr></table>"
+            let html = "<h2>发布说明</h2><p>这一版加了<strong>提取信息</strong>和<a href=\"https://github.com/whrss9527/pop\">JSON 转代码</a>。</p><ul><li>支持 <code>HTML</code> 和 RTF</li><li>表格也能转</li></ul><table><tr><th>功能</th><th>分类</th></tr><tr><td>按行处理</td><td>文字</td></tr></table>"
             if let converted = HTMLToMarkdown.convert(html) {
                 overlay.showCard(ResultCardView(card: ResultCard(title: "转成 Markdown", body: converted, monospaced: true,
                                                                  copyText: converted),
@@ -251,7 +247,7 @@ enum OverlayDemo {
             // 正则测试卡片：用「日期」表达式找出日期，替换成日/月/年
             await pause(1.4 * unit)
             let notes = "0.10.0 发布于 2026-09-29，0.9.0 发布于 2026-09-28。\n下一版计划在 2026-10-08 之前发布。"
-            let regex = RegexTesterModel(text: notes, pattern: RegexTester.presets.first { $0.title == "日期" }?.pattern ?? "")
+            let regex = RegexTesterModel(text: notes, pattern: RegexTester.presets.first { $0.title == String(localized: "日期") }?.pattern ?? "")
             regex.replacement = "$3/$2/$1"
             overlay.showCard(RegexTesterView(model: regex, canReplace: true, onAction: { _ in }, onClose: {}), anchor: center)
             step("regex")

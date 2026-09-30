@@ -11,6 +11,11 @@ enum Localization {
         Bundle.main.preferredLocalizations.first?.hasPrefix("zh") ?? true
     }
 
+    /// 格式化日期、星期、「3 天前」这类文字用的区域：中文界面固定用 zh_CN，其他跟着系统
+    static var locale: Locale {
+        isChinese ? Locale(identifier: "zh_CN") : Locale.current
+    }
+
     /// 列举几项时的分隔符：中文是「、」，英文是「, 」
     static var listSeparator: String {
         String(localized: "、", comment: "列举几项时的分隔符")

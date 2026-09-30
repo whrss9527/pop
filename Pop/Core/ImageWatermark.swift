@@ -11,7 +11,7 @@ enum ImageWatermark {
         let message: String
     }
 
-    static let defaultText = "仅供办理业务使用，他用无效"
+    static let defaultText = String(localized: "仅供办理业务使用，他用无效")
     /// 上次用的水印文字存在这里
     static let textKey = "watermarkText"
 
@@ -76,21 +76,21 @@ enum ImageWatermark {
     static func watermark(_ url: URL, text: String, opacity: Double) throws -> URL {
         guard let source = CGImageSourceCreateWithURL(url as CFURL, nil), CGImageSourceGetCount(source) > 0,
               let image = ImageConverter.uprightImage(source) else {
-            throw Failure(message: "读不了「\(url.lastPathComponent)」")
+            throw Failure(message: String(localized: "读不了「\(url.lastPathComponent)」"))
         }
-        guard let marked = apply(image, text: text, opacity: opacity) else { throw Failure(message: "「\(url.lastPathComponent)」加水印失败") }
+        guard let marked = apply(image, text: text, opacity: opacity) else { throw Failure(message: String(localized: "「\(url.lastPathComponent)」加水印失败")) }
         let sourceType = (CGImageSourceGetType(source) as String?).flatMap { UTType($0) } ?? .png
         let photo = sourceType.conforms(to: .jpeg) || sourceType.conforms(to: .heic) || sourceType.conforms(to: .heif)
         let type: UTType = photo ? .jpeg : .png
         let output = FileNames.available(in: url.deletingLastPathComponent(),
-                                         base: url.deletingPathExtension().lastPathComponent + " 水印", extension: photo ? "jpg" : "png")
+                                         base: url.deletingPathExtension().lastPathComponent + String(localized: " 水印"), extension: photo ? "jpg" : "png")
         guard let destination = CGImageDestinationCreateWithURL(output as CFURL, type.identifier as CFString, 1, nil) else {
-            throw Failure(message: "存储「\(output.lastPathComponent)」失败")
+            throw Failure(message: String(localized: "存储「\(output.lastPathComponent)」失败"))
         }
         CGImageDestinationAddImage(destination, marked, [kCGImageDestinationLossyCompressionQuality: 0.92] as CFDictionary)
         guard CGImageDestinationFinalize(destination) else {
             try? FileManager.default.removeItem(at: output)
-            throw Failure(message: "存储「\(output.lastPathComponent)」失败")
+            throw Failure(message: String(localized: "存储「\(output.lastPathComponent)」失败"))
         }
         return output
     }

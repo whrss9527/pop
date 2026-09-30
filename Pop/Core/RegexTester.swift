@@ -42,7 +42,7 @@ enum RegexTester {
     static func run(_ pattern: String, on text: String, options: Options = Options()) -> Result {
         guard !pattern.isEmpty else { return Result() }
         guard let regex = try? NSRegularExpression(pattern: pattern, options: options.regexOptions) else {
-            return Result(error: "表达式写得不对：括号、方括号是否成对，转义是否完整？")
+            return Result(error: String(localized: "表达式写得不对：括号、方括号是否成对，转义是否完整？"))
         }
         let names = groupNames(in: pattern, count: regex.numberOfCaptureGroups)
         let string = text as NSString
@@ -50,7 +50,7 @@ enum RegexTester {
         let started = Date()
         regex.enumerateMatches(in: text, options: [.reportProgress], range: NSRange(location: 0, length: string.length)) { match, _, stop in
             if Date().timeIntervalSince(started) > timeLimit {
-                result.error = "匹配太久被停下了，表达式里可能有嵌套的重复（比如 (a+)+）"
+                result.error = String(localized: "匹配太久被停下了，表达式里可能有嵌套的重复（比如 (a+)+）")
                 stop.pointee = true
                 return
             }
@@ -123,24 +123,24 @@ enum RegexTester {
 
     /// 常用的表达式，卡片上的「常用」菜单
     static let presets: [Preset] = [
-        Preset(title: "数字", pattern: #"-?\d+(?:\.\d+)?"#),
-        Preset(title: "中文", pattern: #"\p{Han}+"#),
-        Preset(title: "英文单词", pattern: #"\b[A-Za-z]+(?:'[A-Za-z]+)?\b"#),
-        Preset(title: "邮箱", pattern: #"[\w.%+-]+@[\w-]+(?:\.[\w-]+)+"#),
-        Preset(title: "手机号", pattern: #"(?<!\d)1[3-9]\d{9}(?!\d)"#),
-        Preset(title: "网址", pattern: #"https?://[^\s"'<>，。）]+"#),
-        Preset(title: "IP 地址", pattern: #"\b(?:\d{1,3}\.){3}\d{1,3}\b"#),
-        Preset(title: "日期", pattern: #"(?<year>\d{4})[-/.](?<month>\d{1,2})[-/.](?<day>\d{1,2})"#),
-        Preset(title: "空行", pattern: #"^[ \t]*$\n?"#),
-        Preset(title: "行首尾空白", pattern: #"^[ \t]+|[ \t]+$"#),
+        Preset(title: String(localized: "数字"), pattern: #"-?\d+(?:\.\d+)?"#),
+        Preset(title: String(localized: "中文"), pattern: #"\p{Han}+"#),
+        Preset(title: String(localized: "英文单词"), pattern: #"\b[A-Za-z]+(?:'[A-Za-z]+)?\b"#),
+        Preset(title: String(localized: "邮箱"), pattern: #"[\w.%+-]+@[\w-]+(?:\.[\w-]+)+"#),
+        Preset(title: String(localized: "手机号"), pattern: #"(?<!\d)1[3-9]\d{9}(?!\d)"#),
+        Preset(title: String(localized: "网址"), pattern: #"https?://[^\s"'<>，。）]+"#),
+        Preset(title: String(localized: "IP 地址"), pattern: #"\b(?:\d{1,3}\.){3}\d{1,3}\b"#),
+        Preset(title: String(localized: "日期"), pattern: #"(?<year>\d{4})[-/.](?<month>\d{1,2})[-/.](?<day>\d{1,2})"#),
+        Preset(title: String(localized: "空行"), pattern: #"^[ \t]*$\n?"#),
+        Preset(title: String(localized: "行首尾空白"), pattern: #"^[ \t]+|[ \t]+$"#),
     ]
 
     /// 匹配列表里的一行：「2026-09-29 · year = 2026 · $2 = 09」
     static func describe(_ match: Match) -> String {
-        var parts = ["\(match.text.isEmpty ? "（空）" : match.text)"]
+        var parts = [match.text.isEmpty ? String(localized: "（空）") : match.text]
         for (offset, group) in match.groups.enumerated() {
             let name = match.groupNames.indices.contains(offset) ? match.groupNames[offset] : nil
-            parts.append("\(name ?? "$\(offset + 1)") = \(group ?? "（未参与）")")
+            parts.append("\(name ?? "$\(offset + 1)") = \(group ?? String(localized: "（未参与）"))")
         }
         return parts.joined(separator: " · ")
     }

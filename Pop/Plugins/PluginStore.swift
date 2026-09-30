@@ -69,7 +69,7 @@ final class PluginStore: ObservableObject {
             let fileName = url.lastPathComponent
             guard let data = try? Data(contentsOf: url),
                   var manifest = try? decoder.decode(PluginManifest.self, from: data) else {
-                result.errors[fileName] = "不是有效的插件文件"
+                result.errors[fileName] = String(localized: "不是有效的插件文件")
                 continue
             }
             // 手写的文件可以不写 ID 和名称，用文件名代替
@@ -81,11 +81,12 @@ final class PluginStore: ObservableObject {
                 manifest.name = baseName
             }
             guard PluginManifest.isValidID(manifest.id), !BuiltinPluginID.all.contains(manifest.id) else {
-                result.errors[fileName] = "插件 ID「\(manifest.id)」无效，只能包含字母、数字、点、横线和下划线，也不能和内置功能重名"
+                result.errors[fileName] = String(localized: "插件 ID「\(manifest.id)」无效，只能包含字母、数字、点、横线和下划线，也不能和内置功能重名")
                 continue
             }
             guard result.files[manifest.id] == nil else {
-                result.errors[fileName] = "和 \(result.files[manifest.id]?.lastPathComponent ?? "其他文件") 的插件 ID 重复"
+                let other = result.files[manifest.id]?.lastPathComponent ?? String(localized: "其他文件")
+                result.errors[fileName] = String(localized: "和 \(other) 的插件 ID 重复")
                 continue
             }
             result.files[manifest.id] = url
@@ -119,7 +120,7 @@ final class PluginStore: ObservableObject {
             throw PluginStoreError(problem)
         }
         guard PluginManifest.isValidID(manifest.id), !BuiltinPluginID.all.contains(manifest.id) else {
-            throw PluginStoreError("插件 ID 无效")
+            throw PluginStoreError(String(localized: "插件 ID 无效"))
         }
         var updated = manifest.normalized()
         updated.modifiedAt = PluginManifest.timestamp()
@@ -149,7 +150,7 @@ final class PluginStore: ObservableObject {
     func importFile(at url: URL) throws -> PluginManifest {
         let data = try Data(contentsOf: url)
         guard var manifest = try? PluginManifest.makeDecoder().decode(PluginManifest.self, from: data) else {
-            throw PluginStoreError("「\(url.lastPathComponent)」不是有效的插件文件")
+            throw PluginStoreError(String(localized: "「\(url.lastPathComponent)」不是有效的插件文件"))
         }
         if manifest.name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
             manifest.name = url.deletingPathExtension().lastPathComponent

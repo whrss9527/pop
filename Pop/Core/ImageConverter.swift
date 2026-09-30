@@ -20,16 +20,16 @@ enum ImageConverter {
 
         var title: String {
             switch self {
-            case .png: return "转成 PNG"
-            case .jpeg: return "转成 JPEG"
-            case .heic: return "转成 HEIC"
-            case .halfSize: return "缩小一半"
-            case .compress: return "压缩"
-            case .rotateLeft: return "向左转"
-            case .rotateRight: return "向右转"
-            case .flipHorizontal: return "左右翻转"
-            case .removeLocation: return "去掉位置信息"
-            case .removeMetadata: return "去掉拍摄信息"
+            case .png: return String(localized: "转成 PNG")
+            case .jpeg: return String(localized: "转成 JPEG")
+            case .heic: return String(localized: "转成 HEIC")
+            case .halfSize: return String(localized: "缩小一半")
+            case .compress: return String(localized: "压缩")
+            case .rotateLeft: return String(localized: "向左转")
+            case .rotateRight: return String(localized: "向右转")
+            case .flipHorizontal: return String(localized: "左右翻转")
+            case .removeLocation: return String(localized: "去掉位置信息")
+            case .removeMetadata: return String(localized: "去掉拍摄信息")
             }
         }
     }
@@ -41,7 +41,7 @@ enum ImageConverter {
     /// 转换一张图片，返回新文件的位置
     static func convert(_ url: URL, _ operation: Operation) throws -> URL {
         guard let source = CGImageSourceCreateWithURL(url as CFURL, nil), CGImageSourceGetCount(source) > 0 else {
-            throw Failure(message: "读不了「\(url.lastPathComponent)」")
+            throw Failure(message: String(localized: "读不了「\(url.lastPathComponent)」"))
         }
         if operation == .removeLocation || operation == .removeMetadata {
             return try removingMetadata(url, source: source, operation: operation)
@@ -76,15 +76,15 @@ enum ImageConverter {
         case .removeLocation, .removeMetadata:
             return url
         }
-        guard let image else { throw Failure(message: "读不了「\(url.lastPathComponent)」") }
+        guard let image else { throw Failure(message: String(localized: "读不了「\(url.lastPathComponent)」")) }
         let output = outputURL(for: url, operation: operation, type: type)
         guard let destination = CGImageDestinationCreateWithURL(output as CFURL, type.identifier as CFString, 1, nil) else {
-            throw Failure(message: "这台 Mac 不支持存成 \(type.preferredFilenameExtension?.uppercased() ?? "这种格式")")
+            throw Failure(message: String(localized: "这台 Mac 不支持存成 \(type.preferredFilenameExtension?.uppercased() ?? String(localized: "这种格式"))"))
         }
         CGImageDestinationAddImage(destination, image, properties as CFDictionary)
         guard CGImageDestinationFinalize(destination) else {
             try? FileManager.default.removeItem(at: output)
-            throw Failure(message: "存储「\(output.lastPathComponent)」失败")
+            throw Failure(message: String(localized: "存储「\(output.lastPathComponent)」失败"))
         }
         return output
     }
@@ -165,11 +165,11 @@ enum ImageConverter {
 
         // 这种格式不能原样拷贝：重新存一份
         guard let destination = CGImageDestinationCreateWithURL(output as CFURL, type.identifier as CFString, 1, nil) else {
-            throw Failure(message: "这台 Mac 不支持存成 \(type.preferredFilenameExtension?.uppercased() ?? "这种格式")")
+            throw Failure(message: String(localized: "这台 Mac 不支持存成 \(type.preferredFilenameExtension?.uppercased() ?? String(localized: "这种格式"))"))
         }
         if removeAll {
             // 画面按方向摆正后重新画一份，不带任何拍摄信息
-            guard let image = uprightImage(source) else { throw Failure(message: "读不了「\(url.lastPathComponent)」") }
+            guard let image = uprightImage(source) else { throw Failure(message: String(localized: "读不了「\(url.lastPathComponent)」")) }
             CGImageDestinationAddImage(destination, image, [kCGImageDestinationLossyCompressionQuality: 0.95] as CFDictionary)
         } else {
             let changes: [CFString: Any] = [kCGImagePropertyGPSDictionary: kCFNull as Any,
@@ -179,7 +179,7 @@ enum ImageConverter {
         }
         guard CGImageDestinationFinalize(destination), cleaned(keepingTheRest: false) else {
             try? FileManager.default.removeItem(at: output)
-            throw Failure(message: removeAll ? "没能去掉「\(url.lastPathComponent)」的拍摄信息" : "没能去掉「\(url.lastPathComponent)」的位置信息")
+            throw Failure(message: removeAll ? String(localized: "没能去掉「\(url.lastPathComponent)」的拍摄信息") : String(localized: "没能去掉「\(url.lastPathComponent)」的位置信息"))
         }
         return output
     }
@@ -232,13 +232,13 @@ enum ImageConverter {
         let ext = type == .jpeg ? "jpg" : (type.preferredFilenameExtension ?? url.pathExtension)
         var name = base
         switch operation {
-        case .halfSize: name += " 缩小"
-        case .compress: name += " 压缩"
-        case .rotateLeft: name += " 向左转"
-        case .rotateRight: name += " 向右转"
-        case .flipHorizontal: name += " 翻转"
-        case .removeLocation: name += " 无位置"
-        case .removeMetadata: name += " 无拍摄信息"
+        case .halfSize: name += String(localized: " 缩小")
+        case .compress: name += String(localized: " 压缩")
+        case .rotateLeft: name += String(localized: " 向左转")
+        case .rotateRight: name += String(localized: " 向右转")
+        case .flipHorizontal: name += String(localized: " 翻转")
+        case .removeLocation: name += String(localized: " 无位置")
+        case .removeMetadata: name += String(localized: " 无拍摄信息")
         case .png, .jpeg, .heic: break
         }
         var candidate = folder.appending(path: "\(name).\(ext)")

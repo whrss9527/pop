@@ -28,7 +28,8 @@ RESOURCES = os.path.join(ROOT, "Pop", "Resources")
 LANGUAGES = ["zh-Hans", "en"]
 TABLES = ["Localizable", "InfoPlist"]
 HAN = re.compile(r"[\u3400-\u9fff]")
-FORMAT = re.compile(r"%(?:(\d+)\$)?[-+ 0#]*\d*(?:\.\d+)?(hh|h|ll|l|q|z|t|j|L)?([@dDiuUxXoOfeEgGcCsSpaA%])")
+FORMAT = re.compile(r"%(?:(\d+)\$)?[-+0#]*\d*(?:\.\d+)?(hh|h|ll|l|q|z|t|j|L)?([@dDiuUxXoOfeEgGcCsSp%])")
+HAN_RUN = re.compile(r"[\u3400-\u9fff]+")
 
 
 class StringsError(Exception):
@@ -113,7 +114,7 @@ def placeholders(s):
         # %lld 和 %ld、%d 都是整数；%lf 和 %f 都是浮点数
         if kind in "dDiuUxXoO":
             kind = "int"
-        elif kind in "feEgGaA":
+        elif kind in "feEgG":
             kind = "float"
         result.append((position, kind))
     return sorted(result)
@@ -200,7 +201,8 @@ def main():
                     errors.append(f"{table}: 占位符不一致 {key!r}：zh-Hans {zh[key]!r}，en {en[key]!r}")
                 if table == "Localizable" and placeholders(key) != placeholders(en[key]):
                     errors.append(f"{table}: 译文和 key 的占位符不一致 {key!r}：{en[key]!r}")
-                if HAN.search(en[key]):
+                # 英文里可以原样引用 key 里的中文（比如文件名「Pop 收集箱.md」、要识别的中文说法），别的中文不行
+                if any(run not in key for run in HAN_RUN.findall(en[key])):
                     errors.append(f"{table}: 英文翻译里还有中文 {key!r}：{en[key]!r}")
 
     localizable = tables.get("Localizable", {}).get("en", {})

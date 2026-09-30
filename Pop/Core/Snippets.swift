@@ -62,7 +62,7 @@ enum SnippetExpander {
             return formatter.string(from: date)
         }
         let weekday = DateFormatter()
-        weekday.locale = Locale(identifier: "zh_CN")
+        weekday.locale = Localization.locale
         weekday.timeZone = timeZone
         weekday.dateFormat = "EEEE"
         return text

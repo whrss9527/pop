@@ -75,14 +75,14 @@ struct PhotoMetadata: Equatable {
     /// 结果卡片里的几行
     var rows: [ResultCard.Row] {
         var rows: [ResultCard.Row] = []
-        if let camera { rows.append(ResultCard.Row(label: "相机", value: camera)) }
-        if let lens { rows.append(ResultCard.Row(label: "镜头", value: lens)) }
-        if let exposure { rows.append(ResultCard.Row(label: "拍摄参数", value: exposure)) }
-        if let taken { rows.append(ResultCard.Row(label: "拍摄时间", value: taken)) }
+        if let camera { rows.append(ResultCard.Row(label: String(localized: "相机"), value: camera)) }
+        if let lens { rows.append(ResultCard.Row(label: String(localized: "镜头"), value: lens)) }
+        if let exposure { rows.append(ResultCard.Row(label: String(localized: "拍摄参数"), value: exposure)) }
+        if let taken { rows.append(ResultCard.Row(label: String(localized: "拍摄时间"), value: taken)) }
         if let latitude, let longitude {
-            rows.append(ResultCard.Row(label: "拍摄地点", value: Self.coordinates(latitude: latitude, longitude: longitude)))
+            rows.append(ResultCard.Row(label: String(localized: "拍摄地点"), value: Self.coordinates(latitude: latitude, longitude: longitude)))
             if let altitude {
-                rows.append(ResultCard.Row(label: "海拔", value: "\(Int(altitude.rounded())) 米"))
+                rows.append(ResultCard.Row(label: String(localized: "海拔"), value: String(localized: "\(Int(altitude.rounded())) 米")))
             }
         }
         return rows
@@ -94,7 +94,7 @@ struct PhotoMetadata: Equatable {
         var components = URLComponents(string: "https://maps.apple.com/")
         components?.queryItems = [
             URLQueryItem(name: "ll", value: String(format: "%.6f,%.6f", latitude, longitude)),
-            URLQueryItem(name: "q", value: "照片拍摄地点"),
+            URLQueryItem(name: "q", value: String(localized: "照片拍摄地点")),
         ]
         return components?.url
     }
@@ -121,11 +121,11 @@ struct PhotoMetadata: Equatable {
         case let (actual?, equivalent?):
             let actualText = trimmed(actual)
             let equivalentText = trimmed(equivalent, digits: 0)
-            return actualText == equivalentText ? "\(actualText) mm" : "\(actualText) mm（等效 \(equivalentText) mm）"
+            return actualText == equivalentText ? "\(actualText) mm" : String(localized: "\(actualText) mm（等效 \(equivalentText) mm）")
         case let (actual?, nil):
             return "\(trimmed(actual)) mm"
         case let (nil, equivalent?):
-            return "等效 \(trimmed(equivalent, digits: 0)) mm"
+            return String(localized: "等效 \(trimmed(equivalent, digits: 0)) mm")
         case (nil, nil):
             return nil
         }
@@ -134,15 +134,18 @@ struct PhotoMetadata: Equatable {
     /// 快门：不到一秒写成 1/120 秒
     static func shutter(_ seconds: Double) -> String {
         if seconds < 1 {
-            return "1/\(Int((1 / seconds).rounded())) 秒"
+            return String(localized: "1/\(Int((1 / seconds).rounded())) 秒")
         }
-        return "\(trimmed(seconds)) 秒"
+        return String(localized: "\(trimmed(seconds)) 秒")
     }
 
     /// 北纬 31.23040°，东经 121.47370°
     static func coordinates(latitude: Double, longitude: Double) -> String {
         let north = String(format: "%.5f°", abs(latitude))
         let east = String(format: "%.5f°", abs(longitude))
+        guard Localization.isChinese else {
+            return "\(north) \(latitude < 0 ? "S" : "N"), \(east) \(longitude < 0 ? "W" : "E")"
+        }
         return "\(latitude < 0 ? "南纬" : "北纬") \(north)，\(longitude < 0 ? "西经" : "东经") \(east)"
     }
 

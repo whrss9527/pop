@@ -23,12 +23,12 @@ enum NumberStats {
         var rows: [ResultCard.Row] {
             let precise = min(decimals + 2, 6)
             return [
-                ResultCard.Row(label: "合计", value: NumberStats.format(sum, decimals: decimals)),
-                ResultCard.Row(label: "平均", value: NumberStats.format(average, decimals: precise)),
-                ResultCard.Row(label: "中位数", value: NumberStats.format(median, decimals: precise)),
-                ResultCard.Row(label: "最大", value: NumberStats.format(maximum, decimals: decimals)),
-                ResultCard.Row(label: "最小", value: NumberStats.format(minimum, decimals: decimals)),
-                ResultCard.Row(label: "个数", value: "\(count)"),
+                ResultCard.Row(label: String(localized: "合计"), value: NumberStats.format(sum, decimals: decimals)),
+                ResultCard.Row(label: String(localized: "平均"), value: NumberStats.format(average, decimals: precise)),
+                ResultCard.Row(label: String(localized: "中位数"), value: NumberStats.format(median, decimals: precise)),
+                ResultCard.Row(label: String(localized: "最大"), value: NumberStats.format(maximum, decimals: decimals)),
+                ResultCard.Row(label: String(localized: "最小"), value: NumberStats.format(minimum, decimals: decimals)),
+                ResultCard.Row(label: String(localized: "个数"), value: "\(count)"),
             ]
         }
     }

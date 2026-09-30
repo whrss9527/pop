@@ -50,15 +50,16 @@ enum ColorContrast {
     static func verdict(_ ratio: Double, large: Bool) -> String {
         let aa = ratio >= (large ? 3 : 4.5)
         let aaa = ratio >= (large ? 4.5 : 7)
-        return "AA \(aa ? "通过" : "不通过") · AAA \(aaa ? "通过" : "不通过")"
+        let pass = String(localized: "通过"), fail = String(localized: "不通过")
+        return "AA \(aa ? pass : fail) · AAA \(aaa ? pass : fail)"
     }
 
     static func rows(_ foreground: ColorValue, _ background: ColorValue) -> [ResultCard.Row] {
         let value = ratio(foreground, background)
         return [
-            ResultCard.Row(label: "对比度", value: format(value)),
-            ResultCard.Row(label: "普通文字", value: verdict(value, large: false)),
-            ResultCard.Row(label: "大号文字", value: verdict(value, large: true)),
+            ResultCard.Row(label: String(localized: "对比度"), value: format(value)),
+            ResultCard.Row(label: String(localized: "普通文字"), value: verdict(value, large: false)),
+            ResultCard.Row(label: String(localized: "大号文字"), value: verdict(value, large: true)),
         ]
     }
 
@@ -66,6 +67,6 @@ enum ColorContrast {
     static func summary(for color: ColorValue) -> String {
         let white = ColorValue(red: 255, green: 255, blue: 255)
         let black = ColorValue(red: 0, green: 0, blue: 0)
-        return "对白色 \(format(ratio(color, white)))，对黑色 \(format(ratio(color, black)))"
+        return String(localized: "对白色 \(format(ratio(color, white)))，对黑色 \(format(ratio(color, black)))")
     }
 }

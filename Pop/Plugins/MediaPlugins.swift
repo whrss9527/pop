@@ -23,7 +23,7 @@ enum TextRecognizer {
             do {
                 return .success(try recognizeLines(in: image))
             } catch {
-                return .failure(PluginRunError("文字识别失败：\(error.localizedDescription)"))
+                return .failure(PluginRunError(String(localized: "文字识别失败：\(error.localizedDescription)")))
             }
         }
     }
@@ -42,18 +42,18 @@ enum TextRecognizer {
 
     /// 识别结果卡片：可以复制，也可以接着翻译。
     static func card(title: String, text: String) -> ResultCard {
-        var buttons = [CardButton(title: "翻译", action: .translate(text))]
+        var buttons = [CardButton(title: String(localized: "翻译"), action: .translate(text))]
         // 识别出来的文字按图片里的样子断行，接成整段更好贴进文档
         if let joined = TextCleanup.joinLines(text), joined != text {
-            buttons.append(CardButton(title: "合并换行后复制", action: .copy(joined)))
+            buttons.append(CardButton(title: String(localized: "合并换行后复制"), action: .copy(joined)))
         }
         return ResultCard(title: title, body: text, copyText: text, buttons: buttons)
     }
 }
 
 struct OCRPlugin: PopPlugin {
-    let info = PluginInfo(id: BuiltinPluginID.ocr, name: "识别文字", symbol: "text.viewfinder",
-                          summary: "识别选中图片里的文字（离线）", accepts: [.image, .imageFile])
+    let info = PluginInfo(id: BuiltinPluginID.ocr, name: String(localized: "识别文字"), symbol: "text.viewfinder",
+                          summary: String(localized: "识别选中图片里的文字（离线）"), accepts: [.image, .imageFile])
 
     @MainActor func run(_ content: ClassifiedContent, context: PluginContext) async -> PluginOutcome {
         let image: CGImage?
@@ -64,11 +64,11 @@ struct OCRPlugin: PopPlugin {
         } else {
             image = nil
         }
-        guard let image else { return .failure("无法读取图片") }
+        guard let image else { return .failure(String(localized: "无法读取图片")) }
         switch await TextRecognizer.recognize(image) {
         case .success(let text):
-            guard !text.isEmpty else { return .failure("图片里没有识别到文字") }
-            return .card(TextRecognizer.card(title: "识别文字", text: text))
+            guard !text.isEmpty else { return .failure(String(localized: "图片里没有识别到文字")) }
+            return .card(TextRecognizer.card(title: String(localized: "识别文字"), text: text))
         case .failure(let error):
             return .failure(error.message)
         }
@@ -98,7 +98,7 @@ enum ScreenCapture {
         case failed(String)
     }
 
-    static let noTextHint = "没有识别到文字。如果截到的只有桌面背景，请在「系统设置 → 隐私与安全性 → 录屏与系统录音」里允许 Pop。"
+    static let noTextHint = String(localized: "没有识别到文字。如果截到的只有桌面背景，请在「系统设置 → 隐私与安全性 → 录屏与系统录音」里允许 Pop。")
 
     static func selectRegion() async -> Outcome {
         if !CGPreflightScreenCaptureAccess() {
@@ -115,7 +115,7 @@ enum ScreenCapture {
         }
         // 按 Esc 取消了截图：没有生成文件
         guard let png = try? Data(contentsOf: url) else { return .cancelled }
-        guard let image = TextRecognizer.cgImage(from: png) else { return .failed("无法读取截图") }
+        guard let image = TextRecognizer.cgImage(from: png) else { return .failed(String(localized: "无法读取截图")) }
         return .captured(Capture(image: image, png: png))
     }
 
@@ -138,8 +138,8 @@ enum ScreenCapture {
 }
 
 struct ScreenshotOCRPlugin: PopPlugin {
-    let info = PluginInfo(id: BuiltinPluginID.screenshotOCR, name: "截图识字", symbol: "viewfinder",
-                          summary: "框选屏幕上的一块区域，识别里面的文字", accepts: [], hidesOverlay: true)
+    let info = PluginInfo(id: BuiltinPluginID.screenshotOCR, name: String(localized: "截图识字"), symbol: "viewfinder",
+                          summary: String(localized: "框选屏幕上的一块区域，识别里面的文字"), accepts: [], hidesOverlay: true)
 
     @MainActor func run(_ content: ClassifiedContent, context: PluginContext) async -> PluginOutcome {
         switch await ScreenCapture.recognizeRegion() {
@@ -148,14 +148,14 @@ struct ScreenshotOCRPlugin: PopPlugin {
         case .failed(let message):
             return .failure(message)
         case .text(let text):
-            return .card(TextRecognizer.card(title: "截图识字", text: text))
+            return .card(TextRecognizer.card(title: String(localized: "截图识字"), text: text))
         }
     }
 }
 
 struct ScreenshotTranslatePlugin: PopPlugin {
-    let info = PluginInfo(id: BuiltinPluginID.screenshotTranslate, name: "截图翻译", symbol: "translate",
-                          summary: "框选屏幕上的一块区域，识别里面的文字并翻译（离线）", accepts: [], hidesOverlay: true)
+    let info = PluginInfo(id: BuiltinPluginID.screenshotTranslate, name: String(localized: "截图翻译"), symbol: "translate",
+                          summary: String(localized: "框选屏幕上的一块区域，识别里面的文字并翻译（离线）"), accepts: [], hidesOverlay: true)
 
     @MainActor func run(_ content: ClassifiedContent, context: PluginContext) async -> PluginOutcome {
         switch await ScreenCapture.recognizeRegion() {
@@ -174,8 +174,8 @@ struct ScreenshotTranslatePlugin: PopPlugin {
 // MARK: - 截图标注
 
 struct AnnotatePlugin: PopPlugin {
-    let info = PluginInfo(id: BuiltinPluginID.annotate, name: "截图标注", symbol: "pencil.and.outline",
-                          summary: "框选屏幕上的一块区域（或者用选中的图片），画箭头、方框、文字、马赛克、序号，再复制、存储或贴到屏幕上",
+    let info = PluginInfo(id: BuiltinPluginID.annotate, name: String(localized: "截图标注"), symbol: "pencil.and.outline",
+                          summary: String(localized: "框选屏幕上的一块区域（或者用选中的图片），画箭头、方框、文字、马赛克、序号，再复制、存储或贴到屏幕上"),
                           accepts: [], hidesOverlay: true, optionalContent: true)
 
     @MainActor func run(_ content: ClassifiedContent, context: PluginContext) async -> PluginOutcome {
@@ -188,7 +188,7 @@ struct AnnotatePlugin: PopPlugin {
             data = try? Data(contentsOf: url)
         }
         if let data {
-            guard let image = TextRecognizer.cgImage(from: data) else { return .failure("无法读取图片") }
+            guard let image = TextRecognizer.cgImage(from: data) else { return .failure(String(localized: "无法读取图片")) }
             AnnotationWindowController.present(ScreenCapture.Capture(image: image, png: data), near: anchor)
             return .done(toast: nil)
         }
@@ -207,15 +207,15 @@ struct AnnotatePlugin: PopPlugin {
 // MARK: - 贴图
 
 struct PinPlugin: PopPlugin {
-    let info = PluginInfo(id: BuiltinPluginID.pin, name: "贴图", symbol: "pin",
-                          summary: "把选中的图片或文字贴在屏幕最前面；什么都没选中时先框选一块屏幕", accepts: [],
+    let info = PluginInfo(id: BuiltinPluginID.pin, name: String(localized: "贴图"), symbol: "pin",
+                          summary: String(localized: "把选中的图片或文字贴在屏幕最前面；什么都没选中时先框选一块屏幕"), accepts: [],
                           hidesOverlay: true, optionalContent: true)
 
     @MainActor func run(_ content: ClassifiedContent, context: PluginContext) async -> PluginOutcome {
         let board = PinBoard.shared
         let anchor = context.anchor ?? NSEvent.mouseLocation
         if case .image(let data) = content.selection {
-            return board.pin(imageData: data, around: anchor) ? .done(toast: nil) : .failure("无法读取图片")
+            return board.pin(imageData: data, around: anchor) ? .done(toast: nil) : .failure(String(localized: "无法读取图片"))
         }
         if content.kinds.contains(.imageFile) {
             // 选中了几张图片：错开一点依次贴出来
@@ -227,7 +227,7 @@ struct PinPlugin: PopPlugin {
                     pinned += 1
                 }
             }
-            return pinned > 0 ? .done(toast: nil) : .failure("无法读取图片")
+            return pinned > 0 ? .done(toast: nil) : .failure(String(localized: "无法读取图片"))
         }
         if let text = content.text {
             board.pin(text: text, around: anchor)
@@ -257,45 +257,45 @@ enum SubjectLifter {
             do {
                 try handler.perform([request])
                 guard let observation = request.results?.first, !observation.allInstances.isEmpty else {
-                    return .failure(PluginRunError("图片里没有找到可以抠出来的主体"))
+                    return .failure(PluginRunError(String(localized: "图片里没有找到可以抠出来的主体")))
                 }
                 let buffer = try observation.generateMaskedImage(ofInstances: observation.allInstances, from: handler,
                                                                  croppedToInstancesExtent: true)
                 let output = CIImage(cvPixelBuffer: buffer)
                 guard let cgImage = CIContext().createCGImage(output, from: output.extent),
                       let png = NSBitmapImageRep(cgImage: cgImage).representation(using: .png, properties: [:]) else {
-                    return .failure(PluginRunError("无法生成抠好的图片"))
+                    return .failure(PluginRunError(String(localized: "无法生成抠好的图片")))
                 }
                 return .success(png)
             } catch {
-                return .failure(PluginRunError("抠图失败：\(error.localizedDescription)"))
+                return .failure(PluginRunError(String(localized: "抠图失败：\(error.localizedDescription)")))
             }
         }
     }
 }
 
 struct RemoveBackgroundPlugin: PopPlugin {
-    let info = PluginInfo(id: BuiltinPluginID.removeBackground, name: "抠图", symbol: "wand.and.stars",
-                          summary: "去掉选中图片的背景，只留下人、动物或物品（离线）", accepts: [.image, .imageFile])
+    let info = PluginInfo(id: BuiltinPluginID.removeBackground, name: String(localized: "抠图"), symbol: "wand.and.stars",
+                          summary: String(localized: "去掉选中图片的背景，只留下人、动物或物品（离线）"), accepts: [.image, .imageFile])
 
     @MainActor func run(_ content: ClassifiedContent, context: PluginContext) async -> PluginOutcome {
         let image: CGImage?
-        var name = ImageFiles.timestampedName("Pop 抠图")
+        var name = ImageFiles.timestampedName(String(localized: "Pop 抠图"))
         if case .image(let data) = content.selection {
             image = TextRecognizer.cgImage(from: data)
         } else if let url = content.files.first {
             image = TextRecognizer.cgImage(contentsOf: url)
-            name = url.deletingPathExtension().lastPathComponent + " 抠图"
+            name = url.deletingPathExtension().lastPathComponent + String(localized: " 抠图")
         } else {
             image = nil
         }
-        guard let image else { return .failure("无法读取图片") }
+        guard let image else { return .failure(String(localized: "无法读取图片")) }
         switch await SubjectLifter.lift(image) {
         case .success(let png):
-            return .card(ResultCard(title: "抠图", detail: "背景已去掉，复制或存储的 PNG 保留透明", image: png,
-                                    buttons: [CardButton(title: "复制图片", action: .copyImage(png)),
-                                              CardButton(title: "存到「下载」", action: .saveImage(png, name: name)),
-                                              CardButton(title: "贴到屏幕", action: .pinImage(png))]))
+            return .card(ResultCard(title: String(localized: "抠图"), detail: String(localized: "背景已去掉，复制或存储的 PNG 保留透明"), image: png,
+                                    buttons: [CardButton(title: String(localized: "复制图片"), action: .copyImage(png)),
+                                              CardButton(title: String(localized: "存到「下载」"), action: .saveImage(png, name: name)),
+                                              CardButton(title: String(localized: "贴到屏幕"), action: .pinImage(png))]))
         case .failure(let error):
             return .failure(error.message)
         }
@@ -332,8 +332,8 @@ enum ImageFiles {
 // MARK: - 隔空投送
 
 struct AirDropPlugin: PopPlugin {
-    let info = PluginInfo(id: BuiltinPluginID.airDrop, name: "隔空投送", symbol: "dot.radiowaves.left.and.right",
-                          summary: "用隔空投送把选中的文件、图片、链接或文字发到附近的 iPhone、iPad 或 Mac",
+    let info = PluginInfo(id: BuiltinPluginID.airDrop, name: String(localized: "隔空投送"), symbol: "dot.radiowaves.left.and.right",
+                          summary: String(localized: "用隔空投送把选中的文件、图片、链接或文字发到附近的 iPhone、iPad 或 Mac"),
                           accepts: [.text, .files, .image])
 
     @MainActor func run(_ content: ClassifiedContent, context: PluginContext) async -> PluginOutcome {
@@ -347,10 +347,10 @@ struct AirDropPlugin: PopPlugin {
         } else if let text = content.text {
             items = [text]
         } else {
-            return .failure("没有可以发送的内容")
+            return .failure(String(localized: "没有可以发送的内容"))
         }
         guard let service = NSSharingService(named: .sendViaAirDrop), service.canPerform(withItems: items) else {
-            return .failure("现在用不了隔空投送。请确认无线局域网和蓝牙都已打开，「隔空投送」没有被关闭。")
+            return .failure(String(localized: "现在用不了隔空投送。请确认无线局域网和蓝牙都已打开，「隔空投送」没有被关闭。"))
         }
         // 隔空投送的窗口要显示在最前面
         NSApp.activate()
@@ -361,8 +361,8 @@ struct AirDropPlugin: PopPlugin {
 
 /// 传到手机：在局域网里开一个临时网页，手机扫码下载选中的文件，也能把手机里的文件传到 Mac
 struct SendToPhonePlugin: PopPlugin {
-    let info = PluginInfo(id: BuiltinPluginID.sendToPhone, name: "传到手机", symbol: "iphone.radiowaves.left.and.right",
-                          summary: "手机扫码下载选中的文件、图片（文件夹先打包成 zip）或者拿到选中的文字，也能从手机传文件到「下载」文件夹；手机和 Mac 连同一个 Wi-Fi 就行，安卓手机也能用",
+    let info = PluginInfo(id: BuiltinPluginID.sendToPhone, name: String(localized: "传到手机"), symbol: "iphone.radiowaves.left.and.right",
+                          summary: String(localized: "手机扫码下载选中的文件、图片（文件夹先打包成 zip）或者拿到选中的文字，也能从手机传文件到「下载」文件夹；手机和 Mac 连同一个 Wi-Fi 就行，安卓手机也能用"),
                           accepts: [], optionalContent: true)
 
     @MainActor func run(_ content: ClassifiedContent, context: PluginContext) async -> PluginOutcome {
@@ -423,14 +423,14 @@ enum ScreenColorSampler {
 }
 
 struct ColorPickerPlugin: PopPlugin {
-    let info = PluginInfo(id: BuiltinPluginID.colorPicker, name: "屏幕取色", symbol: "eyedropper",
-                          summary: "吸取屏幕上任意位置的颜色，自动复制 HEX 值", accepts: [], hidesOverlay: true)
+    let info = PluginInfo(id: BuiltinPluginID.colorPicker, name: String(localized: "屏幕取色"), symbol: "eyedropper",
+                          summary: String(localized: "吸取屏幕上任意位置的颜色，自动复制 HEX 值"), accepts: [], hidesOverlay: true)
 
     @MainActor func run(_ content: ClassifiedContent, context: PluginContext) async -> PluginOutcome {
         guard case .picked(let picked) = await ScreenColorSampler.pick() else { return .done(toast: nil) }
-        guard let color = picked else { return .failure("无法读取这个颜色") }
+        guard let color = picked else { return .failure(String(localized: "无法读取这个颜色")) }
         PasteboardWriter.copy(color.hexString)
-        return .card(ResultCard(title: "屏幕取色", detail: "已复制 \(color.hexString)",
+        return .card(ResultCard(title: String(localized: "屏幕取色"), detail: String(localized: "已复制 \(color.hexString)"),
                                 rows: color.rows, rowsReplaceable: true, swatchHex: color.hexString))
     }
 }
@@ -470,36 +470,36 @@ enum QRCode {
     static func card(for messages: [String]) -> ResultCard {
         let text = messages.joined(separator: "\n")
         if messages.count == 1, let network = WiFiCode.parse(text) {
-            var rows = [ResultCard.Row(label: "网络名称", value: network.ssid)]
+            var rows = [ResultCard.Row(label: String(localized: "网络名称"), value: network.ssid)]
             if let password = network.password {
-                rows.append(ResultCard.Row(label: "密码", value: password))
+                rows.append(ResultCard.Row(label: String(localized: "密码"), value: password))
             }
-            rows.append(ResultCard.Row(label: "加密方式", value: network.security ?? "无（开放网络）"))
-            return ResultCard(title: "Wi-Fi 二维码", detail: network.hidden ? "这是一个隐藏的网络" : nil, rows: rows)
+            rows.append(ResultCard.Row(label: String(localized: "加密方式"), value: network.security ?? String(localized: "无（开放网络）")))
+            return ResultCard(title: String(localized: "Wi-Fi 二维码"), detail: network.hidden ? String(localized: "这是一个隐藏的网络") : nil, rows: rows)
         }
         var buttons: [CardButton] = []
         if messages.count == 1, let url = URL(string: text), let scheme = url.scheme?.lowercased(), ["http", "https"].contains(scheme) {
-            buttons.append(CardButton(title: "打开链接", action: .open(url)))
+            buttons.append(CardButton(title: String(localized: "打开链接"), action: .open(url)))
         }
-        return ResultCard(title: "扫码结果", body: text, detail: messages.count > 1 ? "找到 \(messages.count) 个码" : nil,
+        return ResultCard(title: String(localized: "扫码结果"), body: text, detail: messages.count > 1 ? String(localized: "找到 \(messages.count) 个码") : nil,
                           copyText: text, buttons: buttons)
     }
 }
 
 struct QRCodePlugin: PopPlugin {
-    let info = PluginInfo(id: BuiltinPluginID.qrCode, name: "二维码", symbol: "qrcode",
-                          summary: "把文字或链接生成二维码；选中图片时识别里面的二维码和条形码", accepts: [.text, .image, .imageFile])
+    let info = PluginInfo(id: BuiltinPluginID.qrCode, name: String(localized: "二维码"), symbol: "qrcode",
+                          summary: String(localized: "把文字或链接生成二维码；选中图片时识别里面的二维码和条形码"), accepts: [.text, .image, .imageFile])
 
     @MainActor func run(_ content: ClassifiedContent, context: PluginContext) async -> PluginOutcome {
         if content.kinds.contains(.image) || content.kinds.contains(.imageFile) {
             return decode(content)
         }
-        guard let text = content.text else { return .failure("没有内容") }
+        guard let text = content.text else { return .failure(String(localized: "没有内容")) }
         guard let png = await runInBackground({ QRCode.generate(text) }) else {
-            return .failure("内容太长，放不进一个二维码")
+            return .failure(String(localized: "内容太长，放不进一个二维码"))
         }
-        return .card(ResultCard(title: "二维码", detail: "\(text.count) 个字符", image: png,
-                                buttons: [CardButton(title: "复制图片", action: .copyImage(png))]))
+        return .card(ResultCard(title: String(localized: "二维码"), detail: String(localized: "\(text.count) 个字符"), image: png,
+                                buttons: [CardButton(title: String(localized: "复制图片"), action: .copyImage(png))]))
     }
 
     @MainActor private func decode(_ content: ClassifiedContent) -> PluginOutcome {
@@ -509,16 +509,16 @@ struct QRCodePlugin: PopPlugin {
         } else {
             image = content.files.first.flatMap(TextRecognizer.cgImage(contentsOf:))
         }
-        guard let image else { return .failure("无法读取图片") }
+        guard let image else { return .failure(String(localized: "无法读取图片")) }
         let messages = QRCode.decode(image)
-        guard !messages.isEmpty else { return .failure("图片里没有找到二维码或条形码") }
+        guard !messages.isEmpty else { return .failure(String(localized: "图片里没有找到二维码或条形码")) }
         return .card(QRCode.card(for: messages))
     }
 }
 
 struct ScanCodePlugin: PopPlugin {
-    let info = PluginInfo(id: BuiltinPluginID.scanCode, name: "扫码", symbol: "qrcode.viewfinder",
-                          summary: "框选屏幕上的二维码或条形码，识别里面的内容；链接可以直接打开，Wi-Fi 二维码列出密码",
+    let info = PluginInfo(id: BuiltinPluginID.scanCode, name: String(localized: "扫码"), symbol: "qrcode.viewfinder",
+                          summary: String(localized: "框选屏幕上的二维码或条形码，识别里面的内容；链接可以直接打开，Wi-Fi 二维码列出密码"),
                           accepts: [], hidesOverlay: true)
 
     @MainActor func run(_ content: ClassifiedContent, context: PluginContext) async -> PluginOutcome {
@@ -531,8 +531,7 @@ struct ScanCodePlugin: PopPlugin {
             let image = capture.image
             let messages = await runInBackground { QRCode.decode(image) }
             guard !messages.isEmpty else {
-                return .failure("没有识别到二维码或条形码。框选时把整个码都框进去；如果框到的只有桌面背景，"
-                                + "请在「系统设置 → 隐私与安全性 → 录屏与系统录音」里允许 Pop。")
+                return .failure(String(localized: "没有识别到二维码或条形码。框选时把整个码都框进去；如果框到的只有桌面背景，请在「系统设置 → 隐私与安全性 → 录屏与系统录音」里允许 Pop。"))
             }
             return .card(QRCode.card(for: messages))
         }
@@ -542,8 +541,8 @@ struct ScanCodePlugin: PopPlugin {
 // MARK: - 图片配色
 
 struct PalettePlugin: PopPlugin {
-    let info = PluginInfo(id: BuiltinPluginID.palette, name: "图片配色", symbol: "paintpalette",
-                          summary: "找出图片里的主要颜色，按面积从大到小列出色值，点一下复制", accepts: [.image, .imageFile])
+    let info = PluginInfo(id: BuiltinPluginID.palette, name: String(localized: "图片配色"), symbol: "paintpalette",
+                          summary: String(localized: "找出图片里的主要颜色，按面积从大到小列出色值，点一下复制"), accepts: [.image, .imageFile])
 
     @MainActor func run(_ content: ClassifiedContent, context: PluginContext) async -> PluginOutcome {
         let image: CGImage?
@@ -552,13 +551,13 @@ struct PalettePlugin: PopPlugin {
         } else {
             image = content.files.first.flatMap(TextRecognizer.cgImage(contentsOf:))
         }
-        guard let image else { return .failure("无法读取图片") }
+        guard let image else { return .failure(String(localized: "无法读取图片")) }
         let swatches = await runInBackground { ColorPalette.extract(from: image) }
-        guard !swatches.isEmpty else { return .failure("图片是全透明的，取不出颜色") }
+        guard !swatches.isEmpty else { return .failure(String(localized: "图片是全透明的，取不出颜色")) }
         let rows = swatches.map { swatch in
-            ResultCard.Row(label: "占 \(max(Int((swatch.share * 100).rounded()), 1))%", value: swatch.hex)
+            ResultCard.Row(label: String(localized: "占 \(max(Int((swatch.share * 100).rounded()), 1))%"), value: swatch.hex)
         }
-        return .card(ResultCard(title: "图片配色", detail: "按面积从大到小；点色块复制色值", rows: rows,
+        return .card(ResultCard(title: String(localized: "图片配色"), detail: String(localized: "按面积从大到小；点色块复制色值"), rows: rows,
                                 palette: swatches.map(\.hex)))
     }
 }
@@ -566,17 +565,17 @@ struct PalettePlugin: PopPlugin {
 // MARK: - 终端
 
 struct OpenInTerminalPlugin: PopPlugin {
-    let info = PluginInfo(id: BuiltinPluginID.openInTerminal, name: "在终端打开", symbol: "apple.terminal",
-                          summary: "在「终端」里打开选中的文件夹（选中文件时打开它所在的文件夹）", accepts: [.files])
+    let info = PluginInfo(id: BuiltinPluginID.openInTerminal, name: String(localized: "在终端打开"), symbol: "apple.terminal",
+                          summary: String(localized: "在「终端」里打开选中的文件夹（选中文件时打开它所在的文件夹）"), accepts: [.files])
 
     @MainActor func run(_ content: ClassifiedContent, context: PluginContext) async -> PluginOutcome {
-        guard let first = content.files.first else { return .failure("没有选中文件") }
+        guard let first = content.files.first else { return .failure(String(localized: "没有选中文件")) }
         var isDirectory: ObjCBool = false
         let exists = FileManager.default.fileExists(atPath: first.path(percentEncoded: false), isDirectory: &isDirectory)
-        guard exists else { return .failure("文件不存在") }
+        guard exists else { return .failure(String(localized: "文件不存在")) }
         let folder = isDirectory.boolValue ? first : first.deletingLastPathComponent()
         guard let terminal = NSWorkspace.shared.urlForApplication(withBundleIdentifier: "com.apple.Terminal") else {
-            return .failure("找不到「终端」App")
+            return .failure(String(localized: "找不到「终端」App"))
         }
         NSWorkspace.shared.open([folder], withApplicationAt: terminal, configuration: NSWorkspace.OpenConfiguration(), completionHandler: nil)
         return .done(toast: nil)

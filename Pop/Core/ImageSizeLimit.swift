@@ -24,7 +24,7 @@ extension ImageConverter {
     static func compress(_ url: URL, toBytes limit: Int) throws -> (url: URL, bytes: Int) {
         guard let source = CGImageSourceCreateWithURL(url as CFURL, nil), CGImageSourceGetCount(source) > 0,
               let full = uprightImage(source).flatMap(flattened) else {
-            throw Failure(message: "读不了「\(url.lastPathComponent)」")
+            throw Failure(message: String(localized: "读不了「\(url.lastPathComponent)」"))
         }
         let longSide = Double(max(full.width, full.height))
         // 先在原尺寸上找画质；画质要降到太低时改成缩小尺寸，最后一档才允许画质很低
@@ -40,11 +40,11 @@ extension ImageConverter {
             do {
                 try data.write(to: output)
             } catch {
-                throw Failure(message: "存储「\(output.lastPathComponent)」失败")
+                throw Failure(message: String(localized: "存储「\(output.lastPathComponent)」失败"))
             }
             return (output, data.count)
         }
-        throw Failure(message: "「\(url.lastPathComponent)」压不到 \(sizeLabel(limit)) 以内")
+        throw Failure(message: String(localized: "「\(url.lastPathComponent)」压不到 \(sizeLabel(limit)) 以内"))
     }
 
     /// 不超过 limit 的最高画质（二分找 6 次）；最低画质也超了返回 nil

@@ -26,8 +26,7 @@ final class MediaTrimModel: ObservableObject {
             return "一共 \(MediaTrim.label(duration))。写上开始和结束的时间，比如 0:10-1:25（1:25- 是到结尾）"
         }
         guard let range else { return "时间写得不对，或者超出了 0:00–\(MediaTrim.label(duration))" }
-        return "从 \(MediaTrim.label(range.lowerBound)) 到 \(MediaTrim.label(range.upperBound))，"
-            + "一共 \(MediaTrim.label(range.upperBound - range.lowerBound))"
+        return "从 \(MediaTrim.label(range.lowerBound)) 到 \(MediaTrim.label(range.upperBound))，一共 \(MediaTrim.label(range.upperBound - range.lowerBound))"
     }
 }
 

@@ -13,11 +13,11 @@ enum BatchRename {
 
         var title: String {
             switch self {
-            case .sequence: return "编号"
-            case .replace: return "替换文字"
-            case .affix: return "加前后缀"
-            case .captureDate: return "拍摄时间"
-            case .letterCase: return "大小写"
+            case .sequence: return String(localized: "编号")
+            case .replace: return String(localized: "替换文字")
+            case .affix: return String(localized: "加前后缀")
+            case .captureDate: return String(localized: "拍摄时间")
+            case .letterCase: return String(localized: "大小写")
             }
         }
     }
@@ -31,9 +31,9 @@ enum BatchRename {
 
         var title: String {
             switch self {
-            case .lower: return "全部小写"
-            case .upper: return "全部大写"
-            case .capitalized: return "首字母大写"
+            case .lower: return String(localized: "全部小写")
+            case .upper: return String(localized: "全部大写")
+            case .capitalized: return String(localized: "首字母大写")
             }
         }
     }
@@ -101,7 +101,7 @@ enum BatchRename {
             do {
                 regex = try NSRegularExpression(pattern: rule.find)
             } catch {
-                return Plan(items: files.map { Item(source: $0, newName: $0.lastPathComponent) }, error: "正则表达式有误")
+                return Plan(items: files.map { Item(source: $0, newName: $0.lastPathComponent) }, error: String(localized: "正则表达式有误"))
             }
         }
         var items: [Item] = []
@@ -147,7 +147,7 @@ enum BatchRename {
                 }
             }
             let newName = ext.isEmpty ? newBase : "\(newBase).\(ext)"
-            let issue = newBase.trimmingCharacters(in: .whitespaces).isEmpty ? "名字不能是空的" : problem(with: newName, original: name)
+            let issue = newBase.trimmingCharacters(in: .whitespaces).isEmpty ? String(localized: "名字不能是空的") : problem(with: newName, original: name)
             items.append(Item(source: file, newName: newName, problem: issue))
         }
         markConflicts(&items, exists: exists)
@@ -158,16 +158,16 @@ enum BatchRename {
     static func problem(with name: String, original: String) -> String? {
         let trimmed = name.trimmingCharacters(in: .whitespaces)
         if trimmed.isEmpty || trimmed == "." || trimmed == ".." {
-            return "名字不能是空的"
+            return String(localized: "名字不能是空的")
         }
         if name.contains("/") || name.contains(":") {
-            return "名字里不能有 / 或 :"
+            return String(localized: "名字里不能有 / 或 :")
         }
         if name.hasPrefix("."), !original.hasPrefix(".") {
-            return "以 . 开头的文件会被隐藏"
+            return String(localized: "以 . 开头的文件会被隐藏")
         }
         if name.utf8.count > 255 {
-            return "名字太长了"
+            return String(localized: "名字太长了")
         }
         return nil
     }
@@ -186,16 +186,16 @@ enum BatchRename {
             let item = items[index]
             let target = item.source.deletingLastPathComponent().appending(path: item.newName)
             if (targets[key(target)] ?? 0) > 1 {
-                items[index].problem = "和另一个文件重名"
+                items[index].problem = String(localized: "和另一个文件重名")
             } else if item.changed, !sources.contains(key(target)), exists(target) {
-                items[index].problem = "文件夹里已经有这个名字"
+                items[index].problem = String(localized: "文件夹里已经有这个名字")
             }
         }
     }
 
     /// 按计划改名，返回每个文件从哪里改到了哪里（撤销用）
     static func apply(_ plan: Plan) throws -> [Move] {
-        guard plan.canApply else { throw Failure(message: plan.error ?? "有的名字不能用") }
+        guard plan.canApply else { throw Failure(message: plan.error ?? String(localized: "有的名字不能用")) }
         let moves = plan.changes.map { item in
             Move(from: item.source, to: item.source.deletingLastPathComponent().appending(path: item.newName))
         }
@@ -236,7 +236,7 @@ enum BatchRename {
             for index in moves.indices where current[index] != moves[index].from {
                 try? manager.moveItem(at: current[index], to: moves[index].from)
             }
-            throw Failure(message: "改名失败：\(error.localizedDescription)")
+            throw Failure(message: String(localized: "改名失败：\(error.localizedDescription)"))
         }
     }
 

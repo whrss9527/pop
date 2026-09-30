@@ -57,7 +57,7 @@ enum MediaTrim {
 
     /// 存成什么：原来的格式能原样截取就用原来的，不然视频存 MOV、音频存 M4A
     static func plan(for url: URL) -> (url: URL, type: AVFileType, preset: String) {
-        let base = url.deletingPathExtension().lastPathComponent + " 片段"
+        let base = url.deletingPathExtension().lastPathComponent + String(localized: " 片段")
         let folder = url.deletingLastPathComponent()
         let passthrough: [String: AVFileType] = ["mp4": .mp4, "mov": .mov, "m4v": .m4v, "m4a": .m4a]
         let ext = url.pathExtension.lowercased()
@@ -80,7 +80,7 @@ enum MediaTrim {
     static func trim(_ url: URL, range: ClosedRange<Double>) async throws -> URL {
         let target = plan(for: url)
         guard let session = AVAssetExportSession(asset: AVURLAsset(url: url), presetName: target.preset) else {
-            throw Failure(message: "这台 Mac 截取不了「\(url.lastPathComponent)」")
+            throw Failure(message: String(localized: "这台 Mac 截取不了「\(url.lastPathComponent)」"))
         }
         session.timeRange = CMTimeRange(start: CMTime(seconds: range.lowerBound, preferredTimescale: 600),
                                         end: CMTime(seconds: range.upperBound, preferredTimescale: 600))
@@ -88,7 +88,7 @@ enum MediaTrim {
             try await session.export(to: target.url, as: target.type)
         } catch {
             try? FileManager.default.removeItem(at: target.url)
-            throw Failure(message: "截取「\(url.lastPathComponent)」失败：\(error.localizedDescription)")
+            throw Failure(message: String(localized: "截取「\(url.lastPathComponent)」失败：\(error.localizedDescription)"))
         }
         return target.url
     }

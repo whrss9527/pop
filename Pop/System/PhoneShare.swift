@@ -158,9 +158,7 @@ enum LANSharePage {
             let thumbnail = item.preview && position < 30
                 ? "<a href=\"\(link)?view=1\"><img src=\"\(link)?view=1\" alt=\"\" loading=\"lazy\" onerror=\"this.remove()\"></a>"
                 : "<span class=\"icon\">📄</span>"
-            return "<li>\(thumbnail)<div class=\"info\"><span class=\"name\">\(escape(item.name))</span>"
-                + "<span class=\"size\">\(sizeLabel(item.size))</span></div>"
-                + "<a class=\"button\" href=\"\(link)\" download>下载</a></li>"
+            return "<li>\(thumbnail)<div class=\"info\"><span class=\"name\">\(escape(item.name))</span><span class=\"size\">\(sizeLabel(item.size))</span></div><a class=\"button\" href=\"\(link)\" download>下载</a></li>"
         }.joined(separator: "\n")
         var shared = ""
         if let text, !text.isEmpty {
