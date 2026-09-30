@@ -1,4 +1,64 @@
-# Pop
+<div align="center">
+  <img src="docs/icon.png" width="128" height="128" alt="Pop 图标">
+  <h1>Pop</h1>
+  <p><strong>长按右键，一划即达</strong></p>
+  <p>住在 macOS 菜单栏里的右键工具箱。原生 Swift，玻璃质感，开源免费。</p>
+  <p>
+    <a href="https://github.com/whrss9527/pop/releases"><img alt="最新版本" src="https://img.shields.io/github/v/release/whrss9527/pop?include_prereleases&label=release&color=5B7BFF"></a>
+    <img alt="macOS 15+" src="https://img.shields.io/badge/macOS-15%2B-111827?logo=apple&logoColor=white">
+    <img alt="Liquid Glass" src="https://img.shields.io/badge/UI-Liquid%20Glass-7C6CFF">
+    <a href="LICENSE"><img alt="GPL-3.0" src="https://img.shields.io/badge/license-GPL--3.0-2563EB"></a>
+  </p>
+  <p>
+    <a href="https://github.com/whrss9527/pop/releases"><b>下载</b></a> ·
+    <a href="CHANGELOG.md">更新日志</a> ·
+    <a href="plugins/README.md">插件库</a>
+  </p>
+</div>
+
+### **Pop** /pɒp/
+
+听起来就像“泡泡”。
+
+按住右键，一个泡泡从鼠标旁边冒出来；朝想去的方向一划，松手，泡泡“啵”地一下破掉，事情也就办完了。
+
+英文里的 **pop**，既有“突然出现”的感觉，也有泡泡破掉时那声轻快的“啵”。**Pop** 想表达的，就是一种轻量、直接、用完即走的交互方式。
+
+## 亮点
+
+- **长按右键就出来**：短按还是系统右键菜单，长按才是 Pop，游戏和 3D 软件的右键拖动也不受影响。
+- **一划就办完**：圆盘上 80 多个功能随你摆，往那一格一划、松手就执行。
+- **选中什么，就给什么**：外文直接翻译，算式直接出结果，单位、颜色直接换算，图片直接识字。
+- **自己加功能**：网址、Shell、JavaScript、快捷指令都能写成插件，插件库里点一下就装。
+- **顺手的小工具**：剪贴板历史、贴图、截图标注、屏幕取色和标尺，还有 AI 润色、总结、解释。
+- **数据在你这儿**：Pop 没有服务器，剪贴板历史只存在本机，API Key 只放在钥匙串里。
+
+## 安装
+
+到 [Releases](https://github.com/whrss9527/pop/releases) 下载最新的 `Pop-<版本>.zip`，解压后把 `Pop.app` 拖进「应用程序」文件夹（每个版本的发布说明里也写了安装步骤）。没有经过苹果公证的包，第一次打开前需要在终端里执行：
+
+```bash
+xattr -dr com.apple.quarantine /Applications/Pop.app
+```
+
+GitHub 上构建的包不带 iCloud 同步（需要用你自己的付费开发者账号签名，见「开发」里的 [iCloud 同步](#icloud-同步)），其他功能都可以用。
+
+### 一键更新
+
+Pop 直接从这个仓库的 GitHub Releases 检查更新，不需要额外的更新服务器：
+
+- 打开「自动检查更新」时（默认打开），启动后检查一次，之后每 6 小时一次；也可以在「设置 → 更新」或菜单栏图标里随时手动检查。默认也接收测试版（预发布版本），不想要可以在设置里关掉；
+- 发现新版本时发一条系统通知，菜单栏图标变成下载箭头；「设置 → 更新」里能看到更新说明，可以立即更新，也可以跳过这个版本；
+- 点「立即更新」后，Pop 会：
+  1. 下载 `Pop-<版本>.zip` 和 `SHA256SUMS.txt`，比对 SHA-256 校验和；
+  2. 解压，检查包名（Bundle ID）、版本号和代码签名是否完整；
+  3. 当前版本是用证书签名的话，新版本必须用**同一张证书**签名，否则拒绝安装；
+  4. 替换 Pop.app（所在文件夹没有写权限时会请求管理员密码）并重新启动。设置、插件和剪贴板历史都存在别处，不受影响。
+- 直接在「下载」文件夹里打开的 Pop，更新时会装进「应用程序」文件夹，旧的那份移到废纸篓。
+
+> 本地签名（ad-hoc）的包每个版本的签名都不一样，macOS 会把更新后的 Pop 当成另一个程序，辅助功能授权随之失效：系统设置里 Pop 的开关看起来还开着，但是不生效。这时在 Pop 的「设置 → 通用」里点「清除旧的授权记录」，再授权一次即可。用固定的证书签名发布就没有这个问题，见下文「签名与公证」。
+
+## 功能
 
 Pop 是一个 macOS 菜单栏效率工具：在任意 App 里**长按鼠标右键**，Pop 读取你选中的内容：
 
@@ -7,8 +67,6 @@ Pop 是一个 macOS 菜单栏效率工具：在任意 App 里**长按鼠标右�
 - 其他情况（或者什么都没选中）：弹出**圆形功能菜单**，按住右键往某个方向一划、松开就执行那一格的功能，在圆心松开就关闭（也可以设置成松开后圆盘保持打开，再用鼠标点选）。
 
 装哪些功能、每个功能放在圆盘的哪一格、什么内容直接执行哪个功能，都可以在设置里调整。除了 80 多个内置功能，还可以用网址模板、Shell、JavaScript 或快捷指令**写自己的插件**，或者从**插件库**里一键装上别人做好的。Pop 还带了一个**剪贴板历史**（只存在本机，按设置的时间自动清理），截图、图片和文字还可以**贴在屏幕最前面**对照着看。选中文字就能让 **AI** 润色、总结、解释或者直接提问：macOS 26 上可以直接用系统内置的模型（在本机处理，不用填接口），也可以填自己的 AI 接口。设置和插件可以通过 **iCloud 同步**到你的其他 Mac，新版本直接从 GitHub 下载，在 App 里**一键更新**。
-
-## 功能
 
 | 模块 | 说明 |
 | --- | --- |
@@ -44,21 +102,6 @@ Pop 是一个 macOS 菜单栏效率工具：在任意 App 里**长按鼠标右�
 | 窗口和系统 | 窗口布局：把当前窗口放到左右半屏、上下半屏、三分之一、最大化、居中，或者移到另一个显示器（方向键和回车也能选）；保持唤醒（30 分钟、1 小时、2 小时或一直，菜单栏里可以随时停止）；计时器（到点响一声、发通知） |
 | AI | AI 助手（提问，或者润色、总结、解释、翻译）；AI 润色、AI 总结、AI 解释（默认不装，在「设置 → 功能」里打开后可以放到圆盘上，一划就执行） |
 | 其他 | 剪贴板历史、全部功能（可以搜索，支持拼音首字母）、打开设置 |
-
-## 工作原理（关键点）
-
-**长按右键怎么做到不影响正常右键？** macOS 的右键菜单在按下瞬间就会弹出，所以 Pop 用 `CGEventTap` 先把「右键按下」扣住并开始计时：
-
-```
-右键按下 → 扣住，开始计时（默认 250ms，可调）
- ├─ 计时内松开          → 按原顺序补发「按下 + 松开」→ 系统右键菜单照常弹出
- ├─ 按住拖动超过 6 像素 → 补发按下并放行拖动（游戏、3D 软件的右键拖拽不受影响）
- └─ 计时到              → 这次按压归 Pop：读取选中内容 → 翻译卡片或圆盘
-```
-
-补发的事件带有标记，回到拦截器时直接放行。因为按下事件没有交给目标 App，右键也不会改变 App 里的选区。
-
-**浮窗为什么不抢焦点？** 圆盘和卡片是 `nonactivatingPanel`：原来的 App 一直在前台，选区不会丢，模拟的 ⌘C 也不会发到 Pop 自己身上。「替换原文」也靠这一点：先收起浮窗，键盘焦点自然回到原来的 App，再写剪贴板、模拟 ⌘V，粘贴完把剪贴板恢复原样。
 
 ## 自定义插件
 
@@ -117,6 +160,21 @@ Pop 是一个 macOS 菜单栏效率工具：在任意 App 里**长按鼠标右�
 
 要在 Pop 的界面里操作的功能（剪贴板历史、批量重命名这类）在快捷指令里会提示拿不到结果。
 
+## 工作原理（关键点）
+
+**长按右键怎么做到不影响正常右键？** macOS 的右键菜单在按下瞬间就会弹出，所以 Pop 用 `CGEventTap` 先把「右键按下」扣住并开始计时：
+
+```
+右键按下 → 扣住，开始计时（默认 250ms，可调）
+ ├─ 计时内松开          → 按原顺序补发「按下 + 松开」→ 系统右键菜单照常弹出
+ ├─ 按住拖动超过 6 像素 → 补发按下并放行拖动（游戏、3D 软件的右键拖拽不受影响）
+ └─ 计时到              → 这次按压归 Pop：读取选中内容 → 翻译卡片或圆盘
+```
+
+补发的事件带有标记，回到拦截器时直接放行。因为按下事件没有交给目标 App，右键也不会改变 App 里的选区。
+
+**浮窗为什么不抢焦点？** 圆盘和卡片是 `nonactivatingPanel`：原来的 App 一直在前台，选区不会丢，模拟的 ⌘C 也不会发到 Pop 自己身上。「替换原文」也靠这一点：先收起浮窗，键盘焦点自然回到原来的 App，再写剪贴板、模拟 ⌘V，粘贴完把剪贴板恢复原样。
+
 ## 数据存在哪里
 
 | 数据 | 位置 | 同步 |
@@ -128,6 +186,17 @@ Pop 是一个 macOS 菜单栏效率工具：在任意 App 里**长按鼠标右�
 | 生词本 | `~/Library/Application Support/Pop/Vocabulary.json` | 不同步，可以导出 |
 
 剪贴板历史按内容去重（同样的内容再复制一次只会挪到最前面）；超过保存天数、超出条数上限的记录每小时清理一次，固定的记录不会被清理。密码管理器用 `org.nspasteboard.ConcealedType` 等类型标记的敏感内容不会被记录，也可以在设置里排除指定的 App。
+
+## 已知限制
+
+- 需要辅助功能权限，并且因为 App Store 沙盒不允许使用辅助功能，只能通过官网 / GitHub 分发；
+- 本地签名的发布包每次一键更新后都要重新授权辅助功能，用固定证书签名发布就不用（见[签名与公证](#签名与公证)）；
+- 少数 App 既不支持辅助功能读取选区，菜单里也找不到「拷贝」，这时会模拟 ⌘C；非 QWERTY 键盘布局下模拟按键可能不准；
+- 「替换原文」和剪贴板历史的粘贴是模拟 ⌘V 实现的，选中的地方不能编辑时不会有效果；
+- 截图识字、截图翻译、扫码、截图标注、屏幕标尺需要「屏幕录制」权限，没授权时截到的可能只有桌面背景；
+- 「加到提醒事项」第一次用时要允许 Pop 访问提醒事项或日历（日历只要写入权限）；自己签名的开发版要带上 `com.apple.security.personal-information.calendars` 这项权限（项目里已经配好）；
+- 剪贴板没有变化通知，Pop 每 0.5 秒检查一次，极短时间内连续复制多次只会记下最后一次；
+- 系统离线翻译译长段落比较生硬，这时可以在翻译卡片上换成 AI 翻译或 DeepL（要先设置好 AI 或者填上 DeepL 的 API Key）。
 
 ## 开发
 
@@ -165,39 +234,57 @@ make clean
 
 每次推送代码，GitHub Actions 都会在 macOS 上生成工程、编译并运行测试（`.github/workflows/ci.yml`），然后真正启动一次 Release 包，再用本地的假发布把一键更新完整走一遍（校验和不对要拒绝、换了签名证书要拒绝、正常版本要替换并重新启动；本地签名和证书签名各测一遍）。
 
-## iCloud 同步
+### iCloud 同步
 
 - 使用 iCloud 键值存储（`NSUbiquitousKeyValueStore`），Pop 没有服务器，数据存在用户自己的 iCloud 里；
 - 需要付费开发者账号签名，`Config/Pop.xcconfig` 默认使用带 iCloud 能力的 `Pop/Resources/Pop.entitlements`；
 - 多台 Mac 都改过时以最后一次修改为准；新装的 Mac 第一次同步会直接采用云端配置，不会用默认设置覆盖云端；
 - iCloud 的存储标识由 Team ID + Bundle ID 组成，**正式发布后不要再改 Bundle ID**，否则老用户的同步数据会找不到。发布前在 `Config/Pop.xcconfig` 里把 `POP_BUNDLE_ID` 改成你自己的。
 
-## 安装
+### 目录结构
 
-到 [Releases](https://github.com/whrss9527/pop/releases) 下载最新的 `Pop-<版本>.zip`，解压后把 `Pop.app` 拖进「应用程序」文件夹（每个版本的发布说明里也写了安装步骤）。没有经过苹果公证的包，第一次打开前需要在终端里执行：
-
-```bash
-xattr -dr com.apple.quarantine /Applications/Pop.app
+```
+Pop/
+├── App/        启动入口、模块组装（AppController）、一次唤起的完整流程（PopCoordinator）
+├── Core/       纯逻辑：设置模型与持久化、内容识别、各种文字转换、计算器、圆盘/屏幕几何
+├── Plugins/    插件协议、分发规则（Router）、内置功能、自定义插件（manifest、运行器、插件文件夹）、插件库
+├── AI/         AI 接口（兼容 OpenAI Chat Completions，流式输出）、系统内置的模型、AI 卡片、钥匙串里的 API Key
+├── Annotate/   截图标注：标注模型（箭头、方框、文字、马赛克、序号、背景）和标注窗口
+├── Clipboard/  剪贴板历史：SQLite 存储、剪贴板监听、历史面板
+├── System/     事件拦截（MouseTrigger）、全局快捷键、读取选中内容、粘贴回原 App、权限、通知、保持唤醒、倒计时
+├── UI/         浮动面板、圆盘、结果/翻译卡片、「全部功能」列表、菜单栏图标、贴图、暂存架、屏幕标尺
+├── Settings/   设置窗口各页面（含拖拽式圆盘编辑器、插件编辑器）
+├── Sync/       iCloud 同步
+├── Update/     检查更新（GitHub Releases）、下载校验、替换并重新启动
+└── Resources/  Info.plist、entitlements
+PopTests/       单元测试
+plugins/        插件库：索引（index.json）和可以一键安装的插件
+Config/         xcconfig（签名、Bundle ID）
+scripts/        构建、签名、公证和测试脚本（发布流程和 CI 都用它们）
 ```
 
-GitHub 上构建的包不带 iCloud 同步（需要用你自己的付费开发者账号签名，见上文），其他功能都可以用。
+### 扩展功能
 
-## 一键更新
+大多数需求用上面的[自定义插件](#自定义插件)就能满足，不用改代码。要做内置功能的话，实现 `PopPlugin` 协议（`Pop/Plugins/Plugin.swift`），声明它能处理的内容类型，在 `BuiltinPluginID` 里加一个 ID，再加到 `BuiltinPlugins.make()` 里（老用户升级后会自动装上新的内置功能）：
 
-Pop 直接从这个仓库的 GitHub Releases 检查更新，不需要额外的更新服务器：
+```swift
+struct UppercasePlugin: PopPlugin {
+    let info = PluginInfo(id: "uppercase", name: "转大写", symbol: "textformat.size.larger",
+                          summary: "把选中的文字转成大写", accepts: [.text], pattern: "[a-z]")
 
-- 打开「自动检查更新」时（默认打开），启动后检查一次，之后每 6 小时一次；也可以在「设置 → 更新」或菜单栏图标里随时手动检查。默认也接收测试版（预发布版本），不想要可以在设置里关掉；
-- 发现新版本时发一条系统通知，菜单栏图标变成下载箭头；「设置 → 更新」里能看到更新说明，可以立即更新，也可以跳过这个版本；
-- 点「立即更新」后，Pop 会：
-  1. 下载 `Pop-<版本>.zip` 和 `SHA256SUMS.txt`，比对 SHA-256 校验和；
-  2. 解压，检查包名（Bundle ID）、版本号和代码签名是否完整；
-  3. 当前版本是用证书签名的话，新版本必须用**同一张证书**签名，否则拒绝安装；
-  4. 替换 Pop.app（所在文件夹没有写权限时会请求管理员密码）并重新启动。设置、插件和剪贴板历史都存在别处，不受影响。
-- 直接在「下载」文件夹里打开的 Pop，更新时会装进「应用程序」文件夹，旧的那份移到废纸篓。
+    @MainActor func run(_ content: ClassifiedContent, context: PluginContext) async -> PluginOutcome {
+        guard let text = content.text else { return .failure("没有文字") }
+        let upper = text.uppercased()
+        return .card(ResultCard(title: "转大写", body: upper, copyText: upper, replaceText: upper))
+    }
+}
+```
 
-> 本地签名（ad-hoc）的包每个版本的签名都不一样，macOS 会把更新后的 Pop 当成另一个程序，辅助功能授权随之失效：系统设置里 Pop 的开关看起来还开着，但是不生效。这时在 Pop 的「设置 → 通用」里点「清除旧的授权记录」，再授权一次即可。用固定的证书签名发布就没有这个问题，见下文「签名与公证」。
+`PluginOutcome` 可以是结果卡片（`ResultCard` 支持多行结果、图片、颜色色块和自定义按钮）、交给翻译卡片、直接替换原文、轻提示，或者打开剪贴板历史、「全部功能」列表。
 
-## 发布新版本
+之后计划支持的方向：带界面的网页插件。
+
+### 发布新版本
 
 发版由 `CHANGELOG.md` 驱动，不用手动打标签：
 
@@ -216,7 +303,7 @@ make release VERSION=0.4.0 BETA=1   # 手动发布测试版（预发布）
 - `CFBundleShortVersionString` 取你填的版本号，`CFBundleVersion` 自动取 Git 提交数；
 - 比较新旧时按数字逐段比较，同一个版本号带 `-beta.1` 之类后缀的比不带的旧。
 
-## 签名与公证
+### 签名与公证
 
 发布流程默认用本地签名（ad-hoc），什么都不用配置。在仓库的 Settings → Secrets and variables → Actions 里加上证书后，之后发布的版本都会用证书签名：
 
@@ -243,60 +330,6 @@ make signing-certificate    # 即 scripts/create-signing-certificate.sh，文件
 
 从本地签名换成证书签名后，第一次更新仍然需要重新授权一次辅助功能，之后就不用了。
 
-## 目录结构
-
-```
-Pop/
-├── App/        启动入口、模块组装（AppController）、一次唤起的完整流程（PopCoordinator）
-├── Core/       纯逻辑：设置模型与持久化、内容识别、各种文字转换、计算器、圆盘/屏幕几何
-├── Plugins/    插件协议、分发规则（Router）、内置功能、自定义插件（manifest、运行器、插件文件夹）、插件库
-├── AI/         AI 接口（兼容 OpenAI Chat Completions，流式输出）、系统内置的模型、AI 卡片、钥匙串里的 API Key
-├── Annotate/   截图标注：标注模型（箭头、方框、文字、马赛克、序号、背景）和标注窗口
-├── Clipboard/  剪贴板历史：SQLite 存储、剪贴板监听、历史面板
-├── System/     事件拦截（MouseTrigger）、全局快捷键、读取选中内容、粘贴回原 App、权限、通知、保持唤醒、倒计时
-├── UI/         浮动面板、圆盘、结果/翻译卡片、「全部功能」列表、菜单栏图标、贴图、暂存架、屏幕标尺
-├── Settings/   设置窗口各页面（含拖拽式圆盘编辑器、插件编辑器）
-├── Sync/       iCloud 同步
-├── Update/     检查更新（GitHub Releases）、下载校验、替换并重新启动
-└── Resources/  Info.plist、entitlements
-PopTests/       单元测试
-plugins/        插件库：索引（index.json）和可以一键安装的插件
-Config/         xcconfig（签名、Bundle ID）
-scripts/        构建、签名、公证和测试脚本（发布流程和 CI 都用它们）
-```
-
-## 扩展功能
-
-大多数需求用上面的[自定义插件](#自定义插件)就能满足，不用改代码。要做内置功能的话，实现 `PopPlugin` 协议（`Pop/Plugins/Plugin.swift`），声明它能处理的内容类型，在 `BuiltinPluginID` 里加一个 ID，再加到 `BuiltinPlugins.make()` 里（老用户升级后会自动装上新的内置功能）：
-
-```swift
-struct UppercasePlugin: PopPlugin {
-    let info = PluginInfo(id: "uppercase", name: "转大写", symbol: "textformat.size.larger",
-                          summary: "把选中的文字转成大写", accepts: [.text], pattern: "[a-z]")
-
-    @MainActor func run(_ content: ClassifiedContent, context: PluginContext) async -> PluginOutcome {
-        guard let text = content.text else { return .failure("没有文字") }
-        let upper = text.uppercased()
-        return .card(ResultCard(title: "转大写", body: upper, copyText: upper, replaceText: upper))
-    }
-}
-```
-
-`PluginOutcome` 可以是结果卡片（`ResultCard` 支持多行结果、图片、颜色色块和自定义按钮）、交给翻译卡片、直接替换原文、轻提示，或者打开剪贴板历史、「全部功能」列表。
-
-之后计划支持的方向：带界面的网页插件。
-
-## 已知限制
-
-- 需要辅助功能权限，并且因为 App Store 沙盒不允许使用辅助功能，只能通过官网 / GitHub 分发；
-- 本地签名的发布包每次一键更新后都要重新授权辅助功能，用固定证书签名发布就不用（见[签名与公证](#签名与公证)）；
-- 少数 App 既不支持辅助功能读取选区，菜单里也找不到「拷贝」，这时会模拟 ⌘C；非 QWERTY 键盘布局下模拟按键可能不准；
-- 「替换原文」和剪贴板历史的粘贴是模拟 ⌘V 实现的，选中的地方不能编辑时不会有效果；
-- 截图识字、截图翻译、扫码、截图标注、屏幕标尺需要「屏幕录制」权限，没授权时截到的可能只有桌面背景；
-- 「加到提醒事项」第一次用时要允许 Pop 访问提醒事项或日历（日历只要写入权限）；自己签名的开发版要带上 `com.apple.security.personal-information.calendars` 这项权限（项目里已经配好）；
-- 剪贴板没有变化通知，Pop 每 0.5 秒检查一次，极短时间内连续复制多次只会记下最后一次；
-- 系统离线翻译译长段落比较生硬，这时可以在翻译卡片上换成 AI 翻译或 DeepL（要先设置好 AI 或者填上 DeepL 的 API Key）。
-
 ## 许可证
 
 Copyright © 2026 whrss9527
@@ -306,3 +339,12 @@ Pop 是自由软件，以 [GNU 通用公共许可证第 3 版（GPL-3.0）](LICE
 「Pop」这个名字和 Pop 的图标不在 GPL 授权范围内（GPL-3.0 第 7 条 e 项）。介绍 Pop、分享未经修改的副本时可以使用；分发修改后的版本时，请换用自己的名字和图标。
 
 贡献需接受 [CONTRIBUTING.md](CONTRIBUTING.md) 里的贡献者协议。
+
+---
+
+<div align="center">
+  <p><b>同样住在菜单栏里</b></p>
+  <a href="https://github.com/whrss9527/meno"><img src="https://raw.githubusercontent.com/whrss9527/whrss9527/master/assets/cards/meno.svg" width="30%" alt="Meno：安静的菜单栏，由玻璃打造"></a>
+  <a href="https://github.com/whrss9527/stox"><img src="https://raw.githubusercontent.com/whrss9527/whrss9527/master/assets/cards/stox.svg" width="30%" alt="Stox：一眼看盘，一键隐身"></a>
+  <a href="https://github.com/whrss9527/proxi"><img src="https://raw.githubusercontent.com/whrss9527/whrss9527/master/assets/cards/proxi.svg" width="30%" alt="Proxi：一个开关，管好所有代理"></a>
+</div>
