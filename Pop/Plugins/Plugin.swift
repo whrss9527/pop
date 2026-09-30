@@ -187,6 +187,8 @@ enum CardAction: Equatable {
     case captureWeb(URL, WebCapture.Format)
     /// 按比例裁剪图片，对准画面主体
     case cropImages([URL], SmartCrop.Ratio)
+    /// 给图片里的人脸、个人信息（或者所有文字）打码，另存在原图旁边
+    case redactImages([URL], Set<Redaction.Target>)
     /// 锁屏、熄屏、隐藏桌面图标这类系统操作
     case system(SystemAction)
     /// 把文字排成图片（换一种底色）
