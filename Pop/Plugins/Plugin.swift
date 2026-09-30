@@ -176,6 +176,8 @@ enum CardAction: Equatable {
     case cancelTimer
     /// 停止「传到手机」
     case stopPhoneShare
+    /// 把录音或视频里说的话转成文字（language 是语言代码，比如 zh-CN）
+    case transcribe(URL, language: String)
 }
 
 struct CardButton: Equatable, Identifiable {
@@ -267,6 +269,8 @@ enum PluginOutcome: Equatable {
     case watermark([URL])
     /// 打开截取片段卡片
     case trimMedia(URL)
+    /// 打开证件照卡片
+    case idPhoto(URL)
     case failure(String)
 }
 

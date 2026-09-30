@@ -203,6 +203,12 @@
 "按下快捷键…" = "Press shortcut…";
 "设置快捷键" = "Set Shortcut";
 
+/* IDPhotoView.swift */
+"正在抠图…" = "Removing background…";
+"底色" = "Background";
+"尺寸" = "Dimensions";
+"存到原图旁边" = "Save Next to Original";
+
 /* ImageSizeLimitView.swift */
 "其他大小" = "Other size";
 "压缩" = "Compress";
@@ -694,7 +700,7 @@
 "水印文字" = "Watermark text";
 "淡" = "Light";
 "浓" = "Strong";
-"斜着铺满整张图，另存一份「原名 水印」放在原图旁边，原图不动" = "Tiled diagonally across the image and saved as a copy named “Name Watermark” next to the original, which stays unchanged";
+"斜着铺满整张图（PDF 每一页都铺），另存一份「原名 水印」放在原文件旁边，原文件不动" = "Tiled diagonally across the image (every page of a PDF) and saved as a copy named “Name Watermark” next to the original, which stays unchanged";
 
 /* 共用的文字和格式 */
 "Pop 功能" = "Pop Action";
