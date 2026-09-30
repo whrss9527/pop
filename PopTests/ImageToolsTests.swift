@@ -1,4 +1,6 @@
+import AppKit
 import ImageIO
+import PDFKit
 import UniformTypeIdentifiers
 import XCTest
 @testable import Pop
@@ -96,6 +98,60 @@ final class WatermarkTests: XCTestCase {
         XCTAssertTrue(Canvas.write(try XCTUnwrap(Canvas.solid(width: 320, height: 200, gray: 0.9)), to: jpeg, type: .jpeg))
         XCTAssertEqual(try ImageWatermark.watermark(jpeg, text: "样张", opacity: 0.4).lastPathComponent, "照片 水印.jpg")
         XCTAssertThrowsError(try ImageWatermark.watermark(folder.appending(path: "没有这张.png"), text: "样张", opacity: 0.4))
+    }
+
+    func testWatermarksEveryPDFPage() throws {
+        let folder = try Canvas.folder(self)
+        let pdf = folder.appending(path: "合同.pdf")
+        let document = PDFDocument()
+        for index in 0..<2 {
+            let image = try XCTUnwrap(Canvas.solid(width: 600, height: 800, gray: 0.95))
+            let page = try XCTUnwrap(PDFPage(image: NSImage(cgImage: image, size: NSSize(width: 600, height: 800))))
+            document.insert(page, at: index)
+        }
+        // 第二页是横着放的扫描件
+        document.page(at: 1)?.rotation = 90
+        XCTAssertTrue(document.write(to: pdf))
+
+        let output = try ImageWatermark.watermark(pdf, text: "仅供入职使用", opacity: 0.4)
+        XCTAssertEqual(output.lastPathComponent, "合同 水印.pdf")
+        let marked = try XCTUnwrap(PDFDocument(url: output))
+        XCTAssertEqual(marked.pageCount, 2)
+        // 原来的页面只有图片，读得出的字都是水印
+        for index in 0..<2 {
+            let text = marked.page(at: index)?.string ?? ""
+            XCTAssertTrue(text.contains("仅"), "第 \(index + 1) 页：\(text.prefix(40))")
+        }
+        let upright = try XCTUnwrap(marked.page(at: 0)?.bounds(for: .cropBox))
+        XCTAssertEqual(upright.width, 600, accuracy: 1)
+        XCTAssertEqual(upright.height, 800, accuracy: 1)
+        let turned = try XCTUnwrap(marked.page(at: 1)?.bounds(for: .cropBox))
+        XCTAssertEqual(turned.width, 800, accuracy: 1)
+        XCTAssertEqual(turned.height, 600, accuracy: 1)
+        XCTAssertEqual(try ImageWatermark.watermark(pdf, text: "仅供入职使用", opacity: 0.4).lastPathComponent, "合同 水印 2.pdf")
+
+        let preview = try XCTUnwrap(ImageWatermark.preview(pdf, text: "样张", opacity: 0.4, maxSide: 200))
+        XCTAssertEqual(preview.height, 200)
+        XCTAssertEqual(preview.width, 150)
+        // 预览很小，字的笔画被抗锯齿冲淡：和没有水印的第一页（灰度 242）比，有变暗的像素就行
+        let plain = try XCTUnwrap(ImageWatermark.preview(pdf, text: "", opacity: 0.4, maxSide: 200))
+        XCTAssertEqual(Canvas.darkPixels(plain, below: 236), 0)
+        XCTAssertGreaterThan(Canvas.darkPixels(preview, below: 236), 0)
+    }
+
+    @MainActor
+    func testPluginTakesImagesAndPDFs() async {
+        let plugin = WatermarkPlugin()
+        let pdf = URL(fileURLWithPath: "/tmp/合同.pdf")
+        let photo = URL(fileURLWithPath: "/tmp/身份证.jpg")
+        XCTAssertTrue(plugin.info.canHandle(ContentClassifier.classify(.files([pdf]))))
+        XCTAssertTrue(plugin.info.canHandle(ContentClassifier.classify(.files([photo]))))
+        XCTAssertFalse(plugin.info.canHandle(ContentClassifier.classify(.files([URL(fileURLWithPath: "/tmp/说明.txt")]))))
+        let outcome = await plugin.run(ContentClassifier.classify(.files([pdf, URL(fileURLWithPath: "/tmp/说明.txt"), photo])),
+                                       context: PluginContext(settings: AppSettings(), openSettings: {}))
+        XCTAssertEqual(outcome, .watermark([pdf, photo]))
+        XCTAssertEqual(WatermarkModel(files: [pdf, photo]).countLabel(2), "2 个文件")
+        XCTAssertEqual(WatermarkModel(files: [photo]).countLabel(1), "1 张图片")
     }
 
     @MainActor

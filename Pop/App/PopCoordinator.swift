@@ -40,8 +40,8 @@ final class PopCoordinator: MouseTriggerDelegate {
 
     private struct Session {
         let id = UUID()
-        /// 唤起点（AppKit 屏幕坐标）
-        let anchor: CGPoint
+        /// 唤起点（AppKit 屏幕坐标）；圆盘靠边挪开时改成圆盘中心（见 followRingWithPointer）
+        var anchor: CGPoint
         let pid: pid_t?
         /// 唤起时前台 App 的名字（收集箱记录来源用）
         let sourceAppName: String?
@@ -459,6 +459,7 @@ final class PopCoordinator: MouseTriggerDelegate {
         session?.ring = ring
         session?.panel = nil
         overlay.showRing(ring, center: current.anchor)
+        followRingWithPointer()
         lastPointer = nil
         startPointerTracking()
         // 圆盘出来之前可能已经拖动过了
@@ -573,6 +574,8 @@ final class PopCoordinator: MouseTriggerDelegate {
             presentWatermark(files)
         case .trimMedia(let file):
             presentTrim(file)
+        case .idPhoto(let file):
+            presentIDPhoto(file)
         case .failure(let message):
             overlay.showCard(ResultCardView(card: ResultCard(title: String(localized: "没能完成"), body: message),
                                             onAction: { [weak self] action in self?.perform(action) },
@@ -665,6 +668,8 @@ final class PopCoordinator: MouseTriggerDelegate {
         case .stopPhoneShare:
             PhoneShare.shared.stop()
             finish(toast: String(localized: "已停止传到手机"))
+        case .transcribe(let file, let language):
+            transcribe(file, language: language)
         }
     }
 
@@ -1019,6 +1024,55 @@ final class PopCoordinator: MouseTriggerDelegate {
         }
     }
 
+    /// 证件照：抠图、预览都在卡片里做，确认后另存一份放在原图旁边
+    private func presentIDPhoto(_ file: URL) {
+        guard let current = session else { return }
+        stopPointerTracking()
+        let model = IDPhotoModel(file: file)
+        overlay.showCard(IDPhotoView(model: model,
+                                     onSave: { [weak self] in self?.saveIDPhoto(model) },
+                                     onClose: { [weak self] in self?.endSession() }),
+                         anchor: current.anchor)
+    }
+
+    private func saveIDPhoto(_ model: IDPhotoModel) {
+        let anchor = session?.anchor ?? NSEvent.mouseLocation
+        endSession()
+        Task { [weak self] in
+            do {
+                let output = try await model.save()
+                NSWorkspace.shared.activateFileViewerSelecting([output])
+                self?.showToast(String(localized: "已存成「\(output.lastPathComponent)」"), at: anchor)
+            } catch {
+                self?.showToast((error as? IDPhoto.Failure)?.message ?? error.localizedDescription, at: anchor)
+            }
+        }
+    }
+
+    /// 语音转文字：要一会儿，先收起卡片；识别完存好文字和字幕，在访达里选中，没在用 Pop 的话再弹出结果卡片
+    private func transcribe(_ file: URL, language: String) {
+        let anchor = session?.anchor ?? NSEvent.mouseLocation
+        endSession()
+        Task { [weak self] in
+            guard await Transcriber.authorize() else {
+                self?.showToast(String(localized: "要先在「系统设置 → 隐私与安全性 → 语音识别」里允许 Pop"), at: anchor)
+                return
+            }
+            self?.showToast(String(localized: "正在识别「\(file.lastPathComponent)」里说的话…"), at: anchor)
+            do {
+                let transcript = try await Transcriber.transcribe(file, language: language)
+                let saved = try Transcriber.save(transcript, beside: file, language: language)
+                NSWorkspace.shared.activateFileViewerSelecting([saved.text, saved.subtitles])
+                guard let self, self.session == nil else { return }
+                let point = NSEvent.mouseLocation
+                self.session = Session(anchor: point, pid: nil, sourceAppName: nil, buttonHeld: false, content: .empty)
+                self.present(.card(Transcriber.card(transcript, file: file, language: language)))
+            } catch {
+                self?.showToast(Transcriber.describe(error), at: NSEvent.mouseLocation)
+            }
+        }
+    }
+
     /// 常用短语：选一条，填好占位符后粘贴到原来的 App（粘贴完剪贴板恢复原样）
     private func presentSnippets() {
         guard let current = session else { return }
@@ -1194,6 +1248,7 @@ final class PopCoordinator: MouseTriggerDelegate {
         let files = model.files
         let text = model.text
         let opacity = model.opacity
+        let hasPDF = model.hasPDF
         model.remember()
         let anchor = session?.anchor ?? NSEvent.mouseLocation
         endSession()
@@ -1216,9 +1271,9 @@ final class PopCoordinator: MouseTriggerDelegate {
             }
             let message: String
             if let failure = result.failures.first {
-                message = result.outputs.isEmpty ? failure : String(localized: "加好了 \(result.outputs.count) 张，\(result.failures.count) 张失败：\(failure)")
+                message = result.outputs.isEmpty ? failure : String(localized: "加好了 \(result.outputs.count) 个，\(result.failures.count) 个失败：\(failure)")
             } else {
-                message = String(localized: "已给 \(result.outputs.count) 张图片加上水印")
+                message = hasPDF ? String(localized: "已给 \(result.outputs.count) 个文件加上水印") : String(localized: "已给 \(result.outputs.count) 张图片加上水印")
             }
             self.showToast(message, at: anchor)
         }
@@ -1526,6 +1581,24 @@ final class PopCoordinator: MouseTriggerDelegate {
         guard let current = session, current.buttonHeld, let ring = current.ring, overlay.mode == .ring,
               let point = current.dragPoint else { return }
         ring.updateHover(offset: CGVector(dx: point.x - current.anchor.x, dy: point.y - current.anchor.y))
+    }
+
+    /// 靠近屏幕边缘时圆盘整体往里挪了：鼠标键还按着的话，把指针也挪到圆盘中心。
+    /// 按住时按「相对按下点的方向」选格子，指针不在圆心的话，朝看到的一格划过去，选中的却是旁边那格；
+    /// 指针贴着屏幕边缘时，往边外那几格也划不过去。圆盘出来之前已经拖过的那一段接着算
+    private func followRingWithPointer() {
+        guard let current = session, current.buttonHeld, let center = overlay.ringCenter,
+              let shift = ScreenGeometry.ringShift(anchor: current.anchor, center: center) else { return }
+        let moved = current.dragPoint.map { CGVector(dx: $0.x - current.anchor.x, dy: $0.y - current.anchor.y) } ?? CGVector(dx: 0, dy: 0)
+        let target = CGPoint(x: center.x + moved.dx, y: center.y + moved.dy)
+        CGWarpMouseCursorPosition(CGPoint(x: target.x, y: OverlayController.primaryScreenHeight - target.y))
+        // 挪完马上恢复指针跟手，不然指针会停顿一小会儿
+        CGAssociateMouseAndMouseCursorPosition(1)
+        session?.anchor = center
+        if current.dragPoint != nil {
+            session?.dragPoint = target
+        }
+        Self.log.notice("圆盘靠边挪了 \(Int(shift.dx), privacy: .public), \(Int(shift.dy), privacy: .public)，指针跟着挪到圆心")
     }
 
     /// 松开鼠标键之后（点击模式）：看指针在圆盘上的位置。按住时由 updateHeldHover 处理。

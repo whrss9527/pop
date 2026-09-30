@@ -88,6 +88,12 @@ enum ScreenGeometry {
         return clamp(rect, within: bounds)
     }
 
+    /// 圆盘因为靠近屏幕边缘从 anchor 挪到了 center：挪了多少；没挪（不到 1 点）时为 nil
+    static func ringShift(anchor: CGPoint, center: CGPoint) -> CGVector? {
+        let shift = CGVector(dx: center.x - anchor.x, dy: center.y - anchor.y)
+        return shift.dx * shift.dx + shift.dy * shift.dy > 1 ? shift : nil
+    }
+
     /// 结果卡片默认放在指针右下方；右边放不下放左边，下面放不下放上面（AppKit 坐标，y 向上）。
     static func cardFrame(anchor: CGPoint, size: CGSize, within bounds: CGRect, gap: CGFloat = 14) -> CGRect {
         var x = anchor.x + gap

@@ -62,6 +62,27 @@ final class GeometryTests: XCTestCase {
         XCTAssertEqual(nearCorner.maxY, 900)
     }
 
+    /// 圆盘靠边挪开了多少：指针要跟着挪过去，按住划动的方向才和看到的一致
+    func testRingShiftNearEdges() {
+        let bounds = CGRect(x: 0, y: 0, width: 1440, height: 900)
+        let middle = CGPoint(x: 700, y: 450)
+        let centered = ScreenGeometry.ringFrame(center: middle, diameter: 280, within: bounds)
+        XCTAssertNil(ScreenGeometry.ringShift(anchor: middle, center: CGPoint(x: centered.midX, y: centered.midY)))
+
+        let corner = CGPoint(x: 10, y: 890)
+        let moved = ScreenGeometry.ringFrame(center: corner, diameter: 280, within: bounds)
+        let shift = ScreenGeometry.ringShift(anchor: corner, center: CGPoint(x: moved.midX, y: moved.midY))
+        XCTAssertEqual(shift, CGVector(dx: 130, dy: -130))
+
+        // 靠右边：只往左挪
+        let right = CGPoint(x: 1430, y: 450)
+        let movedLeft = ScreenGeometry.ringFrame(center: right, diameter: 280, within: bounds)
+        XCTAssertEqual(ScreenGeometry.ringShift(anchor: right, center: CGPoint(x: movedLeft.midX, y: movedLeft.midY)),
+                       CGVector(dx: -130, dy: 0))
+        // 不到 1 点的差别不算挪开
+        XCTAssertNil(ScreenGeometry.ringShift(anchor: middle, center: CGPoint(x: 700.5, y: 450.5)))
+    }
+
     func testCardFramePrefersBottomRightAndFlips() {
         let bounds = CGRect(x: 0, y: 0, width: 1440, height: 900)
         let size = CGSize(width: 400, height: 200)

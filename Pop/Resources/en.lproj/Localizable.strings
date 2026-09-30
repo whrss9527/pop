@@ -588,6 +588,29 @@
 "校验不通过，可能输错了（也有少数卡号不用这种校验）" = "Invalid check digit; it may be mistyped (a few card numbers don’t use this check)";
 "只根据号码本身推算，不联网查询" = "Derived from the number itself; nothing is looked up online";
 
+/* IDPhoto.swift */
+"白底" = "White";
+"蓝底" = "Blue";
+"红底" = "Red";
+"原尺寸" = "Original Size";
+"一寸" = "1-inch";
+"二寸" = "2-inch";
+"抠图失败：%@" = "Couldn’t remove the background: %@";
+"照片里没有找到人像" = "No person found in the photo";
+"无法生成抠好的图片" = "Couldn’t create the cut-out image";
+"存不了「%@」" = "Can’t save “%@”";
+"读不了这张照片" = "Can’t read this photo";
+"没有找到人脸，一寸、二寸按照片中间裁剪" = "No face found; 1-inch and 2-inch sizes are cropped from the center";
+"还没抠好图" = "The background isn’t removed yet";
+"无法生成照片" = "Couldn’t create the photo";
+
+/* IDPhotoView.swift */
+"抠图在本机进行，不上传照片" = "The background is removed on this Mac; the photo isn’t uploaded";
+"一寸 295×413、二寸 413×579 像素（300 dpi）；另存一份放在原图旁边，原图不动" = "1-inch is 295×413 and 2-inch is 413×579 pixels (300 dpi). A copy is saved next to the original, which stays unchanged.";
+"正在抠图…" = "Removing background…";
+"底色" = "Background";
+"存到原图旁边" = "Save Next to Original";
+
 /* ImageAnimation.swift */
 "至少选两张图片" = "Select at least two images";
 "一次最多合成 %lld 张" = "Up to %lld images at a time";
@@ -637,8 +660,9 @@
 
 /* ImageWatermark.swift */
 "仅供办理业务使用，他用无效" = "For this purpose only. Not valid for any other use.";
-"「%@」加水印失败" = "Couldn’t add a watermark to “%@”";
+"「%@」有密码，先用「PDF → 去掉密码」再加水印" = "“%@” is password-protected. Remove the password with PDF → Remove Password first.";
 " 水印" = " Watermark";
+"「%@」加水印失败" = "Couldn’t add a watermark to “%@”";
 
 /* InfoExtractor.swift */
 "链接" = "Link";
@@ -712,8 +736,16 @@
 "%lld 张图片按上面的顺序拼接；宽度（横着拼时是高度）不一样时按最小的那张缩放。合成动图时每张停 %@ 秒，画面大小按第一张" = "%lld images are stitched in the order above; if widths (heights when horizontal) differ, they’re scaled to the smallest. Animated images show each frame for %@ s at the size of the first image.";
 "合成动图" = "Make Animated Image";
 "加水印" = "Watermark";
-"给选中的图片斜着铺满一层半透明的文字（比如「仅供办理业务使用」），另存一份放在原图旁边" = "Tile semi-transparent text diagonally across the selected images and save copies next to the originals";
-"没有选中图片" = "No images selected";
+"给选中的图片或 PDF 斜着铺满一层半透明的文字（比如「仅供办理业务使用」），另存一份放在原文件旁边" = "Tile semi-transparent text diagonally across the selected images or PDFs and save copies next to the originals";
+"没有选中图片或 PDF" = "No images or PDFs selected";
+"证件照" = "ID Photo";
+"把人像照片换成白底、蓝底或红底，按人脸位置裁成一寸、二寸（300 dpi）；在本机处理，另存一份放在原图旁边" = "Give a portrait a white, blue or red background and crop it around the face to 1-inch or 2-inch ID sizes (300 dpi); processed on this Mac and saved as a copy next to the original";
+"没有选中照片" = "No photo selected";
+"把录音、视频里说的话转成文字和 SRT 字幕，存在原文件旁边；普通话、英语、粤语、日语，这台 Mac 支持时在本机识别" = "Turn speech in recordings and videos into text and SRT subtitles saved next to the original; Mandarin, English, Cantonese and Japanese, recognized on this Mac when it supports it";
+"没有选中录音或视频" = "No recording or video selected";
+"这台 Mac 上用不了语音识别" = "Speech recognition isn’t available on this Mac";
+"说的是哪种话？" = "Which language is spoken?";
+"识别完，文字（.txt）和字幕（.srt）存在原文件旁边；长录音要等一会儿" = "When done, the text (.txt) and subtitles (.srt) are saved next to the original. Long recordings take a while.";
 "视频转换" = "Convert Video";
 "把选中的视频转成 GIF、转成 MP4、压缩到 720p，或者提取音频；结果存在原视频旁边" = "Convert the selected videos to GIF or MP4, compress to 720p, or extract audio; results are saved next to the originals";
 "没有选中视频文件" = "No video files selected";
@@ -742,8 +774,6 @@
 "贴图" = "Pin";
 "把选中的图片或文字贴在屏幕最前面；什么都没选中时先框选一块屏幕" = "Pin the selected image or text on top of all windows; with nothing selected, select an area of the screen first";
 "图片里没有找到可以抠出来的主体" = "No subject found in the image";
-"无法生成抠好的图片" = "Couldn’t create the cut-out image";
-"抠图失败：%@" = "Couldn’t remove the background: %@";
 "抠图" = "Remove Background";
 "去掉选中图片的背景，只留下人、动物或物品（离线）" = "Remove the background of the selected image, keeping only people, animals or objects (offline)";
 "Pop 抠图" = "Pop Cutout";
@@ -1132,11 +1162,15 @@
 "已截取 %@" = "Trimmed %@";
 "转换了 %lld 个，%lld 个失败：%@" = "Converted %lld, %lld failed: %@";
 "已转换 %lld 个视频" = "Converted %lld videos";
+"已存成「%@」" = "Saved as “%@”";
+"要先在「系统设置 → 隐私与安全性 → 语音识别」里允许 Pop" = "Allow Pop in System Settings → Privacy & Security → Speech Recognition first";
+"正在识别「%@」里说的话…" = "Transcribing “%@”…";
 "已加到提醒事项" = "Added to Reminders";
 "已加到日历" = "Added to Calendar";
 "Pop 生词本.%@" = "Pop Vocabulary.%@";
 "导出失败：%@" = "Export failed: %@";
-"加好了 %lld 张，%lld 张失败：%@" = "Watermarked %lld images, %lld failed: %@";
+"加好了 %lld 个，%lld 个失败：%@" = "Watermarked %lld, %lld failed: %@";
+"已给 %lld 个文件加上水印" = "Watermarked %lld files";
 "已给 %lld 张图片加上水印" = "Watermarked %lld images";
 "压好了 %lld 张，%lld 张失败：%@" = "Compressed %lld images, %lld failed: %@";
 "已压缩到 %@" = "Compressed to %@";
@@ -1620,6 +1654,25 @@
 "比较选中的两个文件夹：哪些文件只在一边有，哪些两边都有但内容不一样" = "Compare the two selected folders: which files are only on one side, and which differ";
 "选中两个文件夹才能比较" = "Select two folders to compare";
 
+/* Transcriber.swift */
+"普通话" = "Mandarin";
+"英语" = "English";
+"粤语" = "Cantonese";
+"日语" = "Japanese";
+"这台 Mac 认不了这种语言" = "This Mac can’t recognize this language";
+"语音识别现在用不了，稍后再试" = "Speech recognition isn’t available right now. Try again later.";
+"「%@」里没有声音" = "“%@” has no audio";
+"读不了「%@」里的声音" = "Can’t read the audio in “%@”";
+"读不了「%@」里的声音：%@" = "Can’t read the audio in “%@”: %@";
+"没有听到有人说话" = "No speech was heard";
+"要先在「系统设置 → 键盘 → 听写」里打开听写，才能在本机识别" = "Turn on Dictation in System Settings → Keyboard → Dictation to recognize speech on this Mac";
+"识别失败：%@" = "Recognition failed: %@";
+"存不了识别结果：%@" = "Can’t save the transcript: %@";
+"文字和字幕已经存在「%@」旁边" = "The text and subtitles were saved next to “%@”";
+"；这台 Mac 不能在本机识别这种话，用的是苹果的服务器" = "; this Mac can’t recognize this language on its own, so Apple’s servers were used";
+"语音转文字" = "Transcribe";
+"字幕 SRT" = "SRT Subtitles";
+
 /* TranslationEngines.swift */
 "系统" = "System";
 "系统翻译（离线）" = "System Translation (offline)";
@@ -1822,7 +1875,8 @@
 "水印文字" = "Watermark text";
 "淡" = "Light";
 "浓" = "Strong";
-"斜着铺满整张图，另存一份「原名 水印」放在原图旁边，原图不动" = "Tiled diagonally across the image and saved as a copy named “Name Watermark” next to the original, which stays unchanged";
+"斜着铺满整张图（PDF 每一页都铺），另存一份「原名 水印」放在原文件旁边，原文件不动" = "Tiled diagonally across the image (every page of a PDF) and saved as a copy named “Name Watermark” next to the original, which stays unchanged";
+"给 %lld 个文件加水印" = "Watermark %lld Files";
 "给 %lld 张图片加水印" = "Watermark %lld Images";
 
 /* WindowLayout.swift */
@@ -1857,12 +1911,6 @@
 "%@，转换后存在原图旁边" = "%@. Converted files are saved next to the originals.";
 
 /* 共用的文字和格式 */
-"%@（⌘%@）" = "%@ (⌘%@)";
-"%@（%lld）" = "%@ (%lld)";
-"%@（%lld）：%@" = "%@ (%lld): %@";
-"、" = ", ";
-"，" = ", ";
-"{name}（{reason}）" = "{name} ({reason})";
 "Pop 功能" = "Pop Action";
 "用 Pop 处理文字" = "Process Text with Pop";
 "用 Pop 的一个功能处理一段文字，把结果交给下一个操作：计算、格式化 JSON、转换大小写、AI 润色……" = "Process text with one of Pop’s actions and pass the result to the next step: calculate, format JSON, change case, AI polish…";
@@ -1877,3 +1925,9 @@
 "引擎" = "Engine";
 "用 Pop 翻译 ${text}" = "Translate ${text} with Pop";
 "处理文字" = "Process Text";
+"{name}（{reason}）" = "{name} ({reason})";
+"，" = ", ";
+"%@（⌘%@）" = "%@ (⌘%@)";
+"%@（%lld）" = "%@ (%lld)";
+"%@（%lld）：%@" = "%@ (%lld): %@";
+"、" = ", ";
