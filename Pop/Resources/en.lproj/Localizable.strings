@@ -2063,9 +2063,9 @@
 
 /* 0.29.0：网页存档、裁剪图片 */
 "网页存档" = "Save Web Page";
-"把选中的网址整页存成一页长 PDF（文字能选、能搜）或者一张长图，放在「下载」里" = "Save the whole page at the selected URL to Downloads as one long PDF (with selectable, searchable text) or a long image";
+"把选中的网址整页存成一页长 PDF（文字能选、能搜）、一张长图，或者只把正文存成 Markdown，放在「下载」里" = "Save the whole page at the selected URL to Downloads as one long PDF (with selectable, searchable text) or a long image, or save just the article text as Markdown";
 "只能存网页（http、https 开头的链接）" = "Only web pages can be saved (links that start with http or https)";
-"在后台打开这个网页，整页存到「下载」；要登录才能看的页面存下来是登录页" = "Opens the page in the background and saves the whole page to Downloads. A page that needs you to sign in is saved as the sign-in page.";
+"在后台打开这个网页，存到「下载」：PDF 和长图是整页，Markdown 只取正文；要登录才能看的页面存下来是登录页" = "Opens the page in the background and saves it to Downloads: the PDF and long image keep the whole page, Markdown keeps just the article text. A page that needs you to sign in is saved as the sign-in page.";
 "存成 PDF" = "Save as PDF";
 "存成长图" = "Save as Long Image";
 "正在打开网页…" = "Opening the web page…";
@@ -2095,6 +2095,21 @@
 "裁好了 %lld 张，%lld 张失败：%@" = "Cropped %lld images, %lld failed: %@";
 "已裁成 %@，存在原图旁边" = "Cropped to %@ and saved next to the original";
 "已把 %lld 张裁成 %@" = "Cropped %lld images to %@";
+
+/* 0.34.0：网页存成 Markdown、对比文件 */
+"存成 Markdown" = "Save as Markdown";
+"网页里没有找到正文" = "No article text found on the page";
+"原文：<%@>" = "Source: <%@>";
+"对比文件" = "Compare Files";
+"对比选中的两个文本文件（代码、Markdown、配置、CSV……），标出删去和新增的行，改动的地方逐词标出；按修改时间，旧的当原文" = "Compare the two selected text files (code, Markdown, config, CSV…), marking removed and added lines and the changed words in them; the older file by modification date is the original";
+"选中两个文本文件才能对比" = "Select two text files to compare";
+"两个文件内容相同" = "The two files are identical";
+"「%@」太大了，只能对比 30 万字以内的文本文件" = "“%@” is too large; only text files up to 300,000 characters can be compared";
+"读不了「%@」：%@" = "Couldn’t read “%@”: %@";
+"「%@」不是文本文件，没法对比" = "“%@” isn’t a text file, so it can’t be compared";
+"「%@」→「%@」（旧的在前）：删去 %lld 行，新增 %lld 行" = "“%@” → “%@” (older first): %lld lines removed, %lld added";
+
+/* 界面语言设置 */
 "界面语言" = "Language";
 "跟随系统" = "Follow System";
 "重新启动 Pop 后生效" = "Takes effect after Pop relaunches";

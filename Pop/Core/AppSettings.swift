@@ -114,6 +114,7 @@ enum BuiltinPluginID {
 
     static let watermark = "watermark"
     static let compareFolders = "compareFolders"
+    static let compareFiles = "compareFiles"
 
     static let sendToPhone = "sendToPhone"
     static let idNumber = "idNumber"
@@ -158,7 +159,7 @@ enum BuiltinPluginID {
         dateSpan, folderTree, markdownTOC,
         findDuplicates,
         diskUsage, codeStats, trimMedia,
-        watermark, compareFolders,
+        watermark, compareFolders, compareFiles,
         sendToPhone, idNumber,
         transcribe, idPhoto,
         webCapture, cropImage,

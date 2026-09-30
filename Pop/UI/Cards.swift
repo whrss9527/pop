@@ -497,30 +497,17 @@ struct TranslationCardView: View {
 
     var body: some View {
         CardContainer(title: String(localized: "翻译"), subtitle: model.pairDescription, onClose: onClose) {
-            HStack(spacing: 8) {
-                Menu {
-                    ForEach(LanguageOption.translationTargets) { option in
-                        Button(option.name) { model.switchTarget(to: option.id) }
-                            .disabled(option.id == model.targetCode)
-                    }
-                } label: {
-                    Text("译成\(LanguageOption.name(for: model.targetCode))")
+            // 英文界面里语言菜单和引擎分段放一行放不下，就分成两行，不让「对比」被截掉
+            ViewThatFits(in: .horizontal) {
+                HStack(spacing: 8) {
+                    targetMenu
+                    Spacer()
+                    enginePicker
                 }
-                .menuStyle(.borderlessButton)
-                .fixedSize()
-                .help("换一种语言重新翻译")
-                Spacer()
-                Picker("翻译引擎", selection: modeBinding) {
-                    ForEach(TranslationEngine.allCases) { engine in
-                        Text(engine.title).tag(TranslationModel.Mode.single(engine))
-                    }
-                    Text("对比").tag(TranslationModel.Mode.compare)
+                VStack(alignment: .leading, spacing: 6) {
+                    targetMenu
+                    enginePicker
                 }
-                .pickerStyle(.segmented)
-                .labelsHidden()
-                .controlSize(.small)
-                .fixedSize()
-                .help("换一个翻译引擎，或者把几家的译文放在一起对比")
             }
             .font(.callout)
             Text(model.text)
@@ -566,6 +553,34 @@ struct TranslationCardView: View {
         .task {
             model.start()
         }
+    }
+
+    private var targetMenu: some View {
+        Menu {
+            ForEach(LanguageOption.translationTargets) { option in
+                Button(option.name) { model.switchTarget(to: option.id) }
+                    .disabled(option.id == model.targetCode)
+            }
+        } label: {
+            Text("译成\(LanguageOption.name(for: model.targetCode))")
+        }
+        .menuStyle(.borderlessButton)
+        .fixedSize()
+        .help("换一种语言重新翻译")
+    }
+
+    private var enginePicker: some View {
+        Picker("翻译引擎", selection: modeBinding) {
+            ForEach(TranslationEngine.allCases) { engine in
+                Text(engine.title).tag(TranslationModel.Mode.single(engine))
+            }
+            Text("对比").tag(TranslationModel.Mode.compare)
+        }
+        .pickerStyle(.segmented)
+        .labelsHidden()
+        .controlSize(.small)
+        .fixedSize()
+        .help("换一个翻译引擎，或者把几家的译文放在一起对比")
     }
 
     private var modeBinding: Binding<TranslationModel.Mode> {
