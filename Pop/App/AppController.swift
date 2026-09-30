@@ -21,6 +21,8 @@ final class AppController {
     let settingsWindow: SettingsWindowController
     /// 拖着文件晃几下打开暂存架
     let shakeDetector = DragShakeDetector()
+    /// 选中文字后显示工具条
+    let selectionWatcher = SelectionWatcher()
 
     private var cancellables = Set<AnyCancellable>()
 
@@ -105,6 +107,17 @@ final class AppController {
         CountdownTimer.shared.onFinish = { [weak self] message in
             self?.coordinator.showToast(message, at: NSEvent.mouseLocation)
         }
+        selectionWatcher.onSelection = { [weak self] point, clickCount in
+            self?.coordinator.selectionMade(at: point, clickCount: clickCount)
+        }
+        selectionWatcher.onInteraction = { [weak self] in
+            self?.coordinator.hideToolbar()
+        }
+        NSWorkspace.shared.notificationCenter.publisher(for: NSWorkspace.didActivateApplicationNotification)
+            .sink { [weak self] _ in
+                self?.coordinator.hideToolbar()
+            }
+            .store(in: &cancellables)
         shakeDetector.onShake = { [weak self] point in
             guard let self, !self.coordinator.isPaused else { return }
             FileShelf.shared.show(near: point)
@@ -232,6 +245,12 @@ final class AppController {
             shakeDetector.start()
         } else {
             shakeDetector.stop()
+        }
+        if settings.toolbar.enabled {
+            selectionWatcher.start()
+        } else {
+            selectionWatcher.stop()
+            coordinator.hideToolbar()
         }
     }
 

@@ -249,6 +249,23 @@ struct TriggerSettings: Codable, Equatable {
     }
 }
 
+/// 选中文字后显示工具条
+struct ToolbarSettings: Codable, Equatable {
+    /// 拖着选中一段文字或者双击选词后，在选区上方显示一排功能（默认关闭）
+    var enabled = false
+    /// 不显示工具条的 App（Bundle ID）
+    var excludedBundleIDs: [String] = []
+
+    init() {}
+
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        let d = ToolbarSettings()
+        enabled = c.lenient(.enabled, default: d.enabled)
+        excludedBundleIDs = c.lenient(.excludedBundleIDs, default: d.excludedBundleIDs)
+    }
+}
+
 /// 圆盘布局：每一格放哪个插件（nil 表示空格子）。
 struct RingLayout: Codable, Equatable {
     static let allowedSlotCounts = [4, 6, 8, 10, 12]
@@ -592,6 +609,7 @@ struct AISettings: Codable, Equatable {
 /// 所有需要持久化（并通过 iCloud 同步）的设置。
 struct AppSettings: Codable, Equatable {
     var trigger = TriggerSettings()
+    var toolbar = ToolbarSettings()
     var ring = RingLayout.default
     /// 按 App 单独设置的圆盘布局
     var appRings: [AppRing] = []
@@ -618,6 +636,7 @@ struct AppSettings: Codable, Equatable {
         let c = try decoder.container(keyedBy: CodingKeys.self)
         let d = AppSettings()
         trigger = c.lenient(.trigger, default: d.trigger)
+        toolbar = c.lenient(.toolbar, default: d.toolbar)
         ring = c.lenient(.ring, default: d.ring)
         appRings = c.lossyArray(.appRings) ?? []
         installedPlugins = c.lenient(.installedPlugins, default: d.installedPlugins)

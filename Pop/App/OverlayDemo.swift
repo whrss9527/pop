@@ -353,6 +353,14 @@ enum OverlayDemo {
             overlay.showCard(PDFPasswordView(model: password, onSubmit: { _ in }, onClose: {}), anchor: center)
             step("pdfPassword")
 
+            // 选中文字后的工具条：假装在圆盘的位置选中了一段英文
+            await pause(1.4 * unit)
+            overlay.hide()
+            coordinator.showToolbarForDemo(text: "Liquid glass", selection: CGRect(x: center.x - 50, y: center.y - 20, width: 100, height: 18))
+            step("toolbar")
+            await pause(1.4 * unit)
+            coordinator.hideToolbar()
+
             // 截图标注窗口：拿一张画好的示例图，标上方框、箭头、文字、马赛克和序号；截图区域换成标注窗口
             await pause(1.4 * unit)
             overlay.hide()

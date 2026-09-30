@@ -32,6 +32,17 @@ final class SelectionReader: @unchecked Sendable {
         }
     }
 
+    /// 只用辅助功能读选中的文字和它在屏幕上的位置（Quartz 坐标），不碰剪贴板；读不到时返回 nil。
+    /// 选中文字后的工具条用它：每次选完都读，不能去动剪贴板
+    func readAccessible(pid: pid_t?) async -> (text: String, bounds: CGRect?)? {
+        guard !Self.skipsReading, let pid, pid != ProcessInfo.processInfo.processIdentifier else { return nil }
+        return await withCheckedContinuation { continuation in
+            queue.async {
+                continuation.resume(returning: self.accessibleSelectionWithBounds())
+            }
+        }
+    }
+
     // MARK: - 读取流程
 
     private enum AXSelection {
@@ -88,6 +99,22 @@ final class SelectionReader: @unchecked Sendable {
             return .unavailable
         }
         return text.isEmpty ? .empty : .text(text)
+    }
+
+    private func accessibleSelectionWithBounds() -> (text: String, bounds: CGRect?)? {
+        let system = AXUIElementCreateSystemWide()
+        guard let focused = axElement(system, kAXFocusedUIElementAttribute),
+              let text = axValue(focused, kAXSelectedTextAttribute) as? String,
+              !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return nil }
+        // 选区在屏幕上的位置：有的 App 给不出来，这时工具条对着鼠标
+        guard let range = axValue(focused, kAXSelectedTextRangeAttribute) else { return (text, nil) }
+        var value: CFTypeRef?
+        guard AXUIElementCopyParameterizedAttributeValue(focused, kAXBoundsForRangeParameterizedAttribute as CFString, range,
+                                                         &value) == .success,
+              let value, CFGetTypeID(value) == AXValueGetTypeID() else { return (text, nil) }
+        var rect = CGRect.zero
+        guard AXValueGetValue(value as! AXValue, .cgRect, &rect), rect.width > 0 || rect.height > 0 else { return (text, nil) }
+        return (text, rect)
     }
 
     /// 在菜单栏里找快捷键是 ⌘C 的菜单项（不依赖菜单标题，所以不受系统语言影响）。
