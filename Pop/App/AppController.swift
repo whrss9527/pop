@@ -25,6 +25,8 @@ final class AppController {
     let selectionWatcher = SelectionWatcher()
 
     private var cancellables = Set<AnyCancellable>()
+    /// 最近一个在前台的别的 App：打开 pop:// 链接时系统会把 Pop 带到前台，处理前先切回去
+    private var lastExternalApp: NSRunningApplication?
 
     init() {
         settingsStore = SettingsStore()
@@ -64,6 +66,51 @@ final class AppController {
             )
         }
         registry.setUserManifests(pluginStore.manifests)
+    }
+
+    /// pop:// 链接
+    func open(_ url: URL) {
+        guard let link = PopLink(url: url) else {
+            coordinator.showToast("Pop 不认识这个链接：\(url.absoluteString)", at: NSEvent.mouseLocation)
+            return
+        }
+        switch link {
+        case .settings, .pluginLibrary:
+            perform(link)
+        case .run, .ring, .clipboard:
+            // 系统打开链接时会把 Pop 带到前台。选中的内容、结果要贴回去的地方都在原来的 App 里，
+            // 所以等一下，Pop 还在前台的话先切回原来的 App 再处理
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) { [weak self] in
+                MainActor.assumeIsolated {
+                    guard let self else { return }
+                    guard NSApp.isActive, let app = self.lastExternalApp, !app.isTerminated else {
+                        self.perform(link)
+                        return
+                    }
+                    app.activate(options: [])
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) { [weak self] in
+                        MainActor.assumeIsolated {
+                            self?.perform(link)
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    private func perform(_ link: PopLink) {
+        switch link {
+        case .run(let pluginID, let text, let files):
+            coordinator.runFromLink(pluginID: pluginID, text: text, files: files)
+        case .ring:
+            coordinator.activateFromHotKey()
+        case .clipboard:
+            coordinator.showClipboardHistoryFromHotKey()
+        case .settings(let tab):
+            settingsWindow.show(tab: tab)
+        case .pluginLibrary:
+            settingsWindow.showPluginLibrary()
+        }
     }
 
     func start() {
@@ -117,8 +164,12 @@ final class AppController {
             self?.coordinator.hideToolbar()
         }
         NSWorkspace.shared.notificationCenter.publisher(for: NSWorkspace.didActivateApplicationNotification)
-            .sink { [weak self] _ in
+            .sink { [weak self] notification in
                 self?.coordinator.hideToolbar()
+                if let app = notification.userInfo?[NSWorkspace.applicationUserInfoKey] as? NSRunningApplication,
+                   app.processIdentifier != ProcessInfo.processInfo.processIdentifier {
+                    self?.lastExternalApp = app
+                }
             }
             .store(in: &cancellables)
         shakeDetector.onShake = { [weak self] point in

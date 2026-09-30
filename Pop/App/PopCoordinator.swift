@@ -58,6 +58,8 @@ final class PopCoordinator: MouseTriggerDelegate {
         /// 这次按住期间收到的拖动事件数（写进日志，排查手势问题用）
         var dragCount = 0
         var content: ClassifiedContent?
+        /// 内容是 pop:// 链接带来的，不是在前台 App 里选中的：没有原文可以替换
+        var fromLink = false
         var ring: RingViewModel?
         /// 当前显示的列表面板
         var panel: Panel?
@@ -185,7 +187,63 @@ final class PopCoordinator: MouseTriggerDelegate {
         if overlay.isVisible || session != nil {
             endSession()
         }
-        guard !isPaused, settingsStore.settings.isInstalled(pluginID), let plugin = registry.plugin(id: pluginID) else { return }
+        guard settingsStore.settings.isInstalled(pluginID) else { return }
+        runReadingSelection(pluginID)
+    }
+
+    /// pop:// 链接执行功能：带了文字或文件就处理它们，没带就和功能快捷键一样处理当前选中的内容。
+    /// 链接点名要用的功能，关掉了（不在圆盘上）的也照样执行。
+    func runFromLink(pluginID: String, text: String?, files: [URL]) {
+        if overlay.isVisible || session != nil {
+            endSession()
+        }
+        let anchor = NSEvent.mouseLocation
+        guard !isPaused else {
+            overlay.showToast("Pop 已暂停", anchor: anchor)
+            return
+        }
+        guard let plugin = registry.plugin(id: pluginID) else {
+            overlay.showToast("没有「\(pluginID)」这个功能", anchor: anchor)
+            return
+        }
+        guard text != nil || !files.isEmpty else {
+            runReadingSelection(pluginID)
+            return
+        }
+        let raw: SelectionContent = files.isEmpty ? .text(text ?? "") : .files(files)
+        let content = ContentClassifier.classify(raw)
+        guard plugin.info.canHandle(content) else {
+            overlay.showToast("「\(plugin.info.name)」处理不了链接里的内容", anchor: anchor)
+            return
+        }
+        // 问之前先记下前台 App：弹出确认框时 Pop 会到前台
+        let app = NSWorkspace.shared.frontmostApplication
+        // 链接可能来自网页：用户自己写的 Shell 脚本、快捷指令插件先问一下再处理链接里的内容
+        if let manifestPlugin = plugin as? ManifestPlugin,
+           [.shell, .shortcut].contains(manifestPlugin.manifest.action.type),
+           !Self.confirmLinkRun(plugin.info.name, content: text ?? files.map { $0.path(percentEncoded: false) }.joined(separator: "\n")) {
+            return
+        }
+        session = Session(anchor: anchor, pid: app?.processIdentifier, sourceAppName: app?.localizedName,
+                          bundleID: app?.bundleIdentifier, buttonHeld: false, content: content, fromLink: true)
+        run(pluginID)
+    }
+
+    private static func confirmLinkRun(_ name: String, content: String) -> Bool {
+        let alert = NSAlert()
+        alert.messageText = "用「\(name)」处理链接里的内容？"
+        let excerpt = content.count > 300 ? String(content.prefix(300)) + "…" : content
+        alert.informativeText = "一个 pop:// 链接要用这个插件处理下面的内容。它会运行你写的脚本或快捷指令，不认识这个链接的话点「取消」。\n\n\(excerpt)"
+        alert.alertStyle = .warning
+        alert.addButton(withTitle: "运行")
+        alert.addButton(withTitle: "取消")
+        NSApp.activate()
+        return alert.runModal() == .alertFirstButtonReturn
+    }
+
+    /// 读取选中的内容后执行（功能快捷键、不带内容的链接）
+    private func runReadingSelection(_ pluginID: String) {
+        guard !isPaused, let plugin = registry.plugin(id: pluginID) else { return }
         let app = NSWorkspace.shared.frontmostApplication
         let pid = app?.processIdentifier
         let newSession = Session(anchor: NSEvent.mouseLocation, pid: pid, sourceAppName: app?.localizedName,
@@ -422,11 +480,16 @@ final class PopCoordinator: MouseTriggerDelegate {
         }
         let pid = current.pid
         let reader = self.reader
+        // 链接带来的文字不是前台 App 里选中的，不去读那边的格式
+        var readRich: (() async -> RichSelection?)? = nil
+        if !current.fromLink {
+            readRich = { await reader.readRich(pid: pid) }
+        }
         let context = PluginContext(settings: settingsStore.settings,
                                     openSettings: { [weak self] in self?.openSettings(nil) },
                                     sourceAppName: current.sourceAppName,
                                     anchor: current.anchor,
-                                    readRichSelection: { await reader.readRich(pid: pid) })
+                                    readRichSelection: readRich)
         let sessionID = current.id
         Task { [weak self] in
             let outcome = await plugin.run(content, context: context)
@@ -446,7 +509,12 @@ final class PopCoordinator: MouseTriggerDelegate {
             } else {
                 overlay.hide()
             }
-        case .card(let card):
+        case .card(var card):
+            if current.fromLink {
+                // 链接带来的文字不在哪个 App 里，没有原文可以替换
+                card.replaceText = nil
+                card.rowsReplaceable = false
+            }
             overlay.showCard(ResultCardView(card: card,
                                             onAction: { [weak self] action in self?.perform(action) },
                                             onMore: moreAction(for: current),
@@ -458,7 +526,7 @@ final class PopCoordinator: MouseTriggerDelegate {
             let model = TranslationModel(text: text, sourceLanguage: language, targetLanguage: target,
                                          engine: settings.translation.engine, services: .live(ai: settings.ai))
             overlay.showCard(TranslationCardView(model: model,
-                                                 canReplace: Self.isTextSelection(current.content) && current.content?.text == text,
+                                                 canReplace: Self.canReplace(current) && current.content?.text == text,
                                                  onAction: { [weak self] action in self?.perform(action) },
                                                  onMore: moreAction(for: current),
                                                  onDownload: { [weak self, weak model] in
@@ -472,7 +540,11 @@ final class PopCoordinator: MouseTriggerDelegate {
                                                  onClose: { [weak self] in self?.endSession() }),
                              anchor: current.anchor)
         case .replace(let text):
-            replaceSelection(with: text)
+            if current.fromLink {
+                copy(text)
+            } else {
+                replaceSelection(with: text)
+            }
         case .showAllPlugins:
             presentChooser()
         case .showClipboardHistory:
@@ -1010,7 +1082,7 @@ final class PopCoordinator: MouseTriggerDelegate {
     private func presentAI(_ spec: AIRequestSpec) {
         guard let current = session else { return }
         let model = AIChatModel(source: spec.text, settings: settingsStore.settings)
-        let canReplace = Self.isTextSelection(current.content) && current.content?.text == spec.text
+        let canReplace = Self.canReplace(current) && current.content?.text == spec.text
         overlay.showCard(AICardView(model: model, canReplace: canReplace,
                                     focusQuestion: spec.action == nil && spec.prompt == nil,
                                     onAction: { [weak self] action in self?.perform(action) },
@@ -1034,7 +1106,7 @@ final class PopCoordinator: MouseTriggerDelegate {
         guard let current = session else { return }
         stopPointerTracking()
         let model = RegexTesterModel(text: text)
-        overlay.showCard(RegexTesterView(model: model, canReplace: Self.isTextSelection(current.content),
+        overlay.showCard(RegexTesterView(model: model, canReplace: Self.canReplace(current),
                                          onAction: { [weak self] action in self?.perform(action) },
                                          onClose: { [weak self] in self?.endSession() }),
                          anchor: current.anchor)
@@ -1295,11 +1367,10 @@ final class PopCoordinator: MouseTriggerDelegate {
         }
     }
 
-    private static func isTextSelection(_ content: ClassifiedContent?) -> Bool {
-        if case .text = content?.selection {
-            return true
-        }
-        return false
+    /// 在前台 App 里选中了一段文字，才能把结果写回去替换它
+    private static func canReplace(_ current: Session) -> Bool {
+        guard !current.fromLink, case .text = current.content?.selection else { return false }
+        return true
     }
 
     /// 中文译成「中文译为」的语言，其他译成「外文译为」的语言。

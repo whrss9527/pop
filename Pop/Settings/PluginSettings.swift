@@ -27,6 +27,7 @@ struct PluginsSettingsView: View {
                     UserPluginRow(manifest: manifest,
                                   installed: installedBinding(for: manifest.id),
                                   onEdit: { editing = PluginDraft(manifest: manifest, isNew: false) },
+                                  onCopyLink: { copyLink(manifest.id) },
                                   onExport: { export(manifest) },
                                   onReveal: { reveal(manifest) },
                                   onDelete: { delete(manifest) })
@@ -91,11 +92,14 @@ struct PluginsSettingsView: View {
                                     }
                                 }
                             }
+                            .contextMenu {
+                                Button("拷贝链接") { copyLink(info.id) }
+                            }
                         }
                     } header: {
                         VStack(alignment: .leading, spacing: 4) {
                             if category == BuiltinCategory.allCases.first {
-                                Text("关掉的功能会从圆盘上移除，也不会再被直达规则调用。打开后到「圆盘」里拖到想要的位置，或者在圆盘的「全部功能」里找到它。")
+                                Text("关掉的功能会从圆盘上移除，也不会再被直达规则调用。打开后到「圆盘」里拖到想要的位置，或者在圆盘的「全部功能」里找到它。右键一个功能可以拷贝它的 pop:// 链接，给快捷指令和脚本用。")
                                     .font(.caption)
                                     .foregroundStyle(.secondary)
                                     .fixedSize(horizontal: false, vertical: true)
@@ -190,6 +194,11 @@ struct PluginsSettingsView: View {
         }
     }
 
+    /// 执行这个功能的 pop:// 链接，给快捷指令和脚本用
+    private func copyLink(_ id: String) {
+        PasteboardWriter.copy(PopLink.runURL(id).absoluteString)
+    }
+
     private func reveal(_ manifest: PluginManifest) {
         if let url = pluginStore.fileURL(for: manifest.id) {
             NSWorkspace.shared.activateFileViewerSelecting([url])
@@ -215,6 +224,7 @@ struct UserPluginRow: View {
     let manifest: PluginManifest
     @Binding var installed: Bool
     let onEdit: () -> Void
+    let onCopyLink: () -> Void
     let onExport: () -> Void
     let onReveal: () -> Void
     let onDelete: () -> Void
@@ -238,6 +248,7 @@ struct UserPluginRow: View {
             Button("编辑", action: onEdit)
                 .controlSize(.small)
             Menu {
+                Button("拷贝链接", action: onCopyLink)
                 Button("导出…", action: onExport)
                 Button("在访达中显示", action: onReveal)
                 Divider()
