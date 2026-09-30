@@ -2,17 +2,20 @@ import AppKit
 import PDFKit
 import WebKit
 
-/// 网页存档：在后台打开一个网页，整页存成一页长 PDF（文字能选、能搜，链接能点），或者一张长图。
+/// 网页存档：在后台打开一个网页，整页存成一页长 PDF（文字能选、能搜，链接能点）、一张长图，
+/// 或者只取出正文存成 Markdown（做笔记用）。
 /// 用的是 Pop 自己的网页视图，没有浏览器里的登录状态：要登录才能看的页面存下来是登录页。
 enum WebCapture {
     enum Format: String, Equatable, CaseIterable {
         case pdf
         case image
+        case markdown
 
         var title: String {
             switch self {
             case .pdf: return String(localized: "存成 PDF")
             case .image: return String(localized: "存成长图")
+            case .markdown: return String(localized: "存成 Markdown")
             }
         }
     }
@@ -26,6 +29,12 @@ enum WebCapture {
     /// 存下来的网页：一页 PDF 和网页标题
     struct Page {
         let pdf: Data
+        let title: String?
+    }
+
+    /// 网页的正文部分（HTML，链接和图片已经是完整的网址）和标题
+    struct Article {
+        let html: String
         let title: String?
     }
 
@@ -43,6 +52,36 @@ enum WebCapture {
         try await loader.load(url: url, html: html, timeout: timeout)
         await loader.settle()
         return Page(pdf: try await loader.pdf(), title: loader.title)
+    }
+
+    /// 打开 url（或者直接给一段 HTML，测试用），取出正文部分
+    @MainActor
+    static func loadArticle(_ url: URL?, html: String? = nil, timeout: TimeInterval = 40) async throws -> Article {
+        let loader = PageLoader(width: pageWidth)
+        defer { loader.close() }
+        try await loader.load(url: url, html: html, timeout: timeout)
+        await loader.settleForText()
+        guard let content = await loader.mainContent(), !content.isEmpty else {
+            throw Failure(message: String(localized: "网页里没有找到正文"))
+        }
+        return Article(html: content, title: loader.title)
+    }
+
+    /// 正文转成 Markdown，最前面是标题和原文链接；正文自己以一级标题开头时，原文链接放在那个标题下面
+    static func markdown(title: String?, url: URL, html: String) -> String? {
+        guard let body = HTMLToMarkdown.convert(html)?.trimmingCharacters(in: .whitespacesAndNewlines), !body.isEmpty else {
+            return nil
+        }
+        let address = url.absoluteString
+        let source = String(localized: "原文：<\(address)>")
+        if body.hasPrefix("# ") {
+            var lines = body.components(separatedBy: "\n")
+            lines.insert(contentsOf: ["", source], at: 1)
+            return lines.joined(separator: "\n") + "\n"
+        }
+        let trimmed = (title ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+        let heading = trimmed.isEmpty ? (url.host() ?? address) : trimmed
+        return "# \(heading)\n\n\(source)\n\n\(body)\n"
     }
 
     /// 一页 PDF 画成 PNG：按 1.5 倍画，太长、太大时整体缩小。比较慢，在后台调用
@@ -85,21 +124,31 @@ enum WebCapture {
     /// 打开网页、存到「下载」，返回文件位置
     @MainActor
     static func capture(_ url: URL, format: Format) async throws -> URL {
-        let page = try await load(url)
-        let name = fileName(title: page.title, url: url)
         let folder = FileManager.default.urls(for: .downloadsDirectory, in: .userDomainMask).first
             ?? FileManager.default.homeDirectoryForCurrentUser.appending(path: "Downloads")
         try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+        if format == .markdown {
+            let article = try await loadArticle(url)
+            let html = article.html
+            let title = article.title
+            guard let text = await runInBackground({ WebCapture.markdown(title: title, url: url, html: html) }) else {
+                throw Failure(message: String(localized: "网页里没有找到正文"))
+            }
+            let output = FileNames.available(in: folder, base: fileName(title: article.title, url: url), extension: "md")
+            try Data(text.utf8).write(to: output)
+            return output
+        }
+        let page = try await load(url)
+        let name = fileName(title: page.title, url: url)
         let output: URL
-        switch format {
-        case .pdf:
-            output = FileNames.available(in: folder, base: name, extension: "pdf")
-            try page.pdf.write(to: output)
-        case .image:
+        if format == .image {
             let data = page.pdf
             let png = try await runInBackground { Result { try WebCapture.image(fromPDF: data) } }.get()
             output = FileNames.available(in: folder, base: name, extension: "png")
             try png.write(to: output)
+        } else {
+            output = FileNames.available(in: folder, base: name, extension: "pdf")
+            try page.pdf.write(to: output)
         }
         return output
     }
@@ -149,6 +198,61 @@ private final class PageLoader: NSObject, WKNavigationDelegate {
         let documentTitle = try? await webView.evaluateJavaScript("document.title") as? String
         title = [documentTitle, webView.title].compactMap { $0 }.first { !$0.isEmpty }
     }
+
+    /// 存正文时只要往下滚一遍，让滚动时才加载的内容出来，不用等图片
+    func settleForText() async {
+        await scrollThrough()
+        _ = try? await webView.evaluateJavaScript("window.scrollTo(0, 0); true")
+    }
+
+    /// 取出正文部分的 HTML
+    func mainContent() async -> String? {
+        await withCheckedContinuation { (continuation: CheckedContinuation<String?, Never>) in
+            webView.callAsyncJavaScript(Self.mainContentScript, arguments: [:], in: nil, in: .defaultClient) { result in
+                continuation.resume(returning: (try? result.get()) as? String)
+            }
+        }
+    }
+
+    /// 找正文：只有一篇（或者最长的一篇比第二长的长很多）的 article，其次是 main，都没有就用整个 body。
+    /// 复制一份再去掉看不见的元素、导航、侧栏、页脚、表单、脚本，链接和图片换成完整的网址
+    private static let mainContentScript = """
+    const length = (element) => (element.innerText || "").trim().length;
+    const outermost = (list) => list.filter((element) => !list.some((other) => other !== element && other.contains(element)));
+    const pick = (selector) => {
+        const found = outermost(Array.from(document.querySelectorAll(selector))).map((element) => [element, length(element)]).sort((a, b) => b[1] - a[1]);
+        if (found.length === 0 || found[0][1] < 200) { return null; }
+        if (found.length > 1 && found[0][1] < found[1][1] * 3) { return null; }
+        return found[0][0];
+    };
+    const root = pick('article, [itemprop="articleBody"]') || pick('main, [role="main"]') || document.body;
+    if (!root) { return ""; }
+    const hidden = [];
+    for (const element of root.querySelectorAll("*")) {
+        const style = getComputedStyle(element);
+        if (style.display === "none" || style.visibility === "hidden") { element.setAttribute("data-pop-hidden", ""); hidden.push(element); }
+    }
+    const copy = root.cloneNode(true);
+    for (const element of hidden) { element.removeAttribute("data-pop-hidden"); }
+    copy.querySelectorAll('[data-pop-hidden], script, style, noscript, template, iframe, nav, aside, form, button, dialog, footer, video, audio, source, [role="navigation"], [role="complementary"], [role="banner"], [role="contentinfo"], [aria-hidden="true"]').forEach((element) => element.remove());
+    if (root === document.body) {
+        copy.querySelectorAll("header").forEach((element) => { if (!element.closest('article, main, [role="main"]')) { element.remove(); } });
+    }
+    const absolute = (value) => { try { return new URL(value, document.baseURI).href; } catch (error) { return ""; } };
+    copy.querySelectorAll("a[href]").forEach((link) => {
+        const href = absolute(link.getAttribute("href"));
+        if (/^(https?|mailto):/i.test(href)) { link.setAttribute("href", href); } else { link.removeAttribute("href"); }
+    });
+    copy.querySelectorAll("img").forEach((image) => {
+        const fromSet = (image.getAttribute("srcset") || "").split(",")[0].trim().split(/\\s+/)[0];
+        const raw = image.getAttribute("data-src") || image.getAttribute("data-original") || image.getAttribute("data-lazy-src") || image.getAttribute("src") || fromSet || "";
+        const source = raw.startsWith("data:") ? "" : absolute(raw);
+        if (!/^https?:/i.test(source)) { image.remove(); return; }
+        image.setAttribute("src", source);
+        image.removeAttribute("srcset");
+    });
+    return copy.outerHTML;
+    """
 
     /// 往下滚到底、让懒加载的图片都加载出来，再回到顶上
     func settle() async {

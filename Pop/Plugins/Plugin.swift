@@ -79,6 +79,8 @@ enum ContentCheck: Hashable {
     case folder
     /// 正好选中了两个文件夹
     case twoFolders
+    /// 正好选中了两个文本文件
+    case twoTextFiles
     /// Markdown 里至少有两个标题
     case markdownHeadings
     /// 身份证号、统一社会信用代码或者银行卡号
@@ -115,6 +117,9 @@ enum ContentCheck: Hashable {
         case .twoFolders:
             let paths = subject.components(separatedBy: "\n").filter { !$0.isEmpty }
             return paths.count == 2 && paths.allSatisfy(FolderTree.isFolder)
+        case .twoTextFiles:
+            let paths = subject.components(separatedBy: "\n").filter { !$0.isEmpty }
+            return paths.count == 2 && paths.allSatisfy { FileDiff.isTextFile(URL(fileURLWithPath: $0)) }
         case .markdownHeadings:
             return MarkdownTOC.headings(in: subject).count >= 2
         case .idNumber:

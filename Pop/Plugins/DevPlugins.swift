@@ -4,7 +4,8 @@ import AppKit
 
 struct WebCapturePlugin: PopPlugin {
     let info = PluginInfo(id: BuiltinPluginID.webCapture, name: String(localized: "网页存档"), symbol: "arrow.down.doc",
-                          summary: String(localized: "把选中的网址整页存成一页长 PDF（文字能选、能搜）或者一张长图，放在「下载」里"), accepts: [.url])
+                          summary: String(localized: "把选中的网址整页存成一页长 PDF（文字能选、能搜）、一张长图，或者只把正文存成 Markdown，放在「下载」里"),
+                          accepts: [.url])
 
     @MainActor func run(_ content: ClassifiedContent, context: PluginContext) async -> PluginOutcome {
         guard let url = content.url, ["http", "https"].contains(url.scheme?.lowercased() ?? "") else {
@@ -15,7 +16,7 @@ struct WebCapturePlugin: PopPlugin {
 
     static func card(_ url: URL) -> ResultCard {
         ResultCard(title: String(localized: "网页存档"), body: url.absoluteString,
-                   detail: String(localized: "在后台打开这个网页，整页存到「下载」；要登录才能看的页面存下来是登录页"),
+                   detail: String(localized: "在后台打开这个网页，存到「下载」：PDF 和长图是整页，Markdown 只取正文；要登录才能看的页面存下来是登录页"),
                    buttons: WebCapture.Format.allCases.map { CardButton(title: $0.title, action: .captureWeb(url, $0)) })
     }
 }
