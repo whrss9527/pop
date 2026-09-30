@@ -670,6 +670,10 @@ final class PopCoordinator: MouseTriggerDelegate {
             finish(toast: String(localized: "已停止传到手机"))
         case .transcribe(let file, let language):
             transcribe(file, language: language)
+        case .captureWeb(let url, let format):
+            captureWeb(url, format: format)
+        case .cropImages(let files, let ratio):
+            cropImages(files, ratio)
         }
     }
 
@@ -891,6 +895,57 @@ final class PopCoordinator: MouseTriggerDelegate {
                 message = outputs.isEmpty ? failure : String(localized: "转换了 \(outputs.count) 张，\(failures.count) 张失败：\(failure)")
             } else {
                 message = outputs.count == 1 ? String(localized: "已存到原图旁边") : String(localized: "已转换 \(outputs.count) 张")
+            }
+            self.showToast(message, at: anchor)
+        }
+    }
+
+    /// 网页存档：在后台打开网页，存好后在访达里选中；这期间又用起了 Pop 就不打断
+    private func captureWeb(_ url: URL, format: WebCapture.Format) {
+        let anchor = session?.anchor ?? NSEvent.mouseLocation
+        showToast(String(localized: "正在打开网页…"), at: anchor)
+        Task { [weak self] in
+            let message: String
+            do {
+                let output = try await WebCapture.capture(url, format: format)
+                NSWorkspace.shared.activateFileViewerSelecting([output])
+                message = String(localized: "已存到「下载」：\(output.lastPathComponent)")
+            } catch {
+                message = (error as? WebCapture.Failure)?.message ?? error.localizedDescription
+            }
+            guard let self, self.session == nil else { return }
+            self.showToast(message, at: NSEvent.mouseLocation)
+        }
+    }
+
+    /// 按比例裁剪：在后台逐张处理，完成后在访达里选中新文件
+    private func cropImages(_ files: [URL], _ ratio: SmartCrop.Ratio) {
+        let anchor = session?.anchor ?? NSEvent.mouseLocation
+        endSession()
+        Task { [weak self] in
+            let (outputs, failures) = await runInBackground { () -> ([URL], [String]) in
+                var outputs: [URL] = []
+                var failures: [String] = []
+                for file in files {
+                    do {
+                        outputs.append(try SmartCrop.crop(file, ratio: ratio))
+                    } catch let failure as SmartCrop.Failure {
+                        failures.append(failure.message)
+                    } catch {
+                        failures.append(error.localizedDescription)
+                    }
+                }
+                return (outputs, failures)
+            }
+            guard let self else { return }
+            if !outputs.isEmpty {
+                NSWorkspace.shared.activateFileViewerSelecting(outputs)
+            }
+            let message: String
+            if let failure = failures.first {
+                message = outputs.isEmpty ? failure : String(localized: "裁好了 \(outputs.count) 张，\(failures.count) 张失败：\(failure)")
+            } else {
+                message = outputs.count == 1 ? String(localized: "已裁成 \(ratio.title)，存在原图旁边") : String(localized: "已把 \(outputs.count) 张裁成 \(ratio.title)")
             }
             self.showToast(message, at: anchor)
         }

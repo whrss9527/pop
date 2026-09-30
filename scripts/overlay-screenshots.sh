@@ -98,6 +98,8 @@ plan = [
     ("idNumber", [3.0]),
     ("transcribe", [3.0]),
     ("idPhoto", [3.0]),
+    ("webCapture", [3.0]),
+    ("cropImage", [3.0]),
     ("annotate", [1.5]),
     ("settings-plugins", [0.5]),
     ("settings-ai", [0.5]),
@@ -114,7 +116,7 @@ if appearance == "dark":
             ("reminder", [3.0]), ("table", [3.0]), ("photo", [3.0]), ("rename", [3.0]), ("sql", [3.0]), ("vocabulary", [3.0]),
             ("duplicates", [3.0]), ("pdfPages", [3.0]), ("diskUsage", [3.0]), ("pdfPassword", [3.0]),
             ("toolbar", [1.2]), ("watermark", [3.0]), ("sendToPhone", [3.0]), ("idNumber", [3.0]), ("transcribe", [3.0]),
-            ("idPhoto", [3.0]), ("annotate", [1.5]),
+            ("idPhoto", [3.0]), ("webCapture", [3.0]), ("cropImage", [3.0]), ("annotate", [1.5]),
             ("settings-plugins", [0.5]), ("settings-ai", [0.5]), ("settings-hotKeys", [0.5]),
             ("settings-pluginLibrary", [0.8])]
 factor = scale / 6.0
