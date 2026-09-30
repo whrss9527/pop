@@ -53,6 +53,25 @@ enum DiskUsage {
         return path
     }
 
+    /// 解开符号链接后的真实位置。macOS 的 /var、/tmp 是 /private 下面的链接，遍历文件夹时给出的是解开后的路径，
+    /// 起点也用解开后的，两边才对得上
+    static func resolved(_ url: URL) -> URL {
+        guard let pointer = realpath(url.path(percentEncoded: false), nil) else { return url.standardizedFileURL }
+        defer { free(pointer) }
+        return URL(fileURLWithPath: String(cString: pointer), isDirectory: true)
+    }
+
+    /// 遍历给出的路径换成以 root 开头的写法（万一两边的写法还是对不上）
+    static func remap(_ path: String, from source: String?, to root: String) -> String {
+        guard let source, source != root, path.hasPrefix(source) else { return path }
+        return root + path.dropFirst(source.count)
+    }
+
+    /// 文件夹里一项的路径
+    static func child(_ name: String, of folder: String) -> String {
+        folder == "/" ? "/" + name : folder + "/" + name
+    }
+
     /// 文件在磁盘上占的空间
     static func allocatedSize(_ values: URLResourceValues) -> Int64 {
         Int64(values.totalFileAllocatedSize ?? values.fileAllocatedSize ?? values.fileSize ?? 0)
@@ -60,8 +79,10 @@ enum DiskUsage {
 
     static func scan(_ folder: URL, limit: Int = fileLimit, keep: Int = 30, isCancelled: () -> Bool = { false },
                      progress: (Progress) -> Void = { _ in }) -> Result {
-        let root = folder.standardizedFileURL
+        let root = resolved(folder)
         let rootKey = key(root)
+        /// 遍历给出的路径里根文件夹的写法：第一项一定在根文件夹下面
+        var sourceRoot: String?
         let keySet = Set(keys)
         // 先记每个文件夹里直接放着的文件，扫完再从最深的一层往上加
         var folders: [String: Totals] = [rootKey: Totals()]
@@ -72,9 +93,12 @@ enum DiskUsage {
                                                         errorHandler: { _, _ in true })
         while let url = enumerator?.nextObject() as? URL {
             if isCancelled() { break }
+            if sourceRoot == nil {
+                sourceRoot = key(url.deletingLastPathComponent())
+            }
             guard let values = try? url.resourceValues(forKeys: keySet), values.isSymbolicLink != true else { continue }
+            let path = remap(key(url), from: sourceRoot, to: rootKey)
             if values.isDirectory == true {
-                let path = key(url)
                 if folders[path] == nil {
                     folders[path] = Totals()
                 }
@@ -82,12 +106,12 @@ enum DiskUsage {
             }
             guard values.isRegularFile == true else { continue }
             let bytes = allocatedSize(values)
-            let parent = key(url.deletingLastPathComponent())
+            let parent = (path as NSString).deletingLastPathComponent
             folders[parent, default: Totals()].size += bytes
             folders[parent, default: Totals()].files += 1
             state.files += 1
             state.size += bytes
-            largest.append(Item(url: url, size: bytes, files: 1, isFolder: false))
+            largest.append(Item(url: URL(fileURLWithPath: path, isDirectory: false), size: bytes, files: 1, isFolder: false))
             if largest.count >= keep * 4 {
                 largest = Array(largest.sorted { $0.size > $1.size }.prefix(keep))
             }
@@ -126,14 +150,18 @@ enum DiskUsage {
 
     /// 文件夹下一层的东西，从大到小
     static func children(of folder: URL, in result: Result) -> [Item] {
+        let base = key(folder)
         let urls = (try? FileManager.default.contentsOfDirectory(at: folder, includingPropertiesForKeys: keys, options: [])) ?? []
         return urls.compactMap { url -> Item? in
             guard let values = try? url.resourceValues(forKeys: Set(keys)), values.isSymbolicLink != true else { return nil }
+            // 路径按 folder 接上名字，和扫描时记的写法一致
+            let path = child(url.lastPathComponent, of: base)
             if values.isDirectory == true {
-                let totals = result.totals(of: url)
-                return Item(url: url, size: totals.size, files: totals.files, isFolder: values.isPackage != true)
+                let totals = result.folders[path] ?? Totals()
+                return Item(url: URL(fileURLWithPath: path, isDirectory: true), size: totals.size, files: totals.files,
+                            isFolder: values.isPackage != true)
             }
-            return Item(url: url, size: allocatedSize(values), files: 1, isFolder: false)
+            return Item(url: URL(fileURLWithPath: path, isDirectory: false), size: allocatedSize(values), files: 1, isFolder: false)
         }.sorted { lhs, rhs in
             if lhs.size != rhs.size {
                 return lhs.size > rhs.size
