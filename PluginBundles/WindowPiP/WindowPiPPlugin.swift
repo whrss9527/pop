@@ -18,8 +18,8 @@ final class WindowPiPEntry: NSObject, PopPluginBundle {
         // 屏幕右下角的小窗：示例的视频会议画面，指针移上去时的按钮也显示出来
         host.addDemoScene(PluginHost.DemoScene(name: "windowPiP-panel", after: "pdfPages", order: 26, delay: 1.4, show: { demo in
             guard let image = WindowPiPPlugin.demoMeeting() else { return nil }
-            // 连同阴影和周围的桌面一起截
-            return PictureInPicture.shared.showForDemo(image: image, title: "产品周会", on: demo.screen).insetBy(dx: -24, dy: -24)
+            // 演示截图时会在外面再留一圈，连同阴影和周围的桌面一起截
+            return PictureInPicture.shared.showForDemo(image: image, title: "产品周会", on: demo.screen)
         }, hide: {
             PictureInPicture.shared.closeAll()
         }))

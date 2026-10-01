@@ -86,6 +86,8 @@ final class PiPChooserModel: ObservableObject {
         let items = items
         Task { [weak self] in
             for item in items {
+                // 卡片关掉了（或者已经选好了窗口）就不拍了
+                guard self != nil, !Task.isCancelled else { return }
                 guard let window = windows[item.id], let image = await PiPCapture.thumbnail(of: window) else { continue }
                 self?.setThumbnail(image, for: item.id)
             }

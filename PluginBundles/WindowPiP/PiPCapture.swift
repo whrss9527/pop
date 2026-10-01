@@ -45,15 +45,18 @@ enum PiPCapture {
     }
 }
 
-/// 实时抓一个窗口的画面，一帧帧放到 layer 上（窗口被挡住、拖到别的桌面也照样抓得到）
+/// 实时抓一个窗口的画面，一帧帧放到 layer 上（窗口被挡住、拖到别的桌面也照样抓得到）。
+/// 开始、换大小、停止都在主线程上调，前后不会搅在一起；画面和「停了」的回调在 ScreenCaptureKit 的线程上
 final class PiPStream: NSObject, SCStreamOutput, SCStreamDelegate {
     private var stream: SCStream?
     private let configuration = SCStreamConfiguration()
     private let queue = DispatchQueue(label: "pop.window-pip.frames")
     /// 画面放在这个 layer 上（只在主线程上碰它）
     private weak var layer: CALayer?
-    /// 抓不下去了（原来的窗口关掉了、App 退出了）
-    var onStop: @MainActor () -> Void = {}
+    /// 抓不下去了（原来的窗口关掉了、App 退出了、在菜单栏里停止了）；error 是停下的原因
+    var onStop: @MainActor (Error?) -> Void = { _ in }
+    /// 已经停了
+    @MainActor private(set) var hasStopped = false
 
     init(layer: CALayer) {
         self.layer = layer
@@ -66,6 +69,7 @@ final class PiPStream: NSObject, SCStreamOutput, SCStreamDelegate {
         configuration.scalesToFit = true
     }
 
+    @MainActor
     func start(window: SCWindow, pixels: (width: Int, height: Int)) async throws {
         configuration.width = pixels.width
         configuration.height = pixels.height
@@ -76,6 +80,7 @@ final class PiPStream: NSObject, SCStreamOutput, SCStreamDelegate {
     }
 
     /// 小窗换了大小：按新的大小抓，画面一直清楚
+    @MainActor
     func resize(pixels: (width: Int, height: Int)) async {
         guard let stream, configuration.width != pixels.width || configuration.height != pixels.height else { return }
         configuration.width = pixels.width
@@ -83,6 +88,7 @@ final class PiPStream: NSObject, SCStreamOutput, SCStreamDelegate {
         try? await stream.updateConfiguration(configuration)
     }
 
+    @MainActor
     func stop() async {
         guard let stream else { return }
         self.stream = nil
@@ -90,11 +96,17 @@ final class PiPStream: NSObject, SCStreamOutput, SCStreamDelegate {
     }
 
     func stream(_ stream: SCStream, didOutputSampleBuffer sampleBuffer: CMSampleBuffer, of type: SCStreamOutputType) {
-        // 只要画好了的完整一帧（窗口没变化时发来的是 idle）
         guard type == .screen, sampleBuffer.isValid,
               let attachments = CMSampleBufferGetSampleAttachmentsArray(sampleBuffer, createIfNecessary: false) as? [[SCStreamFrameInfo: Any]],
               let rawStatus = attachments.first?[.status] as? Int,
-              SCFrameStatus(rawValue: rawStatus) == .complete,
+              let status = SCFrameStatus(rawValue: rawStatus) else { return }
+        // 窗口没了时有的系统只发一帧 stopped，不报错
+        if status == .stopped {
+            reportStop(nil)
+            return
+        }
+        // 只要画好了的完整一帧（窗口没变化时发来的是 idle）
+        guard status == .complete,
               let pixelBuffer = sampleBuffer.imageBuffer,
               let surface = CVPixelBufferGetIOSurface(pixelBuffer)?.takeUnretainedValue() else { return }
         DispatchQueue.main.async { [weak self] in
@@ -106,9 +118,16 @@ final class PiPStream: NSObject, SCStreamOutput, SCStreamDelegate {
     }
 
     func stream(_ stream: SCStream, didStopWithError error: Error) {
+        reportStop(error)
+    }
+
+    /// 停了：在主线程上说一次
+    private func reportStop(_ error: Error?) {
         DispatchQueue.main.async { [weak self] in
             MainActor.assumeIsolated {
-                self?.onStop()
+                guard let self, !self.hasStopped else { return }
+                self.hasStopped = true
+                self.onStop(error)
             }
         }
     }

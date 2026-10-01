@@ -16,6 +16,10 @@ final class PictureInPicture {
     static let opacities: [CGFloat] = [1, 0.75, 0.5]
 
     private(set) var panels: [PiPPanel] = []
+    /// 正在开的（抓画面还没开始）：不重复开，也算进最多 4 个里
+    private var opening: Set<CGWindowID> = []
+    /// 每次全部关掉加一：开到一半时全部关掉了，开好了也不显示
+    private var generation = 0
 
     var count: Int { panels.count }
 
@@ -29,7 +33,8 @@ final class PictureInPicture {
             existing.orderFrontRegardless()
             return nil
         }
-        guard panels.count < Self.maxCount else {
+        guard !opening.contains(item.id) else { return nil }
+        guard panels.count + opening.count < Self.maxCount else {
             return String(localized: "最多同时开 \(Self.maxCount) 个小窗，先关掉一个")
         }
         guard let screen = NSScreen.screens.first(where: { NSMouseInRect(point, $0.frame, false) }) ?? NSScreen.main else {
@@ -41,14 +46,24 @@ final class PictureInPicture {
                                            occupied: panels.filter { $0.screen == screen }.map(\.frame))
         let panel = PiPPanel(item: item, frame: frame)
         let stream = PiPStream(layer: panel.pip.contentLayer)
+        // 先接上：刚开始抓就停了也知道
+        stream.onStop = { [weak self, weak panel] error in
+            guard let self, let panel, self.panels.contains(where: { $0 === panel }) else { return }
+            self.windowWentAway(panel, error: error)
+        }
+        let generation = self.generation
+        opening.insert(item.id)
+        defer { opening.remove(item.id) }
         do {
             try await stream.start(window: window, pixels: PiPLayout.captureSize(for: frame.size, scale: screen.backingScaleFactor))
         } catch {
             return String(localized: "抓不到这个窗口的画面：\(error.localizedDescription)")
         }
-        stream.onStop = { [weak self, weak panel] in
-            guard let self, let panel else { return }
-            self.windowWentAway(panel)
+        // 开的时候全部关掉了（或者卸载了插件）：不要了
+        guard generation == self.generation, !stream.hasStopped else {
+            let stopped = stream.hasStopped
+            await stream.stop()
+            return stopped ? String(localized: "原来的窗口关掉了") : nil
         }
         panel.stream = stream
         attach(panel)
@@ -60,6 +75,8 @@ final class PictureInPicture {
         guard let index = panels.firstIndex(where: { $0 === panel }) else { return }
         panels.remove(at: index)
         panel.orderOut(nil)
+        panel.resizeTask?.cancel()
+        panel.resizeTask = nil
         if let stream = panel.stream {
             panel.stream = nil
             Task { await stream.stop() }
@@ -67,14 +84,16 @@ final class PictureInPicture {
     }
 
     func closeAll() {
+        generation += 1
         for panel in panels {
             close(panel)
         }
     }
 
-    /// 原来的窗口关掉了（或者 App 退出了）：小窗上说一声，两秒后收起
-    private func windowWentAway(_ panel: PiPPanel) {
-        panel.pip.showEnded()
+    /// 原来的窗口关掉了（或者 App 退出了、在菜单栏里停止了抓取画面）：小窗上说一声，两秒后收起
+    private func windowWentAway(_ panel: PiPPanel, error: Error?) {
+        let stoppedByUser = (error as? SCStreamError)?.code == .userStopped
+        panel.pip.showEnded(stoppedByUser ? String(localized: "从菜单栏停止了抓取画面") : String(localized: "原来的窗口关掉了"))
         Task { @MainActor [weak self, weak panel] in
             try? await Task.sleep(for: .seconds(2))
             guard let self, let panel else { return }
@@ -108,7 +127,7 @@ final class PictureInPicture {
 
     private func resize(_ panel: PiPPanel, to longSide: CGFloat, animated: Bool) {
         let visible = (panel.screen ?? NSScreen.main)?.visibleFrame ?? panel.frame
-        let frame = PiPLayout.resized(panel.frame, longSide: longSide, within: visible)
+        let frame = PiPLayout.resized(panel.frame, longSide: longSide, within: visible, aspect: panel.item.frame.size)
         if animated {
             NSAnimationContext.runAnimationGroup { context in
                 context.duration = Motion.seconds(0.2)
@@ -189,12 +208,17 @@ enum PiPWindowRaiser {
         guard let app = NSRunningApplication(processIdentifier: item.pid) else { return }
         app.activate()
         let element = AXUIElementCreateApplication(item.pid)
+        // Pop 不在前台时 activate 不一定能把那个 App 叫到前面：用辅助功能接口再说一次
+        AXUIElementSetAttributeValue(element, kAXFrontmostAttribute as CFString, kCFBooleanTrue)
         var value: CFTypeRef?
         guard AXUIElementCopyAttributeValue(element, kAXWindowsAttribute as CFString, &value) == .success,
               let windows = value as? [AXUIElement] else { return }
+        // 先按位置和大小找（同一个 App 可能有几个同名的窗口，比如几个终端），找不到再按标题
+        let byFrame = windows.first { frame(of: $0).map { sameFrame($0, item.frame) } ?? false }
         let titled = item.title.isEmpty ? nil : windows.first { title(of: $0) == item.title }
-        guard let window = titled ?? windows.first(where: { frame(of: $0).map { sameFrame($0, item.frame) } ?? false }) else { return }
+        guard let window = byFrame ?? titled else { return }
         AXUIElementSetAttributeValue(window, kAXMinimizedAttribute as CFString, kCFBooleanFalse)
+        AXUIElementSetAttributeValue(window, kAXMainAttribute as CFString, kCFBooleanTrue)
         AXUIElementPerformAction(window, kAXRaiseAction as CFString)
     }
 

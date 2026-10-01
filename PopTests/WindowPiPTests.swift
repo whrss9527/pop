@@ -88,6 +88,14 @@ final class WindowPiPTests: XCTestCase {
         XCTAssertEqual(bigger.minY, 0)
         let smaller = PiPLayout.resized(CGRect(x: 400, y: 300, width: 360, height: 203), longSide: 240, within: visible)
         XCTAssertEqual(smaller, CGRect(x: 460, y: 334, width: 240, height: 135))
+        // 宽高比按原来的窗口算：滚来滚去换了很多次大小也不会越来越歪
+        let window = CGSize(width: 1600, height: 1000)
+        var scrolled = CGRect(x: 400, y: 300, width: 360, height: 225)
+        for longSide in [361, 362, 363, 361, 520, 241, 359, 362, 161, 958] as [CGFloat] {
+            scrolled = PiPLayout.resized(scrolled, longSide: longSide, within: visible, aspect: window)
+        }
+        XCTAssertEqual(scrolled.width, 958)
+        XCTAssertEqual(scrolled.width / scrolled.height, 1.6, accuracy: 0.005)
     }
 
     // MARK: - 选窗口的卡片
@@ -154,7 +162,7 @@ final class WindowPiPTests: XCTestCase {
         XCTAssertNotNil(WindowPiPPlugin.demoTerminal())
 
         // 演示的小窗放在屏幕右下角，关掉全部以后没有了
-        let screen = try XCTUnwrap(NSScreen.main)
+        let screen = try XCTUnwrap(NSScreen.main ?? NSScreen.screens.first)
         let pip = PictureInPicture.shared
         let frame = pip.showForDemo(image: meeting, title: "产品周会", on: screen)
         XCTAssertEqual(pip.count, 1)

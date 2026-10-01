@@ -156,9 +156,10 @@ final class PiPView: NSView {
         CATransaction.commit()
     }
 
-    /// 原来的窗口没了：画面暗下去，中间写一句
-    func showEnded() {
+    /// 原来的窗口没了（或者抓画面被停了）：画面暗下去，中间写一句
+    func showEnded(_ text: String) {
         contentLayer.opacity = 0.35
+        endedLabel.stringValue = text
         endedLabel.isHidden = false
     }
 

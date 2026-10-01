@@ -93,9 +93,10 @@ enum PiPLayout {
         return corner
     }
 
-    /// 换大小：中心不动，保持宽高比，超出屏幕的挪回来
-    static func resized(_ frame: CGRect, longSide: CGFloat, within visible: CGRect) -> CGRect {
-        let size = size(for: frame.size, longSide: longSide)
+    /// 换大小：中心不动，超出屏幕的挪回来。宽高比按 aspect（原来的窗口）算，不按小窗现在的大小：
+    /// 小窗的大小取过整，一次次按它算会越来越歪
+    static func resized(_ frame: CGRect, longSide: CGFloat, within visible: CGRect, aspect: CGSize? = nil) -> CGRect {
+        let size = size(for: aspect ?? frame.size, longSide: longSide)
         var result = CGRect(x: frame.midX - size.width / 2, y: frame.midY - size.height / 2, width: size.width, height: size.height)
         result.origin.x = min(max(result.minX, visible.minX), max(visible.minX, visible.maxX - size.width))
         result.origin.y = min(max(result.minY, visible.minY), max(visible.minY, visible.maxY - size.height))

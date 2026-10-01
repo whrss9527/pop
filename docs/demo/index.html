@@ -6192,8 +6192,9 @@ function pipSources() {
   const zh = lang === 'zh';
   const list = [];
   const win = windowHost.querySelector('.win');
-  if (win) {
-    const app = state.scene === 'foreign' ? 'Safari' : state.scene === 'files' ? (zh ? '访达' : 'Finder') : state.scene === 'plugins' ? 'Pop' : (zh ? '备忘录' : 'Notes');
+  // Pop 自己的窗口（设置）不列出来，和 App 一样
+  if (win && state.scene !== 'plugins') {
+    const app = state.scene === 'foreign' ? 'Safari' : state.scene === 'files' ? (zh ? '访达' : 'Finder') : (zh ? '备忘录' : 'Notes');
     const title = state.scene === 'foreign' ? ARTICLE[lang].title : (win.querySelector('.bar .title')?.textContent || '');
     list.push({ id: 'desk-' + state.scene, scene: state.scene, app, title, kind: 'clone', ratio: win.offsetWidth / Math.max(1, win.offsetHeight) });
   }
@@ -6277,7 +6278,7 @@ function showWindowPiP(anchor) {
   // 缩略图：按原来窗口的比例放进格子里
   for (const { shot, source } of tiles) {
     const width = shot.clientWidth - 12, height = shot.clientHeight - 12;
-    const fit = Math.min(width / source.ratio, height) ;
+    const fit = Math.min(width / source.ratio, height);
     const box = h('div', { class: 'thumb', style: `width:${Math.round(fit * source.ratio)}px;height:${Math.round(fit)}px` });
     const view = pipView(source, false);
     box.append(view);
