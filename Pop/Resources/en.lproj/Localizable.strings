@@ -2525,3 +2525,7 @@
 "存音频时出错了：%@" = "Couldn’t save the audio: %@";
 "朗读 %@" = "Speech %@";
 "存好了「%@」，长 %@" = "Saved “%@” (%@ long)";
+"按拍摄日期" = "By Date Taken";
+"没有读得到拍摄日期的照片和视频" = "No photos or videos with a capture date";
+"会把 %lld 张照片和视频按拍摄的月份放进 %lld 个子文件夹；别的文件不动" = "Moves %lld photos and videos into %lld subfolders by the month they were taken. Other files stay put";
+"把选中的文件夹（没选时是「下载」）第一层的文件按类型或者按月份归到子文件夹里，照片和视频也能按拍摄日期归好；先看预览，整理完可以撤销" = "Sort the files at the top of the selected folder (or Downloads if nothing is selected) into subfolders by type or by month, or sort photos and videos by the date they were taken. Preview first and undo afterwards";

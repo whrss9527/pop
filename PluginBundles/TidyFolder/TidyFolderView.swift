@@ -37,6 +37,10 @@ final class TidyFolderModel: ObservableObject {
 
     var summary: String {
         let plan = self.plan
+        if mode == .taken {
+            guard !plan.moves.isEmpty else { return String(localized: "没有读得到拍摄日期的照片和视频") }
+            return String(localized: "会把 \(plan.moves.count) 张照片和视频按拍摄的月份放进 \(plan.groups.count) 个子文件夹；别的文件不动")
+        }
         guard !plan.moves.isEmpty else { return String(localized: "没有要整理的文件") }
         return String(localized: "会把 \(plan.moves.count) 个文件放进 \(plan.groups.count) 个子文件夹；子文件夹、隐藏文件和没下载完的文件不动")
     }

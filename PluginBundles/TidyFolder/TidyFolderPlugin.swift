@@ -21,7 +21,7 @@ final class TidyFolderEntry: NSObject, PopPluginBundle {
 
 struct TidyFolderPlugin: PopPlugin {
     let info = PluginInfo(id: BuiltinPluginID.tidyFolder, name: String(localized: "整理文件夹"), symbol: "folder.badge.gearshape",
-                          summary: String(localized: "把选中的文件夹（没选时是「下载」）第一层的文件按类型或者按月份归到子文件夹里，先看预览，整理完可以撤销"),
+                          summary: String(localized: "把选中的文件夹（没选时是「下载」）第一层的文件按类型或者按月份归到子文件夹里，照片和视频也能按拍摄日期归好；先看预览，整理完可以撤销"),
                           accepts: [])
 
     @MainActor func run(_ content: ClassifiedContent, context: PluginContext) async -> PluginOutcome {

@@ -1,13 +1,17 @@
+import CoreServices
 import Foundation
+import ImageIO
 import UniformTypeIdentifiers
 @testable import Pop
 
-/// 整理文件夹：把一个文件夹第一层的文件按类型（图片、文档、压缩包……）或者按放进来的月份归到子文件夹里。
+/// 整理文件夹：把一个文件夹第一层的文件按类型（图片、文档、压缩包……）、按放进来的月份，或者把照片和视频按拍摄的月份归到子文件夹里。
 /// 子文件夹、隐藏文件和正在下载的文件不动；先算出计划给人看，整理完可以撤销。
 enum FolderTidy {
     enum Mode: String, CaseIterable, Identifiable {
         case kind
         case month
+        /// 照片和视频按拍摄的月份，别的文件不动
+        case taken
 
         var id: String { rawValue }
 
@@ -15,6 +19,7 @@ enum FolderTidy {
             switch self {
             case .kind: return String(localized: "按类型")
             case .month: return String(localized: "按月份")
+            case .taken: return String(localized: "按拍摄日期")
             }
         }
     }
@@ -59,6 +64,8 @@ enum FolderTidy {
         let isDirectory: Bool
         /// 放进这个文件夹的时间（「下载」里就是下载的时间）；没有时用修改时间
         let added: Date?
+        /// 照片、视频拍摄的时间；读不到时为 nil
+        var taken: Date? = nil
     }
 
     struct Move: Equatable {
@@ -140,6 +147,10 @@ enum FolderTidy {
                 guard let added = item.added else { continue }
                 group = month(of: added, calendar: calendar)
                 symbol = "calendar"
+            case .taken:
+                guard let taken = item.taken else { continue }
+                group = month(of: taken, calendar: calendar)
+                symbol = "camera"
             }
             // 和子文件夹同名的文件不动（比如已经有个叫「图片」的文件）
             guard group.lowercased() != name.lowercased() else { continue }
@@ -155,7 +166,7 @@ enum FolderTidy {
         let order: [String]
         switch mode {
         case .kind: order = Kind.allCases.map(\.title).filter { counts[$0] != nil }
-        case .month: order = counts.keys.sorted(by: >)
+        case .month, .taken: order = counts.keys.sorted(by: >)
         }
         return Plan(moves: moves, groups: order.map { Group(name: $0, symbol: symbols[$0] ?? "folder", count: counts[$0] ?? 0) })
     }
@@ -191,9 +202,32 @@ enum FolderTidy {
         return urls.map { url in
             let values = try? url.resourceValues(forKeys: Set(keys))
             // App 和其他包看起来是文件，其实是文件夹：不动
-            return Item(url: url, isDirectory: values?.isDirectory ?? false,
-                        added: values?.addedToDirectoryDate ?? values?.contentModificationDate)
+            let isDirectory = values?.isDirectory ?? false
+            return Item(url: url, isDirectory: isDirectory, added: values?.addedToDirectoryDate ?? values?.contentModificationDate,
+                        taken: isDirectory ? nil : takenDate(of: url))
         }
+    }
+
+    /// 拍摄时间：照片先看 EXIF 里的拍摄时间，再看 Spotlight 记下的内容创建时间（视频也是）；别的文件为 nil
+    static func takenDate(of url: URL) -> Date? {
+        let kind = kind(of: url)
+        guard kind == .images || kind == .videos else { return nil }
+        if kind == .images, let source = CGImageSourceCreateWithURL(url as CFURL, nil),
+           let properties = CGImageSourceCopyPropertiesAtIndex(source, 0, nil) as? [CFString: Any],
+           let exif = properties[kCGImagePropertyExifDictionary] as? [CFString: Any],
+           let text = exif[kCGImagePropertyExifDateTimeOriginal] as? String, let date = exifDate(text) {
+            return date
+        }
+        guard let item = MDItemCreateWithURL(kCFAllocatorDefault, url as CFURL) else { return nil }
+        return MDItemCopyAttribute(item, kMDItemContentCreationDate) as? Date
+    }
+
+    /// EXIF 的时间写法「2026:09:21 17:42:05」（拍的时候所在地的时间，按本机时区算）
+    static func exifDate(_ text: String) -> Date? {
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.dateFormat = "yyyy:MM:dd HH:mm:ss"
+        return formatter.date(from: text.trimmingCharacters(in: .whitespaces))
     }
 
     /// 按计划挪。中途出错时先把挪了的挪回去再报错
