@@ -28,38 +28,6 @@ enum PDFTextLayer {
         characters < max(pages, 1) * sparseCharactersPerPage
     }
 
-    /// 页面按显示的方向（算上旋转）有多大：看到的那块（裁切框）
-    static func displaySize(of page: CGPDFPage) -> CGSize {
-        let box = page.getBoxRect(.cropBox)
-        let quarterTurns = Int(page.rotationAngle) / 90
-        return quarterTurns % 2 == 0 ? box.size : CGSize(width: box.height, height: box.width)
-    }
-
-    /// 把页面按显示的方向画进 size 大小的地方
-    private static func drawPage(_ page: CGPDFPage, size: CGSize, in context: CGContext) {
-        context.saveGState()
-        context.concatenate(page.getDrawingTransform(.cropBox, rect: CGRect(origin: .zero, size: size), rotate: 0, preserveAspectRatio: true))
-        context.drawPDFPage(page)
-        context.restoreGState()
-    }
-
-    /// 画成白底的图片给 Vision 认：长边 2400 像素左右，最多放大 4 倍
-    static func render(_ page: CGPDFPage, longSide: CGFloat = 2400) -> CGImage? {
-        let size = displaySize(of: page)
-        guard size.width > 1, size.height > 1 else { return nil }
-        let scale = min(4, max(1, longSide / max(size.width, size.height)))
-        let width = Int((size.width * scale).rounded())
-        let height = Int((size.height * scale).rounded())
-        guard width * height <= 60_000_000,
-              let context = CGContext(data: nil, width: width, height: height, bitsPerComponent: 8, bytesPerRow: 0,
-                                      space: CGColorSpaceCreateDeviceRGB(), bitmapInfo: CGImageAlphaInfo.noneSkipLast.rawValue) else { return nil }
-        context.setFillColor(CGColor(gray: 1, alpha: 1))
-        context.fill(CGRect(x: 0, y: 0, width: width, height: height))
-        context.scaleBy(x: scale, y: scale)
-        drawPage(page, size: size, in: context)
-        return context.makeImage()
-    }
-
     /// Vision 给的位置（0～1，左下角是原点）换成页面上的点
     static func lines(_ found: [(text: String, box: CGRect)], pageSize: CGSize) -> [Line] {
         found.compactMap { item in
@@ -72,7 +40,8 @@ enum PDFTextLayer {
 
     /// 认出一页上的字（在后台线程调用）
     static func recognize(_ page: CGPDFPage) throws -> [Line] {
-        guard let image = render(page) else { return [] }
+        // 长边 2400 像素左右，Vision 认得清楚
+        guard let image = PDFRedraw.render(page, longSide: 2400) else { return [] }
         let request = VNRecognizeTextRequest()
         request.recognitionLevel = .accurate
         request.usesLanguageCorrection = true
@@ -82,34 +51,14 @@ enum PDFTextLayer {
             guard let candidate = observation.topCandidates(1).first else { return nil }
             return (candidate.string, observation.boundingBox)
         }
-        return lines(found, pageSize: displaySize(of: page))
+        return lines(found, pageSize: PDFRedraw.displaySize(of: page))
     }
 
-    /// 写成新的 PDF：每页先原样画上原来的页面，再在每行的位置写上看不见的文字。标题和作者照搬
+    /// 写成新的 PDF：每页先原样画上原来的页面，再在每行的位置写上看不见的文字
     static func write(_ document: CGPDFDocument, pages: [[Line]], to url: URL) throws {
-        var info: [String: Any] = [kCGPDFContextCreator as String: "Pop"]
-        if let dictionary = document.info {
-            for (key, name) in [("Title", kCGPDFContextTitle), ("Author", kCGPDFContextAuthor)] {
-                var value: CGPDFStringRef?
-                if CGPDFDictionaryGetString(dictionary, key, &value), let value, let text = CGPDFStringCopyTextString(value) {
-                    info[name as String] = text as String
-                }
-            }
+        try PDFRedraw.write(document, to: url) { index, _, context in
+            drawInvisible(index < pages.count ? pages[index] : [], in: context)
         }
-        var firstBox = CGRect(x: 0, y: 0, width: 612, height: 792)
-        guard let context = CGContext(url as CFURL, mediaBox: &firstBox, info as CFDictionary) else {
-            throw PDFTools.Failure(message: String(localized: "写不进「\(url.lastPathComponent)」"))
-        }
-        for number in 1...max(document.numberOfPages, 1) {
-            guard let page = document.page(at: number) else { continue }
-            let size = displaySize(of: page)
-            var box = CGRect(origin: .zero, size: size)
-            context.beginPage(mediaBox: &box)
-            drawPage(page, size: size, in: context)
-            drawInvisible(number - 1 < pages.count ? pages[number - 1] : [], in: context)
-            context.endPage()
-        }
-        context.closePDF()
     }
 
     /// 每行写在它的位置上：字号按行高，横向拉伸到和这一行一样宽；看不见，但能搜索、选中、复制
@@ -160,12 +109,11 @@ final class PDFTextLayerModel: ObservableObject {
         let pdf = pdf
         let destination = destination
         task = Task {
-            guard let document = CGPDFDocument(pdf as CFURL), document.numberOfPages > 0 else {
-                finish(.failure(PDFTools.Failure(message: String(localized: "读不了「\(pdf.lastPathComponent)」"))))
-                return
-            }
-            guard !document.isEncrypted || document.isUnlocked else {
-                finish(.failure(PDFTools.Failure(message: String(localized: "「\(pdf.lastPathComponent)」有密码，先解锁再处理"))))
+            let document: CGPDFDocument
+            do {
+                document = try PDFRedraw.open(pdf)
+            } catch {
+                finish(.failure(error as? PDFTools.Failure ?? PDFTools.Failure(message: error.localizedDescription)))
                 return
             }
             total = document.numberOfPages

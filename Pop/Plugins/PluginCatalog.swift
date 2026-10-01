@@ -217,7 +217,7 @@ enum PluginCatalog {
                       summary: String(localized: "把选中的文件或文件夹压缩成 zip，存在原来的文件夹里；把选中的 zip 解压到旁边的同名文件夹里"),
                       symbol: "doc.zipper", category: .files, functions: [BuiltinPluginID.zip, BuiltinPluginID.unzip]),
         PluginPackage(id: "pdf", bundleName: "PopPDF", name: String(localized: "PDF"),
-                      summary: String(localized: "把选中的图片和 PDF 按文件名顺序合成一个 PDF；只选了一个 PDF 时可以把每页存成图片、复制里面的文字、取出其中几页或者拆开、加密码或者去掉密码，或者压缩；扫描件可以识别文字，另存一份能搜索、复制的 PDF"),
+                      summary: String(localized: "把选中的图片和 PDF 按文件名顺序合成一个 PDF；只选了一个 PDF 时可以把每页存成图片、复制里面的文字、取出其中几页或者拆开、加页码、加密码或者去掉密码，或者压缩；扫描件可以识别文字，另存一份能搜索、复制的 PDF"),
                       symbol: "doc.richtext", category: .files, functions: [BuiltinPluginID.pdf]),
         PluginPackage(id: "videoConvert", bundleName: "PopVideoConvert", name: String(localized: "视频转换"),
                       summary: String(localized: "把选中的视频转成 GIF、转成 MP4、压缩到 720p、提取音频，或者均匀取 16 帧拼成一张缩略图；结果存在原视频旁边"),

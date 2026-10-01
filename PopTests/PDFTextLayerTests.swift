@@ -122,6 +122,91 @@ final class PDFTextLayerTests: XCTestCase {
         XCTAssertFalse(textCard.buttons.contains { $0.title == "识别文字" })
     }
 
+    // MARK: - 加页码
+
+    func testPageNumberLabelsAndPlacement() {
+        var options = PDFPageNumbers.Options()
+        XCTAssertEqual((0..<3).map { PDFPageNumbers.label(forPage: $0, pageCount: 3, options: options) }, ["1", "2", "3"])
+        // 封面不标，「1 / 2」的总数按标了的算
+        options.format = .fraction
+        options.firstPage = 2
+        XCTAssertEqual((0..<3).map { PDFPageNumbers.label(forPage: $0, pageCount: 3, options: options) }, [nil, "1 / 2", "2 / 2"])
+        options.format = .page
+        options.startNumber = 5
+        XCTAssertEqual(PDFPageNumbers.label(forPage: 1, pageCount: 3, options: options), "第 5 页")
+        options.format = .dashed
+        XCTAssertEqual(PDFPageNumbers.label(forPage: 2, pageCount: 3, options: options), "- 6 -")
+        XCTAssertNil(PDFPageNumbers.label(forPage: 3, pageCount: 3, options: options))
+
+        // A4 上 10 点左右的字，离边 28 点左右
+        let a4 = PDFPageNumbers.metrics(for: CGSize(width: 595, height: 842))
+        XCTAssertEqual(a4.fontSize, 595 / 60, accuracy: 0.01)
+        XCTAssertEqual(a4.margin, 595 * 0.047, accuracy: 0.01)
+        let page = CGSize(width: 600, height: 800)
+        XCTAssertEqual(PDFPageNumbers.origin(.bottomCenter, pageSize: page, textWidth: 20, ascent: 8, margin: 30), CGPoint(x: 290, y: 30))
+        XCTAssertEqual(PDFPageNumbers.origin(.bottomRight, pageSize: page, textWidth: 20, ascent: 8, margin: 30), CGPoint(x: 550, y: 30))
+        XCTAssertEqual(PDFPageNumbers.origin(.topRight, pageSize: page, textWidth: 20, ascent: 8, margin: 30), CGPoint(x: 550, y: 762))
+    }
+
+    func testWritesPageNumbers() throws {
+        let pdf = try blankPDF(name: "报告.pdf", pages: 3)
+        let output = folder.appending(path: "报告 页码.pdf")
+        var options = PDFPageNumbers.Options()
+        options.format = .fraction
+        options.firstPage = 2
+        XCTAssertEqual(try PDFPageNumbers.write(pdf, options: options, to: output), 2)
+        let written = try XCTUnwrap(PDFDocument(url: output))
+        XCTAssertEqual(written.pageCount, 3)
+        let texts = (0..<3).map { (written.page(at: $0)?.string ?? "").filter { !$0.isWhitespace } }
+        XCTAssertEqual(texts, ["", "1/2", "2/2"])
+        // 底部居中
+        let last = try XCTUnwrap(written.page(at: 2))
+        let bottom = try XCTUnwrap(last.selection(for: last.bounds(for: .mediaBox))).bounds(for: last)
+        XCTAssertEqual(bottom.midX, 306, accuracy: 12)
+        XCTAssertLessThan(bottom.maxY, 60)
+
+        // 右上角
+        options.position = .topRight
+        let top = folder.appending(path: "右上角.pdf")
+        try PDFPageNumbers.write(pdf, options: options, to: top)
+        let topPage = try XCTUnwrap(PDFDocument(url: top)?.page(at: 1))
+        let corner = try XCTUnwrap(topPage.selection(for: topPage.bounds(for: .mediaBox))).bounds(for: topPage)
+        XCTAssertGreaterThan(corner.minY, 720)
+        XCTAssertGreaterThan(corner.minX, 520)
+    }
+
+    @MainActor
+    func testPageNumbersCard() async throws {
+        defer {
+            UserDefaults.standard.removeObject(forKey: PDFPageNumbersModel.formatKey)
+            UserDefaults.standard.removeObject(forKey: PDFPageNumbersModel.positionKey)
+        }
+        let pdf = try blankPDF(name: "手册.pdf", pages: 4)
+        let model = try PDFPageNumbersModel(pdf: pdf)
+        XCTAssertEqual(model.pageCount, 4)
+        XCTAssertNotNil(model.preview)
+        XCTAssertEqual(model.summary, "共 4 页，标在第 1～4 页")
+        XCTAssertEqual(PDFPageNumbers.Format.allCases.map(model.example), ["1", "第 1 页", "1 / 4", "- 1 -"])
+        // 超出页数的拉回来
+        model.options.firstPage = 9
+        XCTAssertEqual(model.options.firstPage, 4)
+        XCTAssertEqual(model.summary, "共 4 页，只标第 4 页")
+        model.options.firstPage = 2
+        model.options.format = .page
+        model.options.position = .bottomRight
+        // 样式和位置记住了
+        XCTAssertEqual(try PDFPageNumbersModel(pdf: pdf).options.format, .page)
+        XCTAssertEqual(try PDFPageNumbersModel(pdf: pdf).options.position, .bottomRight)
+
+        let applied = await model.apply()
+        let url = try XCTUnwrap(applied)
+        XCTAssertEqual(url.lastPathComponent, "手册 页码.pdf")
+        let written = try XCTUnwrap(PDFDocument(url: url))
+        XCTAssertEqual((written.page(at: 0)?.string ?? "").filter { !$0.isWhitespace }, "")
+        XCTAssertEqual((written.page(at: 1)?.string ?? "").filter { !$0.isWhitespace }, "第1页")
+        XCTAssertThrowsError(try PDFPageNumbersModel(pdf: folder.appending(path: "没有.pdf")))
+    }
+
     // MARK: - 做测试用的 PDF
 
     /// 「扫描件」：每页只有一张写着字的图片。rotatedPage 不为 nil 时再加一页：内容横着画、页面顺时针转 90 度，看起来是正的
@@ -146,6 +231,21 @@ final class PDFTextLayerTests: XCTestCase {
             document.page(at: 1)?.rotation = 90
         }
         XCTAssertTrue(document.write(to: url))
+        return url
+    }
+
+    /// 几页空白的 PDF（每页一块浅灰色的方块，没有文字）
+    private func blankPDF(name: String, pages: Int) throws -> URL {
+        let url = folder.appending(path: name)
+        var box = CGRect(x: 0, y: 0, width: 612, height: 792)
+        let context = try XCTUnwrap(CGContext(url as CFURL, mediaBox: &box, nil))
+        for _ in 0..<pages {
+            context.beginPage(mediaBox: &box)
+            context.setFillColor(CGColor(gray: 0.9, alpha: 1))
+            context.fill(CGRect(x: 72, y: 600, width: 200, height: 100))
+            context.endPage()
+        }
+        context.closePDF()
         return url
     }
 

@@ -11,7 +11,7 @@ final class PDFEntry: NSObject, PopPluginBundle {
 
 struct PDFPlugin: PopPlugin {
     let info = PluginInfo(id: BuiltinPluginID.pdf, name: "PDF", symbol: "doc.richtext",
-                          summary: String(localized: "把选中的图片和 PDF 按文件名顺序合成一个 PDF；只选了一个 PDF 时可以把每页存成图片、复制里面的文字、取出其中几页或者拆开、加密码或者去掉密码，或者压缩；扫描件可以识别文字，另存一份能搜索、复制的 PDF"),
+                          summary: String(localized: "把选中的图片和 PDF 按文件名顺序合成一个 PDF；只选了一个 PDF 时可以把每页存成图片、复制里面的文字、取出其中几页或者拆开、加页码、加密码或者去掉密码，或者压缩；扫描件可以识别文字，另存一份能搜索、复制的 PDF"),
                           accepts: [.files], pattern: #"(?im)\.(pdf|png|jpe?g|heic|heif|tiff?|gif|bmp|webp)$"#)
     /// 完成后在访达里选中结果（测试时换掉）
     var reveal: @MainActor ([URL]) -> Void = { NSWorkspace.shared.activateFileViewerSelecting($0) }
@@ -66,6 +66,7 @@ struct PDFPlugin: PopPlugin {
         case .failure(let failure):
             return .failure(failure.message)
         case .success(let summary):
+            let reveal = self.reveal
             var buttons = [CardButton(title: String(localized: "每页存成图片"), action: .exportPDFPages(pdf))]
             let detail: String
             if summary.text.isEmpty {
@@ -76,7 +77,6 @@ struct PDFPlugin: PopPlugin {
             }
             // 没有文字或者只有零星几个字（扫描件上的页眉、水印）：认出文字，另存一份能搜索的
             if PDFTextLayer.needsTextLayer(characters: summary.text.count, pages: summary.pages) {
-                let reveal = reveal
                 buttons.insert(CardButton(title: String(localized: "识别文字"), action: .custom(PluginCardAction { session in
                     Self.makeSearchable(pdf, session: session, reveal: reveal)
                 })), at: 1)
@@ -84,10 +84,30 @@ struct PDFPlugin: PopPlugin {
             if summary.pages > 1 {
                 buttons.append(CardButton(title: String(localized: "取出几页…"), action: .pdfPages(pdf)))
             }
+            buttons.append(CardButton(title: String(localized: "加页码…"), action: .custom(PluginCardAction { session in
+                Self.addPageNumbers(pdf, session: session, reveal: reveal)
+            })))
             buttons.append(CardButton(title: String(localized: "加密码…"), action: .pdfPassword(pdf)))
             buttons.append(CardButton(title: String(localized: "压缩"), action: .compressPDF(pdf)))
             return .card(ResultCard(title: "PDF", body: pdf.lastPathComponent, detail: detail, buttons: buttons))
         }
+    }
+
+    /// 加页码：卡片换成选样式、位置的卡片，存好以后在访达里选中新文件
+    @MainActor static func addPageNumbers(_ pdf: URL, session: PluginSession, reveal: @escaping @MainActor ([URL]) -> Void) {
+        let model: PDFPageNumbersModel
+        do {
+            model = try PDFPageNumbersModel(pdf: pdf)
+        } catch {
+            session.fail((error as? PDFTools.Failure)?.message ?? error.localizedDescription)
+            return
+        }
+        session.showCard(PDFPageNumbersView(model: model,
+                                            onDone: { url in
+                                                reveal([url])
+                                                session.finish(toast: String(localized: "加好了页码，存成了「\(url.lastPathComponent)」"))
+                                            },
+                                            onClose: { session.end() }))
     }
 
     /// 识别文字，另存成「原名 可搜索.pdf」：卡片换成进度，认完在访达里选中新文件
