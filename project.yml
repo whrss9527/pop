@@ -986,6 +986,15 @@ targets:
         POP_PLUGIN_ID: bluetooth
         POP_PLUGIN_ENTRY: PopBluetoothEntry
 
+  PopCalendar:
+    templates: [PopPlugin]
+    sources: [PluginBundles/Calendar]
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: io.github.whrss9527.pop.plugin.calendar
+        POP_PLUGIN_ID: calendar
+        POP_PLUGIN_ENTRY: PopCalendarEntry
+
   PopTests:
     type: bundle.unit-test
     platform: macOS
@@ -996,6 +1005,7 @@ targets:
       - path: PluginBundles/CameraBubble
       - path: PluginBundles/PointerHighlight
       - path: PluginBundles/Teleprompter
+      - path: PluginBundles/Calendar
       - path: PluginBundles/Bluetooth
       - path: PluginBundles/EmojiSymbols
       - path: PluginBundles/FocusSounds
@@ -1110,6 +1120,7 @@ schemes:
         PopCameraBubble: all
         PopPointerHighlight: all
         PopTeleprompter: all
+        PopCalendar: all
         PopBluetooth: all
         PopEmojiSymbols: all
         PopFocusSounds: all

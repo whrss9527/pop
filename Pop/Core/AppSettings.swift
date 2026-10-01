@@ -206,6 +206,8 @@ enum BuiltinPluginID {
 
     static let bluetooth = "bluetooth"
 
+    static let calendar = "calendar"
+
     /// 0.1 版就有的功能。旧版本的设置里没有记录「见过哪些内置功能」，按这个列表补齐。
     static let legacy = [translate, search, openURL, calculate, copyPlain, formatJSON, timestamp, copyPath, revealInFinder, settings]
 
@@ -277,6 +279,7 @@ enum BuiltinPluginID {
         focusSounds,
         emojiSymbols,
         bluetooth,
+        calendar,
     ]
 
     /// 默认不装的内置功能（需要的话在「设置 → 功能」里打开）
