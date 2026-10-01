@@ -1,3 +1,5 @@
+import ImageIO
+import UniformTypeIdentifiers
 import XCTest
 @testable import Pop
 
@@ -78,6 +80,42 @@ final class TidyFolderTests: XCTestCase {
         XCTAssertFalse(manager.fileExists(atPath: folder.appending(path: "图像").path(percentEncoded: false)))
         XCTAssertFalse(manager.fileExists(atPath: folder.appending(path: "压缩包").path(percentEncoded: false)))
         XCTAssertTrue(manager.fileExists(atPath: folder.appending(path: "文档/b.pdf").path(percentEncoded: false)))
+    }
+
+    func testSortsPhotosByCaptureDate() throws {
+        let folder = FileManager.default.temporaryDirectory.appending(path: "pop-tidy-\(UUID().uuidString)", directoryHint: .isDirectory)
+        try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: folder) }
+        // 一张 EXIF 里写着拍摄时间的照片和一个文档
+        let context = try XCTUnwrap(CGContext(data: nil, width: 8, height: 8, bitsPerComponent: 8, bytesPerRow: 0,
+                                              space: CGColorSpace(name: CGColorSpace.sRGB)!, bitmapInfo: CGImageAlphaInfo.noneSkipLast.rawValue))
+        let photo = folder.appending(path: "IMG_0001.jpg")
+        let destination = try XCTUnwrap(CGImageDestinationCreateWithURL(photo as CFURL, UTType.jpeg.identifier as CFString, 1, nil))
+        let exif: [CFString: Any] = [kCGImagePropertyExifDictionary: [kCGImagePropertyExifDateTimeOriginal: "2025:07:14 10:20:30"]]
+        CGImageDestinationAddImage(destination, try XCTUnwrap(context.makeImage()), exif as CFDictionary)
+        XCTAssertTrue(CGImageDestinationFinalize(destination))
+        try Data("说明".utf8).write(to: folder.appending(path: "说明.txt"))
+
+        let items = try FolderTidy.items(in: folder)
+        XCTAssertEqual(items.first { $0.url.lastPathComponent == "IMG_0001.jpg" }?.taken, FolderTidy.exifDate("2025:07:14 10:20:30"))
+        XCTAssertNil(items.first { $0.url.lastPathComponent == "说明.txt" }?.taken)
+        XCTAssertNil(FolderTidy.exifDate("不是时间"))
+        let plan = FolderTidy.plan(items, in: folder, mode: .taken)
+        XCTAssertEqual(plan.groups.map(\.name), ["2025-07"])
+        XCTAssertEqual(plan.groups.first?.symbol, "camera")
+        XCTAssertEqual(plan.moves.map { $0.to.path(percentEncoded: false) }, [folder.appending(path: "2025-07/IMG_0001.jpg").path(percentEncoded: false)])
+        XCTAssertEqual(FolderTidy.Mode.allCases.map(\.title), ["按类型", "按月份", "按拍摄日期"])
+    }
+
+    @MainActor
+    func testCaptureDateSummary() {
+        let folder = URL(fileURLWithPath: "/tmp/pop-tidy-\(UUID().uuidString)", isDirectory: true)
+        var photo = FolderTidy.Item(url: folder.appending(path: "a.jpg"), isDirectory: false, added: Date())
+        photo.taken = Date(timeIntervalSince1970: 1_790_000_000)
+        let model = TidyFolderModel(folder: folder, items: [photo, FolderTidy.Item(url: folder.appending(path: "b.pdf"), isDirectory: false, added: Date())],
+                                    mode: .taken)
+        XCTAssertEqual(model.summary, "会把 1 张照片和视频按拍摄的月份放进 1 个子文件夹；别的文件不动")
+        XCTAssertEqual(TidyFolderModel(folder: folder, items: [], mode: .taken).summary, "没有读得到拍摄日期的照片和视频")
     }
 
     func testAvailableNames() {

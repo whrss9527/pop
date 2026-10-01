@@ -40,7 +40,7 @@ enum BuiltinPlugins {
     /// 「全部功能」和设置里的顺序。Pop 自带的功能和插件包提供的功能按这个顺序排在一起，不在里面的排到最后。
     static let displayOrder: [String] = [
         BuiltinPluginID.translate, BuiltinPluginID.screenshotTranslate, BuiltinPluginID.search, BuiltinPluginID.dictionary,
-        BuiltinPluginID.vocabulary, BuiltinPluginID.speak, BuiltinPluginID.openURL, BuiltinPluginID.linkInspect,
+        BuiltinPluginID.vocabulary, BuiltinPluginID.speak, BuiltinPluginID.speakToFile, BuiltinPluginID.openURL, BuiltinPluginID.linkInspect,
         BuiltinPluginID.webCapture, BuiltinPluginID.textImage, BuiltinPluginID.largeType, BuiltinPluginID.calculate,
         BuiltinPluginID.numberStats, BuiltinPluginID.unitConvert, BuiltinPluginID.copyPlain, BuiltinPluginID.textCleanup,
         BuiltinPluginID.extractInfo, BuiltinPluginID.idNumber, BuiltinPluginID.lineTools, BuiltinPluginID.reminder,
@@ -61,13 +61,14 @@ enum BuiltinPlugins {
         BuiltinPluginID.idPhoto, BuiltinPluginID.cropImage, BuiltinPluginID.redact, BuiltinPluginID.palette,
         BuiltinPluginID.colorPicker, BuiltinPluginID.ruler, BuiltinPluginID.random, BuiltinPluginID.quickNote,
         BuiltinPluginID.windowLayout, BuiltinPluginID.menuShortcuts, BuiltinPluginID.airDrop, BuiltinPluginID.sendToPhone,
-        BuiltinPluginID.copyPath, BuiltinPluginID.fileInfo, BuiltinPluginID.folderTree, BuiltinPluginID.findDuplicates,
+        BuiltinPluginID.copyPath, BuiltinPluginID.fileInfo, BuiltinPluginID.folderTree, BuiltinPluginID.findDuplicates, BuiltinPluginID.similarPhotos,
         BuiltinPluginID.diskUsage, BuiltinPluginID.tidyFolder, BuiltinPluginID.newFile, BuiltinPluginID.fileEncoding, BuiltinPluginID.codeStats,
         BuiltinPluginID.compareFolders, BuiltinPluginID.compareFiles,
         BuiltinPluginID.batchRename, BuiltinPluginID.revealInFinder, BuiltinPluginID.openWith, BuiltinPluginID.zip,
         BuiltinPluginID.unzip, BuiltinPluginID.pdf, BuiltinPluginID.videoConvert, BuiltinPluginID.trimMedia,
         BuiltinPluginID.transcribe, BuiltinPluginID.shelf, BuiltinPluginID.openInTerminal, BuiltinPluginID.keepAwake,
-        BuiltinPluginID.systemActions, BuiltinPluginID.quitApps, BuiltinPluginID.uninstallApp, BuiltinPluginID.cleanKeyboard, BuiltinPluginID.timer, BuiltinPluginID.clipboardHistory,
+        BuiltinPluginID.systemActions, BuiltinPluginID.quitApps, BuiltinPluginID.uninstallApp, BuiltinPluginID.appInfo, BuiltinPluginID.cleanKeyboard, BuiltinPluginID.timer,
+        BuiltinPluginID.clipboardHistory,
         BuiltinPluginID.snippets, BuiltinPluginID.allPlugins, BuiltinPluginID.settings,
     ]
 
@@ -112,7 +113,7 @@ enum BuiltinCategory: CaseIterable, Identifiable {
 
     private static let members: [BuiltinCategory: [String]] = [
         .text: [BuiltinPluginID.translate, BuiltinPluginID.screenshotTranslate, BuiltinPluginID.search,
-                BuiltinPluginID.dictionary, BuiltinPluginID.vocabulary, BuiltinPluginID.speak, BuiltinPluginID.openURL,
+                BuiltinPluginID.dictionary, BuiltinPluginID.vocabulary, BuiltinPluginID.speak, BuiltinPluginID.speakToFile, BuiltinPluginID.openURL,
                 BuiltinPluginID.webCapture, BuiltinPluginID.textImage, BuiltinPluginID.largeType,
                 BuiltinPluginID.copyPlain,
                 BuiltinPluginID.textCleanup, BuiltinPluginID.extractInfo, BuiltinPluginID.idNumber, BuiltinPluginID.lineTools,
@@ -140,7 +141,7 @@ enum BuiltinCategory: CaseIterable, Identifiable {
         .recording: [BuiltinPluginID.screenRecord, BuiltinPluginID.scrollCapture, BuiltinPluginID.showKeystrokes,
                      BuiltinPluginID.screenPen, BuiltinPluginID.cameraBubble, BuiltinPluginID.pointerHighlight,
                      BuiltinPluginID.spotlight, BuiltinPluginID.zoom, BuiltinPluginID.teleprompter],
-        .files: [BuiltinPluginID.copyPath, BuiltinPluginID.fileInfo, BuiltinPluginID.folderTree, BuiltinPluginID.findDuplicates,
+        .files: [BuiltinPluginID.copyPath, BuiltinPluginID.fileInfo, BuiltinPluginID.folderTree, BuiltinPluginID.findDuplicates, BuiltinPluginID.similarPhotos,
                  BuiltinPluginID.diskUsage, BuiltinPluginID.tidyFolder, BuiltinPluginID.newFile, BuiltinPluginID.fileEncoding,
                  BuiltinPluginID.codeStats, BuiltinPluginID.compareFolders,
                  BuiltinPluginID.compareFiles,
@@ -152,7 +153,8 @@ enum BuiltinCategory: CaseIterable, Identifiable {
                  BuiltinPluginID.transcribe,
                  BuiltinPluginID.shelf, BuiltinPluginID.airDrop, BuiltinPluginID.sendToPhone,
                  BuiltinPluginID.windowLayout, BuiltinPluginID.menuShortcuts,
-                 BuiltinPluginID.keepAwake, BuiltinPluginID.systemActions, BuiltinPluginID.quitApps, BuiltinPluginID.uninstallApp, BuiltinPluginID.cleanKeyboard, BuiltinPluginID.timer],
+                 BuiltinPluginID.keepAwake, BuiltinPluginID.systemActions, BuiltinPluginID.quitApps, BuiltinPluginID.uninstallApp, BuiltinPluginID.appInfo,
+                 BuiltinPluginID.cleanKeyboard, BuiltinPluginID.timer],
     ]
 
     /// 没有列出来的（剪贴板、全部功能、设置）都算「其他」

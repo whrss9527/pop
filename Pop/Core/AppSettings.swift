@@ -170,6 +170,12 @@ enum BuiltinPluginID {
 
     static let fileEncoding = "fileEncoding"
 
+    static let appInfo = "appInfo"
+
+    static let speakToFile = "speakToFile"
+
+    static let similarPhotos = "similarPhotos"
+
     /// 0.1 版就有的功能。旧版本的设置里没有记录「见过哪些内置功能」，按这个列表补齐。
     static let legacy = [translate, search, openURL, calculate, copyPlain, formatJSON, timestamp, copyPath, revealInFinder, settings]
 
@@ -223,6 +229,9 @@ enum BuiltinPluginID {
         uninstallApp,
         newFile,
         fileEncoding,
+        appInfo,
+        speakToFile,
+        similarPhotos,
     ]
 
     /// 默认不装的内置功能（需要的话在「设置 → 功能」里打开）
@@ -779,13 +788,17 @@ struct AppSettings: Codable, Equatable {
 
     /// 老用户升级到功能搬进插件包的版本：在用的功能留着（Pop 会自动把它的插件包装上），
     /// 没在用的去掉，要用时到「设置 → 插件」里装。一个插件包里有一个功能在用，整个插件包都留着。
+    /// 迁移过的插件包在新版本里多了功能时，装着这个插件包的把新功能也装上。
     /// onDisk 是这台 Mac 上已经装着的插件包（ID）。返回有没有改动。
     mutating func adoptPluginBundles(recentlyUsed: Set<String>, onDisk: Set<String> = []) -> Bool {
         let pending = PluginCatalog.packages.filter { package in package.functions.contains { !movedToPlugins.contains($0) } }
         guard !pending.isEmpty else { return false }
         for package in pending {
+            let migrated = package.functions.filter { movedToPlugins.contains($0) }
             let keep = onDisk.contains(package.id)
-                || package.functions.contains { installedPlugins.contains($0) && isInUse($0, recentlyUsed: recentlyUsed) }
+                || (migrated.isEmpty
+                    ? package.functions.contains { installedPlugins.contains($0) && isInUse($0, recentlyUsed: recentlyUsed) }
+                    : migrated.contains { installedPlugins.contains($0) })
             for id in package.functions {
                 if keep {
                     if !installedPlugins.contains(id) {

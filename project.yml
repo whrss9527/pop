@@ -14,7 +14,7 @@ configFiles:
 settings:
   base:
     SWIFT_VERSION: "5.0"
-    MARKETING_VERSION: "0.49.0"
+    MARKETING_VERSION: "0.50.0"
     CURRENT_PROJECT_VERSION: "1"
     CODE_SIGN_STYLE: Automatic
     DEAD_CODE_STRIPPING: YES
@@ -833,6 +833,24 @@ targets:
         POP_PLUGIN_ID: fileEncoding
         POP_PLUGIN_ENTRY: PopFileEncodingEntry
 
+  PopAppInfo:
+    templates: [PopPlugin]
+    sources: [PluginBundles/AppInfo]
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: io.github.whrss9527.pop.plugin.appInfo
+        POP_PLUGIN_ID: appInfo
+        POP_PLUGIN_ENTRY: PopAppInfoEntry
+
+  PopSimilarPhotos:
+    templates: [PopPlugin]
+    sources: [PluginBundles/SimilarPhotos]
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: io.github.whrss9527.pop.plugin.similarPhotos
+        POP_PLUGIN_ID: similarPhotos
+        POP_PLUGIN_ENTRY: PopSimilarPhotosEntry
+
   PopTests:
     type: bundle.unit-test
     platform: macOS
@@ -852,6 +870,8 @@ targets:
       - path: PluginBundles/UninstallApp
       - path: PluginBundles/NewFile
       - path: PluginBundles/FileEncoding
+      - path: PluginBundles/AppInfo
+      - path: PluginBundles/SimilarPhotos
       - path: PluginBundles/Beautify
       - path: PluginBundles/Spotlight
       - path: PluginBundles/Timer
@@ -949,6 +969,8 @@ schemes:
         PopUninstallApp: all
         PopNewFile: all
         PopFileEncoding: all
+        PopAppInfo: all
+        PopSimilarPhotos: all
         PopBeautify: all
         PopSpotlight: all
         PopTimer: all

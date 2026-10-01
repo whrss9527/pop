@@ -71,6 +71,8 @@ enum TestCatalog {
         UninstallAppEntry.self,
         NewFileEntry.self,
         FileEncodingEntry.self,
+        AppInfoEntry.self,
+        SimilarPhotosEntry.self,
     ]
 
     static func plugins() -> [any PopPlugin] {

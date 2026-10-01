@@ -94,8 +94,8 @@ enum PluginCatalog {
                       summary: String(localized: "把当前窗口放到屏幕的左半边、右半边、三分之一、最大化、居中，或者移到另一个显示器"),
                       symbol: "rectangle.split.2x1", category: .files, functions: [BuiltinPluginID.windowLayout]),
         PluginPackage(id: "speak", bundleName: "PopSpeak", name: String(localized: "朗读"),
-                      summary: String(localized: "用系统语音朗读选中的文字，朗读中再用一次就停止"),
-                      symbol: "speaker.wave.2", category: .text, functions: [BuiltinPluginID.speak]),
+                      summary: String(localized: "用系统语音朗读选中的文字，朗读中再用一次就停止；也能读出来存成音频文件"),
+                      symbol: "speaker.wave.2", category: .text, functions: [BuiltinPluginID.speak, BuiltinPluginID.speakToFile]),
         PluginPackage(id: "textImage", bundleName: "PopTextImage", name: String(localized: "文字转图片"),
                       summary: String(localized: "把选中的文字排成一张手机上看着舒服的长图（宽 1080 像素），白底、米黄、深色三种底色，可以复制、存储或贴到屏幕上"),
                       symbol: "text.below.photo", category: .text, functions: [BuiltinPluginID.textImage]),
@@ -271,7 +271,7 @@ enum PluginCatalog {
                       summary: String(localized: "列出正在运行的 App 和各占多少内存，一键退出，没有响应的强制退出；也能一下退出其他所有 App，开会、演示前清清场"),
                       symbol: "xmark.app", category: .files, functions: [BuiltinPluginID.quitApps]),
         PluginPackage(id: "tidyFolder", bundleName: "PopTidyFolder", name: String(localized: "整理文件夹"),
-                      summary: String(localized: "把选中的文件夹（没选时是「下载」）第一层的文件按类型或者按月份归到子文件夹里，先看预览，整理完可以撤销"),
+                      summary: String(localized: "把选中的文件夹（没选时是「下载」）第一层的文件按类型或者按月份归到子文件夹里，照片和视频也能按拍摄日期归好；先看预览，整理完可以撤销"),
                       symbol: "folder.badge.gearshape", category: .files, functions: [BuiltinPluginID.tidyFolder],
                       // 和插件包里 TidyFolderModel 的键一样
                       defaultsKeys: ["pop.tidyFolder.mode"]),
@@ -293,6 +293,14 @@ enum PluginCatalog {
                       symbol: "character.book.closed", category: .files, functions: [BuiltinPluginID.fileEncoding],
                       // 和插件包里 FileEncodingModel 的键一样
                       defaultsKeys: ["pop.fileEncoding.target", "pop.fileEncoding.lines"]),
+        PluginPackage(id: "appInfo", bundleName: "PopAppInfo", name: String(localized: "App 信息"),
+                      summary: String(localized: "看选中的 App 是给哪种芯片做的、谁签的名、有没有公证、在不在沙盒里、会要哪些权限、用什么做的、从哪下载的，可以复制下来"),
+                      symbol: "info.square", category: .files, functions: [BuiltinPluginID.appInfo]),
+        PluginPackage(id: "similarPhotos", bundleName: "PopSimilarPhotos", name: String(localized: "相似照片"),
+                      summary: String(localized: "在选中的文件夹（或者几张图片）里找出连拍、重复存的、改过大小的相似照片，每组留最清楚的一张，其余的移到废纸篓"),
+                      symbol: "photo.stack", category: .files, functions: [BuiltinPluginID.similarPhotos],
+                      // 和插件包里 SimilarPhotosModel 的键一样
+                      defaultsKeys: ["pop.similarPhotos.sensitivity"]),
     ]
 
     /// 插件包提供的所有功能
