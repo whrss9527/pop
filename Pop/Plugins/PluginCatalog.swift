@@ -296,6 +296,11 @@ enum PluginCatalog {
         PluginPackage(id: "appInfo", bundleName: "PopAppInfo", name: String(localized: "App 信息"),
                       summary: String(localized: "看选中的 App 是给哪种芯片做的、谁签的名、有没有公证、在不在沙盒里、会要哪些权限、用什么做的、从哪下载的，可以复制下来"),
                       symbol: "info.square", category: .files, functions: [BuiltinPluginID.appInfo]),
+        PluginPackage(id: "similarPhotos", bundleName: "PopSimilarPhotos", name: String(localized: "相似照片"),
+                      summary: String(localized: "在选中的文件夹（或者几张图片）里找出连拍、重复存的、改过大小的相似照片，每组留最清楚的一张，其余的移到废纸篓"),
+                      symbol: "photo.stack", category: .files, functions: [BuiltinPluginID.similarPhotos],
+                      // 和插件包里 SimilarPhotosModel 的键一样
+                      defaultsKeys: ["pop.similarPhotos.sensitivity"]),
     ]
 
     /// 插件包提供的所有功能
