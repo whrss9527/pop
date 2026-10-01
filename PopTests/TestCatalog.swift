@@ -64,6 +64,7 @@ enum TestCatalog {
         BeautifyEntry.self,
         ZoomEntry.self,
         CompareImagesEntry.self,
+        SplitImageEntry.self,
     ]
 
     static func plugins() -> [any PopPlugin] {

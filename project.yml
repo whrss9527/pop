@@ -770,6 +770,15 @@ targets:
         POP_PLUGIN_ID: compareImages
         POP_PLUGIN_ENTRY: PopCompareImagesEntry
 
+  PopSplitImage:
+    templates: [PopPlugin]
+    sources: [PluginBundles/SplitImage]
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: io.github.whrss9527.pop.plugin.splitImage
+        POP_PLUGIN_ID: splitImage
+        POP_PLUGIN_ENTRY: PopSplitImageEntry
+
   PopTests:
     type: bundle.unit-test
     platform: macOS
@@ -782,6 +791,7 @@ targets:
       - path: PluginBundles/Teleprompter
       - path: PluginBundles/Zoom
       - path: PluginBundles/CompareImages
+      - path: PluginBundles/SplitImage
       - path: PluginBundles/Beautify
       - path: PluginBundles/Spotlight
       - path: PluginBundles/Timer
@@ -872,6 +882,7 @@ schemes:
         PopTeleprompter: all
         PopZoom: all
         PopCompareImages: all
+        PopSplitImage: all
         PopBeautify: all
         PopSpotlight: all
         PopTimer: all

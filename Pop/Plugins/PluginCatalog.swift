@@ -262,6 +262,11 @@ enum PluginCatalog {
                       symbol: "square.split.2x1", category: .screen, functions: [BuiltinPluginID.compareImages],
                       // 和插件包里 ImageCompareModel 的键一样
                       defaultsKeys: ["pop.compareImages.mode", "pop.compareImages.ignoreSubtle"]),
+        PluginPackage(id: "splitImage", bundleName: "PopSplitImage", name: String(localized: "切分图片"),
+                      summary: String(localized: "把选中的图片切成九宫格、四宫格（对准画面里的主体裁成正方形）或者横着三张，长图切成几页；按发出去的顺序编号，存在原图旁边的文件夹里"),
+                      symbol: "square.grid.3x3", category: .screen, functions: [BuiltinPluginID.splitImage],
+                      // 和插件包里 SplitImageModel 的键一样
+                      defaultsKeys: ["pop.splitImage.layout"]),
     ]
 
     /// 插件包提供的所有功能
