@@ -743,6 +743,15 @@ targets:
         POP_PLUGIN_ID: spotlight
         POP_PLUGIN_ENTRY: PopSpotlightEntry
 
+  PopBeautify:
+    templates: [PopPlugin]
+    sources: [PluginBundles/Beautify]
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: io.github.whrss9527.pop.plugin.beautify
+        POP_PLUGIN_ID: beautify
+        POP_PLUGIN_ENTRY: PopBeautifyEntry
+
   PopTests:
     type: bundle.unit-test
     platform: macOS
@@ -753,6 +762,7 @@ targets:
       - path: PluginBundles/CameraBubble
       - path: PluginBundles/PointerHighlight
       - path: PluginBundles/Teleprompter
+      - path: PluginBundles/Beautify
       - path: PluginBundles/Spotlight
       - path: PluginBundles/Timer
       - path: PluginBundles/SystemActions
@@ -840,6 +850,7 @@ schemes:
         PopCameraBubble: all
         PopPointerHighlight: all
         PopTeleprompter: all
+        PopBeautify: all
         PopSpotlight: all
         PopTimer: all
         PopSystemActions: all

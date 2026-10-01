@@ -249,6 +249,11 @@ enum PluginCatalog {
         PluginPackage(id: "spotlight", bundleName: "PopSpotlight", name: String(localized: "聚光灯"),
                       summary: String(localized: "演示、录教程时把屏幕压暗，只亮着指针周围一圈，跟着指针走，让大家看你指的地方；录屏时一起录进去，再用一次关闭"),
                       symbol: "flashlight.on.fill", category: .recording, functions: [BuiltinPluginID.spotlight]),
+        PluginPackage(id: "beautify", bundleName: "PopBeautify", name: String(localized: "截图美化"),
+                      summary: String(localized: "给截图加上渐变背景、留白、圆角和阴影，可以补成 1:1、4:3、16:9，发文章、做演示更好看；选中图片就用它，没选中就先框选屏幕上的一块"),
+                      symbol: "wand.and.stars", category: .screen, functions: [BuiltinPluginID.beautify],
+                      // 和插件包里 ScreenshotBeautifier.Options 的键一样
+                      defaultsKeys: ["pop.beautify.background", "pop.beautify.padding", "pop.beautify.ratio", "pop.beautify.corners", "pop.beautify.shadow"]),
     ]
 
     /// 插件包提供的所有功能
