@@ -11,7 +11,7 @@ final class UninstallAppEntry: NSObject, PopPluginBundle {
 
     @MainActor static func didLoad(_ host: PluginHost.Registrar) {
         // CI 截图：一个示例 App 和它留下的文件（路径和大小都是示例，不碰真的文件）
-        host.addDemoScene(PluginHost.DemoScene(name: "uninstallApp", after: "tidyFolder", order: 1, delay: 1.4, hold: 0, show: { demo in
+        host.addDemoScene(PluginHost.DemoScene(name: "uninstallApp", after: "pdfPages", order: 2, delay: 1.4, hold: 0, show: { demo in
             let (app, items, sizes) = UninstallAppPlugin.demo()
             let model = UninstallAppModel(app: app, icon: NSWorkspace.shared.icon(for: .applicationBundle), items: items, sizes: sizes,
                                           isRunning: { false }, quit: {}, recycle: { _ in [] })

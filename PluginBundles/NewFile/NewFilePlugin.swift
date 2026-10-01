@@ -10,7 +10,7 @@ final class NewFileEntry: NSObject, PopPluginBundle {
 
     @MainActor static func didLoad(_ host: PluginHost.Registrar) {
         // CI 截图：把选中的一段 Markdown 存成文件（只是卡片，不写文件）
-        host.addDemoScene(PluginHost.DemoScene(name: "newFile", after: "uninstallApp", order: 1, delay: 1.4, hold: 0, show: { demo in
+        host.addDemoScene(PluginHost.DemoScene(name: "newFile", after: "pdfPages", order: 3, delay: 1.4, hold: 0, show: { demo in
             let downloads = FileManager.default.urls(for: .downloadsDirectory, in: .userDomainMask).first
                 ?? FileManager.default.temporaryDirectory
             let model = NewFileModel(folder: downloads, selection: NewFilePlugin.demoSelection, clipboardText: nil, clipboardImage: nil, kind: .markdown)

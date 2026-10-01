@@ -10,7 +10,7 @@ final class FileEncodingEntry: NSObject, PopPluginBundle {
 
     @MainActor static func didLoad(_ host: PluginHost.Registrar) {
         // CI 截图：两个 Windows 上存的 GBK 文件和一个 UTF-8 的（内容是示例，不碰真的文件）
-        host.addDemoScene(PluginHost.DemoScene(name: "fileEncoding", after: "newFile", order: 1, delay: 1.4, hold: 0, show: { demo in
+        host.addDemoScene(PluginHost.DemoScene(name: "fileEncoding", after: "pdfPages", order: 4, delay: 1.4, hold: 0, show: { demo in
             let model = FileEncodingModel(rows: FileEncodingPlugin.demoRows(), target: .utf8BOM, lines: .keep)
             demo.overlay.showCard(FileEncodingView(model: model, onClose: {}), anchor: demo.center)
             return demo.cardRegion
