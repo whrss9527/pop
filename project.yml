@@ -941,6 +941,15 @@ targets:
         POP_PLUGIN_ID: diskSpeed
         POP_PLUGIN_ENTRY: PopDiskSpeedEntry
 
+  PopWorldTime:
+    templates: [PopPlugin]
+    sources: [PluginBundles/WorldTime]
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: io.github.whrss9527.pop.plugin.worldTime
+        POP_PLUGIN_ID: worldTime
+        POP_PLUGIN_ENTRY: PopWorldTimeEntry
+
   PopTests:
     type: bundle.unit-test
     platform: macOS
@@ -972,6 +981,7 @@ targets:
       - path: PluginBundles/SoundDevices
       - path: PluginBundles/Resolution
       - path: PluginBundles/DiskSpeed
+      - path: PluginBundles/WorldTime
       - path: PluginBundles/Beautify
       - path: PluginBundles/Spotlight
       - path: PluginBundles/Timer
@@ -1081,6 +1091,7 @@ schemes:
         PopSoundDevices: all
         PopResolution: all
         PopDiskSpeed: all
+        PopWorldTime: all
         PopBeautify: all
         PopSpotlight: all
         PopTimer: all
