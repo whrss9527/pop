@@ -28,7 +28,7 @@ enum TextEncodingTools {
             case .utf8BOM: return String(localized: "UTF-8 带 BOM")
             case .utf16LE: return "UTF-16 LE"
             case .utf16BE: return "UTF-16 BE"
-            case .gb18030: return "GB18030（GBK）"
+            case .gb18030: return String(localized: "GB18030（GBK）")
             case .big5: return "Big5"
             case .shiftJIS: return "Shift_JIS"
             case .eucKR: return "EUC-KR"

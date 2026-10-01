@@ -1761,6 +1761,9 @@
 /* TextDiffView.swift */
 "⋯ %lld 行相同 ⋯" = "⋯ %lld 行相同 ⋯";
 
+/* TextEncodingTools.swift */
+"GB18030（GBK）" = "GB18030（GBK）";
+
 /* TextImage.swift */
 "米黄" = "米黄";
 "深色" = "深色";

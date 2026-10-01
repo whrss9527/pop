@@ -4709,7 +4709,7 @@ function showNewFile(content, anchor) {
 // 文件编码：每个文件记着内容（换行统一成 \n）、编码和换行，字节按这些现做：GBK 的字节用浏览器的 TextDecoder 反查出来，
 // 读的时候也用 TextDecoder，按错的编码读就是真的乱码
 const ENCODING = {
-  labels: { utf8: 'UTF-8', utf8BOM: { zh: 'UTF-8 带 BOM', en: 'UTF-8 with BOM' }, gb18030: 'GB18030（GBK）', big5: 'Big5', shiftJIS: 'Shift_JIS', eucKR: 'EUC-KR', utf16LE: 'UTF-16 LE', windows1252: { zh: 'Windows 西欧', en: 'Western (Windows)' } },
+  labels: { utf8: 'UTF-8', utf8BOM: { zh: 'UTF-8 带 BOM', en: 'UTF-8 with BOM' }, gb18030: { zh: 'GB18030（GBK）', en: 'GB18030 (GBK)' }, big5: 'Big5', shiftJIS: 'Shift_JIS', eucKR: 'EUC-KR', utf16LE: 'UTF-16 LE', windows1252: { zh: 'Windows 西欧', en: 'Western (Windows)' } },
   decoders: { utf8: 'utf-8', utf8BOM: 'utf-8', gb18030: 'gb18030', big5: 'big5', shiftJIS: 'shift_jis', eucKR: 'euc-kr', utf16LE: 'utf-16le', windows1252: 'windows-1252' },
   readable: ['utf8', 'gb18030', 'big5', 'shiftJIS', 'eucKR', 'utf16LE', 'windows1252'],
   targets: ['utf8', 'utf8BOM', 'gb18030'],
