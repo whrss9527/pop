@@ -75,33 +75,39 @@ struct BeautifyView: View {
                 }
             }
             .frame(height: 220)
-            row(String(localized: "背景")) {
-                HStack(spacing: 8) {
-                    ForEach(AnnotationBackground.allCases) { background in
-                        swatchButton(background)
-                    }
-                    swatchButton(nil)
-                }
-            }
-            row(String(localized: "留白")) {
-                Picker("留白", selection: $model.options.padding) {
-                    ForEach(ScreenshotBeautifier.Padding.allCases) { padding in
-                        Text(padding.title).tag(padding)
+            // 左边一列按最长的那个名字排齐（英文的「Background」比中文长）
+            Grid(alignment: .leading, horizontalSpacing: 10, verticalSpacing: 10) {
+                GridRow {
+                    label(String(localized: "背景"))
+                    HStack(spacing: 8) {
+                        ForEach(AnnotationBackground.allCases) { background in
+                            swatchButton(background)
+                        }
+                        swatchButton(nil)
                     }
                 }
-                .pickerStyle(.segmented)
-                .labelsHidden()
-                .fixedSize()
-            }
-            row(String(localized: "比例")) {
-                Picker("比例", selection: $model.options.ratio) {
-                    ForEach(ScreenshotBeautifier.Ratio.allCases) { ratio in
-                        Text(ratio.title).tag(ratio)
+                GridRow {
+                    label(String(localized: "留白"))
+                    Picker("留白", selection: $model.options.padding) {
+                        ForEach(ScreenshotBeautifier.Padding.allCases) { padding in
+                            Text(padding.title).tag(padding)
+                        }
                     }
+                    .pickerStyle(.segmented)
+                    .labelsHidden()
+                    .fixedSize()
                 }
-                .pickerStyle(.segmented)
-                .labelsHidden()
-                .fixedSize()
+                GridRow {
+                    label(String(localized: "比例"))
+                    Picker("比例", selection: $model.options.ratio) {
+                        ForEach(ScreenshotBeautifier.Ratio.allCases) { ratio in
+                            Text(ratio.title).tag(ratio)
+                        }
+                    }
+                    .pickerStyle(.segmented)
+                    .labelsHidden()
+                    .fixedSize()
+                }
             }
             HStack(spacing: 14) {
                 Toggle("圆角", isOn: $model.options.corners)
@@ -120,15 +126,11 @@ struct BeautifyView: View {
         .controlSize(.small)
     }
 
-    private func row<Content: View>(_ label: String, @ViewBuilder content: () -> Content) -> some View {
-        HStack(spacing: 10) {
-            Text(label)
-                .font(.caption)
-                .foregroundStyle(.secondary)
-                .frame(width: 30, alignment: .leading)
-            content()
-            Spacer(minLength: 0)
-        }
+    private func label(_ text: String) -> some View {
+        Text(text)
+            .font(.caption)
+            .foregroundStyle(.secondary)
+            .fixedSize()
     }
 
     /// 背景色块：渐变的圆点，透明（nil）是虚线圈；选中的外面加一圈
