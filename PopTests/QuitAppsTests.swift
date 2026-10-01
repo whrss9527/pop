@@ -71,6 +71,17 @@ final class QuitAppsTests: XCTestCase {
     }
 
     @MainActor
+    func testRefusedQuitOffersForceQuit() {
+        // 请它退出没能发出去，但还在运行：直接给出强制退出
+        let model = QuitAppsModel(rows: [QuitAppsModel.Row(entry: entry(7, "预览", 50), icon: nil)], front: nil,
+                                  terminate: { _, force in force }, isRunning: { _ in true })
+        model.quit(7)
+        XCTAssertEqual(model.rows.first?.state, .stuck)
+        model.quit(7, force: true)
+        XCTAssertEqual(model.rows.first?.state, .quitting)
+    }
+
+    @MainActor
     func testDemoRowsAndPlugin() {
         XCTAssertEqual(QuitAppsPlugin.demoRows().count, 6)
         XCTAssertTrue(QuitAppsPlugin().info.canHandle(.empty))

@@ -61,8 +61,12 @@ final class QuitAppsModel: ObservableObject {
     func quit(_ pid: pid_t, force: Bool = false) {
         guard let index = rows.firstIndex(where: { $0.entry.pid == pid }) else { return }
         guard terminate(pid, force) else {
-            // 已经退出了
-            rows.remove(at: index)
+            // 没能发出去：已经退出了就拿掉，还在运行就让用户强制退出
+            if isRunning(pid) {
+                rows[index].state = .stuck
+            } else {
+                rows.remove(at: index)
+            }
             return
         }
         rows[index].state = .quitting
