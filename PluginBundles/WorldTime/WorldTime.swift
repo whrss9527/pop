@@ -227,10 +227,14 @@ enum WorldTime {
         return timeFormatter.string(from: date)
     }
 
-    /// 「10月2日周五」「Fri, Oct 2」
+    /// 「10月2日周五」「Fri, Oct 2」。中文写死格式：不同系统版本带的 ICU 有的在日和星期之间加空格，有的不加
     static func dateText(_ date: Date, in zone: TimeZone) -> String {
         dateFormatter.locale = Localization.locale
-        dateFormatter.setLocalizedDateFormatFromTemplate("MMMdEEE")
+        if Localization.isChinese {
+            dateFormatter.dateFormat = "M月d日EEE"
+        } else {
+            dateFormatter.setLocalizedDateFormatFromTemplate("MMMdEEE")
+        }
         dateFormatter.timeZone = zone
         return dateFormatter.string(from: date)
     }
