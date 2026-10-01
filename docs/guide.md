@@ -67,12 +67,12 @@ These actions are plugins now (they're also listed in the Built-in actions table
 
 | Category | Plugins |
 | --- | --- |
-| Text | Speak, Save Web Page, Text to Image, Large Type, Clean Up Text, Extract Info, ID Numbers, Lines, Add to Reminders, Spell Check, Inbox |
+| Text | Translate Screenshot, Speak, Save Web Page, Text to Image, Large Type, Clean Up Text, Extract Info, ID Numbers, Lines, Add to Reminders, Spell Check, Compare Text, Inbox |
 | Convert | Number Statistics, Case, Encode & Decode, YAML ↔ JSON, Format XML, Format SQL, Convert Table, Markdown Rich Text (Markdown Preview, Copy as Rich Text), Convert to Markdown, Markdown Table of Contents, Date Difference, Numbers, Contrast |
 | Developer | Hash, QR Code, Base64 Image, Random, Parse Link, Decode JWT, Regex Tester, Cron Expression, Code Screenshot, JSON to Code, Character Info |
-| Screen & Images | Screen Ruler, Watermark, Image Colors, Recognize Table |
-| Recording & Presenting | Draw on Screen, Camera Bubble, Highlight Pointer, Teleprompter |
-| Files & System | Clean Keyboard, Lines of Code, Compare Files, Batch Rename, Keyboard Shortcuts, Window Layout, Folder Tools (Disk Usage, Find Duplicates, Compare Folders) |
+| Screen & Images | Recognize Table, Scan Code, Remove Background, Convert Images, Stitch Images, Watermark, ID Photo, Crop Image, Redact, Image Colors, Screen Ruler |
+| Recording & Presenting | Record Screen, Scrolling Screenshot, Show Keystrokes, Draw on Screen, Camera Bubble, Highlight Pointer, Teleprompter |
+| Files & System | Folder Tree, Lines of Code, Compare Files, Batch Rename, Zip and Unzip, Open in Terminal, PDF, Convert Video, Trim, Transcribe, AirDrop, Send to Phone, Window Layout, Keyboard Shortcuts, Keep Awake, System Actions, Clean Keyboard, Timer, Folder Tools (Disk Usage, Find Duplicates, Compare Folders) |
 
 When you upgrade from an older version, the ones you use (on the ring, with a shortcut, or used recently) are installed automatically; install the others when you need them. After Pop updates, installed plugins are replaced with the matching new versions automatically. Recognize Table in the clipboard history's image menu needs the Recognize Table plugin.
 
