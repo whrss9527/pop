@@ -138,7 +138,7 @@ enum BuiltinCategory: CaseIterable, Identifiable {
                   BuiltinPluginID.ruler],
         .recording: [BuiltinPluginID.screenRecord, BuiltinPluginID.scrollCapture, BuiltinPluginID.showKeystrokes,
                      BuiltinPluginID.screenPen, BuiltinPluginID.cameraBubble, BuiltinPluginID.pointerHighlight,
-                     BuiltinPluginID.spotlight, BuiltinPluginID.teleprompter],
+                     BuiltinPluginID.spotlight, BuiltinPluginID.zoom, BuiltinPluginID.teleprompter],
         .files: [BuiltinPluginID.copyPath, BuiltinPluginID.fileInfo, BuiltinPluginID.folderTree, BuiltinPluginID.findDuplicates,
                  BuiltinPluginID.diskUsage, BuiltinPluginID.codeStats, BuiltinPluginID.compareFolders,
                  BuiltinPluginID.compareFiles,
