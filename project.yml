@@ -806,6 +806,15 @@ targets:
         POP_PLUGIN_ID: appIcon
         POP_PLUGIN_ENTRY: PopAppIconEntry
 
+  PopUninstallApp:
+    templates: [PopPlugin]
+    sources: [PluginBundles/UninstallApp]
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: io.github.whrss9527.pop.plugin.uninstallApp
+        POP_PLUGIN_ID: uninstallApp
+        POP_PLUGIN_ENTRY: PopUninstallAppEntry
+
   PopTests:
     type: bundle.unit-test
     platform: macOS
@@ -822,6 +831,7 @@ targets:
       - path: PluginBundles/QuitApps
       - path: PluginBundles/TidyFolder
       - path: PluginBundles/AppIcon
+      - path: PluginBundles/UninstallApp
       - path: PluginBundles/Beautify
       - path: PluginBundles/Spotlight
       - path: PluginBundles/Timer
@@ -916,6 +926,7 @@ schemes:
         PopQuitApps: all
         PopTidyFolder: all
         PopAppIcon: all
+        PopUninstallApp: all
         PopBeautify: all
         PopSpotlight: all
         PopTimer: all

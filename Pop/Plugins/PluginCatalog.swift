@@ -280,6 +280,9 @@ enum PluginCatalog {
                       symbol: "app.dashed", category: .screen, functions: [BuiltinPluginID.appIcon],
                       // 和插件包里 AppIconModel 的键一样
                       defaultsKeys: ["pop.appIcon.style", "pop.appIcon.fill", "pop.appIcon.outputs"]),
+        PluginPackage(id: "uninstallApp", bundleName: "PopUninstallApp", name: String(localized: "卸载 App"),
+                      summary: String(localized: "卸载选中的 App：连同它在「资源库」里留下的设置、缓存、容器一起找出来，看清各占多大，再一起移到废纸篓；只勾留下的文件，就是把 App 恢复成刚装好的样子"),
+                      symbol: "trash.square", category: .files, functions: [BuiltinPluginID.uninstallApp]),
     ]
 
     /// 插件包提供的所有功能
