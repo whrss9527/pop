@@ -1601,6 +1601,7 @@
 "直接改原文件，可以撤销" = "Changes the original file; you can undo";
 "另存一份，原文件不动" = "Saves a copy; the original stays as it is";
 "存好" = "Save";
+"「%@」" = "“%@”";
 
 /* SubtitleTools.swift */
 "纯文字" = "Plain Text";

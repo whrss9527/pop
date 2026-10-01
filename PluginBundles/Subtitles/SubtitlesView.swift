@@ -157,7 +157,7 @@ final class SubtitlesModel: ObservableObject {
 
     var savedMessage: String? {
         guard case .saved(let files, let replaced) = phase else { return nil }
-        let names = files.map { "「\($0.lastPathComponent)」" }.joined(separator: Localization.listSeparator)
+        let names = files.map { String(localized: "「\($0.lastPathComponent)」") }.joined(separator: Localization.listSeparator)
         return replaced.isEmpty ? String(localized: "存好了\(names)") : String(localized: "改好了\(names)，存成 UTF-8")
     }
 }
