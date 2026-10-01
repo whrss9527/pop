@@ -13,6 +13,11 @@ ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 BUNDLE_ID="$(/usr/libexec/PlistBuddy -c 'Print CFBundleIdentifier' "$APP/Contents/Info.plist")"
 
 pkill -x Pop 2>/dev/null || true
+# 等上一个 Pop（比如截图时开的）真的退出：还没退干净时 open 可能只是去叫醒它，带的环境变量就不生效了
+for _ in $(seq 1 20); do
+  pgrep -x Pop > /dev/null || break
+  sleep 0.5
+done
 # 模拟全新安装：清掉上次留下的偏好设置
 defaults delete "$BUNDLE_ID" 2>/dev/null || true
 xattr -dr com.apple.quarantine "$APP" 2>/dev/null || true
@@ -20,10 +25,14 @@ xattr -dr com.apple.quarantine "$APP" 2>/dev/null || true
 # Pop.app 旁边的插件包
 PLUGIN_DIR="$(cd "$(dirname "$APP")" && pwd)"
 PLUGINS=()
+# 和 PLUGINS 一一对应：插件包里可执行文件的路径（装载后会映射进 Pop 进程）
+EXECUTABLES=()
 for bundle in "$PLUGIN_DIR"/*.bundle; do
   [ -f "$bundle/Contents/Info.plist" ] || continue
   id="$(/usr/libexec/PlistBuddy -c 'Print :PopPluginID' "$bundle/Contents/Info.plist" 2>/dev/null)" || continue
+  executable="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleExecutable' "$bundle/Contents/Info.plist" 2>/dev/null)" || continue
   PLUGINS+=("$id")
+  EXECUTABLES+=("$(basename "$bundle")/Contents/MacOS/${executable}")
 done
 
 START="$(date '+%Y-%m-%d %H:%M:%S')"
@@ -85,17 +94,30 @@ if log show --start "$START" --style compact --predicate 'process == "Pop"' 2>/d
   exit 1
 fi
 
-# 每个插件包都装载上了（日志里有「loaded plugin <ID>」）
+# 每个插件包都装载上了：日志里有「loaded plugin <ID>」，或者它的可执行文件已经映射进 Pop 进程。
+# 系统日志偶尔会晚到、在日志多的时候还会丢几条，所以多等一会儿，也用 lsof 看一眼
 if [ ${#PLUGINS[@]} -gt 0 ]; then
-  PLUGIN_LOG="$(log show --start "$START" --style compact --predicate 'process == "Pop" AND category == "plugins"' 2>/dev/null || true)"
-  for id in "${PLUGINS[@]}"; do
-    if ! grep -q "loaded plugin ${id} " <<< "$PLUGIN_LOG"; then
-      echo "❌ 插件包 ${id} 没有装载上"
-      echo "$PLUGIN_LOG" | tail -20
-      dump_logs
-      exit 1
-    fi
+  PID="$(pgrep -x Pop | head -1 || true)"
+  for _ in $(seq 1 15); do
+    PLUGIN_LOG="$(log show --start "$START" --style compact --predicate 'process == "Pop" AND category == "plugins"' 2>/dev/null || true)"
+    MAPPED="$(lsof -p "$PID" 2>/dev/null || true)"
+    MISSING=()
+    for i in "${!PLUGINS[@]}"; do
+      id="${PLUGINS[$i]}"
+      grep -q "loaded plugin ${id} " <<< "$PLUGIN_LOG" && continue
+      grep -qF "${EXECUTABLES[$i]}" <<< "$MAPPED" && continue
+      MISSING+=("$id")
+    done
+    [ ${#MISSING[@]} -eq 0 ] && break
+    sleep 1
   done
+  if [ ${#MISSING[@]} -gt 0 ]; then
+    echo "❌ 这些插件包没有装载上：${MISSING[*]}"
+    echo "$PLUGIN_LOG" | tail -20
+    echo "Pop 进程的环境变量：$(ps -E -ww -o command= -p "$PID" 2>/dev/null | grep -o 'POP_[A-Z_]*=[^ ]*' | tr '\n' ' ' || true)"
+    dump_logs
+    exit 1
+  fi
   echo "插件包都装载上了：${PLUGINS[*]}"
 fi
 
