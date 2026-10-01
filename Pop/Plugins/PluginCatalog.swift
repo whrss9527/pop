@@ -348,6 +348,9 @@ enum PluginCatalog {
                       summary: String(localized: "用中文、拼音或者英文搜表情（「笑」「猫」「smile」），也有常用的特殊符号：对勾、箭头、带圈数字、数学符号、单位和货币、希腊字母、上下标；点一下插到正在打字的地方。选中一个词再用，能直接换成表情"),
                       symbol: "face.smiling", category: .text, functions: [BuiltinPluginID.emojiSymbols],
                       defaultsKeys: ["pop.emojiSymbols.recent", "pop.emojiSymbols.tone"]),
+        PluginPackage(id: "bluetooth", bundleName: "PopBluetooth", name: String(localized: "蓝牙设备"),
+                      summary: String(localized: "一下子连接、断开配对过的蓝牙设备：AirPods 和别的耳机、键盘、鼠标、触控板、手柄，连着的键盘鼠标写着电量"),
+                      symbol: "dot.radiowaves.left.and.right", category: .files, functions: [BuiltinPluginID.bluetooth]),
     ]
 
     /// 插件包提供的所有功能
