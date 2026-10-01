@@ -177,6 +177,13 @@ struct ResultRowsView: View {
     var lineLimit = 4
     let onAction: (CardAction) -> Void
 
+    /// 标签那一列按最长的标签算（英文的「Chinese characters」比中文的「汉字」长得多），76～150 点
+    private var labelWidth: CGFloat {
+        let font = NSFont.preferredFont(forTextStyle: .caption1)
+        let widest = rows.map { ($0.label as NSString).size(withAttributes: [.font: font]).width }.max() ?? 0
+        return min(max(76, ceil(widest) + 2), 150)
+    }
+
     var body: some View {
         VStack(alignment: .leading, spacing: 5) {
             ForEach(Array(rows.enumerated()), id: \.offset) { _, row in
@@ -185,7 +192,7 @@ struct ResultRowsView: View {
                         .font(.caption)
                         .foregroundStyle(.secondary)
                         .lineLimit(1)
-                        .frame(width: 76, alignment: .leading)
+                        .frame(width: labelWidth, alignment: .leading)
                     Text(row.value)
                         .font(.system(size: 12, design: .monospaced))
                         .textSelection(.enabled)
