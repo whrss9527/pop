@@ -152,6 +152,7 @@ final class OverlayController {
     private var localClickMonitor: Any?
     private var keyMonitor: Any?
     private var resignObserver: NSObjectProtocol?
+    private var screensObserver: NSObjectProtocol?
     private var toastTimer: Timer?
 
     /// 给圆盘阴影和弹开时的回弹留的边距
@@ -173,6 +174,12 @@ final class OverlayController {
             MainActor.assumeIsolated {
                 guard let self, self.mode == .ring || self.mode == .card else { return }
                 self.dismissByUser()
+            }
+        }
+        screensObserver = NotificationCenter.default.addObserver(forName: NSApplication.didChangeScreenParametersNotification,
+                                                                 object: nil, queue: .main) { [weak self] _ in
+            MainActor.assumeIsolated {
+                self?.keepCardOnScreen()
             }
         }
     }
@@ -325,6 +332,17 @@ final class OverlayController {
         guard let ghost = leavingPanels.removeValue(forKey: token) else { return }
         ghost.orderOut(nil)
         ghost.contentView = nil
+    }
+
+    /// 显示器的分辨率、排列变了（在卡片里换了分辨率、拔掉了显示器）：卡片挪回屏幕里，之后长大缩小也从挪过的位置算
+    private func keepCardOnScreen() {
+        guard mode == .card else { return }
+        let frame = panel.frame
+        let moved = ScreenGeometry.clamp(frame, within: Self.visibleFrame(containing: CGPoint(x: frame.midX, y: frame.midY)))
+        guard moved != frame else { return }
+        cardAnchor.x += moved.minX - frame.minX
+        cardAnchor.y += moved.minY - frame.minY
+        panel.setFrame(moved, display: true)
     }
 
     /// 卡片内容的大小变了（比如翻译结果出来了）就跟着改窗口大小。已经退场的卡片不管。
