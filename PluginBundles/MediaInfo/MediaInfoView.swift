@@ -202,7 +202,7 @@ struct MediaInfoView: View {
                                         Text(row.label)
                                             .font(.caption)
                                             .foregroundStyle(.secondary)
-                                            .frame(width: 56, alignment: .trailing)
+                                            .frame(width: labelWidth, alignment: .trailing)
                                         Text(row.value)
                                             .font(.callout)
                                             .foregroundStyle(row.warning ? Color.orange : Color.primary)
@@ -229,6 +229,13 @@ struct MediaInfoView: View {
             }
         }
         .controlSize(.small)
+    }
+
+    /// 标签那一列按最长的标签算（英文的「Dynamic Range」比中文的「动态范围」长），56～120 点，各组对齐
+    private var labelWidth: CGFloat {
+        let font = NSFont.preferredFont(forTextStyle: .caption1)
+        let widest = model.sections.flatMap(\.rows).map { ($0.label as NSString).size(withAttributes: [.font: font]).width }.max() ?? 0
+        return min(max(56, ceil(widest) + 2), 120)
     }
 
     /// 列表的高度：按组数和行数估，最高 380，再多就滚动
