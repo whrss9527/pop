@@ -458,6 +458,28 @@
 "留" = "Keep";
 "正在比较内容：%lld / %lld" = "Comparing contents: %lld / %lld";
 
+/* EncryptedImage.swift */
+"密码至少 %@ 位" = "The password needs at least %@ characters";
+"密码里不能有空字符" = "The password can’t contain null characters";
+"密码有点简单：8 位以上，字母、数字、符号混着用更安全" = "This password is simple. 8 or more characters mixing letters, numbers and symbols are safer.";
+"%@ 项" = "%@ items";
+"加密" = "Encrypted";
+"加密打包失败：%@" = "Couldn’t create the encrypted image: %@";
+
+/* EncryptFilesPlugin.swift */
+"把选中的文件和文件夹放进一个用密码加密（AES-256）的磁盘映像，在任何一台 Mac 上双击、输入密码就能打开；发给别人、存到 U 盘或者网盘前用" = "Put the selected files and folders into a password-protected (AES-256) disk image that opens on any Mac with a double-click and the password; use it before sending files or saving them to a USB drive or cloud storage";
+
+/* EncryptFilesView.swift */
+"%@，一共 %@" = "%@, %@ in total";
+"加密打包" = "Encrypt Files";
+"做好了「%@」（%@）" = "Created “%@” (%@)";
+"在任何一台 Mac 上双击它、输入密码就能打开。密码忘了就打不开了，记好它" = "Double-click it on any Mac and enter the password to open it. Without the password it can’t be opened, so keep it safe.";
+"名字" = "Name";
+"再输一遍" = "Confirm";
+"做好后把原文件移到废纸篓" = "Move the originals to the Trash afterwards";
+"存在「%@」里" = "Saved in “%@”";
+"加密强度" = "Encryption";
+
 /* FileInfo.swift */
 "类型" = "Type";
 "至少 " = "at least ";

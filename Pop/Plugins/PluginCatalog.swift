@@ -312,6 +312,9 @@ enum PluginCatalog {
                       symbol: "textformat", category: .text, functions: [BuiltinPluginID.fontPreview],
                       // 和插件包里 FontPreviewModel 的键一样
                       defaultsKeys: ["pop.fontPreview.favorites", "pop.fontPreview.size"]),
+        PluginPackage(id: "encryptFiles", bundleName: "PopEncryptFiles", name: String(localized: "加密打包"),
+                      summary: String(localized: "把选中的文件和文件夹放进一个用密码加密（AES-256）的磁盘映像，在任何一台 Mac 上双击、输入密码就能打开；发给别人、存到 U 盘或者网盘前用"),
+                      symbol: "lock.doc", category: .files, functions: [BuiltinPluginID.encryptFiles]),
     ]
 
     /// 插件包提供的所有功能

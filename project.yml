@@ -878,6 +878,15 @@ targets:
         POP_PLUGIN_ID: fontPreview
         POP_PLUGIN_ENTRY: PopFontPreviewEntry
 
+  PopEncryptFiles:
+    templates: [PopPlugin]
+    sources: [PluginBundles/EncryptFiles]
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: io.github.whrss9527.pop.plugin.encryptFiles
+        POP_PLUGIN_ID: encryptFiles
+        POP_PLUGIN_ENTRY: PopEncryptFilesEntry
+
   PopTests:
     type: bundle.unit-test
     platform: macOS
@@ -902,6 +911,7 @@ targets:
       - path: PluginBundles/MediaInfo
       - path: PluginBundles/Subtitles
       - path: PluginBundles/FontPreview
+      - path: PluginBundles/EncryptFiles
       - path: PluginBundles/Beautify
       - path: PluginBundles/Spotlight
       - path: PluginBundles/Timer
@@ -1004,6 +1014,7 @@ schemes:
         PopMediaInfo: all
         PopSubtitles: all
         PopFontPreview: all
+        PopEncryptFiles: all
         PopBeautify: all
         PopSpotlight: all
         PopTimer: all
