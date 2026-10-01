@@ -1013,6 +1013,15 @@ targets:
         POP_PLUGIN_ID: windowPiP
         POP_PLUGIN_ENTRY: PopWindowPiPEntry
 
+  PopMouseWheel:
+    templates: [PopPlugin]
+    sources: [PluginBundles/MouseWheel]
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: io.github.whrss9527.pop.plugin.mouseWheel
+        POP_PLUGIN_ID: mouseWheel
+        POP_PLUGIN_ENTRY: PopMouseWheelEntry
+
   PopTests:
     type: bundle.unit-test
     platform: macOS
@@ -1023,6 +1032,7 @@ targets:
       - path: PluginBundles/CameraBubble
       - path: PluginBundles/PointerHighlight
       - path: PluginBundles/Teleprompter
+      - path: PluginBundles/MouseWheel
       - path: PluginBundles/WindowPiP
       - path: PluginBundles/BreakReminder
       - path: PluginBundles/Calendar
@@ -1140,6 +1150,7 @@ schemes:
         PopCameraBubble: all
         PopPointerHighlight: all
         PopTeleprompter: all
+        PopMouseWheel: all
         PopWindowPiP: all
         PopBreakReminder: all
         PopCalendar: all

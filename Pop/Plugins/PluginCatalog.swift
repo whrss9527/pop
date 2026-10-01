@@ -363,6 +363,11 @@ enum PluginCatalog {
                       symbol: "pip", category: .screen, functions: [BuiltinPluginID.windowPiP],
                       // 和插件包里 PictureInPicture 的键一样
                       defaultsKeys: ["pop.windowPiP.size"]),
+        PluginPackage(id: "mouseWheel", bundleName: "PopMouseWheel", name: String(localized: "鼠标滚轮"),
+                      summary: String(localized: "把鼠标滚轮的方向反过来（触控板还是自然滚动），也可以让它滚得快一点；只改滚轮鼠标，触控板、妙控鼠标照旧"),
+                      symbol: "computermouse", category: .files, functions: [BuiltinPluginID.mouseWheel],
+                      // 和插件包里 MouseWheel 的键一样
+                      defaultsKeys: ["pop.mouseWheel.reverse", "pop.mouseWheel.reverseHorizontal", "pop.mouseWheel.speed"]),
     ]
 
     /// 插件包提供的所有功能

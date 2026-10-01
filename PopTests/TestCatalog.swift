@@ -91,6 +91,7 @@ enum TestCatalog {
         CalendarEntry.self,
         BreakReminderEntry.self,
         WindowPiPEntry.self,
+        MouseWheelEntry.self,
     ]
 
     static func plugins() -> [any PopPlugin] {
