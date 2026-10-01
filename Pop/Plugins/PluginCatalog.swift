@@ -354,6 +354,10 @@ enum PluginCatalog {
         PluginPackage(id: "calendar", bundleName: "PopCalendar", name: String(localized: "万年历"),
                       summary: String(localized: "月历上每天写着农历、节气和节日；选中一个日期、节日或者农历日子，翻到那一天"),
                       symbol: "calendar", category: .convert, functions: [BuiltinPluginID.calendar], defaultsKeys: ["pop.calendar.lunar"]),
+        PluginPackage(id: "breakReminder", bundleName: "PopBreakReminder", name: String(localized: "休息提醒"),
+                      summary: String(localized: "连续用电脑一段时间提醒你起来活动、看看远处；离开一会儿就算休息过了，看视频、开会时不打扰"),
+                      symbol: "figure.walk", category: .files, functions: [BuiltinPluginID.breakReminder],
+                      defaultsKeys: ["pop.breakReminder.enabled", "pop.breakReminder.interval", "pop.breakReminder.length", "pop.breakReminder.fullScreen"]),
     ]
 
     /// 插件包提供的所有功能
