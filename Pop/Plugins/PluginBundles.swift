@@ -68,6 +68,10 @@ final class PluginHost {
     private var recordingExclusions: [(owner: String, windows: @MainActor () -> [Int])] = []
     private var scenes: [(owner: String, scene: DemoScene)] = []
 
+    /// 用某个功能处理这些文件，结果在指针的位置弹出来。插件包自己的小窗（不在浮窗里）要接着交给别的功能时用，
+    /// 比如录音存好后「转成文字」。Pop 启动时接上
+    var runFunction: @MainActor (_ pluginID: String, _ files: [URL]) -> Void = { _, _ in }
+
     /// 录屏时不录进去的窗口编号
     var windowsExcludedFromRecording: [Int] {
         recordingExclusions.flatMap { $0.windows() }

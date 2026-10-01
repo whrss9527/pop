@@ -4,6 +4,6 @@
 "NSCalendarsWriteOnlyAccessUsageDescription" = "把选中的事情加到「日历」时需要这个权限。Pop 只添加日程，不会读取你的日历。";
 "NSCalendarsUsageDescription" = "把选中的事情加到「日历」时需要这个权限。Pop 只添加日程，不会读取你的日历。";
 "NSSpeechRecognitionUsageDescription" = "把录音、视频里说的话转成文字时需要语音识别权限。这台 Mac 支持时只在本机识别，不上传音频。";
-"NSMicrophoneUsageDescription" = "录屏时选了「麦克风」才会用到麦克风，把你说的话一起录进视频。";
+"NSMicrophoneUsageDescription" = "用「录音」或者录屏时选了「麦克风」才会用到麦克风，录下你说的话。";
 "NSAppleEventsUsageDescription" = "在「系统操作」里切换深色、浅色模式时，要请「System Events」改系统的外观设置。";
 "NSCameraUsageDescription" = "打开「摄像头小窗」时才会用到摄像头，在屏幕角落显示你自己；Pop 不会单独保存或上传摄像头的画面。";

@@ -54,7 +54,7 @@ enum BuiltinPlugins {
         BuiltinPluginID.contrast, BuiltinPluginID.hash, BuiltinPluginID.qrCode, BuiltinPluginID.base64Image, BuiltinPluginID.ocr,
         BuiltinPluginID.screenshotOCR, BuiltinPluginID.tableOCR, BuiltinPluginID.scanCode, BuiltinPluginID.annotate,
         BuiltinPluginID.beautify,
-        BuiltinPluginID.screenRecord, BuiltinPluginID.scrollCapture, BuiltinPluginID.showKeystrokes, BuiltinPluginID.screenPen,
+        BuiltinPluginID.screenRecord, BuiltinPluginID.voiceRecorder, BuiltinPluginID.scrollCapture, BuiltinPluginID.showKeystrokes, BuiltinPluginID.screenPen,
         BuiltinPluginID.cameraBubble, BuiltinPluginID.pointerHighlight, BuiltinPluginID.spotlight, BuiltinPluginID.teleprompter,
         BuiltinPluginID.pin,
         BuiltinPluginID.removeBackground, BuiltinPluginID.imageConvert, BuiltinPluginID.stitchImages, BuiltinPluginID.splitImage, BuiltinPluginID.compareImages, BuiltinPluginID.appIcon, BuiltinPluginID.watermark,
@@ -67,7 +67,7 @@ enum BuiltinPlugins {
         BuiltinPluginID.batchRename, BuiltinPluginID.revealInFinder, BuiltinPluginID.openWith, BuiltinPluginID.zip, BuiltinPluginID.encryptFiles,
         BuiltinPluginID.unzip, BuiltinPluginID.pdf, BuiltinPluginID.videoConvert, BuiltinPluginID.trimMedia,
         BuiltinPluginID.transcribe, BuiltinPluginID.shelf, BuiltinPluginID.openInTerminal, BuiltinPluginID.keepAwake,
-        BuiltinPluginID.systemActions, BuiltinPluginID.quitApps, BuiltinPluginID.uninstallApp, BuiltinPluginID.appInfo, BuiltinPluginID.batteryInfo, BuiltinPluginID.cleanKeyboard, BuiltinPluginID.timer,
+        BuiltinPluginID.systemActions, BuiltinPluginID.quitApps, BuiltinPluginID.uninstallApp, BuiltinPluginID.appInfo, BuiltinPluginID.batteryInfo, BuiltinPluginID.systemInfo, BuiltinPluginID.cleanKeyboard, BuiltinPluginID.timer,
         BuiltinPluginID.clipboardHistory,
         BuiltinPluginID.snippets, BuiltinPluginID.allPlugins, BuiltinPluginID.settings,
     ]
@@ -138,7 +138,7 @@ enum BuiltinCategory: CaseIterable, Identifiable {
                   BuiltinPluginID.cropImage, BuiltinPluginID.redact,
                   BuiltinPluginID.palette, BuiltinPluginID.colorPicker,
                   BuiltinPluginID.ruler],
-        .recording: [BuiltinPluginID.screenRecord, BuiltinPluginID.scrollCapture, BuiltinPluginID.showKeystrokes,
+        .recording: [BuiltinPluginID.screenRecord, BuiltinPluginID.voiceRecorder, BuiltinPluginID.scrollCapture, BuiltinPluginID.showKeystrokes,
                      BuiltinPluginID.screenPen, BuiltinPluginID.cameraBubble, BuiltinPluginID.pointerHighlight,
                      BuiltinPluginID.spotlight, BuiltinPluginID.zoom, BuiltinPluginID.teleprompter],
         .files: [BuiltinPluginID.copyPath, BuiltinPluginID.fileInfo, BuiltinPluginID.mediaInfo, BuiltinPluginID.subtitles, BuiltinPluginID.folderTree, BuiltinPluginID.findDuplicates, BuiltinPluginID.similarPhotos,
@@ -153,7 +153,7 @@ enum BuiltinCategory: CaseIterable, Identifiable {
                  BuiltinPluginID.transcribe,
                  BuiltinPluginID.shelf, BuiltinPluginID.airDrop, BuiltinPluginID.sendToPhone,
                  BuiltinPluginID.windowLayout, BuiltinPluginID.menuShortcuts,
-                 BuiltinPluginID.keepAwake, BuiltinPluginID.systemActions, BuiltinPluginID.quitApps, BuiltinPluginID.uninstallApp, BuiltinPluginID.appInfo, BuiltinPluginID.batteryInfo,
+                 BuiltinPluginID.keepAwake, BuiltinPluginID.systemActions, BuiltinPluginID.quitApps, BuiltinPluginID.uninstallApp, BuiltinPluginID.appInfo, BuiltinPluginID.batteryInfo, BuiltinPluginID.systemInfo,
                  BuiltinPluginID.cleanKeyboard, BuiltinPluginID.timer],
     ]
 
