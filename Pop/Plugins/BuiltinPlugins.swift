@@ -41,7 +41,7 @@ enum BuiltinPlugins {
     static let displayOrder: [String] = [
         BuiltinPluginID.translate, BuiltinPluginID.screenshotTranslate, BuiltinPluginID.search, BuiltinPluginID.dictionary,
         BuiltinPluginID.vocabulary, BuiltinPluginID.speak, BuiltinPluginID.speakToFile, BuiltinPluginID.openURL, BuiltinPluginID.linkInspect,
-        BuiltinPluginID.webCapture, BuiltinPluginID.textImage, BuiltinPluginID.largeType, BuiltinPluginID.calculate,
+        BuiltinPluginID.webCapture, BuiltinPluginID.textImage, BuiltinPluginID.largeType, BuiltinPluginID.fontPreview, BuiltinPluginID.calculate,
         BuiltinPluginID.numberStats, BuiltinPluginID.unitConvert, BuiltinPluginID.copyPlain, BuiltinPluginID.textCleanup,
         BuiltinPluginID.extractInfo, BuiltinPluginID.idNumber, BuiltinPluginID.lineTools, BuiltinPluginID.reminder,
         BuiltinPluginID.spellCheck, BuiltinPluginID.aiAssistant, BuiltinPluginID.aiPolish, BuiltinPluginID.aiSummarize,
@@ -114,7 +114,7 @@ enum BuiltinCategory: CaseIterable, Identifiable {
     private static let members: [BuiltinCategory: [String]] = [
         .text: [BuiltinPluginID.translate, BuiltinPluginID.screenshotTranslate, BuiltinPluginID.search,
                 BuiltinPluginID.dictionary, BuiltinPluginID.vocabulary, BuiltinPluginID.speak, BuiltinPluginID.speakToFile, BuiltinPluginID.openURL,
-                BuiltinPluginID.webCapture, BuiltinPluginID.textImage, BuiltinPluginID.largeType,
+                BuiltinPluginID.webCapture, BuiltinPluginID.textImage, BuiltinPluginID.largeType, BuiltinPluginID.fontPreview,
                 BuiltinPluginID.copyPlain,
                 BuiltinPluginID.textCleanup, BuiltinPluginID.extractInfo, BuiltinPluginID.idNumber, BuiltinPluginID.lineTools,
                 BuiltinPluginID.reminder,

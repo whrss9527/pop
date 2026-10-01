@@ -869,6 +869,15 @@ targets:
         POP_PLUGIN_ID: subtitles
         POP_PLUGIN_ENTRY: PopSubtitlesEntry
 
+  PopFontPreview:
+    templates: [PopPlugin]
+    sources: [PluginBundles/FontPreview]
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: io.github.whrss9527.pop.plugin.fontPreview
+        POP_PLUGIN_ID: fontPreview
+        POP_PLUGIN_ENTRY: PopFontPreviewEntry
+
   PopTests:
     type: bundle.unit-test
     platform: macOS
@@ -892,6 +901,7 @@ targets:
       - path: PluginBundles/SimilarPhotos
       - path: PluginBundles/MediaInfo
       - path: PluginBundles/Subtitles
+      - path: PluginBundles/FontPreview
       - path: PluginBundles/Beautify
       - path: PluginBundles/Spotlight
       - path: PluginBundles/Timer
@@ -993,6 +1003,7 @@ schemes:
         PopSimilarPhotos: all
         PopMediaInfo: all
         PopSubtitles: all
+        PopFontPreview: all
         PopBeautify: all
         PopSpotlight: all
         PopTimer: all

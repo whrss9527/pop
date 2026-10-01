@@ -74,6 +74,7 @@ enum TestCatalog {
         AppInfoEntry.self,
         MediaInfoEntry.self,
         SubtitlesEntry.self,
+        FontPreviewEntry.self,
         SimilarPhotosEntry.self,
     ]
 

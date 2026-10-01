@@ -541,6 +541,37 @@
 "一样的 %lld 个，内容不同 %lld 个，只在一边有的 %lld 个；隐藏文件和 App 这类包里面的文件不比较" = "%lld identical, %lld different, %lld on one side only; hidden files and files inside packages such as apps aren’t compared";
 "两个文件夹里的 %lld 个文件完全一样" = "The %lld files in both folders are identical";
 
+/* FontCatalog.swift */
+"西文" = "Western";
+"等宽" = "Monospaced";
+"收藏" = "Favorites";
+"永和九年，岁在癸丑 The quick brown fox jumps over the lazy dog 0123456789" = "The quick brown fox jumps over the lazy dog 0123456789";
+
+/* FontPreviewPlugin.swift */
+"用这台 Mac 上的每一种字体显示选中的文字（没选中时用示例），按中文、西文、等宽、收藏筛选，只看能完整显示的；复制字体名、CSS，或者复制成图片；选中字体文件时先预览再安装" = "Show the selected text (or a sample) in every font on your Mac, filter by Chinese, Western, monospaced or favorite fonts and only those that can show all of it; copy the font name or CSS, or copy it as an image; select font files to preview and install them";
+"读不了这个字体文件" = "Can’t read this font file";
+
+/* FontPreviewView.swift */
+"%@ 种字体能完整显示这段文字" = "%@ fonts can show all of this text";
+"%@ 种字体" = "%@ fonts";
+"装不上：%@" = "Couldn’t install: %@";
+"字体预览" = "Font Preview";
+"要预览的文字" = "Text to preview";
+"搜索字体" = "Search fonts";
+"筛选" = "Filter";
+"只看能显示的" = "Only fonts that can show it";
+"%@ 种样式" = "%@ styles";
+"取消收藏" = "Remove from Favorites";
+"加到收藏" = "Add to Favorites";
+"复制字体名" = "Copy Font Name";
+"复制 PostScript 名" = "Copy PostScript Name";
+"复制 CSS" = "Copy CSS";
+"复制成图片" = "Copy as Image";
+"在访达中显示字体文件" = "Show Font File in Finder";
+"装好了，在「字体册」里也能看到" = "Installed. You can also find it in Font Book.";
+"装到「~/资源库/Fonts」，只给你自己用" = "Installs into ~/Library/Fonts, just for you";
+"没有能完整显示这段文字的字体，取消「只看能显示的」再看看" = "No font can show all of this text. Uncheck “Only fonts that can show it” to see more.";
+
 /* FormatPlugins.swift */
 "YAML 和 JSON" = "YAML ↔ JSON";
 "选中 JSON 转成 YAML，选中 YAML 转成 JSON，键的顺序不变" = "Convert selected JSON to YAML or YAML to JSON, keeping key order";
