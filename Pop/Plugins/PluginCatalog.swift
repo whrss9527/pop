@@ -267,6 +267,9 @@ enum PluginCatalog {
                       symbol: "square.grid.3x3", category: .screen, functions: [BuiltinPluginID.splitImage],
                       // 和插件包里 SplitImageModel 的键一样
                       defaultsKeys: ["pop.splitImage.layout"]),
+        PluginPackage(id: "quitApps", bundleName: "PopQuitApps", name: String(localized: "退出 App"),
+                      summary: String(localized: "列出正在运行的 App 和各占多少内存，一键退出，没有响应的强制退出；也能一下退出其他所有 App，开会、演示前清清场"),
+                      symbol: "xmark.app", category: .files, functions: [BuiltinPluginID.quitApps]),
     ]
 
     /// 插件包提供的所有功能

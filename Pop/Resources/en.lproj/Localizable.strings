@@ -2344,3 +2344,15 @@
 "切成 %lld 张" = "%lld pieces";
 "%@，按编号的顺序存在原图旁边的「%@」文件夹" = "%@, saved in order in the “%@” folder next to the original";
 "切好了 %lld 张，存在「%@」" = "Saved %lld pieces in “%@”";
+"退出 App" = "Quit Apps";
+"列出正在运行的 App 和各占多少内存，一键退出，没有响应的强制退出；也能一下退出其他所有 App，开会、演示前清清场" = "List running apps and how much memory each one uses. Quit an app with a click, force quit one that doesn’t respond, or quit all the others at once before a meeting or a demo";
+"正在运行 %lld 个 App，一共占用 %@ 内存" = "%lld apps running, using %@ of memory";
+"没有别的 App 在运行了" = "No other apps are running";
+"没存的文稿，App 会先问你要不要存；点了「退出」几秒还没退出的，可以强制退出" = "Apps ask before closing unsaved documents. If an app hasn’t quit a few seconds after you click Quit, you can force quit it";
+"在用" = "Current";
+"退出" = "Quit";
+"强制退出" = "Force Quit";
+"除了「%@」，退出其他 %lld 个 App？" = "Quit the %2$lld apps other than “%1$@”?";
+"退出这 %lld 个 App？" = "Quit these %lld apps?";
+"退出 %lld 个" = "Quit %lld";
+"退出其他 App" = "Quit Other Apps";

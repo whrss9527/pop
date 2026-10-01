@@ -779,6 +779,15 @@ targets:
         POP_PLUGIN_ID: splitImage
         POP_PLUGIN_ENTRY: PopSplitImageEntry
 
+  PopQuitApps:
+    templates: [PopPlugin]
+    sources: [PluginBundles/QuitApps]
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: io.github.whrss9527.pop.plugin.quitApps
+        POP_PLUGIN_ID: quitApps
+        POP_PLUGIN_ENTRY: PopQuitAppsEntry
+
   PopTests:
     type: bundle.unit-test
     platform: macOS
@@ -792,6 +801,7 @@ targets:
       - path: PluginBundles/Zoom
       - path: PluginBundles/CompareImages
       - path: PluginBundles/SplitImage
+      - path: PluginBundles/QuitApps
       - path: PluginBundles/Beautify
       - path: PluginBundles/Spotlight
       - path: PluginBundles/Timer
@@ -883,6 +893,7 @@ schemes:
         PopZoom: all
         PopCompareImages: all
         PopSplitImage: all
+        PopQuitApps: all
         PopBeautify: all
         PopSpotlight: all
         PopTimer: all
