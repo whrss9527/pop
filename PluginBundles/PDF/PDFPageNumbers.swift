@@ -132,17 +132,22 @@ final class PDFPageNumbersModel: ObservableObject {
     private let document: CGPDFDocument
     /// 同一个文件用 PDFKit 打开：预览时把批注画上
     private let annotations: PDFDocument?
-    @Published var options: PDFPageNumbers.Options {
-        didSet {
-            options.firstPage = min(max(options.firstPage, 1), pageCount)
-            options.startNumber = min(max(options.startNumber, 0), 9999)
-            UserDefaults.standard.set(options.format.rawValue, forKey: Self.formatKey)
-            UserDefaults.standard.set(options.position.rawValue, forKey: Self.positionKey)
-            if options != oldValue {
-                drawPreview()
-            }
+    /// 卡片上选的样式、位置、从第几页开始、第一个页码：改的时候拉回能用的范围，记住样式和位置，重画预览。
+    /// （不在 @Published 属性自己的 didSet 里改它：那样会再触发 didSet，一直递归下去）
+    var options: PDFPageNumbers.Options {
+        get { storedOptions }
+        set {
+            var value = newValue
+            value.firstPage = min(max(value.firstPage, 1), pageCount)
+            value.startNumber = min(max(value.startNumber, 0), 9999)
+            UserDefaults.standard.set(value.format.rawValue, forKey: Self.formatKey)
+            UserDefaults.standard.set(value.position.rawValue, forKey: Self.positionKey)
+            guard value != storedOptions else { return }
+            storedOptions = value
+            drawPreview()
         }
     }
+    @Published private var storedOptions: PDFPageNumbers.Options
     @Published private(set) var preview: CGImage?
     @Published private(set) var working = false
     @Published private(set) var message: String?
@@ -156,7 +161,7 @@ final class PDFPageNumbersModel: ObservableObject {
         let defaults = UserDefaults.standard
         options.format = defaults.string(forKey: Self.formatKey).flatMap(PDFPageNumbers.Format.init(rawValue:)) ?? .plain
         options.position = defaults.string(forKey: Self.positionKey).flatMap(PDFPageNumbers.Position.init(rawValue:)) ?? .bottomCenter
-        self.options = options
+        storedOptions = options
         drawPreview()
     }
 
