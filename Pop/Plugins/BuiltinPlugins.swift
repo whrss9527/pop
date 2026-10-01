@@ -57,16 +57,17 @@ enum BuiltinPlugins {
         BuiltinPluginID.screenRecord, BuiltinPluginID.scrollCapture, BuiltinPluginID.showKeystrokes, BuiltinPluginID.screenPen,
         BuiltinPluginID.cameraBubble, BuiltinPluginID.pointerHighlight, BuiltinPluginID.spotlight, BuiltinPluginID.teleprompter,
         BuiltinPluginID.pin,
-        BuiltinPluginID.removeBackground, BuiltinPluginID.imageConvert, BuiltinPluginID.stitchImages, BuiltinPluginID.splitImage, BuiltinPluginID.compareImages, BuiltinPluginID.watermark,
+        BuiltinPluginID.removeBackground, BuiltinPluginID.imageConvert, BuiltinPluginID.stitchImages, BuiltinPluginID.splitImage, BuiltinPluginID.compareImages, BuiltinPluginID.appIcon, BuiltinPluginID.watermark,
         BuiltinPluginID.idPhoto, BuiltinPluginID.cropImage, BuiltinPluginID.redact, BuiltinPluginID.palette,
         BuiltinPluginID.colorPicker, BuiltinPluginID.ruler, BuiltinPluginID.random, BuiltinPluginID.quickNote,
         BuiltinPluginID.windowLayout, BuiltinPluginID.menuShortcuts, BuiltinPluginID.airDrop, BuiltinPluginID.sendToPhone,
         BuiltinPluginID.copyPath, BuiltinPluginID.fileInfo, BuiltinPluginID.folderTree, BuiltinPluginID.findDuplicates,
-        BuiltinPluginID.diskUsage, BuiltinPluginID.tidyFolder, BuiltinPluginID.codeStats, BuiltinPluginID.compareFolders, BuiltinPluginID.compareFiles,
+        BuiltinPluginID.diskUsage, BuiltinPluginID.tidyFolder, BuiltinPluginID.newFile, BuiltinPluginID.fileEncoding, BuiltinPluginID.codeStats,
+        BuiltinPluginID.compareFolders, BuiltinPluginID.compareFiles,
         BuiltinPluginID.batchRename, BuiltinPluginID.revealInFinder, BuiltinPluginID.openWith, BuiltinPluginID.zip,
         BuiltinPluginID.unzip, BuiltinPluginID.pdf, BuiltinPluginID.videoConvert, BuiltinPluginID.trimMedia,
         BuiltinPluginID.transcribe, BuiltinPluginID.shelf, BuiltinPluginID.openInTerminal, BuiltinPluginID.keepAwake,
-        BuiltinPluginID.systemActions, BuiltinPluginID.quitApps, BuiltinPluginID.cleanKeyboard, BuiltinPluginID.timer, BuiltinPluginID.clipboardHistory,
+        BuiltinPluginID.systemActions, BuiltinPluginID.quitApps, BuiltinPluginID.uninstallApp, BuiltinPluginID.cleanKeyboard, BuiltinPluginID.timer, BuiltinPluginID.clipboardHistory,
         BuiltinPluginID.snippets, BuiltinPluginID.allPlugins, BuiltinPluginID.settings,
     ]
 
@@ -132,7 +133,7 @@ enum BuiltinCategory: CaseIterable, Identifiable {
                      BuiltinPluginID.jsonTypes, BuiltinPluginID.charInfo],
         .screen: [BuiltinPluginID.ocr, BuiltinPluginID.screenshotOCR, BuiltinPluginID.tableOCR, BuiltinPluginID.scanCode,
                   BuiltinPluginID.annotate, BuiltinPluginID.beautify, BuiltinPluginID.pin, BuiltinPluginID.removeBackground,
-                  BuiltinPluginID.imageConvert, BuiltinPluginID.stitchImages, BuiltinPluginID.splitImage, BuiltinPluginID.compareImages, BuiltinPluginID.watermark, BuiltinPluginID.idPhoto,
+                  BuiltinPluginID.imageConvert, BuiltinPluginID.stitchImages, BuiltinPluginID.splitImage, BuiltinPluginID.compareImages, BuiltinPluginID.appIcon, BuiltinPluginID.watermark, BuiltinPluginID.idPhoto,
                   BuiltinPluginID.cropImage, BuiltinPluginID.redact,
                   BuiltinPluginID.palette, BuiltinPluginID.colorPicker,
                   BuiltinPluginID.ruler],
@@ -140,7 +141,8 @@ enum BuiltinCategory: CaseIterable, Identifiable {
                      BuiltinPluginID.screenPen, BuiltinPluginID.cameraBubble, BuiltinPluginID.pointerHighlight,
                      BuiltinPluginID.spotlight, BuiltinPluginID.zoom, BuiltinPluginID.teleprompter],
         .files: [BuiltinPluginID.copyPath, BuiltinPluginID.fileInfo, BuiltinPluginID.folderTree, BuiltinPluginID.findDuplicates,
-                 BuiltinPluginID.diskUsage, BuiltinPluginID.tidyFolder, BuiltinPluginID.codeStats, BuiltinPluginID.compareFolders,
+                 BuiltinPluginID.diskUsage, BuiltinPluginID.tidyFolder, BuiltinPluginID.newFile, BuiltinPluginID.fileEncoding,
+                 BuiltinPluginID.codeStats, BuiltinPluginID.compareFolders,
                  BuiltinPluginID.compareFiles,
                  BuiltinPluginID.batchRename,
                  BuiltinPluginID.revealInFinder,
@@ -150,7 +152,7 @@ enum BuiltinCategory: CaseIterable, Identifiable {
                  BuiltinPluginID.transcribe,
                  BuiltinPluginID.shelf, BuiltinPluginID.airDrop, BuiltinPluginID.sendToPhone,
                  BuiltinPluginID.windowLayout, BuiltinPluginID.menuShortcuts,
-                 BuiltinPluginID.keepAwake, BuiltinPluginID.systemActions, BuiltinPluginID.quitApps, BuiltinPluginID.cleanKeyboard, BuiltinPluginID.timer],
+                 BuiltinPluginID.keepAwake, BuiltinPluginID.systemActions, BuiltinPluginID.quitApps, BuiltinPluginID.uninstallApp, BuiltinPluginID.cleanKeyboard, BuiltinPluginID.timer],
     ]
 
     /// 没有列出来的（剪贴板、全部功能、设置）都算「其他」

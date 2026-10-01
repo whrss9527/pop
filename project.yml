@@ -14,7 +14,7 @@ configFiles:
 settings:
   base:
     SWIFT_VERSION: "5.0"
-    MARKETING_VERSION: "0.48.0"
+    MARKETING_VERSION: "0.49.0"
     CURRENT_PROJECT_VERSION: "1"
     CODE_SIGN_STYLE: Automatic
     DEAD_CODE_STRIPPING: YES
@@ -797,6 +797,42 @@ targets:
         POP_PLUGIN_ID: tidyFolder
         POP_PLUGIN_ENTRY: PopTidyFolderEntry
 
+  PopAppIcon:
+    templates: [PopPlugin]
+    sources: [PluginBundles/AppIcon]
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: io.github.whrss9527.pop.plugin.appIcon
+        POP_PLUGIN_ID: appIcon
+        POP_PLUGIN_ENTRY: PopAppIconEntry
+
+  PopUninstallApp:
+    templates: [PopPlugin]
+    sources: [PluginBundles/UninstallApp]
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: io.github.whrss9527.pop.plugin.uninstallApp
+        POP_PLUGIN_ID: uninstallApp
+        POP_PLUGIN_ENTRY: PopUninstallAppEntry
+
+  PopNewFile:
+    templates: [PopPlugin]
+    sources: [PluginBundles/NewFile]
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: io.github.whrss9527.pop.plugin.newFile
+        POP_PLUGIN_ID: newFile
+        POP_PLUGIN_ENTRY: PopNewFileEntry
+
+  PopFileEncoding:
+    templates: [PopPlugin]
+    sources: [PluginBundles/FileEncoding]
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: io.github.whrss9527.pop.plugin.fileEncoding
+        POP_PLUGIN_ID: fileEncoding
+        POP_PLUGIN_ENTRY: PopFileEncodingEntry
+
   PopTests:
     type: bundle.unit-test
     platform: macOS
@@ -812,6 +848,10 @@ targets:
       - path: PluginBundles/SplitImage
       - path: PluginBundles/QuitApps
       - path: PluginBundles/TidyFolder
+      - path: PluginBundles/AppIcon
+      - path: PluginBundles/UninstallApp
+      - path: PluginBundles/NewFile
+      - path: PluginBundles/FileEncoding
       - path: PluginBundles/Beautify
       - path: PluginBundles/Spotlight
       - path: PluginBundles/Timer
@@ -905,6 +945,10 @@ schemes:
         PopSplitImage: all
         PopQuitApps: all
         PopTidyFolder: all
+        PopAppIcon: all
+        PopUninstallApp: all
+        PopNewFile: all
+        PopFileEncoding: all
         PopBeautify: all
         PopSpotlight: all
         PopTimer: all

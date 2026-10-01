@@ -275,6 +275,24 @@ enum PluginCatalog {
                       symbol: "folder.badge.gearshape", category: .files, functions: [BuiltinPluginID.tidyFolder],
                       // 和插件包里 TidyFolderModel 的键一样
                       defaultsKeys: ["pop.tidyFolder.mode"]),
+        PluginPackage(id: "appIcon", bundleName: "PopAppIcon", name: String(localized: "生成图标"),
+                      summary: String(localized: "用选中的图片生成 App 图标：macOS 的 .icns 和 Xcode 用的图标集（圆角方块，和系统 App 的图标一样大）、iOS 的 1024 图标，还有网站的 favicon，存在原图旁边的文件夹里"),
+                      symbol: "app.dashed", category: .screen, functions: [BuiltinPluginID.appIcon],
+                      // 和插件包里 AppIconModel 的键一样
+                      defaultsKeys: ["pop.appIcon.style", "pop.appIcon.fill", "pop.appIcon.outputs"]),
+        PluginPackage(id: "uninstallApp", bundleName: "PopUninstallApp", name: String(localized: "卸载 App"),
+                      summary: String(localized: "卸载选中的 App：连同它在「资源库」里留下的设置、缓存、容器一起找出来，看清各占多大，再一起移到废纸篓；只勾留下的文件，就是把 App 恢复成刚装好的样子"),
+                      symbol: "trash.square", category: .files, functions: [BuiltinPluginID.uninstallApp]),
+        PluginPackage(id: "newFile", bundleName: "PopNewFile", name: String(localized: "新建文件"),
+                      summary: String(localized: "在选中的文件夹（没选时是访达当前的文件夹）里新建文本、Markdown、网页、脚本这些文件，也可以把选中的文字、剪贴板里的文字和图片直接存成文件"),
+                      symbol: "doc.badge.plus", category: .files, functions: [BuiltinPluginID.newFile],
+                      // 和插件包里 NewFileModel 的键一样
+                      defaultsKeys: ["pop.newFile.kind"]),
+        PluginPackage(id: "fileEncoding", bundleName: "PopFileEncoding", name: String(localized: "文件编码"),
+                      summary: String(localized: "认出选中的文本文件是什么编码（UTF-8、GBK、Big5……）、用的什么换行，一键转成 UTF-8（Excel 打开 CSV 要带 BOM）或者 GBK，换行统一成 LF 或 CRLF；转完可以撤销"),
+                      symbol: "character.book.closed", category: .files, functions: [BuiltinPluginID.fileEncoding],
+                      // 和插件包里 FileEncodingModel 的键一样
+                      defaultsKeys: ["pop.fileEncoding.target", "pop.fileEncoding.lines"]),
     ]
 
     /// 插件包提供的所有功能
