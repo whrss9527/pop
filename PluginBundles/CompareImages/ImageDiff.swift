@@ -469,7 +469,8 @@ enum ImageDiff {
         case .topLeft: parts.append(String(localized: "两张图大小不同：按左上角对齐"))
         }
         if canvas.reduced {
-            parts.append(String(localized: "图片太大，缩小到 \(canvas.width) × \(canvas.height) 对比"))
+            // 尺寸不加千分位
+            parts.append(String(localized: "图片太大，缩小到 \(String(canvas.width)) × \(String(canvas.height)) 对比"))
         }
         return parts.isEmpty ? nil : parts.joined(separator: String(localized: "；"))
     }

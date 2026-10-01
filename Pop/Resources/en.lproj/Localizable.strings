@@ -2328,7 +2328,7 @@
 "%lld 处不一样，占 %@ 的像素" = "Areas that differ: %lld · %@ of the pixels";
 "两张图比例相同、大小不同：按小的那张的大小对比" = "Same proportions, different sizes: compared at the size of the smaller image";
 "两张图大小不同：按左上角对齐" = "Different sizes: aligned at the top-left corner";
-"图片太大，缩小到 %lld × %lld 对比" = "Large images are compared at %lld × %lld";
+"图片太大，缩小到 %@ × %@ 对比" = "Large images are compared at %@ × %@";
 "切分图片" = "Split Image";
 "把选中的图片切成九宫格、四宫格（对准画面里的主体裁成正方形）或者横着三张，长图切成几页；按发出去的顺序编号，存在原图旁边的文件夹里" = "Cut the selected image into a 3 × 3 or 2 × 2 grid (cropped to a square around the subject) or three squares side by side, or cut a long image into pages. The pieces are numbered in posting order and saved in a folder next to the original";
 "九宫格" = "3 × 3 Grid";
@@ -2340,7 +2340,7 @@
 "图片太小，切不开" = "The image is too small to split";
 "没能新建文件夹「%@」：%@" = "Couldn’t create the folder “%@”: %@";
 "切第 %lld 张时出错了" = "Something went wrong while cutting piece %lld";
-"切成 %lld 张 %lld × %lld" = "%lld pieces, %lld × %lld each";
+"切成 %lld 张 %@ × %@" = "%lld pieces, %@ × %@ each";
 "切成 %lld 张" = "%lld pieces";
 "%@，按编号的顺序存在原图旁边的「%@」文件夹" = "%@, saved in order in the “%@” folder next to the original";
 "切好了 %lld 张，存在「%@」" = "Saved %lld pieces in “%@”";

@@ -7,7 +7,7 @@ final class QuitAppsTests: XCTestCase {
     }
 
     func testSortsByMemory() {
-        let sorted = RunningApps.sorted([entry(1, "备忘录", 100), entry(2, "Xcode", 2_000), entry(3, "邮件", nil), entry(4, "Safari", 2_000),
+        let sorted = RunningApps.sorted([entry(1, "备忘录", 100), entry(2, "Xcode", 2_000), entry(3, "Mail", nil), entry(4, "Safari", 2_000),
                                          entry(5, "App Store", nil)])
         // 占得多的在前；一样多、读不到的按名字排
         XCTAssertEqual(sorted.map(\.pid), [4, 2, 1, 5, 3])

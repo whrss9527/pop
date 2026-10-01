@@ -141,7 +141,8 @@ enum ImageSplitter {
         let sameSize = plan.tiles.allSatisfy { abs($0.width - first.width) <= 1 && abs($0.height - first.height) <= 1 }
         let count = plan.tiles.count
         if sameSize {
-            return String(localized: "切成 \(count) 张 \(Int(first.width)) × \(Int(first.height))")
+            // 尺寸不加千分位
+            return String(localized: "切成 \(count) 张 \(String(Int(first.width))) × \(String(Int(first.height)))")
         }
         return String(localized: "切成 \(count) 张")
     }
