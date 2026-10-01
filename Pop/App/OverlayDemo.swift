@@ -29,6 +29,8 @@ enum OverlayDemo {
         // 宽一些，放得下文本对比那样的宽卡片
         let cardRegion = CGRect(x: center.x - 190, y: center.y - 480, width: 760, height: 680)
         logRegion(cardRegion, screen: screen)
+        // 插件包的演示步骤用
+        let demo = PluginHost.DemoContext(screen: screen, center: center, overlay: overlay, cardRegion: cardRegion)
 
         let installed = Set(settings.installedPlugins)
         let text = ContentClassifier.classify(.text("Liquid glass"))
@@ -221,18 +223,8 @@ enum OverlayDemo {
                              anchor: center)
             step("extract")
 
-            // JSON 转代码卡片（分段切换语言）
-            await pause(1.4 * unit)
-            let json = #"{"id": 42, "name": "Pop", "tags": ["效率"], "owner": {"login": "pop", "site_url": null}, "#
-                + #""releases": [{"version": "0.10.0", "draft": false}, {"version": "0.11.0", "draft": true, "notes": "新功能"}]}"#
-            if let output = JSONTypes.generate(json) {
-                let tabs = output.code.map { ResultCard.Tab(title: $0.language.rawValue, text: $0.text) }
-                overlay.showCard(ResultCardView(card: ResultCard(title: String(localized: "JSON 转代码"), detail: String(localized: "\(output.typeCount) 个类型；字段是否可选、能否为空按示例推断"),
-                                                                 tabs: tabs),
-                                                onAction: { _ in }, onMore: {}, onClose: {}),
-                                 anchor: center)
-            }
-            step("jsonTypes")
+            // 插件包的步骤：JSON 转代码
+            await playPluginScenes(after: "extract", in: demo, unit: unit)
 
             // 网页内容转成 Markdown
             await pause(1.4 * unit)
@@ -245,13 +237,8 @@ enum OverlayDemo {
             }
             step("toMarkdown")
 
-            // 正则测试卡片：用「日期」表达式找出日期，替换成日/月/年
-            await pause(1.4 * unit)
-            let notes = "0.10.0 发布于 2026-09-29，0.9.0 发布于 2026-09-28。\n下一版计划在 2026-10-08 之前发布。"
-            let regex = RegexTesterModel(text: notes, pattern: RegexTester.presets.first { $0.title == String(localized: "日期") }?.pattern ?? "")
-            regex.replacement = "$3/$2/$1"
-            overlay.showCard(RegexTesterView(model: regex, canReplace: true, onAction: { _ in }, onClose: {}), anchor: center)
-            step("regex")
+            // 插件包的步骤：正则测试
+            await playPluginScenes(after: "toMarkdown", in: demo, unit: unit)
 
             // 剪贴板历史：几条示例记录，⌘ 点选两条准备合在一起粘贴
             await pause(1.4 * unit)
@@ -368,17 +355,8 @@ enum OverlayDemo {
             await pause(1.4 * unit)
             coordinator.hideToolbar()
 
-            // 加水印：示例截图上铺一层「仅供办理业务使用」
-            await pause(0.6 * unit)
-            if let capture = sampleScreenshot() {
-                let image = FileManager.default.temporaryDirectory.appending(path: "pop-demo/证件照片.png")
-                try? FileManager.default.createDirectory(at: image.deletingLastPathComponent(), withIntermediateDirectories: true)
-                if (try? capture.png.write(to: image)) != nil {
-                    let watermark = WatermarkModel(files: [image], text: ImageWatermark.defaultText, opacity: 0.35)
-                    overlay.showCard(WatermarkView(model: watermark, onApply: {}, onClose: {}), anchor: center)
-                }
-            }
-            step("watermark")
+            // 插件包的步骤：加水印
+            await playPluginScenes(after: "toolbar", in: demo, unit: unit)
 
             // 传到手机：二维码和能下载的文件（演示时不开网页服务，网址是示例）
             await pause(1.4 * unit)
@@ -504,7 +482,7 @@ enum OverlayDemo {
             // 装载的插件包加的步骤：屏幕画笔、摄像头小窗、突出显示指针、提词器……
             await pause(1.4 * unit)
             overlay.hide()
-            await playPluginScenes(after: "scrollCapture", on: screen, unit: unit)
+            await playPluginScenes(after: "scrollCapture", in: demo, unit: unit)
 
             // 截图标注窗口：拿一张画好的示例图，标上方框、箭头、文字、马赛克和序号；截图区域换成标注窗口
             await pause(1.4 * unit)
@@ -721,14 +699,14 @@ enum OverlayDemo {
     }
 
     /// 插件包注册的演示步骤：按顺序一个个显示、记下截图区域、停一会儿再收起
-    private static func playPluginScenes(after step: String, on screen: NSScreen, unit: Double) async {
+    private static func playPluginScenes(after step: String, in context: PluginHost.DemoContext, unit: Double) async {
         for scene in PluginHost.shared.demoScenes(after: step) {
-            await pause(0.4 * unit)
-            if let region = scene.show(screen) {
-                logRegion(region.insetBy(dx: -24, dy: -24), screen: screen)
+            await pause(scene.delay * unit)
+            if let region = scene.show(context) {
+                logRegion(region == context.cardRegion ? region : region.insetBy(dx: -24, dy: -24), screen: context.screen)
             }
             Self.step(scene.name)
-            await pause(1.4 * unit)
+            await pause(scene.hold * unit)
             scene.hide()
         }
     }

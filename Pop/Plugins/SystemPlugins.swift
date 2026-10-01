@@ -44,19 +44,6 @@ struct MenuShortcutsPlugin: PopPlugin {
 
 // MARK: - 屏幕标尺
 
-struct RulerPlugin: PopPlugin {
-    let info = PluginInfo(id: BuiltinPluginID.ruler, name: String(localized: "屏幕标尺"), symbol: "ruler",
-                          summary: String(localized: "定格屏幕，量出指针处到上下左右边缘的距离，拖动量一块区域的宽高；单击复制尺寸"),
-                          accepts: [], hidesOverlay: true)
-
-    @MainActor func run(_ content: ClassifiedContent, context: PluginContext) async -> PluginOutcome {
-        if let problem = await ScreenRuler.start() {
-            return .failure(problem)
-        }
-        return .done(toast: nil)
-    }
-}
-
 // MARK: - 录屏
 
 struct ScreenRecordPlugin: PopPlugin {
@@ -106,26 +93,6 @@ struct ShowKeystrokesPlugin: PopPlugin {
             return .failure(problem)
         }
         return .done(toast: String(localized: "开始显示按下的组合键，再用一次就关闭"))
-    }
-}
-
-// MARK: - 清洁键盘
-
-struct KeyboardCleanerPlugin: PopPlugin {
-    let info = PluginInfo(id: BuiltinPluginID.cleanKeyboard, name: String(localized: "清洁键盘"), symbol: "keyboard",
-                          summary: String(localized: "锁住键盘一分钟，擦键盘时不会误触；亮度、音量键也不起作用，用鼠标点「结束清洁」随时恢复"),
-                          accepts: [], hidesOverlay: true)
-
-    @MainActor func run(_ content: ClassifiedContent, context: PluginContext) async -> PluginOutcome {
-        let cleaner = KeyboardCleaner.shared
-        if cleaner.isActive {
-            cleaner.stop()
-            return .done(toast: nil)
-        }
-        if let problem = cleaner.start() {
-            return .failure(problem)
-        }
-        return .done(toast: nil)
     }
 }
 

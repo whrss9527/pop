@@ -3,6 +3,7 @@ import CoreText
 import Foundation
 import ImageIO
 import UniformTypeIdentifiers
+@testable import Pop
 
 /// 给图片和 PDF 加文字水印：斜着铺满整张图（PDF 是每一页）、半透明，存成「原名 水印」放在原文件旁边，原文件不动。
 /// 证件复印件这类图片写上用途，别人拿去也不好挪作他用。

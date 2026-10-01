@@ -95,18 +95,6 @@ struct SpeakPlugin: PopPlugin {
     }
 }
 
-struct LargeTypePlugin: PopPlugin {
-    let info = PluginInfo(id: BuiltinPluginID.largeType, name: String(localized: "大字显示"), symbol: "textformat.size",
-                          summary: String(localized: "把选中的文字铺满整个屏幕，给别人看电话号码、Wi-Fi 密码、取件码都方便；点一下或按任意键关闭"),
-                          accepts: [.text], maxLength: LargeType.maxLength, hidesOverlay: true)
-
-    @MainActor func run(_ content: ClassifiedContent, context: PluginContext) async -> PluginOutcome {
-        guard let text = content.text?.trimmingCharacters(in: .whitespacesAndNewlines), !text.isEmpty else { return .done(toast: nil) }
-        LargeTypeWindow.show(text, near: context.anchor ?? NSEvent.mouseLocation)
-        return .done(toast: nil)
-    }
-}
-
 struct TextImagePlugin: PopPlugin {
     let info = PluginInfo(id: BuiltinPluginID.textImage, name: String(localized: "文字转图片"), symbol: "text.below.photo",
                           summary: String(localized: "把选中的文字排成一张手机上看着舒服的长图（宽 1080 像素），白底、米黄、深色三种底色，可以复制、存储或贴到屏幕上"),
@@ -168,28 +156,6 @@ struct NumberStatsPlugin: PopPlugin {
             return .failure(String(localized: "需要至少两个数：一列（每行一个，前面可以有文字），或者一行用逗号、空格隔开"))
         }
         return .card(ResultCard(title: String(localized: "数字统计"), detail: String(localized: "共 \(summary.count) 个数"), rows: summary.rows))
-    }
-}
-
-struct SpellCheckPlugin: PopPlugin {
-    let info = PluginInfo(id: BuiltinPluginID.spellCheck, name: String(localized: "拼写检查"), symbol: "text.badge.checkmark",
-                          summary: String(localized: "找出外文里拼错的词，给出改法，可以直接换成改好的文字（系统自带的拼写检查，离线）"),
-                          accepts: [.foreignText], maxLength: 20_000)
-
-    @MainActor func run(_ content: ClassifiedContent, context: PluginContext) async -> PluginOutcome {
-        guard let text = content.text else { return .failure(String(localized: "没有文字")) }
-        let issues = SpellCheck.issues(in: text, language: SpellCheck.supportedLanguage(content.language))
-        guard !issues.isEmpty else { return .done(toast: String(localized: "没有发现拼写错误")) }
-        let rows = issues.map { issue in
-            ResultCard.Row(label: issue.word,
-                           value: issue.suggestions.isEmpty ? String(localized: "（没有建议）") : issue.suggestions.joined(separator: " / "))
-        }
-        let corrected = SpellCheck.corrected(text, issues: issues)
-        let changed = corrected != text
-        return .card(ResultCard(title: String(localized: "拼写检查"), body: changed ? corrected : "",
-                                detail: changed ? String(localized: "发现 \(issues.count) 处拼写问题；上面是按第一个建议改好的文字")
-                                    : String(localized: "发现 \(issues.count) 处可能拼错的词，没有找到改法"),
-                                copyText: changed ? corrected : nil, replaceText: changed ? corrected : nil, rows: rows))
     }
 }
 

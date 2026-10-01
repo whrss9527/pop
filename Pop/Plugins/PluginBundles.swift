@@ -33,9 +33,21 @@ final class PluginHost {
         let after: String
         /// 排在同一步后面的几个插件包步骤按它从小到大排
         var order = 0
-        /// 显示出来，返回要截的区域（AppKit 屏幕坐标）
-        let show: @MainActor (NSScreen) -> CGRect?
-        let hide: @MainActor () -> Void
+        /// 显示之前先停多久、显示以后停多久再收起（乘上动画放慢的倍数）
+        var delay = 0.4
+        var hold = 1.4
+        /// 显示出来，返回要截的区域（AppKit 屏幕坐标）；返回 nil 时沿用上一次的区域
+        let show: @MainActor (DemoContext) -> CGRect?
+        var hide: @MainActor () -> Void = {}
+    }
+
+    /// 演示步骤显示时用得上的：屏幕、演示里的唤起点（卡片从这里弹出来）、浮窗、卡片的截图区域
+    @MainActor
+    struct DemoContext {
+        let screen: NSScreen
+        let center: CGPoint
+        let overlay: OverlayController
+        let cardRegion: CGRect
     }
 
     /// 交给插件包注册用：注册的东西都记在这个插件包名下

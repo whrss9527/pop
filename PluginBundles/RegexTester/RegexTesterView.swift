@@ -1,4 +1,5 @@
 import SwiftUI
+@testable import Pop
 
 /// 正则测试卡片的状态：改了表达式、选项或替换内容后稍等一下再在后台重新匹配。
 @MainActor

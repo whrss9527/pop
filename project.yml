@@ -104,6 +104,87 @@ targets:
         POP_PLUGIN_ID: teleprompter
         POP_PLUGIN_ENTRY: PopTeleprompterEntry
 
+  PopKeyboardCleaner:
+    templates: [PopPlugin]
+    sources: [PluginBundles/KeyboardCleaner]
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: io.github.whrss9527.pop.plugin.cleanKeyboard
+        POP_PLUGIN_ID: cleanKeyboard
+        POP_PLUGIN_ENTRY: PopKeyboardCleanerEntry
+
+  PopScreenRuler:
+    templates: [PopPlugin]
+    sources: [PluginBundles/ScreenRuler]
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: io.github.whrss9527.pop.plugin.ruler
+        POP_PLUGIN_ID: ruler
+        POP_PLUGIN_ENTRY: PopScreenRulerEntry
+
+  PopLargeType:
+    templates: [PopPlugin]
+    sources: [PluginBundles/LargeType]
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: io.github.whrss9527.pop.plugin.largeType
+        POP_PLUGIN_ID: largeType
+        POP_PLUGIN_ENTRY: PopLargeTypeEntry
+
+  PopSpellCheck:
+    templates: [PopPlugin]
+    sources: [PluginBundles/SpellCheck]
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: io.github.whrss9527.pop.plugin.spellCheck
+        POP_PLUGIN_ID: spellCheck
+        POP_PLUGIN_ENTRY: PopSpellCheckEntry
+
+  PopCodeImage:
+    templates: [PopPlugin]
+    sources: [PluginBundles/CodeImage]
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: io.github.whrss9527.pop.plugin.codeImage
+        POP_PLUGIN_ID: codeImage
+        POP_PLUGIN_ENTRY: PopCodeImageEntry
+
+  PopCron:
+    templates: [PopPlugin]
+    sources: [PluginBundles/Cron]
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: io.github.whrss9527.pop.plugin.cron
+        POP_PLUGIN_ID: cron
+        POP_PLUGIN_ENTRY: PopCronEntry
+
+  PopJSONTypes:
+    templates: [PopPlugin]
+    sources: [PluginBundles/JSONTypes]
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: io.github.whrss9527.pop.plugin.jsonTypes
+        POP_PLUGIN_ID: jsonTypes
+        POP_PLUGIN_ENTRY: PopJSONTypesEntry
+
+  PopRegexTester:
+    templates: [PopPlugin]
+    sources: [PluginBundles/RegexTester]
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: io.github.whrss9527.pop.plugin.regexTest
+        POP_PLUGIN_ID: regexTest
+        POP_PLUGIN_ENTRY: PopRegexTesterEntry
+
+  PopWatermark:
+    templates: [PopPlugin]
+    sources: [PluginBundles/Watermark]
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: io.github.whrss9527.pop.plugin.watermark
+        POP_PLUGIN_ID: watermark
+        POP_PLUGIN_ENTRY: PopWatermarkEntry
+
   PopTests:
     type: bundle.unit-test
     platform: macOS
@@ -114,6 +195,15 @@ targets:
       - path: PluginBundles/CameraBubble
       - path: PluginBundles/PointerHighlight
       - path: PluginBundles/Teleprompter
+      - path: PluginBundles/Watermark
+      - path: PluginBundles/RegexTester
+      - path: PluginBundles/JSONTypes
+      - path: PluginBundles/Cron
+      - path: PluginBundles/CodeImage
+      - path: PluginBundles/SpellCheck
+      - path: PluginBundles/LargeType
+      - path: PluginBundles/ScreenRuler
+      - path: PluginBundles/KeyboardCleaner
     dependencies:
       - target: Pop
     settings:
@@ -130,6 +220,15 @@ schemes:
         PopCameraBubble: all
         PopPointerHighlight: all
         PopTeleprompter: all
+        PopWatermark: all
+        PopRegexTester: all
+        PopJSONTypes: all
+        PopCron: all
+        PopCodeImage: all
+        PopSpellCheck: all
+        PopLargeType: all
+        PopScreenRuler: all
+        PopKeyboardCleaner: all
         PopTests: [test]
     run:
       config: Debug

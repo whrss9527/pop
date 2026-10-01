@@ -1,4 +1,5 @@
 import Foundation
+@testable import Pop
 
 /// 根据一段 JSON 示例生成类型定义：TypeScript、Swift（Codable）、Go、Kotlin（kotlinx.serialization）。
 /// 同一个位置上见过的值合起来推断：数组里的对象取所有字段，有的对象里没有的字段是可选的，出现过 null 的可以为空。

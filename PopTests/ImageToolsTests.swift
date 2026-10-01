@@ -147,9 +147,11 @@ final class WatermarkTests: XCTestCase {
         XCTAssertTrue(plugin.info.canHandle(ContentClassifier.classify(.files([pdf]))))
         XCTAssertTrue(plugin.info.canHandle(ContentClassifier.classify(.files([photo]))))
         XCTAssertFalse(plugin.info.canHandle(ContentClassifier.classify(.files([URL(fileURLWithPath: "/tmp/说明.txt")]))))
-        let outcome = await plugin.run(ContentClassifier.classify(.files([pdf, URL(fileURLWithPath: "/tmp/说明.txt"), photo])),
-                                       context: PluginContext(settings: AppSettings(), openSettings: {}))
-        XCTAssertEqual(outcome, .watermark([pdf, photo]))
+        let content = ContentClassifier.classify(.files([pdf, URL(fileURLWithPath: "/tmp/说明.txt"), photo]))
+        XCTAssertEqual(WatermarkPlugin.files(in: content), [pdf, photo])
+        // 插件包自己弹出加水印的卡片
+        let outcome = await plugin.run(content, context: PluginContext(settings: AppSettings(), openSettings: {}))
+        guard case .present = outcome else { return XCTFail("\(outcome)") }
         XCTAssertEqual(WatermarkModel(files: [pdf, photo]).countLabel(2), "2 个文件")
         XCTAssertEqual(WatermarkModel(files: [photo]).countLabel(1), "1 张图片")
     }

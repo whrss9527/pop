@@ -1,4 +1,5 @@
 import AppKit
+@testable import Pop
 
 /// 把一段代码画成图片：深色编辑器窗口、简单的语法着色，外面套上渐变背景。
 enum CodeImage {

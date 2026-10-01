@@ -10,7 +10,8 @@ final class CameraBubbleEntry: NSObject, PopPluginBundle {
 
     @MainActor static func didLoad(_ host: PluginHost.Registrar) {
         // CI 截图：示例人像当作摄像头的画面，小窗在屏幕右下角
-        host.addDemoScene(PluginHost.DemoScene(name: "cameraBubble", after: "scrollCapture", order: 2, show: { screen in
+        host.addDemoScene(PluginHost.DemoScene(name: "cameraBubble", after: "scrollCapture", order: 2, show: { demo in
+            let screen = demo.screen
             guard let camera = OverlayDemo.sampleCameraFrame() else { return nil }
             return CameraBubble.shared.showForDemo(image: camera, on: screen)
         }, hide: {

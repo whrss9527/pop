@@ -1,7 +1,7 @@
 import AppKit
 import SwiftUI
 
-/// 「设置 → 功能」最上面的插件包：要用时装上，不用了卸载，看每个占了多大。
+/// 「设置 → 功能」最上面的插件包：要用时装上，不用了卸载，看每个占了多大。按分类分组
 struct PluginPackagesSection: View {
     @EnvironmentObject var manager: PluginManager
     /// 设置页上方搜索框里的字
@@ -9,31 +9,49 @@ struct PluginPackagesSection: View {
 
     var body: some View {
         let packages = PluginCatalog.packages.filter(matchesQuery)
-        Section {
+        let categories = BuiltinCategory.allCases.filter { category in packages.contains { $0.category == category } }
+        Group {
             if packages.isEmpty {
-                Text("没有匹配的插件")
-                    .foregroundStyle(.secondary)
+                Section {
+                    Text("没有匹配的插件")
+                        .foregroundStyle(.secondary)
+                } header: {
+                    header(Text("插件"))
+                }
             }
-            ForEach(packages) { package in
-                PluginPackageRow(package: package)
-            }
-        } header: {
-            VStack(alignment: .leading, spacing: 4) {
-                Text("这些功能是单独的插件包，要用时再装：从 GitHub 发布页下载，几秒就好；不用了可以卸载，连同它的设置一起删掉，不占地方。")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                    .fixedSize(horizontal: false, vertical: true)
-                Text("插件")
-            }
-        } footer: {
-            if let error = manager.indexError {
-                Text("读不到插件包列表：\(error)")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+            ForEach(categories) { category in
+                Section {
+                    ForEach(packages.filter { $0.category == category }) { package in
+                        PluginPackageRow(package: package)
+                    }
+                } header: {
+                    if category == categories.first {
+                        header(Text("插件 · \(category.title)"))
+                    } else {
+                        Text("插件 · \(category.title)")
+                    }
+                } footer: {
+                    if category == categories.last, let error = manager.indexError {
+                        Text("读不到插件包列表：\(error)")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                }
             }
         }
         .onAppear {
             manager.refreshIndex()
+        }
+    }
+
+    /// 第一组上面的说明
+    private func header(_ title: Text) -> some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Text("这些功能是单独的插件包，要用时再装：从 GitHub 发布页下载，几秒就好；不用了可以卸载，连同它的设置一起删掉，不占地方。")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+            title
         }
     }
 

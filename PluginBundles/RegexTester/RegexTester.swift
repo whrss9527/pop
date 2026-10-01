@@ -1,4 +1,5 @@
 import Foundation
+@testable import Pop
 
 /// 正则测试：在一段文字里试正则表达式，列出每处匹配和分组，也可以试替换。纯逻辑，方便测试。
 enum RegexTester {

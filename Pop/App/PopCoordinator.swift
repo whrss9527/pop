@@ -590,8 +590,6 @@ final class PopCoordinator: MouseTriggerDelegate {
             presentSnippets()
         case .chooseApp(let request):
             presentOpenWith(request)
-        case .regexTester(let text):
-            presentRegexTester(text)
         case .reminder(let text):
             presentReminder(text)
         case .rename(let files):
@@ -602,12 +600,13 @@ final class PopCoordinator: MouseTriggerDelegate {
             presentDuplicates(folders)
         case .diskUsage(let folder):
             presentDiskUsage(folder)
-        case .watermark(let files):
-            presentWatermark(files)
         case .trimMedia(let file):
             presentTrim(file)
         case .idPhoto(let file):
             presentIDPhoto(file)
+        case .present(let presentation):
+            stopPointerTracking()
+            presentation.run(pluginSession(current))
         case .failure(let message):
             overlay.showCard(ResultCardView(card: ResultCard(title: String(localized: "没能完成"), body: message),
                                             onAction: { [weak self] action in self?.perform(action) },
@@ -723,6 +722,10 @@ final class PopCoordinator: MouseTriggerDelegate {
                                                               action: .saveImage(png, name: ImageFiles.timestampedName(String(localized: "Pop 条形码"))))])))
             } else {
                 present(.failure(String(localized: "只有英文字母、数字和常见符号能生成条形码，最多 80 个字")))
+            }
+        case .custom(let action):
+            if let current = session {
+                action.run(pluginSession(current))
             }
         case .recognizeImageText(let png):
             recognizeImageText(png)
@@ -1384,17 +1387,6 @@ final class PopCoordinator: MouseTriggerDelegate {
         }
     }
 
-    /// 正则测试：输入表达式，实时看匹配和替换结果
-    private func presentRegexTester(_ text: String) {
-        guard let current = session else { return }
-        stopPointerTracking()
-        let model = RegexTesterModel(text: text)
-        overlay.showCard(RegexTesterView(model: model, canReplace: Self.canReplace(current),
-                                         onAction: { [weak self] action in self?.perform(action) },
-                                         onClose: { [weak self] in self?.endSession() }),
-                         anchor: current.anchor)
-    }
-
     /// 加到提醒事项或日历：先认出时间和事情，可以再改
     private func presentReminder(_ text: String) {
         guard let current = session else { return }
@@ -1452,52 +1444,6 @@ final class PopCoordinator: MouseTriggerDelegate {
             NSWorkspace.shared.activateFileViewerSelecting([url])
         } catch {
             showToast(String(localized: "导出失败：\(error.localizedDescription)"), at: NSEvent.mouseLocation)
-        }
-    }
-
-    /// 加水印：改文字和浓淡时看预览，确认后每张图另存一份
-    private func presentWatermark(_ files: [URL]) {
-        guard let current = session else { return }
-        stopPointerTracking()
-        let model = WatermarkModel(files: files)
-        overlay.showCard(WatermarkView(model: model,
-                                       onApply: { [weak self] in self?.applyWatermark(model) },
-                                       onClose: { [weak self] in self?.endSession() }),
-                         anchor: current.anchor)
-    }
-
-    private func applyWatermark(_ model: WatermarkModel) {
-        let files = model.files
-        let text = model.text
-        let opacity = model.opacity
-        let hasPDF = model.hasPDF
-        model.remember()
-        let anchor = session?.anchor ?? NSEvent.mouseLocation
-        endSession()
-        Task { [weak self] in
-            let result = await runInBackground { () -> (outputs: [URL], failures: [String]) in
-                var outputs: [URL] = []
-                var failures: [String] = []
-                for file in files {
-                    do {
-                        outputs.append(try ImageWatermark.watermark(file, text: text, opacity: opacity))
-                    } catch {
-                        failures.append((error as? ImageWatermark.Failure)?.message ?? error.localizedDescription)
-                    }
-                }
-                return (outputs, failures)
-            }
-            guard let self else { return }
-            if !result.outputs.isEmpty {
-                NSWorkspace.shared.activateFileViewerSelecting(result.outputs)
-            }
-            let message: String
-            if let failure = result.failures.first {
-                message = result.outputs.isEmpty ? failure : String(localized: "加好了 \(result.outputs.count) 个，\(result.failures.count) 个失败：\(failure)")
-            } else {
-                message = hasPDF ? String(localized: "已给 \(result.outputs.count) 个文件加上水印") : String(localized: "已给 \(result.outputs.count) 张图片加上水印")
-            }
-            self.showToast(message, at: anchor)
         }
     }
 
@@ -1726,6 +1672,44 @@ final class PopCoordinator: MouseTriggerDelegate {
     private func replaceSelection(with text: String) {
         endSession()
         Paster.replaceSelection(with: text)
+    }
+
+    /// 交给插件的这次唤起：插件用它弹自己的卡片、显示提示。唤起已经结束（又唤起了一次）时什么都不做
+    private func pluginSession(_ current: Session) -> PluginSession {
+        let id = current.id
+        let anchor = current.anchor
+        return PluginSession(
+            anchor: anchor,
+            canReplace: Self.canReplace(current),
+            isCurrentHandler: { [weak self] in
+                self?.session?.id == id
+            },
+            showCardHandler: { [weak self] view, keyHandler in
+                guard let self, let session = self.session, session.id == id else { return }
+                self.stopPointerTracking()
+                self.overlay.showCard(view, anchor: session.anchor, keyHandler: keyHandler)
+            },
+            finishHandler: { [weak self] message in
+                guard let self else { return }
+                if self.session?.id == id {
+                    self.finish(toast: message)
+                } else if self.session == nil {
+                    // 这次唤起已经结束（比如在后台转换完了），又没有新的唤起：照样提示
+                    self.showToast(message, at: anchor)
+                }
+            },
+            endHandler: { [weak self] in
+                guard let self, self.session?.id == id else { return }
+                self.endSession()
+            },
+            performHandler: { [weak self] action in
+                guard let self, self.session?.id == id else { return }
+                self.perform(action)
+            },
+            failHandler: { [weak self] message in
+                guard let self, self.session?.id == id else { return }
+                self.present(.failure(message))
+            })
     }
 
     /// 结果卡片上的「更多功能」：切回圆盘，对同一份内容换个功能处理。

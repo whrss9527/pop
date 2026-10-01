@@ -2268,3 +2268,4 @@
 "会删掉插件包和它的设置。圆盘上和快捷键里的这个功能也会拿掉，要用时可以再装。" = "This deletes the plugin and its settings. It’s also removed from the ring and shortcuts. You can install it again any time.";
 "搜索插件和内置功能" = "Search plugins and built-in actions";
 "搜索插件和内置功能，支持拼音首字母" = "Search plugins and built-in actions";
+"插件 · %@" = "Plugins · %@";

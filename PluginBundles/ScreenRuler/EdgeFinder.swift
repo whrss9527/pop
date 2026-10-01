@@ -1,5 +1,6 @@
 import CoreGraphics
 import Foundation
+@testable import Pop
 
 /// 在截图上从一个点往上下左右找颜色变化的地方（界面元素的边），屏幕标尺用它量距离。
 struct EdgeFinder {

@@ -10,7 +10,8 @@ final class PointerHighlightEntry: NSObject, PopPluginBundle {
 
     @MainActor static func didLoad(_ host: PluginHost.Registrar) {
         // CI 截图：光圈停在屏幕中间，泛起一圈波纹
-        host.addDemoScene(PluginHost.DemoScene(name: "pointerHighlight", after: "scrollCapture", order: 3, show: { screen in
+        host.addDemoScene(PluginHost.DemoScene(name: "pointerHighlight", after: "scrollCapture", order: 3, show: { demo in
+            let screen = demo.screen
             let visible = screen.visibleFrame
             let point = CGPoint(x: visible.midX.rounded(), y: visible.midY.rounded())
             PointerHighlight.shared.showForDemo(at: point)

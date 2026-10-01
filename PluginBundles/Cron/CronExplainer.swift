@@ -1,4 +1,5 @@
 import Foundation
+@testable import Pop
 
 /// 解读 5 段式 cron 表达式（分 时 日 月 周），说成中文，并算出接下来几次运行的时间。
 struct CronExpression: Equatable {

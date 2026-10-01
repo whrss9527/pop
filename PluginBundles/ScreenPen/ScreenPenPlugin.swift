@@ -11,7 +11,8 @@ final class ScreenPenEntry: NSObject, PopPluginBundle {
     @MainActor static func didLoad(_ host: PluginHost.Registrar) {
         // CI 截图：贴一张示例截图当作屏幕上的内容，荧光笔划出邮箱、画笔在手机号下面画波浪线、椭圆圈出按钮、箭头指过去；
         // 截图区域包括屏幕上方的工具栏
-        host.addDemoScene(PluginHost.DemoScene(name: "screenPen", after: "scrollCapture", order: 1, show: { screen in
+        host.addDemoScene(PluginHost.DemoScene(name: "screenPen", after: "scrollCapture", order: 1, show: { demo in
+            let screen = demo.screen
             guard let capture = OverlayDemo.sampleScreenshot() else { return nil }
             let visible = screen.visibleFrame
             let pinCenter = CGPoint(x: visible.midX.rounded(), y: (visible.maxY - 260).rounded())

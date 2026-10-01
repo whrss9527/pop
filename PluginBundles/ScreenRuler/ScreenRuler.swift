@@ -1,5 +1,6 @@
 import AppKit
 import Carbon.HIToolbox
+@testable import Pop
 
 /// 屏幕标尺：把指针所在的屏幕定格，指针处自动量出到上下左右边缘的距离；按住拖动量一块区域的宽高。
 /// 单击复制量到的尺寸，Esc 或右键退出。

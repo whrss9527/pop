@@ -1,5 +1,6 @@
 import AppKit
 import SwiftUI
+@testable import Pop
 
 /// 清洁键盘：一段时间里拦下所有按键（包括亮度、音量这些功能键），可以放心擦键盘；
 /// 屏幕上盖一层提示和倒计时，用鼠标点「结束」或者时间到了就恢复。

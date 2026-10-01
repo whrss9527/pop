@@ -44,46 +44,6 @@ struct LinkInspectPlugin: PopPlugin {
     }
 }
 
-// MARK: - 代码截图
-
-struct CodeImagePlugin: PopPlugin {
-    let info = PluginInfo(id: BuiltinPluginID.codeImage, name: String(localized: "代码截图"), symbol: "chevron.left.forwardslash.chevron.right",
-                          summary: String(localized: "把选中的代码画成一张图片（深色编辑器、语法着色、渐变背景），可以复制、存储或贴到屏幕上"),
-                          accepts: [.text], maxLength: 20_000)
-
-    @MainActor func run(_ content: ClassifiedContent, context: PluginContext) async -> PluginOutcome {
-        guard let text = content.text, let png = CodeImage.render(text) else { return .failure(String(localized: "没能画出这段代码")) }
-        return .card(ResultCard(title: String(localized: "代码截图"), detail: String(localized: "按住拖动预览图也能拖到别的 App 里"), image: png, buttons: [
-            CardButton(title: String(localized: "复制图片"), action: .copyImage(png)),
-            CardButton(title: String(localized: "存储"), action: .saveImage(png, name: ImageFiles.timestampedName(String(localized: "Pop 代码")))),
-            CardButton(title: String(localized: "贴到屏幕"), action: .pinImage(png)),
-        ]))
-    }
-}
-
-// MARK: - Cron
-
-struct CronPlugin: PopPlugin {
-    let info = PluginInfo(id: BuiltinPluginID.cron, name: String(localized: "Cron 表达式"), symbol: "clock.arrow.circlepath",
-                          summary: String(localized: "把 cron 表达式（比如 */15 9-17 * * 1-5）说成中文，列出接下来几次运行的时间"),
-                          accepts: [.text], maxLength: 120, check: .cron)
-
-    @MainActor func run(_ content: ClassifiedContent, context: PluginContext) async -> PluginOutcome {
-        guard let text = content.text, let cron = CronExpression(text) else { return .failure(String(localized: "不是有效的 cron 表达式")) }
-        let calendar = Calendar.current
-        let runs = cron.nextRuns(after: Date(), count: 5, calendar: calendar)
-        let formatter = DateFormatter()
-        formatter.locale = Localization.locale
-        formatter.dateFormat = "yyyy-MM-dd HH:mm EEE"
-        let rows = runs.enumerated().map { index, date in
-            ResultCard.Row(label: String(localized: "第 \(index + 1) 次"), value: formatter.string(from: date))
-        }
-        return .card(ResultCard(title: String(localized: "Cron 表达式"), body: cron.summary,
-                                detail: runs.isEmpty ? String(localized: "五年内都不会运行") : String(localized: "接下来几次（本机时区 \(calendar.timeZone.identifier)）"),
-                                copyText: cron.summary, rows: rows))
-    }
-}
-
 // MARK: - JWT
 
 struct JWTPlugin: PopPlugin {
@@ -286,23 +246,6 @@ struct ToMarkdownPlugin: PopPlugin {
     }
 }
 
-// MARK: - JSON 转代码
-
-struct JSONTypesPlugin: PopPlugin {
-    let info = PluginInfo(id: BuiltinPluginID.jsonTypes, name: String(localized: "JSON 转代码"), symbol: "curlybraces.square",
-                          summary: String(localized: "根据选中的 JSON 生成 TypeScript、Swift、Go、Kotlin 的类型定义"),
-                          accepts: [.json], maxLength: JSONTypes.maxLength)
-
-    @MainActor func run(_ content: ClassifiedContent, context: PluginContext) async -> PluginOutcome {
-        guard let text = content.text, let output = await runInBackground({ JSONTypes.generate(text) }) else {
-            return .failure(String(localized: "JSON 里没有对象，不用生成类型定义"))
-        }
-        let tabs = output.code.map { ResultCard.Tab(title: $0.language.rawValue, text: $0.text) }
-        return .card(ResultCard(title: String(localized: "JSON 转代码"), detail: String(localized: "\(output.typeCount) 个类型；字段是否可选、能否为空按示例推断"),
-                                tabs: tabs))
-    }
-}
-
 // MARK: - 字符信息
 
 struct CharInfoPlugin: PopPlugin {
@@ -313,18 +256,5 @@ struct CharInfoPlugin: PopPlugin {
     @MainActor func run(_ content: ClassifiedContent, context: PluginContext) async -> PluginOutcome {
         guard let text = content.text else { return .failure(String(localized: "没有文字")) }
         return .card(await runInBackground { CharacterInspector.card(for: text) })
-    }
-}
-
-// MARK: - 正则测试
-
-struct RegexTestPlugin: PopPlugin {
-    let info = PluginInfo(id: BuiltinPluginID.regexTest, name: String(localized: "正则测试"), symbol: "asterisk.circle",
-                          summary: String(localized: "在选中的文字里试正则表达式：实时标出每处匹配、列出分组，也可以试替换"),
-                          accepts: [.text], maxLength: 200_000)
-
-    @MainActor func run(_ content: ClassifiedContent, context: PluginContext) async -> PluginOutcome {
-        guard let text = content.text else { return .failure(String(localized: "没有文字")) }
-        return .regexTester(text: text)
     }
 }

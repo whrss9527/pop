@@ -1,4 +1,5 @@
 import SwiftUI
+@testable import Pop
 
 /// 加水印卡片：改文字和浓淡时，预览跟着变；确认后给选中的每张图片另存一份加了水印的。
 @MainActor

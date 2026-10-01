@@ -1,5 +1,6 @@
 import AppKit
 import SwiftUI
+@testable import Pop
 
 /// 大字显示：把一段文字铺满屏幕，字号按屏幕大小自动算；点一下或者按任意键关闭，⌘C 复制
 enum LargeType {

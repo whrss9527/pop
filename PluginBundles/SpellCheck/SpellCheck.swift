@@ -1,4 +1,5 @@
 import AppKit
+@testable import Pop
 
 /// 用系统自带的拼写检查（离线）找出外文里拼错的词，给出改法。
 enum SpellCheck {
