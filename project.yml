@@ -63,6 +63,8 @@ targets:
         # 所以 Release 也要打开 testability，并且只去掉局部符号，留着插件包要找的全局符号
         ENABLE_TESTABILITY: YES
         STRIP_STYLE: non-global
+        # Debug 下不要把代码放进单独的 Pop.debug.dylib（给 SwiftUI 预览用的）：插件包链接时要在 Pop 的可执行文件里找到这些符号
+        ENABLE_DEBUG_DYLIB: NO
 
   # 插件包，用下面的 PopPlugin 模板：target 名字是 Pop + 文件夹名，代码在 PluginBundles/<文件夹>。
   # POP_PLUGIN_ID 是插件包的 ID（和 Pop/Plugins/PluginCatalog.swift 里的一样），POP_PLUGIN_ENTRY 是入口类的名字
