@@ -241,7 +241,7 @@ enum PluginCatalog {
                       summary: String(localized: "一段时间内不让屏幕变暗、电脑睡眠，适合看文档、演示、等下载"),
                       symbol: "cup.and.saucer", category: .files, functions: [BuiltinPluginID.keepAwake]),
         PluginPackage(id: "systemActions", bundleName: "PopSystemActions", name: String(localized: "系统操作"),
-                      summary: String(localized: "锁屏、熄屏、睡眠、打开屏幕保护程序、切换深色和浅色模式、隐藏或显示桌面图标、推出所有磁盘"),
+                      summary: String(localized: "锁屏、熄屏、睡眠、打开屏幕保护程序、切换深色和浅色模式、静音、隐藏或显示桌面图标、显示隐藏文件、推出所有磁盘"),
                       symbol: "switch.2", category: .files, functions: [BuiltinPluginID.systemActions]),
         PluginPackage(id: "timer", bundleName: "PopTimer", name: String(localized: "计时器"),
                       summary: String(localized: "倒计时：选一个时长，或者选中「25 分钟」「1:30」这样的文字直接开始；到点时响一声、发通知。也有番茄钟：专注 25 分钟、休息 5 分钟，一直循环"),

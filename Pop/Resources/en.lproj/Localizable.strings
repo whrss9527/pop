@@ -1535,7 +1535,7 @@
 "推出 %lld 个磁盘" = "Eject %lld Disks";
 "推出磁盘" = "Eject Disk";
 "系统操作" = "System Actions";
-"隐藏桌面图标会重新打开访达；推出前请先关掉磁盘上打开的文件" = "Hiding desktop icons relaunches Finder; close files that are open on a disk before ejecting it";
+"隐藏桌面图标、显示隐藏文件时会重新打开访达；推出前请先关掉磁盘上打开的文件" = "Hiding desktop icons or showing hidden files relaunches Finder; close files that are open on a disk before ejecting it";
 "熄屏失败" = "Couldn’t turn off the display";
 "熄屏失败：%@" = "Couldn’t turn off the display: %@";
 "睡眠失败" = "Couldn’t go to sleep";
@@ -1565,7 +1565,7 @@
 "选一个时长开始倒计时；到点时响一声、发一条通知。也可以选中「25 分钟」「1:30」这样的文字再用它。番茄钟是专注 25 分钟、休息 5 分钟轮流来（每四个番茄休息 15 分钟），一直到你结束。" = "Choose a duration to start a countdown. When time’s up, Pop plays a sound and sends a notification. You can also select text such as “25 min” or “1:30” and use the timer. The Pomodoro timer alternates 25 minutes of focus with a 5-minute break (15 minutes after every fourth) until you end it.";
 "录屏" = "Record Screen";
 "拖出一块区域、单击选一个窗口或者按回车录整个屏幕，存成 MP4；可以录上电脑里的声音或者麦克风、显示鼠标点击和按下的键，录好能接着转成 GIF。正在录的时候再用一次就停止" = "Drag out an area, click a window or press Return to record the whole screen as MP4; can include the Mac’s sound or the microphone and show clicks and keystrokes, and the recording can then be turned into a GIF. Use it again while recording to stop";
-"锁屏、熄屏、睡眠、打开屏幕保护程序、切换深色和浅色模式、隐藏或显示桌面图标、推出所有磁盘" = "Lock the screen, turn off the display, sleep, start the screen saver, switch between Dark and Light Mode, hide or show desktop icons, or eject all disks";
+"锁屏、熄屏、睡眠、打开屏幕保护程序、切换深色和浅色模式、静音、隐藏或显示桌面图标、显示隐藏文件、推出所有磁盘" = "Lock the screen, turn off the display, sleep, start the screen saver, switch between Dark and Light Mode, mute, hide or show desktop icons, show hidden files, or eject all disks";
 
 /* TableConverter.swift */
 "制表符分隔" = "Tab-Separated";
@@ -2298,3 +2298,13 @@
 "演示、录教程时把指针附近放大，看清小字：放大的是那一刻的屏幕画面，挪动指针换地方看，滚轮或 ↑↓ 调倍数，点一下或按 Esc 回去" = "Magnify the area around the pointer in demos and tutorials so small text is easy to read. It zooms into a snapshot of the screen: move the pointer to look around, scroll or press ↑↓ to change the magnification, and click or press Esc to go back";
 "找不到要放大的屏幕" = "Couldn’t find the screen to zoom";
 "没能拍下屏幕：%@" = "Couldn’t capture the screen: %@";
+"静音" = "Mute";
+"取消静音" = "Unmute";
+"显示隐藏文件" = "Show Hidden Files";
+"不显示隐藏文件" = "Hide Hidden Files";
+"已静音" = "Muted";
+"已取消静音" = "Unmuted";
+"没能切换静音" = "Couldn’t change mute";
+"没能切换静音：%@" = "Couldn’t change mute: %@";
+"访达里显示隐藏文件了，再用一次就不显示" = "Finder now shows hidden files. Use it again to hide them";
+"访达里不再显示隐藏文件" = "Finder no longer shows hidden files";
