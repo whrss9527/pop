@@ -112,7 +112,8 @@ final class RouterTests: XCTestCase {
         // 录屏和演示用的单独一组
         let recording = catalog.map(\.id).filter { BuiltinCategory.of($0) == .recording }
         XCTAssertEqual(Set(recording), [BuiltinPluginID.screenRecord, BuiltinPluginID.scrollCapture, BuiltinPluginID.showKeystrokes,
-                                        BuiltinPluginID.screenPen, BuiltinPluginID.cameraBubble, BuiltinPluginID.pointerHighlight])
+                                        BuiltinPluginID.screenPen, BuiltinPluginID.cameraBubble, BuiltinPluginID.pointerHighlight,
+                                        BuiltinPluginID.teleprompter])
         XCTAssertEqual(BuiltinCategory.of(BuiltinPluginID.annotate), .screen)
     }
 
