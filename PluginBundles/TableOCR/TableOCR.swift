@@ -1,5 +1,6 @@
 import CoreGraphics
 import Vision
+@testable import Pop
 
 /// 识别图片里的表格：macOS 26 用系统的文档识别，按行列取出每个格子的文字；
 /// 更早的系统没有这个接口，返回 nil，调用方退回普通的识别文字。

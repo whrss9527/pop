@@ -1,4 +1,5 @@
 import Foundation
+@testable import Pop
 
 /// 批量重命名：按规则算出每个文件的新名字（扩展名不变），检查有没有重名，再一起改名；改完可以撤销。
 enum BatchRename {

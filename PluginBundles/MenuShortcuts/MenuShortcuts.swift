@@ -1,5 +1,6 @@
 import AppKit
 import ApplicationServices
+@testable import Pop
 
 /// 快捷键一览：用辅助功能读前台 App 菜单栏里的菜单项和快捷键，可以搜索，点一下就执行那个菜单项。
 enum MenuShortcuts {

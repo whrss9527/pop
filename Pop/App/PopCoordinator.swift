@@ -519,6 +519,7 @@ final class PopCoordinator: MouseTriggerDelegate {
         let context = PluginContext(settings: settingsStore.settings,
                                     openSettings: { [weak self] in self?.openSettings(nil) },
                                     sourceAppName: current.sourceAppName,
+                                    sourcePID: pid,
                                     anchor: current.anchor,
                                     readRichSelection: readRich)
         let sessionID = current.id
@@ -582,24 +583,12 @@ final class PopCoordinator: MouseTriggerDelegate {
             presentClipboardHistory()
         case .ai(let spec):
             presentAI(spec)
-        case .showWindowLayouts:
-            presentWindowLayouts()
-        case .showMenuShortcuts:
-            presentMenuShortcuts()
         case .showSnippets:
             presentSnippets()
         case .chooseApp(let request):
             presentOpenWith(request)
-        case .reminder(let text):
-            presentReminder(text)
-        case .rename(let files):
-            presentRename(files)
         case .showVocabulary:
             presentVocabulary()
-        case .findDuplicates(let folders):
-            presentDuplicates(folders)
-        case .diskUsage(let folder):
-            presentDiskUsage(folder)
         case .trimMedia(let file):
             presentTrim(file)
         case .idPhoto(let file):
@@ -1296,74 +1285,6 @@ final class PopCoordinator: MouseTriggerDelegate {
                          })
     }
 
-    /// 窗口布局：选一个位置，把唤起时前台 App 的窗口放过去
-    private func presentWindowLayouts() {
-        guard let current = session else { return }
-        stopPointerTracking()
-        let choose: (WindowLayout) -> Void = { [weak self] layout in
-            self?.arrangeWindow(layout)
-        }
-        overlay.showCard(WindowLayoutCardView(hasMultipleDisplays: NSScreen.screens.count > 1, onChoose: choose,
-                                              onClose: { [weak self] in self?.endSession() }),
-                         anchor: current.anchor,
-                         keyHandler: { event in
-                             guard let layout = WindowLayoutCardView.layout(for: event) else { return false }
-                             choose(layout)
-                             return true
-                         })
-    }
-
-    /// 快捷键一览：在后台读唤起时前台 App 的菜单（菜单多的 App 要一会儿），选一项就让那个 App 执行它
-    private func presentMenuShortcuts() {
-        guard let current = session else { return }
-        stopPointerTracking()
-        let model = MenuShortcutsModel(appName: current.sourceAppName ?? String(localized: "当前 App"))
-        overlay.showCard(MenuShortcutsView(model: model, onClose: { [weak self] in self?.endSession() }),
-                         anchor: current.anchor,
-                         keyHandler: { event in model.handleKey(event) })
-        guard let pid = current.pid, pid != ProcessInfo.processInfo.processIdentifier else {
-            model.fail(String(localized: "不知道要看哪个 App 的菜单：先点一下那个 App 的窗口，再唤起 Pop"))
-            return
-        }
-        guard Permissions.isAccessibilityTrusted else {
-            model.fail(String(localized: "要先在「系统设置 → 隐私与安全性 → 辅助功能」里允许 Pop，才能读到菜单"))
-            return
-        }
-        model.onRun = { [weak self] item in self?.runMenuItem(item, pid: pid) }
-        let sessionID = current.id
-        Task { [weak self, weak model] in
-            let nodes = await runInBackground { MenuShortcuts.read(pid: pid) }
-            guard let self, let model, self.session?.id == sessionID else { return }
-            model.load(nodes)
-        }
-    }
-
-    /// 先收起浮窗、让那个 App 回到前台，再点它的菜单项
-    private func runMenuItem(_ item: MenuShortcuts.Item, pid: pid_t) {
-        let anchor = session?.anchor ?? NSEvent.mouseLocation
-        endSession()
-        NSRunningApplication(processIdentifier: pid)?.activate()
-        let path = item.path
-        let title = item.title
-        Task { [weak self] in
-            try? await Task.sleep(nanoseconds: 150_000_000)
-            let pressed = await runInBackground { MenuShortcuts.press(pid: pid, path: path) }
-            // 这期间又唤起了 Pop 的话不去打断
-            if !pressed, let self, self.session == nil {
-                self.showToast(String(localized: "没能执行「\(title)」，菜单可能已经变了"), at: anchor)
-            }
-        }
-    }
-
-    private func arrangeWindow(_ layout: WindowLayout) {
-        guard let current = session else { return }
-        endSession()
-        guard let pid = current.pid else { return }
-        if let problem = WindowMover.apply(layout, pid: pid) {
-            overlay.showToast(problem, anchor: current.anchor)
-        }
-    }
-
     /// AI 卡片：马上执行指定的指令，或者等用户选指令、提问
     private func presentAI(_ spec: AIRequestSpec) {
         guard let current = session else { return }
@@ -1385,36 +1306,6 @@ final class PopCoordinator: MouseTriggerDelegate {
         } else if let action = spec.action {
             model.run(action)
         }
-    }
-
-    /// 加到提醒事项或日历：先认出时间和事情，可以再改
-    private func presentReminder(_ text: String) {
-        guard let current = session else { return }
-        stopPointerTracking()
-        let draft = ReminderDraft(text: text)
-        let add: (ReminderDraft.Target) -> Void = { [weak self, weak draft] target in
-            guard let draft else { return }
-            draft.isSaving = true
-            draft.errorMessage = nil
-            let title = draft.title.trimmingCharacters(in: .whitespacesAndNewlines)
-            let (date, hasTime, notes) = (draft.date, draft.hasTime, draft.notes)
-            Task { [weak self] in
-                do {
-                    switch target {
-                    case .reminder:
-                        try await ReminderService.addReminder(title: title, date: date, hasTime: hasTime, notes: notes)
-                    case .calendar:
-                        try await ReminderService.addEvent(title: title, date: date, hasTime: hasTime, notes: notes)
-                    }
-                    self?.finish(toast: target == .reminder ? String(localized: "已加到提醒事项") : String(localized: "已加到日历"))
-                } catch {
-                    draft.isSaving = false
-                    draft.errorMessage = (error as? ReminderService.Failure)?.message ?? error.localizedDescription
-                }
-            }
-        }
-        overlay.showCard(ReminderCardView(draft: draft, onAdd: add, onClose: { [weak self] in self?.endSession() }),
-                         anchor: current.anchor)
     }
 
     /// 生词本：搜索、朗读、复习、导出
@@ -1489,42 +1380,6 @@ final class PopCoordinator: MouseTriggerDelegate {
         }
     }
 
-    /// 占用空间：后台扫描，扫完一层层点进去看，不要的移到废纸篓
-    private func presentDiskUsage(_ folder: URL) {
-        guard let current = session else { return }
-        stopPointerTracking()
-        let model = DiskUsageModel(root: folder)
-        overlay.showCard(DiskUsageView(model: model,
-                                       onReveal: { urls in NSWorkspace.shared.activateFileViewerSelecting(urls) },
-                                       onClose: { [weak self] in self?.endSession() }),
-                         anchor: current.anchor)
-    }
-
-    /// 查找重复文件：后台扫描，扫完可以每组只留一个
-    private func presentDuplicates(_ folders: [URL]) {
-        guard let current = session else { return }
-        stopPointerTracking()
-        let model = DuplicatesModel(roots: folders)
-        overlay.showCard(DuplicatesView(model: model,
-                                        onReveal: { urls in NSWorkspace.shared.activateFileViewerSelecting(urls) },
-                                        onClose: { [weak self] in self?.endSession() }),
-                         anchor: current.anchor)
-    }
-
-    /// 批量重命名：按规则预览新名字，改完可以撤销
-    private func presentRename(_ files: [URL]) {
-        guard let current = session else { return }
-        stopPointerTracking()
-        let model = RenameModel(files: files)
-        overlay.showCard(RenameCardView(model: model,
-                                        onReveal: { [weak self] urls in
-                                            NSWorkspace.shared.activateFileViewerSelecting(urls)
-                                            self?.endSession()
-                                        },
-                                        onClose: { [weak self] in self?.endSession() }),
-                         anchor: current.anchor)
-    }
-
     /// 「全部功能」：列出所有能处理当前内容的已安装功能
     private func presentChooser() {
         guard let current = session else { return }
@@ -1577,8 +1432,10 @@ final class PopCoordinator: MouseTriggerDelegate {
         model.onAnnotate = { [weak self] item in
             self?.annotateFromHistory(item)
         }
-        model.onRecognizeTable = { [weak self] item in
-            self?.recognizeTableFromHistory(item)
+        if settingsStore.settings.isInstalled(BuiltinPluginID.tableOCR), registry.plugin(id: BuiltinPluginID.tableOCR) != nil {
+            model.onRecognizeTable = { [weak self] item in
+                self?.recognizeTableFromHistory(item)
+            }
         }
         model.onSaveSnippet = { [weak self] item in
             self?.saveSnippet(from: item)
@@ -1649,15 +1506,19 @@ final class PopCoordinator: MouseTriggerDelegate {
         }
     }
 
-    /// 剪贴板历史里的图片按表格识别（macOS 26；更早的系统按普通文字识别）
+    /// 剪贴板历史里的图片按表格识别：交给「识别表格」插件（macOS 26；更早的系统按普通文字识别）
     private func recognizeTableFromHistory(_ item: ClipboardItem) {
-        guard let url = clipboard.store.imageURL(for: item), let image = TextRecognizer.cgImage(contentsOf: url) else {
+        guard let plugin = registry.plugin(id: BuiltinPluginID.tableOCR) else { return }
+        // 先确认图片读得出来：插件拿到读不出的图片会改成去框选屏幕
+        guard let url = clipboard.store.imageURL(for: item), let data = try? Data(contentsOf: url),
+              TextRecognizer.cgImage(from: data) != nil else {
             present(.failure(String(localized: "无法读取这张图片")))
             return
         }
         let sessionID = session?.id
+        let context = PluginContext(settings: settingsStore.settings, openSettings: { [weak self] in self?.openSettings(nil) })
         Task { [weak self] in
-            let outcome = await TableOCRPlugin.recognize(image)
+            let outcome = await plugin.run(ContentClassifier.classify(.image(data)), context: context)
             guard let self, self.session?.id == sessionID else { return }
             self.present(outcome)
         }

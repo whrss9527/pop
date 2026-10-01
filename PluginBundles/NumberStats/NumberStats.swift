@@ -1,4 +1,5 @@
 import Foundation
+@testable import Pop
 
 /// 一列（或者一行）数字的合计、平均、中位数、最大、最小。
 enum NumberStats {

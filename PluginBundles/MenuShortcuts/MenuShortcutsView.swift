@@ -1,5 +1,6 @@
 import AppKit
 import SwiftUI
+@testable import Pop
 
 /// 「快捷键一览」列表：搜索（支持拼音首字母），只看有快捷键的或者全部菜单项，↑↓ 选择，回车执行，⇥ 切换。
 @MainActor

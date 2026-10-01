@@ -1,4 +1,5 @@
 import CoreGraphics
+@testable import Pop
 
 /// 窗口布局：把窗口放到屏幕可用区域的某一块。坐标都是 AppKit 屏幕坐标（y 向上）。纯逻辑，方便测试。
 enum WindowLayout: String, CaseIterable, Identifiable {

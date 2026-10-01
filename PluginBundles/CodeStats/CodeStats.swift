@@ -1,4 +1,5 @@
 import Foundation
+@testable import Pop
 
 /// 代码行数：按扩展名分语言，数文件数、行数和空行。隐藏文件夹（.git 这些）、node_modules 这类依赖和编译产物文件夹不算，
 /// 锁文件、压缩过的 .min.js、看起来是二进制的文件和太大的文件（多半是生成的）也跳过。

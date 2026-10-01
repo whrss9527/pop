@@ -2269,3 +2269,5 @@
 "搜索插件和内置功能" = "Search plugins and built-in actions";
 "搜索插件和内置功能，支持拼音首字母" = "Search plugins and built-in actions";
 "插件 · %@" = "Plugins · %@";
+"文件夹工具" = "Folder Tools";
+"看文件夹里哪些东西最占地方、找出内容一样的重复文件、比较两个文件夹有哪些不同，不要的可以移到废纸篓" = "See what takes up the most space in a folder, find files with identical contents and compare two folders, then move what you don’t need to the Trash";

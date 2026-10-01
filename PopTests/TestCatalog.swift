@@ -7,6 +7,8 @@ enum TestCatalog {
         ScreenPenEntry.self, CameraBubbleEntry.self, PointerHighlightEntry.self, TeleprompterEntry.self,
         KeyboardCleanerEntry.self, ScreenRulerEntry.self, LargeTypeEntry.self, SpellCheckEntry.self, CodeImageEntry.self,
         CronEntry.self, JSONTypesEntry.self, RegexTesterEntry.self, WatermarkEntry.self,
+        PaletteEntry.self, TableOCREntry.self, NumberStatsEntry.self, ReminderEntry.self, CodeStatsEntry.self,
+        FileCompareEntry.self, FolderToolsEntry.self, BatchRenameEntry.self, MenuShortcutsEntry.self, WindowLayoutEntry.self,
     ]
 
     static func plugins() -> [any PopPlugin] {

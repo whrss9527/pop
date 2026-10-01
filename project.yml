@@ -185,6 +185,96 @@ targets:
         POP_PLUGIN_ID: watermark
         POP_PLUGIN_ENTRY: PopWatermarkEntry
 
+  PopPalette:
+    templates: [PopPlugin]
+    sources: [PluginBundles/Palette]
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: io.github.whrss9527.pop.plugin.palette
+        POP_PLUGIN_ID: palette
+        POP_PLUGIN_ENTRY: PopPaletteEntry
+
+  PopTableOCR:
+    templates: [PopPlugin]
+    sources: [PluginBundles/TableOCR]
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: io.github.whrss9527.pop.plugin.tableOCR
+        POP_PLUGIN_ID: tableOCR
+        POP_PLUGIN_ENTRY: PopTableOCREntry
+
+  PopNumberStats:
+    templates: [PopPlugin]
+    sources: [PluginBundles/NumberStats]
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: io.github.whrss9527.pop.plugin.numberStats
+        POP_PLUGIN_ID: numberStats
+        POP_PLUGIN_ENTRY: PopNumberStatsEntry
+
+  PopReminder:
+    templates: [PopPlugin]
+    sources: [PluginBundles/Reminder]
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: io.github.whrss9527.pop.plugin.reminder
+        POP_PLUGIN_ID: reminder
+        POP_PLUGIN_ENTRY: PopReminderEntry
+
+  PopCodeStats:
+    templates: [PopPlugin]
+    sources: [PluginBundles/CodeStats]
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: io.github.whrss9527.pop.plugin.codeStats
+        POP_PLUGIN_ID: codeStats
+        POP_PLUGIN_ENTRY: PopCodeStatsEntry
+
+  PopFileCompare:
+    templates: [PopPlugin]
+    sources: [PluginBundles/FileCompare]
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: io.github.whrss9527.pop.plugin.compareFiles
+        POP_PLUGIN_ID: compareFiles
+        POP_PLUGIN_ENTRY: PopFileCompareEntry
+
+  PopFolderTools:
+    templates: [PopPlugin]
+    sources: [PluginBundles/FolderTools]
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: io.github.whrss9527.pop.plugin.folderTools
+        POP_PLUGIN_ID: folderTools
+        POP_PLUGIN_ENTRY: PopFolderToolsEntry
+
+  PopBatchRename:
+    templates: [PopPlugin]
+    sources: [PluginBundles/BatchRename]
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: io.github.whrss9527.pop.plugin.batchRename
+        POP_PLUGIN_ID: batchRename
+        POP_PLUGIN_ENTRY: PopBatchRenameEntry
+
+  PopMenuShortcuts:
+    templates: [PopPlugin]
+    sources: [PluginBundles/MenuShortcuts]
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: io.github.whrss9527.pop.plugin.menuShortcuts
+        POP_PLUGIN_ID: menuShortcuts
+        POP_PLUGIN_ENTRY: PopMenuShortcutsEntry
+
+  PopWindowLayout:
+    templates: [PopPlugin]
+    sources: [PluginBundles/WindowLayout]
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: io.github.whrss9527.pop.plugin.windowLayout
+        POP_PLUGIN_ID: windowLayout
+        POP_PLUGIN_ENTRY: PopWindowLayoutEntry
+
   PopTests:
     type: bundle.unit-test
     platform: macOS
@@ -195,6 +285,16 @@ targets:
       - path: PluginBundles/CameraBubble
       - path: PluginBundles/PointerHighlight
       - path: PluginBundles/Teleprompter
+      - path: PluginBundles/WindowLayout
+      - path: PluginBundles/MenuShortcuts
+      - path: PluginBundles/BatchRename
+      - path: PluginBundles/FolderTools
+      - path: PluginBundles/FileCompare
+      - path: PluginBundles/CodeStats
+      - path: PluginBundles/Reminder
+      - path: PluginBundles/NumberStats
+      - path: PluginBundles/TableOCR
+      - path: PluginBundles/Palette
       - path: PluginBundles/Watermark
       - path: PluginBundles/RegexTester
       - path: PluginBundles/JSONTypes
@@ -220,6 +320,16 @@ schemes:
         PopCameraBubble: all
         PopPointerHighlight: all
         PopTeleprompter: all
+        PopWindowLayout: all
+        PopMenuShortcuts: all
+        PopBatchRename: all
+        PopFolderTools: all
+        PopFileCompare: all
+        PopCodeStats: all
+        PopReminder: all
+        PopNumberStats: all
+        PopTableOCR: all
+        PopPalette: all
         PopWatermark: all
         PopRegexTester: all
         PopJSONTypes: all

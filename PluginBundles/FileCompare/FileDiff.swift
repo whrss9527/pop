@@ -1,5 +1,6 @@
 import Foundation
 import UniformTypeIdentifiers
+@testable import Pop
 
 /// 对比两个文本文件：读成文字（UTF-8 读不了再按 UTF-16、GB18030 试），按修改时间把旧的当作原文
 enum FileDiff {

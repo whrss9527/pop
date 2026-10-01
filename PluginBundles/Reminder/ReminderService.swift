@@ -1,5 +1,6 @@
 import EventKit
 import Foundation
+@testable import Pop
 
 /// 把一件事加到「提醒事项」或「日历」。第一次用时系统会问要不要允许。
 @MainActor

@@ -1,4 +1,5 @@
 import SwiftUI
+@testable import Pop
 
 /// 「加到提醒事项」卡片的内容：从选中的文字里认出时间和事情，可以再改。
 @MainActor

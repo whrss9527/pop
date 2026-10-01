@@ -134,10 +134,8 @@ enum OverlayDemo {
                                         onOpenSettings: {}, onClose: {}),
                              anchor: center)
 
-            // 窗口布局卡片
-            await pause(1.4 * unit)
-            step("layout")
-            overlay.showCard(WindowLayoutCardView(hasMultipleDisplays: false, onChoose: { _ in }, onClose: {}), anchor: center)
+            // 插件包的步骤：窗口布局卡片
+            await playPluginScenes(after: "ai", in: demo, unit: unit)
 
             // 翻译卡片（CI 上没有离线语言包，显示的是引导下载的样子），左上角可以换目标语言
             await pause(1.4 * unit)
@@ -177,16 +175,8 @@ enum OverlayDemo {
                                             onAction: { _ in }, onMore: {}, onClose: {}),
                              anchor: center)
 
-            // 图片配色卡片（用标注演示的那张示例图）
-            await pause(1.4 * unit)
-            step("palette")
-            if let sample = sampleScreenshot() {
-                let swatches = ColorPalette.extract(from: sample.image)
-                let card = ResultCard(title: String(localized: "图片配色"), detail: String(localized: "按面积从大到小；点色块复制色值"),
-                                      rows: swatches.map { ResultCard.Row(label: String(localized: "占 \(Int((($0.share) * 100).rounded()))%"), value: $0.hex) },
-                                      palette: swatches.map(\.hex))
-                overlay.showCard(ResultCardView(card: card, onAction: { _ in }, onMore: {}, onClose: {}), anchor: center)
-            }
+            // 插件包的步骤：图片配色
+            await playPluginScenes(after: "diff", in: demo, unit: unit)
 
             // 暂存架：放上几个示例文件
             await pause(1.4 * unit)
@@ -259,18 +249,8 @@ enum OverlayDemo {
             }
             step("history-search")
 
-            // 加到提醒事项：从一句话里认出时间和事情
-            await pause(1.4 * unit)
-            let draft = ReminderDraft(text: "明天下午3点和设计组过一遍新版本的截图")
-            overlay.showCard(ReminderCardView(draft: draft, onAdd: { _ in }, onClose: {}), anchor: center)
-            step("reminder")
-
-            // 识别表格：macOS 26 上按行列认出格子，更早的系统按普通文字识别
-            await pause(1.4 * unit)
-            if let table = sampleTableImage(), case .card(let tableCard) = await TableOCRPlugin.recognize(table) {
-                overlay.showCard(ResultCardView(card: tableCard, onAction: { _ in }, onMore: {}, onClose: {}), anchor: center)
-            }
-            step("table")
+            // 插件包的步骤：加到提醒事项、识别表格
+            await playPluginScenes(after: "history-search", in: demo, unit: unit)
 
             // 文件信息：一张带拍摄信息和位置的示例照片，可以在地图里看、另存去掉位置的一份
             await pause(1.4 * unit)
@@ -281,12 +261,8 @@ enum OverlayDemo {
             }
             step("photo")
 
-            // 批量重命名：几个示例文件按编号改名的预览
-            await pause(1.4 * unit)
-            let renaming = RenameModel(files: sampleFiles())
-            renaming.rule.name = "发布素材"
-            overlay.showCard(RenameCardView(model: renaming, onReveal: { _ in }, onClose: {}), anchor: center)
-            step("rename")
+            // 插件包的步骤：批量重命名
+            await playPluginScenes(after: "photo", in: demo, unit: unit)
 
             // SQL 格式化：写在一行里的查询按子句分行
             await pause(1.4 * unit)
@@ -314,14 +290,8 @@ enum OverlayDemo {
                              anchor: center)
             step("vocabulary")
 
-            // 查找重复文件：示例文件夹里有两组内容一样的文件
-            await pause(1.4 * unit)
-            if let folder = sampleDuplicates() {
-                let duplicates = DuplicatesModel(roots: [folder])
-                duplicates.start()
-                overlay.showCard(DuplicatesView(model: duplicates, onReveal: { _ in }, onClose: {}), anchor: center)
-            }
-            step("duplicates")
+            // 插件包的步骤：查找重复文件
+            await playPluginScenes(after: "vocabulary", in: demo, unit: unit)
 
             // PDF 页面：一份 12 页的 PDF，写好了要取出的页码（卡片只用到文件名和页数）
             await pause(1.4 * unit)
@@ -330,14 +300,8 @@ enum OverlayDemo {
             overlay.showCard(PDFPagesView(model: pdfPages, onExtract: { _ in }, onSplit: {}, onClose: {}), anchor: center)
             step("pdfPages")
 
-            // 占用空间：查找重复文件用的示例文件夹，看每一项占了多少
-            await pause(1.4 * unit)
-            if let folder = sampleDuplicates() {
-                let usage = DiskUsageModel(root: folder)
-                usage.start()
-                overlay.showCard(DiskUsageView(model: usage, onReveal: { _ in }, onClose: {}), anchor: center)
-            }
-            step("diskUsage")
+            // 插件包的步骤：占用空间
+            await playPluginScenes(after: "pdfPages", in: demo, unit: unit)
 
             // 给 PDF 加密码：两次输入的密码一样
             await pause(1.4 * unit)
@@ -455,12 +419,8 @@ enum OverlayDemo {
             }
             step("textImage")
 
-            // 快捷键一览：一份写好的示例菜单，不去读真的 App
-            await pause(1.4 * unit)
-            let shortcuts = MenuShortcutsModel(appName: "备忘录")
-            shortcuts.load(sampleMenus)
-            overlay.showCard(MenuShortcutsView(model: shortcuts, onClose: {}), anchor: center)
-            step("menuShortcuts")
+            // 插件包的步骤：快捷键一览
+            await playPluginScenes(after: "textImage", in: demo, unit: unit)
 
             // 滚动截图：截的时候的边框和面板，然后是拼好的长图卡片（示例长图用文字转图片画一篇长文）
             await pause(1.4 * unit)
@@ -634,7 +594,7 @@ enum OverlayDemo {
         return context.makeImage()
     }
 
-    private static func sampleFiles() -> [URL] {
+    static func sampleFiles() -> [URL] {
         let folder = FileManager.default.temporaryDirectory.appending(path: "pop-demo")
         try? FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
         var files: [URL] = []
@@ -656,7 +616,7 @@ enum OverlayDemo {
     }
 
     /// 查找重复文件演示：临时文件夹里三份一样的照片、两份一样的报告，再加两个不重复的
-    private static func sampleDuplicates() -> URL? {
+    static func sampleDuplicates() -> URL? {
         let root = FileManager.default.temporaryDirectory.appending(path: "pop-demo-duplicates/资料", directoryHint: .isDirectory)
         try? FileManager.default.removeItem(at: root)
         let photo = Data(repeating: 7, count: 2_400_000)
@@ -702,7 +662,7 @@ enum OverlayDemo {
     private static func playPluginScenes(after step: String, in context: PluginHost.DemoContext, unit: Double) async {
         for scene in PluginHost.shared.demoScenes(after: step) {
             await pause(scene.delay * unit)
-            if let region = scene.show(context) {
+            if let region = await scene.show(context) {
                 logRegion(region == context.cardRegion ? region : region.insetBy(dx: -24, dy: -24), screen: context.screen)
             }
             Self.step(scene.name)

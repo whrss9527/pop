@@ -1,5 +1,6 @@
 import CoreGraphics
 import Foundation
+@testable import Pop
 
 /// 从图片里挑出主要的几种颜色，按面积从大到小排。
 enum ColorPalette {

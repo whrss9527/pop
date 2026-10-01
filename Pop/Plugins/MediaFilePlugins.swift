@@ -26,8 +26,6 @@ struct StitchImagesPlugin: PopPlugin {
     }
 }
 
-// MARK: - 加水印
-
 // MARK: - 视频转换
 
 struct IDPhotoPlugin: PopPlugin {
@@ -166,18 +164,5 @@ struct TrimMediaPlugin: PopPlugin {
     @MainActor func run(_ content: ClassifiedContent, context: PluginContext) async -> PluginOutcome {
         guard let file = content.files.first(where: MediaTrim.isMedia) else { return .failure(String(localized: "没有选中音频或视频文件")) }
         return .trimMedia(file)
-    }
-}
-
-// MARK: - 批量重命名
-
-struct BatchRenamePlugin: PopPlugin {
-    let info = PluginInfo(id: BuiltinPluginID.batchRename, name: String(localized: "批量重命名"), symbol: "rectangle.and.pencil.and.ellipsis",
-                          summary: String(localized: "给选中的文件统一改名：编号、替换文字、加前后缀、按照片的拍摄时间、改大小写，先看预览再改，改完可以撤销"),
-                          accepts: [.files])
-
-    @MainActor func run(_ content: ClassifiedContent, context: PluginContext) async -> PluginOutcome {
-        guard !content.files.isEmpty else { return .failure(String(localized: "没有选中文件")) }
-        return .rename(content.files)
     }
 }

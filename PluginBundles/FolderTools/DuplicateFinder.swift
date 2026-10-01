@@ -1,5 +1,6 @@
 import CryptoKit
 import Foundation
+@testable import Pop
 
 /// 找出内容完全一样的文件：先按大小分组，大小一样的比开头一小段，还一样的再算整个文件的 SHA-256。
 /// 隐藏文件、App 这类包里面的文件和空文件不算。

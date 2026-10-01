@@ -31,19 +31,6 @@ struct SystemActionsPlugin: PopPlugin {
     }
 }
 
-// MARK: - 快捷键一览
-
-struct MenuShortcutsPlugin: PopPlugin {
-    let info = PluginInfo(id: BuiltinPluginID.menuShortcuts, name: String(localized: "快捷键一览"), symbol: "command",
-                          summary: String(localized: "列出当前 App 菜单里的所有快捷键，可以搜索，点一项直接执行"), accepts: [])
-
-    @MainActor func run(_ content: ClassifiedContent, context: PluginContext) async -> PluginOutcome {
-        .showMenuShortcuts
-    }
-}
-
-// MARK: - 屏幕标尺
-
 // MARK: - 录屏
 
 struct ScreenRecordPlugin: PopPlugin {

@@ -104,9 +104,12 @@ echo "✅ Pop 启动正常：进程存活、有菜单栏图标、设置窗口在
 
 [ ${#PLUGINS[@]} -gt 0 ] || exit 0
 
-# 从「发布页」装插件包。插件包的 ID 和它提供的功能 ID 一样（现在的插件包都是这样），
+# 从「发布页」装插件包：挑一个 ID 和它提供的功能 ID 一样的插件包（提词器；没有的话用第一个），
 # 把这个功能放到圆盘上，Pop 启动时就会去装它的插件包
 INSTALL_ID="${PLUGINS[0]}"
+for id in "${PLUGINS[@]}"; do
+  [ "$id" = teleprompter ] && INSTALL_ID="$id"
+done
 VERSION="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$APP/Contents/Info.plist")"
 SOURCE="$(mktemp -d -t pop-plugin-source)"
 "$ROOT/scripts/package-plugins.sh" "$PLUGIN_DIR" "$SOURCE" "$VERSION" > /dev/null

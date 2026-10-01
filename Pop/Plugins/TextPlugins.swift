@@ -146,19 +146,6 @@ struct TextStatsPlugin: PopPlugin {
     }
 }
 
-struct NumberStatsPlugin: PopPlugin {
-    let info = PluginInfo(id: BuiltinPluginID.numberStats, name: String(localized: "数字统计"), symbol: "sum",
-                          summary: String(localized: "选中一列或一串数字，算出合计、平均、中位数、最大、最小"), accepts: [.text],
-                          maxLength: 100_000, check: .numberList)
-
-    @MainActor func run(_ content: ClassifiedContent, context: PluginContext) async -> PluginOutcome {
-        guard let text = content.text, let summary = await runInBackground({ NumberStats.parse(text) }) else {
-            return .failure(String(localized: "需要至少两个数：一列（每行一个，前面可以有文字），或者一行用逗号、空格隔开"))
-        }
-        return .card(ResultCard(title: String(localized: "数字统计"), detail: String(localized: "共 \(summary.count) 个数"), rows: summary.rows))
-    }
-}
-
 struct TextDiffPlugin: PopPlugin {
     let info = PluginInfo(id: BuiltinPluginID.textDiff, name: String(localized: "文本对比"), symbol: "arrow.left.arrow.right.square",
                           summary: String(localized: "把选中的文字和剪贴板里的文字对比，标出删去和新增的地方"), accepts: [.text],
@@ -385,16 +372,5 @@ struct LineToolsPlugin: PopPlugin {
         guard !rows.isEmpty else { return .failure(String(localized: "这些内容没有可以转换的写法")) }
         return .card(ResultCard(title: String(localized: "按行处理"), detail: String(localized: "共 \(items.values.count) 项"), rows: rows,
                                 rowsReplaceable: true, rowLineLimit: 2))
-    }
-}
-
-struct ReminderPlugin: PopPlugin {
-    let info = PluginInfo(id: BuiltinPluginID.reminder, name: String(localized: "加到提醒事项"), symbol: "checklist",
-                          summary: String(localized: "从选中的文字里认出时间（明天下午 3 点、周五、10 月 8 日、半小时后……），加到「提醒事项」或者「日历」"),
-                          accepts: [.text], maxLength: 500, check: .dateMention)
-
-    @MainActor func run(_ content: ClassifiedContent, context: PluginContext) async -> PluginOutcome {
-        guard let text = content.text else { return .failure(String(localized: "没有文字")) }
-        return .reminder(text: text)
     }
 }

@@ -1,4 +1,5 @@
 import SwiftUI
+@testable import Pop
 
 /// 批量重命名卡片的状态：改了规则马上算出新名字；改名在后台做，改完可以撤销。
 @MainActor

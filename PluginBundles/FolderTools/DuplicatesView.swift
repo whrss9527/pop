@@ -1,4 +1,5 @@
 import SwiftUI
+@testable import Pop
 
 /// 后台线程和界面之间共用的「不用再算了」标记
 final class CancelFlag: @unchecked Sendable {

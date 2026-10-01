@@ -51,8 +51,6 @@ struct PluginInfo: Identifiable, Hashable {
 
 /// 正则写不出来的内容检查，决定圆盘里要不要显示这个功能
 enum ContentCheck: Hashable {
-    /// 至少两个数：一列（每行一个）或者一行用逗号、空格隔开
-    case numberList
     /// 两个颜色（文字和背景）
     case colorPair
     /// 里面有链接、邮箱、电话号码、IP 地址可以提取
@@ -61,8 +59,6 @@ enum ContentCheck: Hashable {
     case characters
     /// 至少两项的一列（或者一行用逗号隔开的）值
     case lineList
-    /// 说到了时间（明天、周五、下午 3 点……）
-    case dateMention
     /// JSON，或者读得出来的 YAML
     case yamlOrJSON
     /// XML（包括 SVG、plist）
@@ -77,8 +73,6 @@ enum ContentCheck: Hashable {
     case folder
     /// 正好选中了两个文件夹
     case twoFolders
-    /// 正好选中了两个文本文件
-    case twoTextFiles
     /// Markdown 里至少有两个标题
     case markdownHeadings
     /// 身份证号、统一社会信用代码或者银行卡号
@@ -88,8 +82,6 @@ enum ContentCheck: Hashable {
 
     func matches(_ subject: String) -> Bool {
         switch self {
-        case .numberList:
-            return NumberStats.parse(subject) != nil
         case .colorPair:
             return ColorContrast.isColorPair(subject)
         case .extractable:
@@ -98,8 +90,6 @@ enum ContentCheck: Hashable {
             return CharacterInspector.isApplicable(subject)
         case .lineList:
             return LineTools.isApplicable(subject)
-        case .dateMention:
-            return NaturalDate.parse(subject) != nil
         case .yamlOrJSON:
             return JSONFormatter.isJSON(subject) || YAMLConverter.looksLikeYAML(subject)
         case .xml:
@@ -115,9 +105,6 @@ enum ContentCheck: Hashable {
         case .twoFolders:
             let paths = subject.components(separatedBy: "\n").filter { !$0.isEmpty }
             return paths.count == 2 && paths.allSatisfy(FolderTree.isFolder)
-        case .twoTextFiles:
-            let paths = subject.components(separatedBy: "\n").filter { !$0.isEmpty }
-            return paths.count == 2 && paths.allSatisfy { FileDiff.isTextFile(URL(fileURLWithPath: $0)) }
         case .markdownHeadings:
             return MarkdownTOC.headings(in: subject).count >= 2
         case .idNumber:
@@ -271,24 +258,12 @@ enum PluginOutcome: Equatable {
     case showClipboardHistory
     /// 打开 AI 卡片
     case ai(AIRequestSpec)
-    /// 打开窗口布局卡片
-    case showWindowLayouts
-    /// 列出唤起时前台 App 菜单里的快捷键
-    case showMenuShortcuts
     /// 打开常用短语列表
     case showSnippets
     /// 选一个 App 打开文件或链接
     case chooseApp(OpenWithRequest)
-    /// 打开「加到提醒事项」卡片
-    case reminder(text: String)
-    /// 打开批量重命名卡片
-    case rename([URL])
     /// 打开生词本
     case showVocabulary
-    /// 在这些文件夹里查找重复文件
-    case findDuplicates([URL])
-    /// 看这个文件夹里各部分占了多少空间
-    case diskUsage(URL)
     /// 打开截取片段卡片
     case trimMedia(URL)
     /// 打开证件照卡片
@@ -303,6 +278,8 @@ struct PluginContext {
     var openSettings: @MainActor () -> Void
     /// 唤起时前台 App 的名字
     var sourceAppName: String? = nil
+    /// 唤起时前台 App 的进程号（窗口布局、快捷键一览对它操作）
+    var sourcePID: pid_t? = nil
     /// 唤起的位置（AppKit 屏幕坐标），贴图之类的功能在这附近显示
     var anchor: CGPoint? = nil
     /// 带格式地重新拷贝一次选中的内容（「转成 Markdown」用）

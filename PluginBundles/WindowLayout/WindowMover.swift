@@ -1,5 +1,6 @@
 import AppKit
 import ApplicationServices
+@testable import Pop
 
 /// 用辅助功能接口移动、缩放其他 App 的窗口（Pop 已经有辅助功能权限）。
 /// 辅助功能接口的坐标以主屏左上角为原点、y 向下；这里对外都用 AppKit 坐标。

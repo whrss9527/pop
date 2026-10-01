@@ -587,30 +587,6 @@ struct ScanCodePlugin: PopPlugin {
     }
 }
 
-// MARK: - 图片配色
-
-struct PalettePlugin: PopPlugin {
-    let info = PluginInfo(id: BuiltinPluginID.palette, name: String(localized: "图片配色"), symbol: "paintpalette",
-                          summary: String(localized: "找出图片里的主要颜色，按面积从大到小列出色值，点一下复制"), accepts: [.image, .imageFile])
-
-    @MainActor func run(_ content: ClassifiedContent, context: PluginContext) async -> PluginOutcome {
-        let image: CGImage?
-        if case .image(let data) = content.selection {
-            image = TextRecognizer.cgImage(from: data)
-        } else {
-            image = content.files.first.flatMap(TextRecognizer.cgImage(contentsOf:))
-        }
-        guard let image else { return .failure(String(localized: "无法读取图片")) }
-        let swatches = await runInBackground { ColorPalette.extract(from: image) }
-        guard !swatches.isEmpty else { return .failure(String(localized: "图片是全透明的，取不出颜色")) }
-        let rows = swatches.map { swatch in
-            ResultCard.Row(label: String(localized: "占 \(max(Int((swatch.share * 100).rounded()), 1))%"), value: swatch.hex)
-        }
-        return .card(ResultCard(title: String(localized: "图片配色"), detail: String(localized: "按面积从大到小；点色块复制色值"), rows: rows,
-                                palette: swatches.map(\.hex)))
-    }
-}
-
 // MARK: - 终端
 
 struct OpenInTerminalPlugin: PopPlugin {

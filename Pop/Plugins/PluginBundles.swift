@@ -36,8 +36,8 @@ final class PluginHost {
         /// 显示之前先停多久、显示以后停多久再收起（乘上动画放慢的倍数）
         var delay = 0.4
         var hold = 1.4
-        /// 显示出来，返回要截的区域（AppKit 屏幕坐标）；返回 nil 时沿用上一次的区域
-        let show: @MainActor (DemoContext) -> CGRect?
+        /// 显示出来，返回要截的区域（AppKit 屏幕坐标）；返回 nil 时沿用上一次的区域。可以先等一会儿（比如识别示例图片）
+        let show: @MainActor (DemoContext) async -> CGRect?
         var hide: @MainActor () -> Void = {}
     }
 
