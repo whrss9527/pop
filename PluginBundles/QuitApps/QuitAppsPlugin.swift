@@ -9,9 +9,10 @@ final class QuitAppsEntry: NSObject, PopPluginBundle {
     }
 
     @MainActor static func didLoad(_ host: PluginHost.Registrar) {
-        // CI 截图：几个系统自带的 App 和示例的内存占用，退出不会真的退出
+        // CI 截图：几个系统自带的 App 和示例的内存、CPU 占用，按内存排；退出不会真的退出
         host.addDemoScene(PluginHost.DemoScene(name: "quitApps", after: "textImage", order: 1, delay: 1.4, hold: 0, show: { demo in
-            let model = QuitAppsModel(rows: QuitAppsPlugin.demoRows(), front: 1, terminate: { _, _ in true }, isRunning: { _ in true })
+            let model = QuitAppsModel(rows: QuitAppsPlugin.demoRows(), front: 1, terminate: { _, _ in true }, isRunning: { _ in true },
+                                      sort: .memory)
             demo.overlay.showCard(QuitAppsView(model: model, onClose: {}), anchor: demo.center)
             return demo.cardRegion
         }))
@@ -20,7 +21,7 @@ final class QuitAppsEntry: NSObject, PopPluginBundle {
 
 struct QuitAppsPlugin: PopPlugin {
     let info = PluginInfo(id: BuiltinPluginID.quitApps, name: String(localized: "退出 App"), symbol: "xmark.app",
-                          summary: String(localized: "列出正在运行的 App 和各占多少内存，一键退出，没有响应的强制退出；也能一下退出其他所有 App，开会、演示前清清场"),
+                          summary: String(localized: "列出正在运行的 App 和各占多少内存、CPU，一键退出，没有响应的强制退出；也能一下退出其他所有 App，开会、演示前清清场"),
                           accepts: [])
 
     @MainActor func run(_ content: ClassifiedContent, context: PluginContext) async -> PluginOutcome {
@@ -49,24 +50,24 @@ struct QuitAppsPlugin: PopPlugin {
                 return force ? app.forceTerminate() : app.terminate()
             }, isRunning: { pid in
                 byPID[pid].map { !$0.isTerminated } ?? false
-            })
+            }, cpuTime: { RunningApps.cpuTime(of: $0) })
             session.showCard(QuitAppsView(model: model, onClose: { session.end() }))
         })
     }
 
-    /// 演示用的列表：系统自带的几个 App（图标从系统里取），内存是示例数据
+    /// 演示用的列表：系统自带的几个 App（图标从系统里取），内存和 CPU 是示例数据（Xcode 正在编译，音乐在放歌）
     @MainActor static func demoRows() -> [QuitAppsModel.Row] {
-        let samples: [(String, String, UInt64)] = [
-            ("com.apple.dt.Xcode", "Xcode", 2_350_000_000),
-            ("com.apple.Safari", "Safari 浏览器", 1_240_000_000),
-            ("com.apple.Music", "音乐", 412_000_000),
-            ("com.apple.mail", "邮件", 286_000_000),
-            ("com.apple.Notes", "备忘录", 158_000_000),
-            ("com.apple.Preview", "预览", 96_000_000),
+        let samples: [(String, String, UInt64, Double)] = [
+            ("com.apple.dt.Xcode", "Xcode", 2_350_000_000, 186),
+            ("com.apple.Safari", "Safari 浏览器", 1_240_000_000, 7.4),
+            ("com.apple.Music", "音乐", 412_000_000, 14.2),
+            ("com.apple.mail", "邮件", 286_000_000, 0.3),
+            ("com.apple.Notes", "备忘录", 158_000_000, 0),
+            ("com.apple.Preview", "预览", 96_000_000, 0),
         ]
         return samples.enumerated().map { index, sample in
             let url = NSWorkspace.shared.urlForApplication(withBundleIdentifier: sample.0)
-            return QuitAppsModel.Row(entry: RunningApps.Entry(pid: pid_t(index + 1), name: sample.1, bundleID: sample.0, memory: sample.2),
+            return QuitAppsModel.Row(entry: RunningApps.Entry(pid: pid_t(index + 1), name: sample.1, bundleID: sample.0, memory: sample.2, cpu: sample.3),
                                      icon: url.map { NSWorkspace.shared.icon(forFile: $0.path(percentEncoded: false)) })
         }
     }

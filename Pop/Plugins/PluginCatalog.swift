@@ -268,8 +268,8 @@ enum PluginCatalog {
                       // 和插件包里 SplitImageModel 的键一样
                       defaultsKeys: ["pop.splitImage.layout"]),
         PluginPackage(id: "quitApps", bundleName: "PopQuitApps", name: String(localized: "退出 App"),
-                      summary: String(localized: "列出正在运行的 App 和各占多少内存，一键退出，没有响应的强制退出；也能一下退出其他所有 App，开会、演示前清清场"),
-                      symbol: "xmark.app", category: .files, functions: [BuiltinPluginID.quitApps]),
+                      summary: String(localized: "列出正在运行的 App 和各占多少内存、CPU，一键退出，没有响应的强制退出；也能一下退出其他所有 App，开会、演示前清清场"),
+                      symbol: "xmark.app", category: .files, functions: [BuiltinPluginID.quitApps], defaultsKeys: ["pop.quitApps.sort"]),
         PluginPackage(id: "tidyFolder", bundleName: "PopTidyFolder", name: String(localized: "整理文件夹"),
                       summary: String(localized: "把选中的文件夹（没选时是「下载」）第一层的文件按类型或者按月份归到子文件夹里，照片和视频也能按拍摄日期归好；先看预览，整理完可以撤销"),
                       symbol: "folder.badge.gearshape", category: .files, functions: [BuiltinPluginID.tidyFolder],

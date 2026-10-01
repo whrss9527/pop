@@ -3,6 +3,7 @@ import SwiftUI
 @testable import Pop
 
 /// 「退出 App」卡片：每个 App 一行，点「退出」后等它退出再从列表里拿掉；几秒还没退出就换成「强制退出」。
+/// 开着时每 1.5 秒读一次各个 App 用了多少 CPU 时间，和上一次比算出 CPU 占用；可以按内存或者 CPU 排。
 @MainActor
 final class QuitAppsModel: ObservableObject {
     struct Row: Identifiable {
@@ -24,8 +25,20 @@ final class QuitAppsModel: ObservableObject {
     /// 退出或强制退出这个进程；返回 false 表示没能发出去（比如已经退出了）
     typealias Terminate = @MainActor (_ pid: pid_t, _ force: Bool) -> Bool
     typealias IsRunning = @MainActor (_ pid: pid_t) -> Bool
+    /// 这个 App（连同子进程）一共用了多少 CPU 时间（纳秒）；演示时不读
+    typealias CPUTime = (_ pid: pid_t) -> UInt64?
+
+    static let sortKey = "pop.quitApps.sort"
 
     @Published private(set) var rows: [Row]
+    /// 按内存还是 CPU 排；会记住
+    @Published var sort: RunningApps.Sort {
+        didSet {
+            guard sort != oldValue else { return }
+            UserDefaults.standard.set(sort.rawValue, forKey: Self.sortKey)
+            resort()
+        }
+    }
     /// 正在确认「退出其他 App」
     @Published var confirmingOthers = false
     /// 唤起时在用的 App：「退出其他 App」时留着它
@@ -34,12 +47,70 @@ final class QuitAppsModel: ObservableObject {
     var patience: Duration = .seconds(4)
     private let terminate: Terminate
     private let isRunning: IsRunning
+    private let cpuTime: CPUTime?
+    private var lastSample: (date: Date, values: [pid_t: UInt64])?
+    private var timer: Timer?
 
-    init(rows: [Row], front: pid_t?, terminate: @escaping Terminate, isRunning: @escaping IsRunning) {
+    init(rows: [Row], front: pid_t?, terminate: @escaping Terminate, isRunning: @escaping IsRunning, cpuTime: CPUTime? = nil,
+         sort: RunningApps.Sort? = nil) {
         self.rows = rows
         self.front = front
         self.terminate = terminate
         self.isRunning = isRunning
+        self.cpuTime = cpuTime
+        self.sort = sort ?? UserDefaults.standard.string(forKey: Self.sortKey).flatMap(RunningApps.Sort.init(rawValue:)) ?? .memory
+        resort()
+    }
+
+    /// 按现在的排法重新排一次
+    private func resort() {
+        let order = RunningApps.sorted(rows.map(\.entry), by: sort).map(\.pid)
+        let byPID = Dictionary(rows.map { ($0.entry.pid, $0) }, uniquingKeysWith: { first, _ in first })
+        rows = order.compactMap { byPID[$0] }
+    }
+
+    /// 开着卡片时读 CPU：先记一次，之后每 1.5 秒算一次占用
+    func startSampling() {
+        guard cpuTime != nil, timer == nil else { return }
+        sampleInBackground()
+        timer = Timer.scheduledTimer(withTimeInterval: 1.5, repeats: true) { [weak self] _ in
+            MainActor.assumeIsolated {
+                self?.sampleInBackground()
+            }
+        }
+    }
+
+    func stopSampling() {
+        timer?.invalidate()
+        timer = nil
+    }
+
+    private func sampleInBackground() {
+        guard let cpuTime else { return }
+        let pids = rows.map(\.entry.pid)
+        Task { [weak self] in
+            let values = await runInBackground {
+                Dictionary(pids.compactMap { pid in cpuTime(pid).map { (pid, $0) } }, uniquingKeysWith: { first, _ in first })
+            }
+            self?.apply(values, at: Date())
+        }
+    }
+
+    /// 记下这一次读到的 CPU 时间，和上一次比算出每个 App 的占用。第一次算出来时按 CPU 排的话排一次，
+    /// 之后只换数字、不重新排，免得正要点的那一行跑掉
+    func apply(_ values: [pid_t: UInt64], at date: Date) {
+        defer { lastSample = (date, values) }
+        guard let last = lastSample else { return }
+        let seconds = date.timeIntervalSince(last.date)
+        let first = rows.allSatisfy { $0.entry.cpu == nil }
+        for index in rows.indices {
+            let pid = rows[index].entry.pid
+            guard let old = last.values[pid], let new = values[pid] else { continue }
+            rows[index].entry.cpu = RunningApps.cpuPercent(from: old, to: new, seconds: seconds)
+        }
+        if first && sort == .cpu {
+            resort()
+        }
     }
 
     var total: UInt64 {
@@ -111,6 +182,14 @@ struct QuitAppsView: View {
                     .foregroundStyle(.secondary)
                     .frame(maxWidth: .infinity, minHeight: 80)
             } else {
+                Picker("排序", selection: $model.sort) {
+                    ForEach(RunningApps.Sort.allCases) { sort in
+                        Text(sort.title).tag(sort)
+                    }
+                }
+                .pickerStyle(.segmented)
+                .labelsHidden()
+                .frame(width: 180)
                 ScrollView {
                     VStack(spacing: 2) {
                         ForEach(model.rows) { row in
@@ -127,6 +206,8 @@ struct QuitAppsView: View {
             footer
         }
         .controlSize(.small)
+        .onAppear { model.startSampling() }
+        .onDisappear { model.stopSampling() }
     }
 
     private func rowView(_ row: QuitAppsModel.Row) -> some View {
@@ -154,9 +235,15 @@ struct QuitAppsView: View {
                     .background(Capsule().fill(Color.primary.opacity(0.08)))
             }
             Spacer(minLength: 8)
+            // 用满一个核以上标橙：多半是它在耗电、发热
+            Text(verbatim: row.entry.cpu.map(RunningApps.formatCPU) ?? "")
+                .font(.callout.monospacedDigit())
+                .foregroundStyle((row.entry.cpu ?? 0) >= 80 ? Color.orange : Color.secondary)
+                .frame(width: 46, alignment: .trailing)
             Text(row.entry.memory.map(RunningApps.format) ?? "—")
                 .font(.callout.monospacedDigit())
                 .foregroundStyle(.secondary)
+                .frame(minWidth: 60, alignment: .trailing)
             Group {
                 switch row.state {
                 case .running:
