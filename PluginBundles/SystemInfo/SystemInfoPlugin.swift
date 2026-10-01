@@ -37,9 +37,9 @@ struct SystemInfoPlugin: PopPlugin {
     static let demoNow = Date(timeIntervalSince1970: 1_790_000_000)
 
     static func demoReport() -> SystemInfo.Report {
-        // 拆成几个有类型的常量：整个写在一个表达式里，新的编译器类型检查会超时
+        // 拆成几个有类型的常量，开机时长直接写秒数：整数字面量的乘加放在 TimeInterval 里，编译器类型检查会超时
         let memory: UInt64 = 16 * 1_073_741_824
-        let uptime: TimeInterval = 3 * 86_400 + 4 * 3_600 + 12 * 60
+        let uptime: TimeInterval = 274_320 // 3 天 4 小时 12 分钟
         let disk = SystemInfo.Disk(name: "Macintosh HD", total: 494_384_795_648, available: 233_876_123_648)
         let builtIn = SystemInfo.Display(name: "Built-in Liquid Retina XDR Display", builtIn: true, points: CGSize(width: 1512, height: 982),
                                          pixels: CGSize(width: 3024, height: 1964), refreshRate: 120)

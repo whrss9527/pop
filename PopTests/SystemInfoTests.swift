@@ -29,13 +29,11 @@ final class SystemInfoTests: XCTestCase {
         XCTAssertEqual(SystemInfo.memoryText(1_610_612_736), "1.5 GB")
 
         let now = Date(timeIntervalSince1970: 1_790_000_000)
-        let day: TimeInterval = 86_400
-        let hour: TimeInterval = 3_600
-        let minute: TimeInterval = 60
-        XCTAssertEqual(SystemInfo.uptimeText(since: now.addingTimeInterval(-(3 * day + 4 * hour + 12 * minute)), now: now), "3 天 4 小时")
-        XCTAssertEqual(SystemInfo.uptimeText(since: now.addingTimeInterval(-2 * day), now: now), "2 天")
-        XCTAssertEqual(SystemInfo.uptimeText(since: now.addingTimeInterval(-(5 * hour + 12 * minute)), now: now), "5 小时 12 分钟")
-        XCTAssertEqual(SystemInfo.uptimeText(since: now.addingTimeInterval(-3 * hour), now: now), "3 小时")
+        // 秒数直接写出来：整数字面量的乘加放在 TimeInterval 里，编译器类型检查会超时
+        XCTAssertEqual(SystemInfo.uptimeText(since: now.addingTimeInterval(-274_320), now: now), "3 天 4 小时") // 3 天 4 小时 12 分钟
+        XCTAssertEqual(SystemInfo.uptimeText(since: now.addingTimeInterval(-172_800), now: now), "2 天")
+        XCTAssertEqual(SystemInfo.uptimeText(since: now.addingTimeInterval(-18_720), now: now), "5 小时 12 分钟")
+        XCTAssertEqual(SystemInfo.uptimeText(since: now.addingTimeInterval(-10_800), now: now), "3 小时")
         XCTAssertEqual(SystemInfo.uptimeText(since: now.addingTimeInterval(-30), now: now), "1 分钟")
 
         let disk = SystemInfo.diskText(SystemInfo.Disk(name: "Macintosh HD", total: 494_384_795_648, available: 233_876_123_648))
