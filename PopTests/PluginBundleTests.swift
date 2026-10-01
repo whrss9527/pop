@@ -68,6 +68,24 @@ final class PluginBundleTests: XCTestCase {
         XCTAssertFalse(settings.isInstalled(BuiltinPluginID.teleprompter))
     }
 
+    /// 迁移过的插件包在新版本里多了功能：装着这个插件包的把新功能也装上（这台 Mac 上还没下载好也一样），没装的不受影响
+    func testInstalledPackageGetsItsNewFunctions() {
+        var settings = AppSettings()
+        settings.movedToPlugins.removeAll { $0 == BuiltinPluginID.speakToFile }
+        settings.installedPlugins.append(BuiltinPluginID.speak)
+        XCTAssertTrue(settings.adoptPluginBundles(recentlyUsed: [], onDisk: []))
+        XCTAssertTrue(settings.isInstalled(BuiltinPluginID.speak))
+        XCTAssertTrue(settings.isInstalled(BuiltinPluginID.speakToFile))
+        XCTAssertTrue(settings.movedToPlugins.contains(BuiltinPluginID.speakToFile))
+        XCTAssertFalse(settings.adoptPluginBundles(recentlyUsed: [], onDisk: []))
+
+        var other = AppSettings()
+        other.movedToPlugins.removeAll { $0 == BuiltinPluginID.speakToFile }
+        XCTAssertTrue(other.adoptPluginBundles(recentlyUsed: [BuiltinPluginID.speak], onDisk: []))
+        XCTAssertFalse(other.isInstalled(BuiltinPluginID.speak))
+        XCTAssertFalse(other.isInstalled(BuiltinPluginID.speakToFile))
+    }
+
     /// 新版本新加的插件包功能不会自动装上
     func testNewPluginFunctionsAreNotAdopted() {
         var settings = AppSettings()
