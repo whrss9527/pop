@@ -361,7 +361,7 @@ enum OverlayDemo {
             // 裁剪图片：五种比例
             await pause(1.4 * unit)
             let beach = FileManager.default.temporaryDirectory.appending(path: "pop-demo/海边.jpg")
-            overlay.showCard(ResultCardView(card: CropImagePlugin.card([beach]), onAction: { _ in }, onMore: {}, onClose: {}),
+            overlay.showCard(ResultCardView(card: SmartCrop.card([beach]), onAction: { _ in }, onMore: {}, onClose: {}),
                              anchor: center)
             step("cropImage")
 

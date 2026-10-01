@@ -1,6 +1,13 @@
-import Foundation
+import AppKit
+@testable import Pop
 
-// MARK: - 目录结构
+/// 插件包「目录结构」的入口（Info.plist 的 NSPrincipalClass）
+@objc(PopFolderTreeEntry)
+final class FolderTreeEntry: NSObject, PopPluginBundle {
+    static func makePlugins() -> [any PopPlugin] {
+        [FolderTreePlugin()]
+    }
+}
 
 struct FolderTreePlugin: PopPlugin {
     let info = PluginInfo(id: BuiltinPluginID.folderTree, name: String(localized: "目录结构"), symbol: "list.bullet.indent",

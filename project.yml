@@ -518,6 +518,222 @@ targets:
         POP_PLUGIN_ID: charInfo
         POP_PLUGIN_ENTRY: PopCharInfoEntry
 
+  PopScreenshotTranslate:
+    templates: [PopPlugin]
+    sources: [PluginBundles/ScreenshotTranslate]
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: io.github.whrss9527.pop.plugin.screenshotTranslate
+        POP_PLUGIN_ID: screenshotTranslate
+        POP_PLUGIN_ENTRY: PopScreenshotTranslateEntry
+
+  PopTextDiff:
+    templates: [PopPlugin]
+    sources: [PluginBundles/TextDiff]
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: io.github.whrss9527.pop.plugin.textDiff
+        POP_PLUGIN_ID: textDiff
+        POP_PLUGIN_ENTRY: PopTextDiffEntry
+
+  PopImageConvert:
+    templates: [PopPlugin]
+    sources: [PluginBundles/ImageConvert]
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: io.github.whrss9527.pop.plugin.imageConvert
+        POP_PLUGIN_ID: imageConvert
+        POP_PLUGIN_ENTRY: PopImageConvertEntry
+
+  PopStitchImages:
+    templates: [PopPlugin]
+    sources: [PluginBundles/StitchImages]
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: io.github.whrss9527.pop.plugin.stitchImages
+        POP_PLUGIN_ID: stitchImages
+        POP_PLUGIN_ENTRY: PopStitchImagesEntry
+
+  PopIDPhoto:
+    templates: [PopPlugin]
+    sources: [PluginBundles/IDPhoto]
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: io.github.whrss9527.pop.plugin.idPhoto
+        POP_PLUGIN_ID: idPhoto
+        POP_PLUGIN_ENTRY: PopIDPhotoEntry
+
+  PopCropImage:
+    templates: [PopPlugin]
+    sources: [PluginBundles/CropImage]
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: io.github.whrss9527.pop.plugin.cropImage
+        POP_PLUGIN_ID: cropImage
+        POP_PLUGIN_ENTRY: PopCropImageEntry
+
+  PopRedact:
+    templates: [PopPlugin]
+    sources: [PluginBundles/Redact]
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: io.github.whrss9527.pop.plugin.redact
+        POP_PLUGIN_ID: redact
+        POP_PLUGIN_ENTRY: PopRedactEntry
+
+  PopRemoveBackground:
+    templates: [PopPlugin]
+    sources: [PluginBundles/RemoveBackground]
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: io.github.whrss9527.pop.plugin.removeBackground
+        POP_PLUGIN_ID: removeBackground
+        POP_PLUGIN_ENTRY: PopRemoveBackgroundEntry
+
+  PopScanCode:
+    templates: [PopPlugin]
+    sources: [PluginBundles/ScanCode]
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: io.github.whrss9527.pop.plugin.scanCode
+        POP_PLUGIN_ID: scanCode
+        POP_PLUGIN_ENTRY: PopScanCodeEntry
+
+  PopScreenRecord:
+    templates: [PopPlugin]
+    sources: [PluginBundles/ScreenRecord]
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: io.github.whrss9527.pop.plugin.screenRecord
+        POP_PLUGIN_ID: screenRecord
+        POP_PLUGIN_ENTRY: PopScreenRecordEntry
+
+  PopScrollCapture:
+    templates: [PopPlugin]
+    sources: [PluginBundles/ScrollCapture]
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: io.github.whrss9527.pop.plugin.scrollCapture
+        POP_PLUGIN_ID: scrollCapture
+        POP_PLUGIN_ENTRY: PopScrollCaptureEntry
+
+  PopShowKeystrokes:
+    templates: [PopPlugin]
+    sources: [PluginBundles/ShowKeystrokes]
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: io.github.whrss9527.pop.plugin.showKeystrokes
+        POP_PLUGIN_ID: showKeystrokes
+        POP_PLUGIN_ENTRY: PopShowKeystrokesEntry
+
+  PopFolderTree:
+    templates: [PopPlugin]
+    sources: [PluginBundles/FolderTree]
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: io.github.whrss9527.pop.plugin.folderTree
+        POP_PLUGIN_ID: folderTree
+        POP_PLUGIN_ENTRY: PopFolderTreeEntry
+
+  PopZip:
+    templates: [PopPlugin]
+    sources: [PluginBundles/Zip]
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: io.github.whrss9527.pop.plugin.zip
+        POP_PLUGIN_ID: zip
+        POP_PLUGIN_ENTRY: PopZipEntry
+
+  PopPDF:
+    templates: [PopPlugin]
+    sources: [PluginBundles/PDF]
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: io.github.whrss9527.pop.plugin.pdf
+        POP_PLUGIN_ID: pdf
+        POP_PLUGIN_ENTRY: PopPDFEntry
+
+  PopVideoConvert:
+    templates: [PopPlugin]
+    sources: [PluginBundles/VideoConvert]
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: io.github.whrss9527.pop.plugin.videoConvert
+        POP_PLUGIN_ID: videoConvert
+        POP_PLUGIN_ENTRY: PopVideoConvertEntry
+
+  PopTrimMedia:
+    templates: [PopPlugin]
+    sources: [PluginBundles/TrimMedia]
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: io.github.whrss9527.pop.plugin.trimMedia
+        POP_PLUGIN_ID: trimMedia
+        POP_PLUGIN_ENTRY: PopTrimMediaEntry
+
+  PopTranscribe:
+    templates: [PopPlugin]
+    sources: [PluginBundles/Transcribe]
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: io.github.whrss9527.pop.plugin.transcribe
+        POP_PLUGIN_ID: transcribe
+        POP_PLUGIN_ENTRY: PopTranscribeEntry
+
+  PopAirDrop:
+    templates: [PopPlugin]
+    sources: [PluginBundles/AirDrop]
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: io.github.whrss9527.pop.plugin.airDrop
+        POP_PLUGIN_ID: airDrop
+        POP_PLUGIN_ENTRY: PopAirDropEntry
+
+  PopSendToPhone:
+    templates: [PopPlugin]
+    sources: [PluginBundles/SendToPhone]
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: io.github.whrss9527.pop.plugin.sendToPhone
+        POP_PLUGIN_ID: sendToPhone
+        POP_PLUGIN_ENTRY: PopSendToPhoneEntry
+
+  PopOpenInTerminal:
+    templates: [PopPlugin]
+    sources: [PluginBundles/OpenInTerminal]
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: io.github.whrss9527.pop.plugin.openInTerminal
+        POP_PLUGIN_ID: openInTerminal
+        POP_PLUGIN_ENTRY: PopOpenInTerminalEntry
+
+  PopKeepAwake:
+    templates: [PopPlugin]
+    sources: [PluginBundles/KeepAwake]
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: io.github.whrss9527.pop.plugin.keepAwake
+        POP_PLUGIN_ID: keepAwake
+        POP_PLUGIN_ENTRY: PopKeepAwakeEntry
+
+  PopSystemActions:
+    templates: [PopPlugin]
+    sources: [PluginBundles/SystemActions]
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: io.github.whrss9527.pop.plugin.systemActions
+        POP_PLUGIN_ID: systemActions
+        POP_PLUGIN_ENTRY: PopSystemActionsEntry
+
+  PopTimer:
+    templates: [PopPlugin]
+    sources: [PluginBundles/Timer]
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: io.github.whrss9527.pop.plugin.timer
+        POP_PLUGIN_ID: timer
+        POP_PLUGIN_ENTRY: PopTimerEntry
+
   PopTests:
     type: bundle.unit-test
     platform: macOS
@@ -528,6 +744,30 @@ targets:
       - path: PluginBundles/CameraBubble
       - path: PluginBundles/PointerHighlight
       - path: PluginBundles/Teleprompter
+      - path: PluginBundles/Timer
+      - path: PluginBundles/SystemActions
+      - path: PluginBundles/KeepAwake
+      - path: PluginBundles/OpenInTerminal
+      - path: PluginBundles/SendToPhone
+      - path: PluginBundles/AirDrop
+      - path: PluginBundles/Transcribe
+      - path: PluginBundles/TrimMedia
+      - path: PluginBundles/VideoConvert
+      - path: PluginBundles/PDF
+      - path: PluginBundles/Zip
+      - path: PluginBundles/FolderTree
+      - path: PluginBundles/ShowKeystrokes
+      - path: PluginBundles/ScrollCapture
+      - path: PluginBundles/ScreenRecord
+      - path: PluginBundles/ScanCode
+      - path: PluginBundles/RemoveBackground
+      - path: PluginBundles/Redact
+      - path: PluginBundles/CropImage
+      - path: PluginBundles/IDPhoto
+      - path: PluginBundles/StitchImages
+      - path: PluginBundles/ImageConvert
+      - path: PluginBundles/TextDiff
+      - path: PluginBundles/ScreenshotTranslate
       - path: PluginBundles/CharInfo
       - path: PluginBundles/JWT
       - path: PluginBundles/LinkInspect
@@ -590,6 +830,30 @@ schemes:
         PopCameraBubble: all
         PopPointerHighlight: all
         PopTeleprompter: all
+        PopTimer: all
+        PopSystemActions: all
+        PopKeepAwake: all
+        PopOpenInTerminal: all
+        PopSendToPhone: all
+        PopAirDrop: all
+        PopTranscribe: all
+        PopTrimMedia: all
+        PopVideoConvert: all
+        PopPDF: all
+        PopZip: all
+        PopFolderTree: all
+        PopShowKeystrokes: all
+        PopScrollCapture: all
+        PopScreenRecord: all
+        PopScanCode: all
+        PopRemoveBackground: all
+        PopRedact: all
+        PopCropImage: all
+        PopIDPhoto: all
+        PopStitchImages: all
+        PopImageConvert: all
+        PopTextDiff: all
+        PopScreenshotTranslate: all
         PopCharInfo: all
         PopJWT: all
         PopLinkInspect: all

@@ -2276,3 +2276,5 @@
 "显示" = "Show";
 "还没有装插件" = "No plugins installed yet";
 "已装 %lld 个插件，一共占用 %@" = "%lld plugins installed, using %@";
+"压缩和解压" = "Zip and Unzip";
+"把选中的文件或文件夹压缩成 zip，存在原来的文件夹里；把选中的 zip 解压到旁边的同名文件夹里" = "Compress the selected files or folders into a zip in the same folder, or extract the selected zip files into folders next to them";
