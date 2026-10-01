@@ -6266,24 +6266,32 @@ function calParse(text, today) {
   const t = (text || '').trim();
   if (!t || t.length > 40 || /\n/.test(t)) return null;
   const year = calCivil(today)[0];
-  const valid = (y, m, d) => y >= 1900 && y <= 2100 && m >= 1 && m <= 12 && d >= 1 && d <= calLength(y, m);
-  let m = t.match(/^(\d{4})\s*[-/.年]\s*(\d{1,2})\s*[-/.月]\s*(\d{1,2})\s*日?(?:[\sT]+\d{1,2}:\d{2}(?::\d{2})?)?$/);
+  // 年份不限：1900–2100 年以外的由卡片说「只能查 1900–2100 年」
+  const valid = (y, m, d) => m >= 1 && m <= 12 && d >= 1 && d <= calLength(y, m);
+  // 「2026-10-01T00:30:00+08:00」这样的时间戳：用写着的年月日，不按时区换算
+  let m = t.match(/^(\d{4})\s*[-/.年]\s*(\d{1,2})\s*[-/.月]\s*(\d{1,2})\s*日?(?:[\sT]+\d{1,2}:\d{2}.*)?$/);
   if (m) return valid(+m[1], +m[2], +m[3]) ? calNumber(+m[1], +m[2], +m[3]) : null;
   if ((m = t.match(/^(\d{4})\s*(?:年|[-/.])\s*(\d{1,2})\s*月?$/)) && valid(+m[1], +m[2], 1)) return calNumber(+m[1], +m[2], 1);
   if ((m = t.match(/^(\d{1,2})\s*月\s*(\d{1,2})\s*[日号]?$/))) return valid(year, +m[1], +m[2]) ? calNumber(year, +m[1], +m[2]) : null;
-  const wanted = new Set([t, t + '节'].map((x) => x.toLowerCase()));
-  const matches = (name) => wanted.has(name.toLowerCase());
+  // 「中秋」补上「节」、「清明节」去掉「节」再比；不分大小写，弯撇号和直撇号一样
+  const norm = (x) => x.toLowerCase().replace(/\u2019/g, "'");
+  const wanted = new Set([t, t + '节'].concat(t.endsWith('节') ? [t.slice(0, -1)] : []).map(norm));
+  const matches = (name) => wanted.has(norm(name));
   const candidates = [];
   const termIndex = CAL_TERM_NAMES.zh.findIndex((name, i) => matches(name) || matches(CAL_TERM_NAMES.en[i]));
   const festival = Object.entries(CAL_LUNAR_FESTIVALS).find(([, names]) => names.some(matches));
   const isEve = CAL_EVE.some(matches);
-  for (const target of [year, year + 1]) {
-    if (termIndex >= 0) candidates.push(calNumber(target, Math.floor(termIndex / 2) + 1, calTermDay(termIndex, target)));
+  // 农历的节日从上一个农历年找起：公历一二月里，快到的除夕、腊八还是上一个农历年的
+  for (const target of [year - 1, year, year + 1]) {
     if (festival) {
       const [lm, ld] = festival[0].split('-').map(Number);
       candidates.push(calLunarNumber(target, lm, ld));
     }
     if (isEve) { const next = calLunarNumber(target + 1, 1, 1); if (next != null) candidates.push(next - 1); }
+  }
+  for (const target of [year, year + 1]) {
+    const termDay = termIndex >= 0 ? calTermDay(termIndex, target) : null;
+    if (termDay != null) candidates.push(calNumber(target, Math.floor(termIndex / 2) + 1, termDay));
     for (const [key, names] of Object.entries(CAL_SOLAR_FESTIVALS)) {
       if (names.some(matches)) { const [fm, fd] = key.split('-').map(Number); candidates.push(calNumber(target, fm, fd)); }
     }
@@ -6302,8 +6310,8 @@ function calParse(text, today) {
   }
   const upcoming = candidates.filter((n) => n != null && n >= today);
   if (upcoming.length) return Math.min(...upcoming);
-  // 英文的写法交给浏览器认（「October 1, 2026」）
-  if (/[a-z]/i.test(t)) {
+  // 英文的写法交给浏览器认（「October 1, 2026」），要写着英文的月份
+  if (/\b(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*\b/i.test(t)) {
     const ms = Date.parse(t);
     if (!Number.isNaN(ms)) { const d = new Date(ms); return calNumber(d.getFullYear(), d.getMonth() + 1, d.getDate()); }
   }
@@ -6324,7 +6332,9 @@ function showCalendar(content, anchor) {
   const text = (content?.text || '').trim();
   const parsed = calParse(text, today);
   const clampDay = (n) => Math.min(Math.max(n, CAL_MIN), CAL_MAX);
-  let selected = clampDay(parsed ?? today);
+  // 1900–2100 年以外的日子翻不到：停在今天，说一声
+  const outOfRange = parsed != null && clampDay(parsed) !== parsed;
+  let selected = outOfRange ? today : clampDay(parsed ?? today);
   let [year, month] = calCivil(selected);
   const firstWeekday = zh ? 2 : 1;
   const utc = (n) => new Date(n * 86400000);
@@ -6409,8 +6419,9 @@ function showCalendar(content, anchor) {
     }
     grid.replaceChildren(...cells);
     const term = S.lunar ? nextTerm() : null;
-    const termLine = term ? (zh ? `下一个节气：${CAL_TERM_NAMES.zh[term[0]]}，${calCivil(term[1])[1]}月${calCivil(term[1])[2]}日，还有 ${term[1] - selected} 天`
-      : `Next solar term: ${CAL_TERM_NAMES.en[term[0]]} on ${new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric', timeZone: 'UTC' }).format(utc(term[1]))}, in ${term[1] - selected} days`) : null;
+    const termDays = term ? term[1] - selected : 0;
+    const termLine = term ? (zh ? `下一个节气：${CAL_TERM_NAMES.zh[term[0]]}，${calCivil(term[1])[1]}月${calCivil(term[1])[2]}日，${termDays === 1 ? '就是明天' : `还有 ${termDays} 天`}`
+      : `Next solar term: ${CAL_TERM_NAMES.en[term[0]]} on ${new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric', timeZone: 'UTC' }).format(utc(term[1]))}, ${termDays === 1 ? 'tomorrow' : `in ${termDays} days`}`) : null;
     const [sy] = calCivil(selected);
     const weekLine = zh ? `第 ${calIsoWeek(selected)} 周 · 全年第 ${selected - calNumber(sy, 1, 1) + 1} 天` : `Week ${calIsoWeek(selected)} · Day ${selected - calNumber(sy, 1, 1) + 1} of the year`;
     detail.replaceChildren(...[h('div', { class: 'top' }, h('b', null, dateText(selected)), h('span', { class: selected === today ? 'today' : '' }, relative(selected))),
@@ -6420,7 +6431,8 @@ function showCalendar(content, anchor) {
       termLine ? h('div', { class: 'muted' }, termLine) : null].filter(Boolean));
   }
   draw();
-  const note = text && parsed == null ? h('div', { class: 'cal-note' }, zh ? '没认出选中的文字是哪一天，下面是这个月' : 'Couldn’t tell which day the selection is, so here is this month') : null;
+  const note = outOfRange ? h('div', { class: 'cal-note' }, zh ? '万年历只能查 1900–2100 年，下面是这个月' : 'The calendar only covers 1900 to 2100, so here is this month')
+    : text && parsed == null ? h('div', { class: 'cal-note' }, zh ? '没认出选中的文字是哪一天，下面是这个月' : 'Couldn’t tell which day the selection is, so here is this month') : null;
   presentCard(cardShell({ title: L(P.calendar.name), width: 380, children: [note, head, grid, detail, foot].filter(Boolean) }), anchor, { onKey: (event) => {
     if (event.isComposing) return false;
     const meta = event.metaKey || event.ctrlKey;

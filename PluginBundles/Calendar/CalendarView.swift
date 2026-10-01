@@ -23,6 +23,8 @@ final class CalendarModel: ObservableObject {
     let firstWeekday: Int
     /// 选中了文字，但是没认出是哪一天
     let unrecognized: Bool
+    /// 选中的日子不在 1900–2100 年里：翻不到，停在今天
+    let outOfRange: Bool
     var onCopy: (String) -> Void = { _ in }
     private let defaults: UserDefaults?
 
@@ -36,7 +38,9 @@ final class CalendarModel: ObservableObject {
         self.today = today
         let parsed = text.flatMap { CalendarMonth.parse($0, today: today) }
         unrecognized = parsed == nil && !(text ?? "").trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-        let selected = Self.clamped(parsed ?? today)
+        let isOutOfRange = parsed.map { CalendarModel.clamped($0) != $0 } ?? false
+        outOfRange = isOutOfRange
+        let selected = Self.clamped(isOutOfRange ? today : parsed ?? today)
         self.selected = selected
         let date = LunarTable.civil(fromDayNumber: selected)
         year = date.year
@@ -173,7 +177,10 @@ final class CalendarModel: ObservableObject {
         guard showsLunar, let next = CalendarMonth.nextSolarTerm(after: selected) else { return nil }
         let name = SolarTerms.name(next.index)
         let date = Self.formatter("MMMMd").string(from: Self.date(next.number))
-        return String(localized: "下一个节气：\(name)，\(date)，还有 \(next.number - selected) 天")
+        let days = next.number - selected
+        return days == 1
+            ? String(localized: "下一个节气：\(name)，\(date)，就是明天")
+            : String(localized: "下一个节气：\(name)，\(date)，还有 \(days) 天")
     }
 
     /// 复制的那一行：「2026年10月1日 星期四 农历丙午年（马年）八月廿一 国庆节」
@@ -238,7 +245,11 @@ struct CalendarView: View {
 
     var body: some View {
         CardContainer(title: String(localized: "万年历"), width: 380, onClose: onClose) {
-            if model.unrecognized {
+            if model.outOfRange {
+                Text("万年历只能查 1900–2100 年，下面是这个月")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            } else if model.unrecognized {
                 Text("没认出选中的文字是哪一天，下面是这个月")
                     .font(.caption)
                     .foregroundStyle(.secondary)
@@ -383,6 +394,11 @@ private struct DayCell: View {
         .contentShape(Rectangle())
         .onTapGesture(perform: action)
         .onHover { hovering = $0 }
+        // 读屏时一格是一个按钮：念出日期和格子里的农历、节日
+        .accessibilityElement(children: .combine)
+        .accessibilityAddTraits(.isButton)
+        .accessibilityAddTraits(isSelected ? AccessibilityTraits.isSelected : [])
+        .accessibilityAction { action() }
     }
 
     private var noteColor: Color {

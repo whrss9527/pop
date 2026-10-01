@@ -184,6 +184,11 @@ enum CalendarMonth {
         let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty, trimmed.count <= 40, !trimmed.contains(where: \.isNewline) else { return nil }
         let year = LunarTable.civil(fromDayNumber: today).year
+        // 「2026-10-01T00:30:00+08:00」这样的时间戳：直接用写着的年月日，不按时区换算成别的日子
+        if let match = numbers(in: trimmed, pattern: #"^(\d{4})-(\d{1,2})-(\d{1,2})(?:[T ].*)?$"#),
+           (1...12).contains(match[1]), (1...length(year: match[0], month: match[1])).contains(match[2]) {
+            return LunarTable.dayNumber(year: match[0], month: match[1], day: match[2])
+        }
         if let date = DateParser.parse(trimmed, timeZone: TimeZone(identifier: "UTC") ?? .current) {
             var calendar = Calendar(identifier: .gregorian)
             calendar.timeZone = TimeZone(identifier: "UTC") ?? .current
@@ -221,25 +226,31 @@ enum CalendarMonth {
 
     /// 节日、节气的名字（中文，或者英文界面里的名字）：今天以后（含今天）最近的那次
     private static func namedDay(_ text: String, today: Int) -> Int? {
-        // 「中秋」「端午」「国庆」也认：补上「节」再比
-        let wanted = Set([text, text + "节"].map { $0.lowercased() })
+        // 「中秋」「端午」「国庆」也认：补上「节」再比；「清明节」「七夕节」去掉「节」再比
+        var wanted = Set([text, text + "节"].map(comparable))
+        if text.hasSuffix("节") {
+            wanted.insert(comparable(String(text.dropLast())))
+        }
         func matches(_ name: String) -> Bool {
-            wanted.contains(name.lowercased())
+            wanted.contains(comparable(name))
         }
         let term = SolarTerms.names.indices.first { matches(SolarTerms.names[$0]) || matches(SolarTerms.name($0)) }
         let festival = LunarCalendar.festivalDays.first { matches($0.name) || matches(localizedLunarFestival($0.name)) }
         let isEve = matches("除夕") || matches(localizedLunarFestival("除夕"))
         let year = LunarTable.civil(fromDayNumber: today).year
         var candidates: [Int] = []
-        for target in [year, year + 1] {
-            if let term, let day = SolarTerms.day(ofTerm: term, in: target) {
-                candidates.append(LunarTable.dayNumber(year: target, month: SolarTerms.month(ofTerm: term), day: day))
-            }
+        // 农历的节日从上一个农历年找起：公历一二月里，快到的除夕、腊八还是上一个农历年的
+        for target in [year - 1, year, year + 1] {
             if let festival, let number = LunarTable.dayNumber(lunarYear: target, month: festival.month, day: festival.day) {
                 candidates.append(number)
             }
             if isEve, let next = LunarTable.dayNumber(lunarYear: target + 1, month: 1, day: 1) {
                 candidates.append(next - 1)
+            }
+        }
+        for target in [year, year + 1] {
+            if let term, let day = SolarTerms.day(ofTerm: term, in: target) {
+                candidates.append(LunarTable.dayNumber(year: target, month: SolarTerms.month(ofTerm: term), day: day))
             }
             for month in 1...12 {
                 for day in 1...length(year: target, month: month) {
@@ -251,6 +262,11 @@ enum CalendarMonth {
             }
         }
         return candidates.filter { $0 >= today }.min()
+    }
+
+    /// 比较节日名字时不分大小写，弯撇号（Mother’s Day）和直撇号（Mother's Day）一样
+    private static func comparable(_ name: String) -> String {
+        name.lowercased().replacingOccurrences(of: "\u{2019}", with: "'")
     }
 
     private static let lunarMonths = ["正": 1, "一": 1, "二": 2, "三": 3, "四": 4, "五": 5, "六": 6, "七": 7, "八": 8, "九": 9,

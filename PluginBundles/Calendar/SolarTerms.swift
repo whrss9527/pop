@@ -93,12 +93,12 @@ enum SolarTerms {
         return localizedNames[index]
     }
 
-    private static var localizedNames: [String] {
+    private static let localizedNames: [String] = {
         [String(localized: "小寒"), String(localized: "大寒"), String(localized: "立春"), String(localized: "雨水"),
          String(localized: "惊蛰"), String(localized: "春分"), String(localized: "清明"), String(localized: "谷雨"),
          String(localized: "立夏"), String(localized: "小满"), String(localized: "芒种"), String(localized: "夏至"),
          String(localized: "小暑"), String(localized: "大暑"), String(localized: "立秋"), String(localized: "处暑"),
          String(localized: "白露"), String(localized: "秋分"), String(localized: "寒露"), String(localized: "霜降"),
          String(localized: "立冬"), String(localized: "小雪"), String(localized: "大雪"), String(localized: "冬至")]
-    }
+    }()
 }

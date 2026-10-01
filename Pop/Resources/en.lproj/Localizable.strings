@@ -3072,6 +3072,8 @@
 "农历%@" = "Lunar: %@";
 "下一个节气：%@，%@，还有 %lld 天" = "Next solar term: %1$@ on %2$@, in %3$lld days";
 "没认出选中的文字是哪一天，下面是这个月" = "Couldn’t tell which day the selection is, so here is this month";
+"下一个节气：%@，%@，就是明天" = "Next solar term: %1$@ on %2$@, tomorrow";
+"万年历只能查 1900–2100 年，下面是这个月" = "The calendar only covers 1900 to 2100, so here is this month";
 "上个月" = "Previous Month";
 "下个月" = "Next Month";
 "农历和节气" = "Lunar Dates & Solar Terms";

@@ -191,6 +191,15 @@ final class CalendarTests: XCTestCase {
         XCTAssertEqual(parse("腊月初八"), number(2027, 1, 15))
         XCTAssertEqual(CalendarMonth.parse("闰六月初一", today: number(2025, 1, 1)), number(2025, 7, 25))
         XCTAssertEqual(parse("October 1, 2026"), today)
+        // 时间戳用写着的年月日，不按时区换算
+        XCTAssertEqual(parse("2026-10-01T00:30:00+08:00"), today)
+        XCTAssertEqual(parse("2026-10-01 23:59:59 -0700"), today)
+        // 「清明节」「七夕节」去掉「节」也认
+        XCTAssertEqual(parse("清明节"), number(2027, 4, 5))
+        XCTAssertEqual(parse("七夕节"), number(2027, 8, 8))
+        // 公历一二月里，快到的除夕、腊八还是上一个农历年的
+        XCTAssertEqual(CalendarMonth.parse("除夕", today: number(2027, 1, 10)), number(2027, 2, 5))
+        XCTAssertEqual(CalendarMonth.parse("腊八", today: number(2026, 1, 10)), number(2026, 1, 26))
         XCTAssertNil(parse("你好"))
         XCTAssertNil(parse(""))
         XCTAssertNil(parse("2026-10-01\n2026-10-02"))
@@ -290,7 +299,16 @@ final class CalendarTests: XCTestCase {
         XCTAssertEqual(opened.relativeText, "349 天后")
         let unknown = makeModel(text: "你好")
         XCTAssertTrue(unknown.unrecognized)
+        XCTAssertFalse(unknown.outOfRange)
         XCTAssertTrue(unknown.isShowingToday)
+        // 1900–2100 年以外的日子翻不到：停在今天，说一声
+        let far = makeModel(text: "2150-01-01")
+        XCTAssertTrue(far.outOfRange)
+        XCTAssertFalse(far.unrecognized)
+        XCTAssertTrue(far.isShowingToday)
+        // 下一个节气就在明天
+        opened.select(number(2026, 10, 7))
+        XCTAssertEqual(opened.nextTermText, "下一个节气：寒露，10月8日，就是明天")
 
         // 显不显示农历会记住；没设过时中文界面默认显示
         let defaults = freshDefaults()
