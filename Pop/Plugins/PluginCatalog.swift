@@ -324,6 +324,9 @@ enum PluginCatalog {
         PluginPackage(id: "systemInfo", bundleName: "PopSystemInfo", name: String(localized: "系统信息"),
                       summary: String(localized: "看这台 Mac 的型号、芯片和核心数、内存、macOS 版本、开机多久、启动磁盘还剩多少、每台显示器的分辨率和刷新率，可以一键复制，报问题、问人时用"),
                       symbol: "info.circle", category: .files, functions: [BuiltinPluginID.systemInfo]),
+        PluginPackage(id: "soundDevices", bundleName: "PopSoundDevices", name: String(localized: "声音设备"),
+                      summary: String(localized: "一下子换声音从哪出、用哪个麦克风：扬声器、耳机、AirPods、显示器、AirPlay，还能调音量、静音"),
+                      symbol: "hifispeaker", category: .files, functions: [BuiltinPluginID.soundDevices]),
     ]
 
     /// 插件包提供的所有功能

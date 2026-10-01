@@ -2747,3 +2747,15 @@
 "%lld 天 %lld 小时" = "%lld days %lld hr";
 "%@ · 可用 %@，共 %@" = "%@ · %@ available of %@";
 "（像素 %@）" = " (%@ pixels)";
+"声音设备" = "Sound Devices";
+"一下子换声音从哪出、用哪个麦克风：扬声器、耳机、AirPods、显示器、AirPlay，还能调音量、静音" = "Switch where sound plays and which microphone is used in one go: speakers, headphones, AirPods, displays or AirPlay, and adjust the volume or mute";
+"没有找到声音设备" = "No sound devices found";
+"输出" = "Output";
+"声音设置" = "Sound Settings";
+"换不成「%@」" = "Couldn’t switch to “%@”";
+"没有能用的输入设备" = "No input devices available";
+"没有能用的输出设备" = "No output devices available";
+"虚拟设备" = "Virtual Device";
+"聚合设备" = "Aggregate Device";
+"MacBook Pro 扬声器" = "MacBook Pro Speakers";
+"MacBook Pro 麦克风" = "MacBook Pro Microphone";

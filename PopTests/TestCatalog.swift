@@ -79,6 +79,7 @@ enum TestCatalog {
         BatteryInfoEntry.self,
         VoiceRecorderEntry.self,
         SystemInfoEntry.self,
+        SoundDevicesEntry.self,
         SimilarPhotosEntry.self,
     ]
 
