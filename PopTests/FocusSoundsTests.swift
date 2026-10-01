@@ -1,4 +1,5 @@
 import AVFoundation
+import Synchronization
 import XCTest
 @testable import Pop
 
@@ -43,6 +44,9 @@ final class FocusSoundsTests: XCTestCase {
         let suite = "PopFocusSoundsTests-\(UUID().uuidString)"
         let defaults = UserDefaults(suiteName: suite) ?? .standard
         defaults.removePersistentDomain(forName: suite)
+        addTeardownBlock {
+            UserDefaults.standard.removePersistentDomain(forName: suite)
+        }
         return defaults
     }
 

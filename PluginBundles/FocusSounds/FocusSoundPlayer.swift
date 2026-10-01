@@ -132,13 +132,21 @@ final class NoiseEngine: FocusSoundEngine {
         }
     }
 
-    /// 只放声音的话输出那头会自己转换采样率，重新开起来就行
-    private func restartAfterDeviceChange() {
+    /// 只放声音的话输出那头会自己转换采样率，重新开起来就行。刚连上 AirPods 时设备可能还没准备好，起不来就过一秒再试一次
+    private func restartAfterDeviceChange(retrying: Bool = true) {
         guard wantsRunning, let engine, !engine.isRunning else { return }
         do {
             engine.prepare()
             try engine.start()
         } catch {
+            if retrying {
+                DispatchQueue.main.asyncAfter(deadline: .now() + 1) { [weak self] in
+                    MainActor.assumeIsolated {
+                        self?.restartAfterDeviceChange(retrying: false)
+                    }
+                }
+                return
+            }
             wantsRunning = false
             onFailure?(error.localizedDescription)
         }
@@ -245,7 +253,7 @@ final class FocusSoundPlayer: ObservableObject {
             break
         }
         state = .playing
-        startTicker()
+        updateTicker()
         updateStatusItem()
     }
 
@@ -274,6 +282,7 @@ final class FocusSoundPlayer: ObservableObject {
         pausedRemaining = endsAt.map { max(0, $0.timeIntervalSince(now())) }
         endsAt = nil
         state = .paused
+        updateTicker()
         updateStatusItem()
     }
 
@@ -283,8 +292,7 @@ final class FocusSoundPlayer: ObservableObject {
         endsAt = nil
         pausedRemaining = nil
         fade = 1
-        ticker?.invalidate()
-        ticker = nil
+        updateTicker()
         statusItem?.remove()
         statusItem = nil
     }
@@ -297,6 +305,7 @@ final class FocusSoundPlayer: ObservableObject {
         restartTimer()
         fade = 1
         applyVolume()
+        updateTicker()
         updateStatusItem()
     }
 
@@ -390,12 +399,20 @@ final class FocusSoundPlayer: ObservableObject {
         pausedRemaining = nil
     }
 
-    private func startTicker() {
-        guard usesTimers, ticker == nil else { return }
-        ticker = Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { [weak self] _ in
-            MainActor.assumeIsolated {
-                self?.tick()
+    /// 有定时、正在放的时候每秒走一次（菜单、弹出菜单开着时也走），别的时候不用
+    private func updateTicker() {
+        let needed = usesTimers && state == .playing && endsAt != nil
+        if needed, ticker == nil {
+            let timer = Timer(timeInterval: 1, repeats: true) { [weak self] _ in
+                MainActor.assumeIsolated {
+                    self?.tick()
+                }
             }
+            RunLoop.main.add(timer, forMode: .common)
+            ticker = timer
+        } else if !needed {
+            ticker?.invalidate()
+            ticker = nil
         }
     }
 
