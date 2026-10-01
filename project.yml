@@ -914,6 +914,15 @@ targets:
         POP_PLUGIN_ID: systemInfo
         POP_PLUGIN_ENTRY: PopSystemInfoEntry
 
+  PopSoundDevices:
+    templates: [PopPlugin]
+    sources: [PluginBundles/SoundDevices]
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: io.github.whrss9527.pop.plugin.soundDevices
+        POP_PLUGIN_ID: soundDevices
+        POP_PLUGIN_ENTRY: PopSoundDevicesEntry
+
   PopTests:
     type: bundle.unit-test
     platform: macOS
@@ -942,6 +951,7 @@ targets:
       - path: PluginBundles/BatteryInfo
       - path: PluginBundles/VoiceRecorder
       - path: PluginBundles/SystemInfo
+      - path: PluginBundles/SoundDevices
       - path: PluginBundles/Beautify
       - path: PluginBundles/Spotlight
       - path: PluginBundles/Timer
@@ -1048,6 +1058,7 @@ schemes:
         PopBatteryInfo: all
         PopVoiceRecorder: all
         PopSystemInfo: all
+        PopSoundDevices: all
         PopBeautify: all
         PopSpotlight: all
         PopTimer: all
