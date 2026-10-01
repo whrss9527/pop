@@ -340,6 +340,10 @@ enum PluginCatalog {
         PluginPackage(id: "chart", bundleName: "PopChart", name: String(localized: "生成图表"),
                       summary: String(localized: "选中表格、一行一个「名字 数值」或者一串数，画成柱状图、条形图、折线图或者饼图，复制成图片或者存到「下载」"),
                       symbol: "chart.bar.xaxis", category: .convert, functions: [BuiltinPluginID.chart], defaultsKeys: ["pop.chart.showsValues"]),
+        PluginPackage(id: "focusSounds", bundleName: "PopFocusSounds", name: String(localized: "白噪音"),
+                      summary: String(localized: "放白噪音、粉红噪音、棕色噪音、雨声或者海浪，盖住周围的说话声，专心做事、午睡时用；可以调音量、定时停止。声音在本机实时生成，关掉卡片也接着放，菜单栏的耳机图标可以暂停、停止"),
+                      symbol: "headphones", category: .files, functions: [BuiltinPluginID.focusSounds],
+                      defaultsKeys: ["pop.focusSounds.sound", "pop.focusSounds.volume", "pop.focusSounds.timer"]),
     ]
 
     /// 插件包提供的所有功能

@@ -959,6 +959,15 @@ targets:
         POP_PLUGIN_ID: chart
         POP_PLUGIN_ENTRY: PopChartEntry
 
+  PopFocusSounds:
+    templates: [PopPlugin]
+    sources: [PluginBundles/FocusSounds]
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: io.github.whrss9527.pop.plugin.focusSounds
+        POP_PLUGIN_ID: focusSounds
+        POP_PLUGIN_ENTRY: PopFocusSoundsEntry
+
   PopTests:
     type: bundle.unit-test
     platform: macOS
@@ -969,6 +978,7 @@ targets:
       - path: PluginBundles/CameraBubble
       - path: PluginBundles/PointerHighlight
       - path: PluginBundles/Teleprompter
+      - path: PluginBundles/FocusSounds
       - path: PluginBundles/Zoom
       - path: PluginBundles/CompareImages
       - path: PluginBundles/SplitImage
@@ -1080,6 +1090,7 @@ schemes:
         PopCameraBubble: all
         PopPointerHighlight: all
         PopTeleprompter: all
+        PopFocusSounds: all
         PopZoom: all
         PopCompareImages: all
         PopSplitImage: all

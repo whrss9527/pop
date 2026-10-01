@@ -85,6 +85,7 @@ enum TestCatalog {
         WorldTimeEntry.self,
         ChartEntry.self,
         SimilarPhotosEntry.self,
+        FocusSoundsEntry.self,
     ]
 
     static func plugins() -> [any PopPlugin] {

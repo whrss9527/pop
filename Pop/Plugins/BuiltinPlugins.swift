@@ -67,7 +67,7 @@ enum BuiltinPlugins {
         BuiltinPluginID.batchRename, BuiltinPluginID.revealInFinder, BuiltinPluginID.openWith, BuiltinPluginID.zip, BuiltinPluginID.encryptFiles,
         BuiltinPluginID.unzip, BuiltinPluginID.pdf, BuiltinPluginID.videoConvert, BuiltinPluginID.trimMedia,
         BuiltinPluginID.transcribe, BuiltinPluginID.shelf, BuiltinPluginID.openInTerminal, BuiltinPluginID.keepAwake,
-        BuiltinPluginID.systemActions, BuiltinPluginID.quitApps, BuiltinPluginID.uninstallApp, BuiltinPluginID.appInfo, BuiltinPluginID.batteryInfo, BuiltinPluginID.systemInfo, BuiltinPluginID.soundDevices, BuiltinPluginID.resolution, BuiltinPluginID.diskSpeed, BuiltinPluginID.cleanKeyboard, BuiltinPluginID.timer,
+        BuiltinPluginID.systemActions, BuiltinPluginID.quitApps, BuiltinPluginID.uninstallApp, BuiltinPluginID.appInfo, BuiltinPluginID.batteryInfo, BuiltinPluginID.systemInfo, BuiltinPluginID.soundDevices, BuiltinPluginID.resolution, BuiltinPluginID.diskSpeed, BuiltinPluginID.cleanKeyboard, BuiltinPluginID.timer, BuiltinPluginID.focusSounds,
         BuiltinPluginID.clipboardHistory,
         BuiltinPluginID.snippets, BuiltinPluginID.allPlugins, BuiltinPluginID.settings,
     ]
@@ -154,7 +154,7 @@ enum BuiltinCategory: CaseIterable, Identifiable {
                  BuiltinPluginID.shelf, BuiltinPluginID.airDrop, BuiltinPluginID.sendToPhone,
                  BuiltinPluginID.windowLayout, BuiltinPluginID.menuShortcuts,
                  BuiltinPluginID.keepAwake, BuiltinPluginID.systemActions, BuiltinPluginID.quitApps, BuiltinPluginID.uninstallApp, BuiltinPluginID.appInfo, BuiltinPluginID.batteryInfo, BuiltinPluginID.systemInfo, BuiltinPluginID.soundDevices, BuiltinPluginID.resolution, BuiltinPluginID.diskSpeed,
-                 BuiltinPluginID.cleanKeyboard, BuiltinPluginID.timer],
+                 BuiltinPluginID.cleanKeyboard, BuiltinPluginID.timer, BuiltinPluginID.focusSounds],
     ]
 
     /// 没有列出来的（剪贴板、全部功能、设置）都算「其他」

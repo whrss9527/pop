@@ -580,6 +580,37 @@
 "按住拖到别的地方" = "Drag to move elsewhere";
 "从架子上拿掉" = "Remove from Shelf";
 
+/* FocusSoundPlayer.swift */
+"还剩 %@" = "%@ left";
+"正在放%@" = "Playing %@";
+"%@ · 已暂停" = "%@ · Paused";
+"不限时" = "Off";
+"放不出声音：%@" = "Can’t play sound: %@";
+"接着放" = "Resume";
+
+/* FocusSounds.swift */
+"白噪音" = "White Noise";
+"粉红噪音" = "Pink Noise";
+"棕色噪音" = "Brown Noise";
+"雨声" = "Rain";
+"海浪" = "Waves";
+"各个频率一样响，最能盖住说话声和键盘声" = "Every frequency equally loud; the best at covering voices and typing";
+"低音多一些，比白噪音柔和" = "More bass and softer than white noise";
+"低沉，像远处的瀑布、飞机舱里" = "Deep, like a distant waterfall or the inside of a plane";
+"细密的雨点打在窗上" = "Steady rain tapping on the window";
+"海浪一阵一阵地涌上来又退下去" = "Waves rolling in and drawing back";
+
+/* FocusSoundsPlugin.swift */
+"放白噪音、粉红噪音、棕色噪音、雨声或者海浪，盖住周围的说话声，专心做事、午睡时用；可以调音量、定时停止。声音在本机实时生成，关掉卡片也接着放，菜单栏的耳机图标可以暂停、停止" = "Play white, pink or brown noise, rain or waves to cover the chatter around you while you focus or nap, with a volume control and a sleep timer. The sound is generated on your Mac and keeps playing after you close the card; pause or stop it from the headphones icon in the menu bar";
+
+/* FocusSoundsView.swift */
+"音量" = "Volume";
+"关掉卡片也接着放，菜单栏的耳机图标可以暂停、停止" = "Keeps playing after you close the card; pause or stop it from the headphones icon in the menu bar";
+"定时停止" = "Sleep Timer";
+"播放" = "Play";
+"播放中" = "Playing";
+"已暂停" = "Paused";
+
 /* FolderCompare.swift */
 "第一个 " = "First: ";
 "第二个 " = "Second: ";
