@@ -13,8 +13,8 @@ final class VoiceRecorderEntry: NSObject, PopPluginBundle {
         host.excludeFromRecording {
             [VoiceRecorder.shared.windowNumber].compactMap { $0 }
         }
-        // CI 截图：录了 42 秒的小条（不开麦克风）
-        host.addDemoScene(PluginHost.DemoScene(name: "voiceRecorder", after: "pdfPages", order: 12, delay: 1.4, hold: 0, show: { demo in
+        // CI 截图：录了 42 秒的小条（不开麦克风）。小条不在浮窗里，截完才收起，所以 hold 不能是 0
+        host.addDemoScene(PluginHost.DemoScene(name: "voiceRecorder", after: "pdfPages", order: 12, delay: 1.4, show: { demo in
             let frame = VoiceRecorder.shared.showForDemo(on: demo.screen)
             // 小条很小，左右多截一些
             return frame.insetBy(dx: -40, dy: -8)
