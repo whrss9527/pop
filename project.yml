@@ -833,6 +833,15 @@ targets:
         POP_PLUGIN_ID: fileEncoding
         POP_PLUGIN_ENTRY: PopFileEncodingEntry
 
+  PopAppInfo:
+    templates: [PopPlugin]
+    sources: [PluginBundles/AppInfo]
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: io.github.whrss9527.pop.plugin.appInfo
+        POP_PLUGIN_ID: appInfo
+        POP_PLUGIN_ENTRY: PopAppInfoEntry
+
   PopTests:
     type: bundle.unit-test
     platform: macOS
@@ -852,6 +861,7 @@ targets:
       - path: PluginBundles/UninstallApp
       - path: PluginBundles/NewFile
       - path: PluginBundles/FileEncoding
+      - path: PluginBundles/AppInfo
       - path: PluginBundles/Beautify
       - path: PluginBundles/Spotlight
       - path: PluginBundles/Timer
@@ -949,6 +959,7 @@ schemes:
         PopUninstallApp: all
         PopNewFile: all
         PopFileEncoding: all
+        PopAppInfo: all
         PopBeautify: all
         PopSpotlight: all
         PopTimer: all

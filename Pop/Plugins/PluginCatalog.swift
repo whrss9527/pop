@@ -293,6 +293,9 @@ enum PluginCatalog {
                       symbol: "character.book.closed", category: .files, functions: [BuiltinPluginID.fileEncoding],
                       // 和插件包里 FileEncodingModel 的键一样
                       defaultsKeys: ["pop.fileEncoding.target", "pop.fileEncoding.lines"]),
+        PluginPackage(id: "appInfo", bundleName: "PopAppInfo", name: String(localized: "App 信息"),
+                      summary: String(localized: "看选中的 App 是给哪种芯片做的、谁签的名、有没有公证、在不在沙盒里、会要哪些权限、用什么做的、从哪下载的，可以复制下来"),
+                      symbol: "info.square", category: .files, functions: [BuiltinPluginID.appInfo]),
     ]
 
     /// 插件包提供的所有功能
