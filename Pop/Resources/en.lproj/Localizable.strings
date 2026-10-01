@@ -523,6 +523,8 @@
 "分类" = "Category";
 "插入" = "Insert";
 "回车插入 · ⌘C 复制" = "Return to insert · ⌘C to copy";
+"箭头符号" = "Arrows";
+"选中的文字不动，点一下复制" = "Your selection stays put; click to copy";
 
 /* EncryptedImage.swift */
 "密码至少 %@ 位" = "The password needs at least %@ characters";

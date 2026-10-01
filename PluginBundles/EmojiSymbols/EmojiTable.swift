@@ -525,9 +525,9 @@ enum EmojiTable {
     💃\t1\t0\t跳舞的女人\t优雅|佛拉门戈|女人|女舞者|探戈|舞者|萨尔萨舞|跳舞\twoman dancing\tdance|dancer|dancing|elegant|festive|flair|flamenco|groove|let’s|salsa|tango|woman\t💃🏻 💃🏼 💃🏽 💃🏾 💃🏿
     🕺\t1\t0\t跳舞的男人\t佛拉门戈|男人|男舞者|舞者|跳舞\tman dancing\tdance|dancer|dancing|elegant|festive|flair|flamenco|groove|let’s|man|salsa|tango\t🕺🏻 🕺🏼 🕺🏽 🕺🏾 🕺🏿
     🕴️\t1\t0\t西装革履的人\t商务|正装|男|西装革履\tperson in suit levitating\tbusiness|levitating|person|suit\t🕴🏻 🕴🏼 🕴🏽 🕴🏾 🕴🏿
-    👯\t1\t0\t戴兔耳朵的人\t兔子服|兔耳朵|双人舞|双胞胎|同好|永远的好朋友|派对|灵魂伴侣|聚会|舞者|跳舞|闺蜜\tpeople with bunny ears\tbestie|bff|bunny|counterpart|dancer|double|ear|identical|pair|party|partying|people|soulmate|twin|twinsies\t👯🏻 👯🏼 👯🏽 👯🏾 👯🏿
-    👯‍♂️\t1\t0\t兔先生\t兔耳朵|同好|永远的好朋友|派对|男生派对|聚会|跳舞\tmen with bunny ears\tbestie|bff|bunny|counterpart|dancer|double|ear|identical|men|pair|party|partying|people|soulmate|twin|twinsies\t👯🏻‍♂️ 👯🏼‍♂️ 👯🏽‍♂️ 👯🏾‍♂️ 👯🏿‍♂️
-    👯‍♀️\t1\t0\t兔女郎\t兔耳朵|女生派对|派对|聚会|跳舞\twomen with bunny ears\tbestie|bff|bunny|counterpart|dancer|double|ear|identical|pair|party|partying|people|soulmate|twin|twinsies|women\t👯🏻‍♀️ 👯🏼‍♀️ 👯🏽‍♀️ 👯🏾‍♀️ 👯🏿‍♀️
+    👯\t1\t0\t戴兔耳朵的人\t兔子服|兔耳朵|双人舞|双胞胎|同好|永远的好朋友|派对|灵魂伴侣|聚会|舞者|跳舞|闺蜜\tpeople with bunny ears\tbestie|bff|bunny|counterpart|dancer|double|ear|identical|pair|party|partying|people|soulmate|twin|twinsies\t
+    👯‍♂️\t1\t0\t兔先生\t兔耳朵|同好|永远的好朋友|派对|男生派对|聚会|跳舞\tmen with bunny ears\tbestie|bff|bunny|counterpart|dancer|double|ear|identical|men|pair|party|partying|people|soulmate|twin|twinsies\t
+    👯‍♀️\t1\t0\t兔女郎\t兔耳朵|女生派对|派对|聚会|跳舞\twomen with bunny ears\tbestie|bff|bunny|counterpart|dancer|double|ear|identical|pair|party|partying|people|soulmate|twin|twinsies|women\t
     🧖\t1\t0\t蒸房里的人\t在桑拿间的人|放松|桑拿|桑拿浴|蒸房|蒸气漫溢|蒸汽浴\tperson in steamy room\tday|luxurious|pamper|person|relax|room|sauna|spa|steam|steambath|unwind\t🧖🏻 🧖🏼 🧖🏽 🧖🏾 🧖🏿
     🧖‍♂️\t1\t0\t蒸房里的男人\t桑拿|男性桑拿\tman in steamy room\tday|luxurious|man|pamper|relax|room|sauna|spa|steam|steambath|unwind\t🧖🏻‍♂️ 🧖🏼‍♂️ 🧖🏽‍♂️ 🧖🏾‍♂️ 🧖🏿‍♂️
     🧖‍♀️\t1\t0\t蒸房里的女人\t女性桑拿|桑拿\twoman in steamy room\tday|luxurious|pamper|relax|room|sauna|spa|steam|steambath|unwind|woman\t🧖🏻‍♀️ 🧖🏼‍♀️ 🧖🏽‍♀️ 🧖🏾‍♀️ 🧖🏿‍♀️
@@ -565,9 +565,9 @@ enum EmojiTable {
     🤸\t1\t0\t侧手翻\t人|体操|体育|兴奋|快乐|杂技|活泼|翻筋斗\tperson cartwheeling\tactive|cartwheel|cartwheeling|excited|flip|gymnastics|happy|person|somersault\t🤸🏻 🤸🏼 🤸🏽 🤸🏾 🤸🏿
     🤸‍♂️\t1\t0\t男生侧手翻\t体操|侧手翻|兴奋|快乐|杂技|活泼|男|男子侧手翻|翻筋斗\tman cartwheeling\tactive|cartwheel|cartwheeling|excited|flip|gymnastics|happy|man|somersault\t🤸🏻‍♂️ 🤸🏼‍♂️ 🤸🏽‍♂️ 🤸🏾‍♂️ 🤸🏿‍♂️
     🤸‍♀️\t1\t0\t女生侧手翻\t体操|侧手翻|兴奋|女|女子侧手翻|快乐|杂技|活泼|翻筋斗\twoman cartwheeling\tactive|cartwheel|cartwheeling|excited|flip|gymnastics|happy|somersault|woman\t🤸🏻‍♀️ 🤸🏼‍♀️ 🤸🏽‍♀️ 🤸🏾‍♀️ 🤸🏿‍♀️
-    🤼\t1\t0\t摔跤选手\t人|体育|对决|打架|搏斗|摔跤|摔跤比赛|擂台争霸|运动\tpeople wrestling\tcombat|duel|grapple|people|ring|tournament|wrestle|wrestling\t🤼🏻 🤼🏼 🤼🏽 🤼🏾 🤼🏿
-    🤼‍♂️\t1\t0\t男生摔跤\t对决|打架|搏斗|摔跤|摔跤比赛|擂台争霸|男|男子摔跤|运动\tmen wrestling\tcombat|duel|grapple|men|ring|tournament|wrestle|wrestling\t🤼🏻‍♂️ 🤼🏼‍♂️ 🤼🏽‍♂️ 🤼🏾‍♂️ 🤼🏿‍♂️
-    🤼‍♀️\t1\t0\t女生摔跤\t女|女子摔跤|对决|打架|搏斗|摔跤|摔跤比赛|擂台争霸|运动\twomen wrestling\tcombat|duel|grapple|ring|tournament|women|wrestle|wrestling\t🤼🏻‍♀️ 🤼🏼‍♀️ 🤼🏽‍♀️ 🤼🏾‍♀️ 🤼🏿‍♀️
+    🤼\t1\t0\t摔跤选手\t人|体育|对决|打架|搏斗|摔跤|摔跤比赛|擂台争霸|运动\tpeople wrestling\tcombat|duel|grapple|people|ring|tournament|wrestle|wrestling\t
+    🤼‍♂️\t1\t0\t男生摔跤\t对决|打架|搏斗|摔跤|摔跤比赛|擂台争霸|男|男子摔跤|运动\tmen wrestling\tcombat|duel|grapple|men|ring|tournament|wrestle|wrestling\t
+    🤼‍♀️\t1\t0\t女生摔跤\t女|女子摔跤|对决|打架|搏斗|摔跤|摔跤比赛|擂台争霸|运动\twomen wrestling\tcombat|duel|grapple|ring|tournament|women|wrestle|wrestling\t
     🤽\t1\t0\t水球\t人|体育|水上足球|水上运动|游泳|马可波罗游戏\tperson playing water polo\tperson|playing|polo|sport|swimming|water|waterpolo\t🤽🏻 🤽🏼 🤽🏽 🤽🏾 🤽🏿
     🤽‍♂️\t1\t0\t男生玩水球\t水上足球|水上运动|水球|游泳|男|男子玩水球|马可波罗游戏\tman playing water polo\tman|playing|polo|sport|swimming|water|waterpolo\t🤽🏻‍♂️ 🤽🏼‍♂️ 🤽🏽‍♂️ 🤽🏾‍♂️ 🤽🏿‍♂️
     🤽‍♀️\t1\t0\t女生玩水球\t女|女子玩水球|水上足球|水上运动|水球|游泳|马可波罗游戏\twoman playing water polo\tplaying|polo|sport|swimming|water|waterpolo|woman\t🤽🏻‍♀️ 🤽🏼‍♀️ 🤽🏽‍♀️ 🤽🏾‍♀️ 🤽🏿‍♀️

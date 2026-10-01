@@ -28,7 +28,7 @@ enum EmojiSymbols {
             case .symbols: return String(localized: "符号")
             case .flags: return String(localized: "旗帜")
             case .math: return String(localized: "数学")
-            case .arrows: return String(localized: "箭头")
+            case .arrows: return String(localized: "箭头符号")
             case .numbers: return String(localized: "数字序号")
             case .punctuation: return String(localized: "标点")
             case .units: return String(localized: "单位和货币")
@@ -81,8 +81,10 @@ enum EmojiSymbols {
     }
 
     struct Item: Identifiable, Hashable {
-        /// 不带肤色的样子，也当 id
+        /// 不带肤色的样子
         let id: String
+        /// 列表、最近用过的里分得开的写法：一般就是 id；同一个字符在两类里都有（π、Ω、↖、↘）时，后一个带上分类
+        let key: String
         let category: Category
         let chineseName: String
         let englishName: String
@@ -90,6 +92,28 @@ enum EmojiSymbols {
         let keywords: [String]
         /// 五种肤色，从浅到深；没有的为空
         let tones: [String]
+        /// 搜索用，事先算好：中文名和小写的英文名、去掉变体选择符的 id
+        let searchNames: [String]
+        let bareID: String
+
+        init(id: String, key: String? = nil, category: Category, chineseName: String, englishName: String,
+             keywords: [String], tones: [String]) {
+            self.id = id
+            self.key = key ?? id
+            self.category = category
+            self.chineseName = chineseName
+            self.englishName = englishName
+            self.keywords = keywords
+            self.tones = tones
+            searchNames = [chineseName, englishName.lowercased()]
+            bareID = EmojiSymbols.withoutVariationSelectors(id)
+        }
+
+        /// 换一个 key（别的都不变）
+        func with(key: String) -> Item {
+            Item(id: id, key: key, category: category, chineseName: chineseName, englishName: englishName,
+                 keywords: keywords, tones: tones)
+        }
 
         var isEmoji: Bool {
             category.isEmoji
@@ -120,12 +144,21 @@ enum EmojiSymbols {
     static let showsEmoji16 = ProcessInfo.processInfo.isOperatingSystemAtLeast(OperatingSystemVersion(majorVersion: 15, minorVersion: 4, patchVersion: 0))
 
     /// 所有的表情（按 Unicode 的顺序）和符号
-    static let items: [Item] = parseEmoji(EmojiTable.emoji, includingEmoji16: showsEmoji16) + parseSymbols(EmojiTable.symbols)
+    static let items: [Item] = uniqueKeys(parseEmoji(EmojiTable.emoji, includingEmoji16: showsEmoji16) + parseSymbols(EmojiTable.symbols))
 
-    private static let byID: [String: Item] = Dictionary(items.map { ($0.id, $0) }, uniquingKeysWith: { first, _ in first })
+    private static let byKey: [String: Item] = Dictionary(items.map { ($0.key, $0) }, uniquingKeysWith: { first, _ in first })
 
-    static func item(_ id: String) -> Item? {
-        byID[id]
+    /// 按 key 找（最近用过的存的是 key）
+    static func item(_ key: String) -> Item? {
+        byKey[key]
+    }
+
+    /// 同一个字符第二次出现时，key 带上分类（「greek:π」），免得最近用过的、列表里认错
+    static func uniqueKeys(_ items: [Item]) -> [Item] {
+        var seen = Set<String>()
+        return items.map { item in
+            seen.insert(item.key).inserted ? item : item.with(key: item.category.rawValue + ":" + item.id)
+        }
     }
 
     static func items(in category: Category) -> [Item] {
@@ -160,18 +193,22 @@ enum EmojiSymbols {
 
     // MARK: - 搜索
 
-    /// 中文名的拼音（「daxiao」）和首字母（「dx」），第一次用拼音搜时才算
-    private static let pinyinIndex: [String: [String]] = {
-        var index: [String: [String]] = [:]
-        for item in items {
-            let latin = item.chineseName.applyingTransform(.toLatin, reverse: false)?
-                .applyingTransform(.stripDiacritics, reverse: false)?.lowercased() ?? ""
-            let syllables = latin.split(whereSeparator: { !$0.isLetter && !$0.isNumber }).map(String.init)
-            guard !syllables.isEmpty else { continue }
-            index[item.id] = [syllables.joined(), String(syllables.compactMap(\.first))]
+    /// 每一项中文名的拼音（「daxiao」）和首字母（「dx」），和 items 一一对应。第一次用拼音搜时才算，
+    /// 卡片打开时会先在后台算好（`prepareSearch`）
+    private static let pinyinIndex: [[String]] = items.map { item in
+        let latin = item.chineseName.applyingTransform(.toLatin, reverse: false)?
+            .applyingTransform(.stripDiacritics, reverse: false)?.lowercased() ?? ""
+        let syllables = latin.split(whereSeparator: { !$0.isLetter && !$0.isNumber }).map(String.init)
+        guard !syllables.isEmpty else { return [] }
+        return [syllables.joined(), String(syllables.compactMap(\.first))]
+    }
+
+    /// 在后台先把数据拆开、把拼音算好，打字时不用等
+    static func prepareSearch() {
+        Task.detached(priority: .utility) {
+            _ = pinyinIndex.count
         }
-        return index
-    }()
+    }
 
     static func withoutVariationSelectors(_ text: String) -> String {
         String(String.UnicodeScalarView(text.unicodeScalars.filter { $0 != "\u{FE0F}" && $0 != "\u{FE0E}" }))
@@ -179,19 +216,21 @@ enum EmojiSymbols {
 
     /// 按名字、关键词、拼音或首字母找；名字对上的在前，关键词对上的在后，同一档按 Unicode 的顺序
     static func search(_ query: String, limit: Int = 240) -> [Item] {
-        let needle = query.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+        let trimmed = query.trimmingCharacters(in: .whitespacesAndNewlines)
+        let needle = trimmed.lowercased()
         guard !needle.isEmpty else { return [] }
-        // 粘进来的表情可能带着、也可能没带变体选择符（🐈 和 🐈️），比较时去掉
-        let bareNeedle = withoutVariationSelectors(needle)
+        // 粘进来的表情、符号按原样比（Ω 不能变成 ω）；可能带着、也可能没带变体选择符（🐈 和 🐈️），比较时去掉
+        let bareQuery = withoutVariationSelectors(trimmed)
         let isLatin = needle.unicodeScalars.allSatisfy { $0.isASCII }
         // 英文、拼音太短的只认开头，免得一个字母对上一大堆
         let allowsContains = !isLatin || needle.count >= 3
+        let usesPinyin = isLatin && needle.count >= 2
+        let pinyin = usesPinyin ? pinyinIndex : []
         var ranked: [(rank: Int, index: Int, item: Item)] = []
-        var seen = Set<String>()
-        for (index, item) in items.enumerated() where !seen.contains(item.id) {
-            let names = [item.chineseName, item.englishName.lowercased()]
+        for (index, item) in items.enumerated() {
+            let names = item.searchNames
             let rank: Int
-            if item.id == needle || withoutVariationSelectors(item.id) == bareNeedle || names.contains(needle) {
+            if item.id == trimmed || item.bareID == bareQuery || names.contains(needle) {
                 rank = 0
             } else if names.contains(where: { $0.hasPrefix(needle) }) {
                 rank = 1
@@ -201,20 +240,24 @@ enum EmojiSymbols {
                 rank = 3
             } else if item.keywords.contains(where: { $0.hasPrefix(needle) || (allowsContains && $0.contains(needle)) }) {
                 rank = 4
-            } else if isLatin, needle.count >= 2, (pinyinIndex[item.id] ?? []).contains(where: { $0.hasPrefix(needle) }) {
+            } else if usesPinyin, pinyin[index].contains(where: { $0.hasPrefix(needle) }) {
                 rank = 5
             } else {
                 continue
             }
-            seen.insert(item.id)
             ranked.append((rank, index, item))
         }
-        let sorted = ranked.sorted { $0.rank != $1.rank ? $0.rank < $1.rank : $0.index < $1.index }
-        return sorted.prefix(limit).map { $0.item }
+        // 同一个字符在两类里都有时只列一次，留对得最好的那个（搜「欧姆」是单位里的 Ω，搜「欧米伽」是希腊字母的）
+        var seen = Set<String>()
+        return ranked
+            .sorted { $0.rank != $1.rank ? $0.rank < $1.rank : $0.index < $1.index }
+            .filter { seen.insert($0.item.id).inserted }
+            .prefix(limit)
+            .map { $0.item }
     }
 }
 
-/// 最近用过的表情和符号，最近的在前
+/// 最近用过的表情和符号（存的是 `Item.key`），最近的在前
 struct EmojiRecents {
     static let key = "pop.emojiSymbols.recent"
     static let limit = 30
@@ -225,10 +268,10 @@ struct EmojiRecents {
         (defaults.stringArray(forKey: Self.key) ?? []).filter { EmojiSymbols.item($0) != nil }
     }
 
-    func record(_ id: String) {
+    func record(_ key: String) {
         var list = defaults.stringArray(forKey: Self.key) ?? []
-        list.removeAll { $0 == id }
-        list.insert(id, at: 0)
+        list.removeAll { $0 == key }
+        list.insert(key, at: 0)
         defaults.set(Array(list.prefix(Self.limit)), forKey: Self.key)
     }
 }

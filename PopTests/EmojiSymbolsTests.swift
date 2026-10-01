@@ -39,6 +39,24 @@ final class EmojiSymbolsTests: XCTestCase {
         XCTAssertEqual(grin.codePoints, "U+1F604")
         XCTAssertEqual(try XCTUnwrap(EmojiSymbols.item("✓")).category, .shapes)
         XCTAssertEqual(try XCTUnwrap(EmojiSymbols.item("①")).englishName, "circled number 1")
+        XCTAssertEqual(EmojiSymbols.Category.arrows.title, "箭头符号")
+    }
+
+    func testSameCharacterInTwoCategories() throws {
+        // π、Ω、↖、↘ 在两类里都有：key 分得开，按 key 找得到各自的那个
+        let keys = EmojiSymbols.items.map(\.key)
+        XCTAssertEqual(keys.count, Set(keys).count)
+        XCTAssertEqual(try XCTUnwrap(EmojiSymbols.item("Ω")).chineseName, "欧姆")
+        XCTAssertEqual(try XCTUnwrap(EmojiSymbols.item("greek:Ω")).chineseName, "大写欧米伽")
+        XCTAssertEqual(try XCTUnwrap(EmojiSymbols.item("keyboard:↖")).chineseName, "Home 键")
+        XCTAssertEqual(EmojiSymbols.items(in: .greek).last?.key, "greek:Ω")
+        // 搜的时候只列一次，留对得最好的那个；粘进来的大写字母不当成小写的
+        XCTAssertEqual(EmojiSymbols.search("Ω").map(\.key), ["Ω"])
+        XCTAssertEqual(EmojiSymbols.search("ω").first?.chineseName, "欧米伽")
+        XCTAssertEqual(EmojiSymbols.search("欧米伽").map(\.key), ["ω", "greek:Ω"])
+        XCTAssertEqual(EmojiSymbols.search("oumu").first?.chineseName, "欧姆")
+        XCTAssertEqual(EmojiSymbols.search("yzl").first?.chineseName, "圆周率")
+        XCTAssertTrue(EmojiSymbols.search("daxie").contains { $0.key == "greek:Ω" })
     }
 
     func testSkinTones() throws {
@@ -49,6 +67,10 @@ final class EmojiSymbolsTests: XCTestCase {
         XCTAssertEqual(wave.text(tone: 5), "👋🏿")
         // 没有肤色的照原样
         XCTAssertEqual(try XCTUnwrap(EmojiSymbols.item("😄")).text(tone: 3), "😄")
+        // 肤色要到 Emoji 17.0 才有的不列肤色（系统还画不出来）
+        for id in ["👯", "👯\u{200D}♀️", "🤼", "🤼\u{200D}♂️"] {
+            XCTAssertEqual(try XCTUnwrap(EmojiSymbols.item(id), id).tones, [], id)
+        }
     }
 
     // MARK: - 搜索
@@ -87,10 +109,12 @@ final class EmojiSymbolsTests: XCTestCase {
         recents.record("😄")
         XCTAssertEqual(recents.ids, ["😄", "✓"])
         for item in EmojiSymbols.items(in: .greek) {
-            recents.record(item.id)
+            recents.record(item.key)
         }
         XCTAssertEqual(recents.ids.count, EmojiRecents.limit)
-        XCTAssertEqual(recents.ids.first, "Ω")
+        // 希腊字母的 Ω 记的是它自己，不是单位里的欧姆
+        XCTAssertEqual(recents.ids.first, "greek:Ω")
+        XCTAssertEqual(recents.ids.first.flatMap(EmojiSymbols.item)?.chineseName, "大写欧米伽")
     }
 
     // MARK: - 卡片
@@ -144,6 +168,34 @@ final class EmojiSymbolsTests: XCTestCase {
         let reopened = EmojiSymbolsModel(defaults: defaults)
         XCTAssertEqual(reopened.section, .recent)
         XCTAssertEqual(reopened.visibleItems.map(\.id), ["←", "😀"])
+    }
+
+    func testListChangesScrollBackToTop() {
+        let model = EmojiSymbolsModel(defaults: freshDefaults())
+        let version = model.listVersion
+        model.emojiCategory = .food
+        XCTAssertEqual(model.listVersion, version + 1)
+        model.query = "猫"
+        XCTAssertEqual(model.listVersion, version + 2)
+        XCTAssertEqual(model.selection, 0)
+    }
+
+    func testLongSelectionIsKept() throws {
+        // 选中了一大段文字：不拿来搜，点了只复制，不替换它
+        XCTAssertFalse(EmojiSymbolsPlugin.keepsSelection(nil))
+        XCTAssertFalse(EmojiSymbolsPlugin.keepsSelection("  "))
+        XCTAssertFalse(EmojiSymbolsPlugin.keepsSelection("猫"))
+        XCTAssertTrue(EmojiSymbolsPlugin.keepsSelection("第一行\n第二行"))
+        XCTAssertTrue(EmojiSymbolsPlugin.keepsSelection(String(repeating: "长", count: 21)))
+        var inserted: [String] = []
+        var copied: [String] = []
+        let model = EmojiSymbolsModel(defaults: freshDefaults())
+        model.keepsSelection = true
+        model.onInsert = { inserted.append($0) }
+        model.onCopy = { copied.append($0) }
+        model.insert(try XCTUnwrap(EmojiSymbols.item("😄")))
+        XCTAssertEqual(inserted, [])
+        XCTAssertEqual(copied, ["😄"])
     }
 
     func testSkinTonePreference() throws {

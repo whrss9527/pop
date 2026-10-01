@@ -27,6 +27,7 @@ struct EmojiSymbolsPlugin: PopPlugin {
 
     @MainActor func run(_ content: ClassifiedContent, context: PluginContext) async -> PluginOutcome {
         let model = EmojiSymbolsModel(query: Self.query(from: content.text))
+        model.keepsSelection = Self.keepsSelection(content.text)
         return .present(PluginPresentation { session in
             model.onInsert = { session.perform(.replace($0)) }
             model.onCopy = { session.perform(.copy($0)) }
@@ -40,6 +41,12 @@ struct EmojiSymbolsPlugin: PopPlugin {
         guard let text = text?.trimmingCharacters(in: .whitespacesAndNewlines), !text.isEmpty,
               text.count <= maxQueryLength, !text.contains(where: \.isNewline) else { return "" }
         return text
+    }
+
+    /// 选中了一大段文字（没拿来搜）：插入会把它整个换掉，所以只复制
+    static func keepsSelection(_ text: String?) -> Bool {
+        let selected = text?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        return !selected.isEmpty && query(from: text).isEmpty
     }
 
     /// 演示用：搜「笑」

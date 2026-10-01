@@ -46,10 +46,14 @@ final class EmojiSymbolsModel: ObservableObject {
     @Published var selection = 0
     /// 指针停着的
     @Published var hovered: EmojiSymbols.Item?
+    /// 列表换了一次就加一，卡片据此滚回最上面
+    @Published private(set) var listVersion = 0
 
     /// 插到原来的 App 里（替换选中的文字）
     var onInsert: (String) -> Void = { _ in }
     var onCopy: (String) -> Void = { _ in }
+    /// 选中了一大段文字（没拿来搜）：点了只复制，不替换选中的文字
+    var keepsSelection = false
 
     private let defaults: UserDefaults
     private let recents: EmojiRecents
@@ -62,6 +66,7 @@ final class EmojiSymbolsModel: ObservableObject {
         section = recents.ids.isEmpty ? .emoji : .recent
         tone = min(max(defaults.integer(forKey: Self.toneKey), 0), 5)
         refresh()
+        EmojiSymbols.prepareSearch()
     }
 
     var isSearching: Bool {
@@ -86,12 +91,16 @@ final class EmojiSymbolsModel: ObservableObject {
     }
 
     func insert(_ item: EmojiSymbols.Item) {
-        recents.record(item.id)
+        guard !keepsSelection else {
+            copy(item)
+            return
+        }
+        recents.record(item.key)
         onInsert(text(for: item))
     }
 
     func copy(_ item: EmojiSymbols.Item) {
-        recents.record(item.id)
+        recents.record(item.key)
         onCopy(text(for: item))
     }
 
@@ -114,6 +123,10 @@ final class EmojiSymbolsModel: ObservableObject {
             break
         }
         if event.modifierFlags.contains(.command), event.charactersIgnoringModifiers == "c", visibleItems.indices.contains(selection) {
+            // 搜索框里选中了字：留给搜索框复制
+            if let field = event.window?.firstResponder as? NSTextView, field.selectedRange().length > 0 {
+                return false
+            }
             copy(visibleItems[selection])
             return true
         }
@@ -146,6 +159,7 @@ final class EmojiSymbolsModel: ObservableObject {
         }
         selection = 0
         hovered = nil
+        listVersion += 1
     }
 }
 
@@ -228,9 +242,9 @@ struct EmojiSymbolsView: View {
                         .frame(maxWidth: .infinity, minHeight: 120)
                 } else {
                     LazyVGrid(columns: Array(repeating: GridItem(.fixed(cell), spacing: 2), count: EmojiSymbolsModel.columns), spacing: 2) {
-                        ForEach(Array(model.visibleItems.enumerated()), id: \.element.id) { index, item in
+                        ForEach(Array(model.visibleItems.enumerated()), id: \.element.key) { index, item in
                             ItemCell(text: model.text(for: item), isEmoji: item.isEmoji, isSelected: index == model.selection, size: cell)
-                                .id(item.id)
+                                .id(item.key)
                                 .onTapGesture { model.insert(item) }
                                 .onHover { inside in
                                     if inside {
@@ -252,7 +266,12 @@ struct EmojiSymbolsView: View {
             .frame(height: 4 * (cell + 2) + 40)
             .onChange(of: model.selection) { _, selection in
                 guard model.visibleItems.indices.contains(selection) else { return }
-                proxy.scrollTo(model.visibleItems[selection].id)
+                proxy.scrollTo(model.visibleItems[selection].key)
+            }
+            // 换了分类、搜了别的：回到最上面，回车插入的就是看得见的第一个
+            .onChange(of: model.listVersion) {
+                guard let first = model.visibleItems.first else { return }
+                proxy.scrollTo(first.key, anchor: .top)
             }
         }
     }
@@ -276,7 +295,7 @@ struct EmojiSymbolsView: View {
                 }
             }
             Spacer(minLength: 8)
-            Text("回车插入 · ⌘C 复制")
+            Text(model.keepsSelection ? String(localized: "选中的文字不动，点一下复制") : String(localized: "回车插入 · ⌘C 复制"))
                 .font(.caption2)
                 .foregroundStyle(.tertiary)
         }
