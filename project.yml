@@ -14,7 +14,7 @@ configFiles:
 settings:
   base:
     SWIFT_VERSION: "5.0"
-    MARKETING_VERSION: "0.55.0"
+    MARKETING_VERSION: "0.56.0"
     CURRENT_PROJECT_VERSION: "1"
     CODE_SIGN_STYLE: Automatic
     DEAD_CODE_STRIPPING: YES
@@ -932,6 +932,15 @@ targets:
         POP_PLUGIN_ID: resolution
         POP_PLUGIN_ENTRY: PopResolutionEntry
 
+  PopDiskSpeed:
+    templates: [PopPlugin]
+    sources: [PluginBundles/DiskSpeed]
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: io.github.whrss9527.pop.plugin.diskSpeed
+        POP_PLUGIN_ID: diskSpeed
+        POP_PLUGIN_ENTRY: PopDiskSpeedEntry
+
   PopTests:
     type: bundle.unit-test
     platform: macOS
@@ -962,6 +971,7 @@ targets:
       - path: PluginBundles/SystemInfo
       - path: PluginBundles/SoundDevices
       - path: PluginBundles/Resolution
+      - path: PluginBundles/DiskSpeed
       - path: PluginBundles/Beautify
       - path: PluginBundles/Spotlight
       - path: PluginBundles/Timer
@@ -1070,6 +1080,7 @@ schemes:
         PopSystemInfo: all
         PopSoundDevices: all
         PopResolution: all
+        PopDiskSpeed: all
         PopBeautify: all
         PopSpotlight: all
         PopTimer: all

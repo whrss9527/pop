@@ -81,6 +81,7 @@ enum TestCatalog {
         SystemInfoEntry.self,
         SoundDevicesEntry.self,
         ResolutionEntry.self,
+        DiskSpeedEntry.self,
         SimilarPhotosEntry.self,
     ]
 
