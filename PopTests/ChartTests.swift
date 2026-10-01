@@ -57,6 +57,13 @@ final class ChartTests: XCTestCase {
         let regions = try XCTUnwrap(ChartData.parse("年份,地区,销售额\n2024,华东,120\n2024,华南,90\n2025,华东,150"))
         XCTAssertEqual(regions.labels, ["华东", "华南", "华东 2"])
         XCTAssertEqual(regions.series.map(\.name), ["销售额"])
+        // 月份那一列在后面：「1月」也像数，还是当名字
+        let months = try XCTUnwrap(ChartData.parse("销售额,月份\n120,1月\n135,2月\n162,3月"))
+        XCTAssertEqual(months.labels, ["1月", "2月", "3月"])
+        XCTAssertEqual(months.series, [ChartData.Series(name: "销售额", values: [120, 135, 162])])
+        XCTAssertEqual(months.labelTitle, "月份")
+        // 只有一行数据的表画不成图
+        XCTAssertNil(ChartData.parse("名字,分数\n张三,90"))
     }
 
     func testLinesAndLists() throws {
@@ -77,12 +84,18 @@ final class ChartTests: XCTestCase {
         XCTAssertEqual(list.labels, ["1", "2", "3", "4"])
         XCTAssertEqual(list.series.first?.values, [12, 15, 9, 20])
         XCTAssertEqual(try XCTUnwrap(ChartData.parse("12 15 9 20")).series.first?.values.count, 4)
+        XCTAssertEqual(try XCTUnwrap(ChartData.parse("0% 15% 30%")).series.first?.values, [0, 15, 30])
         // 画不了的
         XCTAssertNil(ChartData.parse("今天天气不错"))
         XCTAssertNil(ChartData.parse("42"))
         XCTAssertNil(ChartData.parse("3 apples and 5 pears"))
         XCTAssertNil(ChartData.parse("上海市徐汇区漕溪北路 88 号 12 楼"))
         XCTAssertNil(ChartData.parse("{\n  \"a\": 1,\n  \"b\": 2\n}"))
+        // 两个数、两行、电话号码、一串年份：不是要画的数据
+        XCTAssertNil(ChartData.parse("3 5"))
+        XCTAssertNil(ChartData.parse("a = 1\nb = 2"))
+        XCTAssertNil(ChartData.parse("138 0013 8000"))
+        XCTAssertNil(ChartData.parse("2022 2023 2024"))
     }
 
     func testKindsAndOrder() throws {
@@ -167,8 +180,9 @@ final class ChartTests: XCTestCase {
     func testPluginShowsUpOnlyForData() {
         let plugin = ChartPlugin()
         XCTAssertTrue(plugin.info.canHandle(ContentClassifier.classify(.text("月份\t销售额\n1月\t120\n2月\t135"))))
-        XCTAssertTrue(plugin.info.canHandle(ContentClassifier.classify(.text("苹果 12\n香蕉 8"))))
+        XCTAssertTrue(plugin.info.canHandle(ContentClassifier.classify(.text("苹果 12\n香蕉 8\n橙子 15"))))
         XCTAssertFalse(plugin.info.canHandle(ContentClassifier.classify(.text("Hello world"))))
+        XCTAssertFalse(plugin.info.canHandle(ContentClassifier.classify(.text("port = 8080\ntimeout = 30"))))
         XCTAssertFalse(plugin.info.canHandle(.empty))
     }
 }

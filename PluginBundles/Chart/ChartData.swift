@@ -125,18 +125,22 @@ enum ChartData {
             ratio(column, in: cells.dropFirst()) >= 0.8 && number(cells[0][column]) == nil && !cells[0][column].isEmpty
         }
         let body = hasHeader ? cells.dropFirst() : cells[...]
-        guard body.count >= 1, body.count <= maxRows else { return nil }
+        guard body.count >= 2, body.count <= maxRows else { return nil }
         let numeric = (0..<width).filter { ratio($0, in: body) >= 0.8 }
         guard !numeric.isEmpty else { return nil }
-        // 名字那一列：第一个不全是数的列；都是数的话第一列（年份、序号）当名字
+        // 「1月」「2024」也算数（带单位的数、年份），名字那一列这样找：第一个不全是数的列；
+        // 都是数的话，年份、月份、季度这类的列；再没有就第一列（序号）
+        func isTime(_ column: Int) -> Bool {
+            isTimeColumn(body.map { $0[column] })
+        }
         var labelColumn = (0..<width).first { !numeric.contains($0) }
         if labelColumn == nil, width >= 2 {
-            labelColumn = 0
+            labelColumn = (0..<width).first(where: isTime) ?? 0
         }
         var valueColumns = numeric.filter { $0 != labelColumn }
-        // 第一列是年份这类的、名字在后面的列里：年份不当成一组数
-        if valueColumns.count > 1, let first = valueColumns.first, first == 0, isYearColumn(body.map { $0[0] }) {
-            valueColumns.removeFirst()
+        // 名字在别的列里时，年份、月份这类的列不当成一组数
+        if valueColumns.contains(where: { !isTime($0) }) {
+            valueColumns.removeAll(where: isTime)
         }
         guard !valueColumns.isEmpty else { return nil }
         var numbers: [Number] = []
@@ -165,9 +169,10 @@ enum ChartData {
     /// 一行一个「名字 数值」：每行取最后一个数，前面的是名字；第一行没有数的话当标题
     static func fromLines(_ text: String) -> Dataset? {
         var lines = text.split(whereSeparator: \.isNewline).map { $0.trimmingCharacters(in: .whitespaces) }.filter { !$0.isEmpty }
-        guard lines.count >= 2, lines.count <= maxRows + 1 else { return nil }
+        // 两行的「a = 1」这类多半不是要画图的数据
+        guard lines.count >= 3, lines.count <= maxRows + 1 else { return nil }
         var title: String?
-        if pair(lines[0]) == nil, lines.count >= 3 {
+        if pair(lines[0]) == nil {
             title = lines.removeFirst()
         }
         let pairs = lines.map(pair)
@@ -191,8 +196,10 @@ enum ChartData {
     static func fromList(_ text: String) -> Dataset? {
         guard !text.contains(where: \.isNewline) else { return nil }
         let tokens = text.split(whereSeparator: { " \t、;；|".contains($0) || $0 == "," || $0 == "，" }).map(String.init)
+        // 「138 0013 8000」是电话号码，「2022 2023 2024」「1月 2月 3月」是日子，都不是要画的数
+        guard !tokens.contains(where: { $0.first == "0" && $0.dropFirst().first?.isNumber == true }), !isTimeColumn(tokens) else { return nil }
         let numbers = tokens.compactMap(number)
-        guard numbers.count >= 2, numbers.count == tokens.count, numbers.count <= maxRows else { return nil }
+        guard numbers.count >= 3, numbers.count == tokens.count, numbers.count <= maxRows else { return nil }
         return Dataset(labels: numbers.indices.map { String($0 + 1) }, series: [Series(name: String(localized: "数值"), values: numbers.map(\.value))],
                        labelTitle: nil, unit: commonUnit(numbers), decimals: numbers.map(\.decimals).max() ?? 0)
     }
@@ -225,12 +232,11 @@ enum ChartData {
         return units.count == 1 ? units.first ?? nil : nil
     }
 
-    /// 1900–2100 之间的整数，或者带着「年」
-    private static func isYearColumn(_ values: [String]) -> Bool {
-        values.allSatisfy { value in
-            let text = value.hasSuffix("年") ? String(value.dropLast()) : value
-            guard text.count == 4, let year = Int(text) else { return false }
-            return (1900...2100).contains(year)
+    /// 一列都是年份、月份、季度、日期、星期（空格不算）
+    private static func isTimeColumn(_ values: [String]) -> Bool {
+        let filled = values.filter { !$0.isEmpty }
+        return !filled.isEmpty && filled.allSatisfy { value in
+            timeline.firstMatch(in: value, range: NSRange(location: 0, length: (value as NSString).length)) != nil
         }
     }
 
@@ -284,10 +290,12 @@ enum ChartData {
     /// 「1,200」「12.5%」「¥3,000」「36 kg」「120元」
     static func format(_ value: Double, decimals: Int, unit: String?) -> String {
         let formatter = NumberFormatter()
-        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.locale = Locale(identifier: "en_US")
         formatter.numberStyle = .decimal
         formatter.usesGroupingSeparator = true
         formatter.groupingSeparator = ","
+        formatter.groupingSize = 3
+        formatter.decimalSeparator = "."
         formatter.minimumFractionDigits = 0
         formatter.maximumFractionDigits = decimals
         let text = formatter.string(from: NSNumber(value: abs(value))) ?? String(abs(value))

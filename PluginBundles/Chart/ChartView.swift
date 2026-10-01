@@ -82,6 +82,8 @@ struct ChartCanvas: View {
         let id: Int
         let label: String
         let series: String
+        /// 第几组：折线图上相邻两组的数值一上一下写，免得叠在一起
+        let group: Int
         let value: Double
     }
 
@@ -90,7 +92,7 @@ struct ChartCanvas: View {
         var result: [Point] = []
         for (group, series) in dataset.series.enumerated() {
             for (index, value) in series.values.enumerated() where index < dataset.labels.count {
-                result.append(Point(id: group * 100_000 + index, label: dataset.labels[index], series: series.name, value: value))
+                result.append(Point(id: group * 100_000 + index, label: dataset.labels[index], series: series.name, group: group, value: value))
             }
         }
         return result
@@ -133,12 +135,22 @@ struct ChartCanvas: View {
         ChartData.format(value, decimals: dataset.decimals, unit: dataset.unit)
     }
 
+    /// 柱子上的数写在顶上，负数写在下面
+    private func columnLabelPosition(_ point: Point) -> AnnotationPosition {
+        point.value < 0 ? .bottom : .top
+    }
+
+    /// 条形图的数写在右边，负数写在左边
+    private func barLabelPosition(_ point: Point) -> AnnotationPosition {
+        point.value < 0 ? .leading : .trailing
+    }
+
     private var barChart: some View {
         Chart(points) { point in
             BarMark(x: .value(labelKey, point.label), y: .value(valueKey, point.value))
                 .foregroundStyle(by: .value(seriesKey, point.series))
                 .position(by: .value(seriesKey, point.series))
-                .annotation(position: point.value < 0 ? .bottom : .top, spacing: 2) {
+                .annotation(position: columnLabelPosition(point), spacing: 2) {
                     if showsValues {
                         Text(verbatim: valueText(point.value))
                             .font(valueFont)
@@ -156,7 +168,7 @@ struct ChartCanvas: View {
             BarMark(x: .value(valueKey, point.value), y: .value(labelKey, point.label))
                 .foregroundStyle(by: .value(seriesKey, point.series))
                 .position(by: .value(seriesKey, point.series))
-                .annotation(position: point.value < 0 ? .leading : .trailing, spacing: 3) {
+                .annotation(position: barLabelPosition(point), spacing: 3) {
                     if showsValues {
                         Text(verbatim: valueText(point.value))
                             .font(valueFont)
@@ -177,7 +189,7 @@ struct ChartCanvas: View {
             if showsValues {
                 PointMark(x: .value(labelKey, point.label), y: .value(valueKey, point.value))
                     .opacity(0)
-                    .annotation(position: .top, spacing: 4) {
+                    .annotation(position: point.group % 2 == 0 ? .top : .bottom, spacing: 4) {
                         Text(verbatim: valueText(point.value))
                             .font(valueFont)
                             .foregroundStyle(.secondary)
