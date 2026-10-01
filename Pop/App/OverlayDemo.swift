@@ -365,6 +365,9 @@ enum OverlayDemo {
                              anchor: center)
             step("cropImage")
 
+            // 插件包的步骤：截图美化
+            await playPluginScenes(after: "cropImage", in: demo, unit: unit)
+
             // 录屏：先是选区域的界面（截屏幕上方的提示条），再是倒数，然后是录的时候的边框、控制面板和按键显示，最后是录好的卡片
             await pause(1.4 * unit)
             overlay.hide()
