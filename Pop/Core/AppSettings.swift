@@ -723,8 +723,9 @@ struct AppSettings: Codable, Equatable {
         pluginHotKeys = c.lossyArray(.pluginHotKeys) ?? []
         snippets = c.lossyArray(.snippets) ?? d.snippets
         knownBuiltinPlugins = c.lenient(.knownBuiltinPlugins, default: BuiltinPluginID.legacy)
-        // 旧版本的设置里没有这一项：搬进插件包的功能都还没迁移过
-        movedToPlugins = c.lenient(.movedToPlugins, default: [])
+        // 旧版本的设置里没有这一项：搬进插件包的功能都还没迁移过。
+        // 连装了哪些功能都没存的，装的本来就是新的默认功能（不含插件包），不用迁移
+        movedToPlugins = c.lenient(.movedToPlugins, default: c.contains(.installedPlugins) ? [] : d.movedToPlugins)
         modifiedAt = c.lenient(.modifiedAt, default: d.modifiedAt)
         if !knownBuiltinPlugins.contains(BuiltinPluginID.allPlugins), ring == .legacyDefault {
             ring = .default
