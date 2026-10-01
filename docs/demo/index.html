@@ -349,7 +349,7 @@ button { font: inherit; color: inherit; }
 .picker .size { position: absolute; font: 11px/1 var(--mono); color: #fff; background: rgba(0, 0, 0, .66); padding: 4px 7px; border-radius: 5px; pointer-events: none; white-space: nowrap; }
 .picker .tip { position: absolute; left: 50%; top: 40px; transform: translateX(-50%); font-size: 12.5px; padding: 7px 14px; border-radius: 999px; white-space: nowrap; max-width: calc(100% - 24px); overflow: hidden; text-overflow: ellipsis; cursor: default; }
 .picker .winhl { position: absolute; border-radius: 12px; background: rgba(10, 132, 255, .18); box-shadow: inset 0 0 0 2px rgba(10, 132, 255, .8); pointer-events: none; }
-.rec-hud { position: absolute; left: 50%; top: 40px; transform: translateX(-50%); border-radius: 14px; padding: 10px 14px; display: flex; flex-direction: column; align-items: center; gap: 8px; font-size: 12px; max-width: calc(100% - 24px); cursor: default; }
+.rec-hud { position: absolute; left: 50%; top: 40px; transform: translateX(-50%); width: max-content; border-radius: 14px; padding: 10px 14px; display: flex; flex-direction: column; align-items: center; gap: 8px; font-size: 12px; max-width: calc(100% - 24px); cursor: default; }
 .rec-hud .opts { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; justify-content: center; }
 .rec-hud label { display: inline-flex; align-items: center; gap: 5px; cursor: pointer; }
 .rec-hud .tiny { font-size: 11.5px; color: var(--label-2); }
@@ -367,7 +367,7 @@ button { font: inherit; color: inherit; }
 .keycaps.gone { opacity: 0; }
 .pen-canvas { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 36; cursor: crosshair; touch-action: none; }
 .pen-canvas.through { pointer-events: none; }
-.pen-bar { position: absolute; left: 50%; top: 34px; transform: translateX(-50%); z-index: 39; display: flex; align-items: center; justify-content: center; flex-wrap: wrap; gap: 8px; padding: 5px 8px; border-radius: 20px; background: rgba(0, 0, 0, .8); color: #fff; box-shadow: 0 8px 24px rgba(0, 0, 0, .28); max-width: calc(100% - 16px); cursor: default; }
+.pen-bar { position: absolute; left: 50%; top: 34px; transform: translateX(-50%); width: max-content; z-index: 39; display: flex; align-items: center; justify-content: center; flex-wrap: wrap; gap: 8px; padding: 5px 8px; border-radius: 20px; background: rgba(0, 0, 0, .8); color: #fff; box-shadow: 0 8px 24px rgba(0, 0, 0, .28); max-width: calc(100% - 16px); cursor: default; }
 .pen-bar .grp { display: flex; align-items: center; gap: 2px; }
 .pen-bar .tool { appearance: none; border: 0; background: transparent; color: #fff; width: 30px; height: 26px; border-radius: 7px; display: grid; place-items: center; cursor: pointer; padding: 0; }
 .pen-bar .tool svg { width: 16px; height: 16px; }
@@ -377,6 +377,7 @@ button { font: inherit; color: inherit; }
 .pen-bar .dot { appearance: none; width: 16px; height: 16px; padding: 0; border-radius: 50%; border: 1px solid rgba(255, 255, 255, .25); cursor: pointer; }
 .pen-bar .dot[aria-pressed="true"] { border: 2px solid rgba(255, 255, 255, .95); }
 .pen-bar .sep { width: 1px; height: 18px; background: rgba(255, 255, 255, .25); }
+@media (max-width: 560px) { .pen-bar .sep { display: none; } }
 .pen-bar .done { appearance: none; border: 0; border-radius: 6px; padding: 5px 11px; background: rgba(255, 255, 255, .18); color: #fff; font: 500 12px/1 var(--font); cursor: pointer; }
 .pen-bar .done:hover { background: rgba(255, 255, 255, .26); }
 .cam-bubble { position: absolute; z-index: 37; border-radius: 50%; overflow: hidden; border: 3px solid rgba(255, 255, 255, .92); box-shadow: 0 10px 28px rgba(0, 0, 0, .35); background: #111; cursor: grab; touch-action: none; transition: border-radius .2s; }
