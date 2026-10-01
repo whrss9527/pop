@@ -275,6 +275,11 @@ enum PluginCatalog {
                       symbol: "folder.badge.gearshape", category: .files, functions: [BuiltinPluginID.tidyFolder],
                       // 和插件包里 TidyFolderModel 的键一样
                       defaultsKeys: ["pop.tidyFolder.mode"]),
+        PluginPackage(id: "appIcon", bundleName: "PopAppIcon", name: String(localized: "生成图标"),
+                      summary: String(localized: "用选中的图片生成 App 图标：macOS 的 .icns 和 Xcode 用的图标集（圆角方块，和系统 App 的图标一样大）、iOS 的 1024 图标，还有网站的 favicon，存在原图旁边的文件夹里"),
+                      symbol: "app.dashed", category: .screen, functions: [BuiltinPluginID.appIcon],
+                      // 和插件包里 AppIconModel 的键一样
+                      defaultsKeys: ["pop.appIcon.style", "pop.appIcon.fill", "pop.appIcon.outputs"]),
     ]
 
     /// 插件包提供的所有功能

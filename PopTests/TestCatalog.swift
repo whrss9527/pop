@@ -67,6 +67,7 @@ enum TestCatalog {
         SplitImageEntry.self,
         QuitAppsEntry.self,
         TidyFolderEntry.self,
+        AppIconEntry.self,
     ]
 
     static func plugins() -> [any PopPlugin] {

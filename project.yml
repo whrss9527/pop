@@ -797,6 +797,15 @@ targets:
         POP_PLUGIN_ID: tidyFolder
         POP_PLUGIN_ENTRY: PopTidyFolderEntry
 
+  PopAppIcon:
+    templates: [PopPlugin]
+    sources: [PluginBundles/AppIcon]
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: io.github.whrss9527.pop.plugin.appIcon
+        POP_PLUGIN_ID: appIcon
+        POP_PLUGIN_ENTRY: PopAppIconEntry
+
   PopTests:
     type: bundle.unit-test
     platform: macOS
@@ -812,6 +821,7 @@ targets:
       - path: PluginBundles/SplitImage
       - path: PluginBundles/QuitApps
       - path: PluginBundles/TidyFolder
+      - path: PluginBundles/AppIcon
       - path: PluginBundles/Beautify
       - path: PluginBundles/Spotlight
       - path: PluginBundles/Timer
@@ -905,6 +915,7 @@ schemes:
         PopSplitImage: all
         PopQuitApps: all
         PopTidyFolder: all
+        PopAppIcon: all
         PopBeautify: all
         PopSpotlight: all
         PopTimer: all
