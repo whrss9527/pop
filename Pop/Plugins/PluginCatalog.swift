@@ -254,6 +254,9 @@ enum PluginCatalog {
                       symbol: "wand.and.stars", category: .screen, functions: [BuiltinPluginID.beautify],
                       // 和插件包里 ScreenshotBeautifier.Options 的键一样
                       defaultsKeys: ["pop.beautify.background", "pop.beautify.padding", "pop.beautify.ratio", "pop.beautify.corners", "pop.beautify.shadow"]),
+        PluginPackage(id: "zoom", bundleName: "PopZoom", name: String(localized: "屏幕放大"),
+                      summary: String(localized: "演示、录教程时把指针附近放大，看清小字：放大的是那一刻的屏幕画面，挪动指针换地方看，滚轮或 ↑↓ 调倍数，点一下或按 Esc 回去"),
+                      symbol: "plus.magnifyingglass", category: .recording, functions: [BuiltinPluginID.zoom]),
     ]
 
     /// 插件包提供的所有功能

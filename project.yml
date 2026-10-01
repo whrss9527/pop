@@ -14,7 +14,7 @@ configFiles:
 settings:
   base:
     SWIFT_VERSION: "5.0"
-    MARKETING_VERSION: "0.45.0"
+    MARKETING_VERSION: "0.46.0"
     CURRENT_PROJECT_VERSION: "1"
     CODE_SIGN_STYLE: Automatic
     DEAD_CODE_STRIPPING: YES
@@ -752,6 +752,15 @@ targets:
         POP_PLUGIN_ID: beautify
         POP_PLUGIN_ENTRY: PopBeautifyEntry
 
+  PopZoom:
+    templates: [PopPlugin]
+    sources: [PluginBundles/Zoom]
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: io.github.whrss9527.pop.plugin.zoom
+        POP_PLUGIN_ID: zoom
+        POP_PLUGIN_ENTRY: PopZoomEntry
+
   PopTests:
     type: bundle.unit-test
     platform: macOS
@@ -762,6 +771,7 @@ targets:
       - path: PluginBundles/CameraBubble
       - path: PluginBundles/PointerHighlight
       - path: PluginBundles/Teleprompter
+      - path: PluginBundles/Zoom
       - path: PluginBundles/Beautify
       - path: PluginBundles/Spotlight
       - path: PluginBundles/Timer
@@ -850,6 +860,7 @@ schemes:
         PopCameraBubble: all
         PopPointerHighlight: all
         PopTeleprompter: all
+        PopZoom: all
         PopBeautify: all
         PopSpotlight: all
         PopTimer: all

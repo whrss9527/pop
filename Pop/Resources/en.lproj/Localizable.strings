@@ -2294,3 +2294,7 @@
 "没装的插件 · 点一下装上就能用" = "Not installed · click to install and use";
 "安装 · %@" = "Install · %@";
 "装好了「%@」" = "Installed “%@”";
+"屏幕放大" = "Screen Zoom";
+"演示、录教程时把指针附近放大，看清小字：放大的是那一刻的屏幕画面，挪动指针换地方看，滚轮或 ↑↓ 调倍数，点一下或按 Esc 回去" = "Magnify the area around the pointer in demos and tutorials so small text is easy to read. It zooms into a snapshot of the screen: move the pointer to look around, scroll or press ↑↓ to change the magnification, and click or press Esc to go back";
+"找不到要放大的屏幕" = "Couldn’t find the screen to zoom";
+"没能拍下屏幕：%@" = "Couldn’t capture the screen: %@";

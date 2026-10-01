@@ -87,6 +87,7 @@ final class RouterTests: XCTestCase {
             BuiltinPluginID.systemActions, BuiltinPluginID.menuShortcuts, BuiltinPluginID.scrollCapture,
             BuiltinPluginID.cleanKeyboard, BuiltinPluginID.showKeystrokes, BuiltinPluginID.screenPen,
             BuiltinPluginID.cameraBubble, BuiltinPluginID.pointerHighlight, BuiltinPluginID.spotlight, BuiltinPluginID.beautify,
+            BuiltinPluginID.zoom,
         ])
     }
 
@@ -113,7 +114,7 @@ final class RouterTests: XCTestCase {
         let recording = catalog.map(\.id).filter { BuiltinCategory.of($0) == .recording }
         XCTAssertEqual(Set(recording), [BuiltinPluginID.screenRecord, BuiltinPluginID.scrollCapture, BuiltinPluginID.showKeystrokes,
                                         BuiltinPluginID.screenPen, BuiltinPluginID.cameraBubble, BuiltinPluginID.pointerHighlight,
-                                        BuiltinPluginID.spotlight, BuiltinPluginID.teleprompter])
+                                        BuiltinPluginID.spotlight, BuiltinPluginID.zoom, BuiltinPluginID.teleprompter])
         XCTAssertEqual(BuiltinCategory.of(BuiltinPluginID.annotate), .screen)
     }
 
