@@ -349,7 +349,7 @@ button { font: inherit; color: inherit; }
 .picker .size { position: absolute; font: 11px/1 var(--mono); color: #fff; background: rgba(0, 0, 0, .66); padding: 4px 7px; border-radius: 5px; pointer-events: none; white-space: nowrap; }
 .picker .tip { position: absolute; left: 50%; top: 40px; transform: translateX(-50%); font-size: 12.5px; padding: 7px 14px; border-radius: 999px; white-space: nowrap; max-width: calc(100% - 24px); overflow: hidden; text-overflow: ellipsis; cursor: default; }
 .picker .winhl { position: absolute; border-radius: 12px; background: rgba(10, 132, 255, .18); box-shadow: inset 0 0 0 2px rgba(10, 132, 255, .8); pointer-events: none; }
-.rec-hud { position: absolute; left: 50%; top: 40px; transform: translateX(-50%); border-radius: 14px; padding: 10px 14px; display: flex; flex-direction: column; align-items: center; gap: 8px; font-size: 12px; max-width: calc(100% - 24px); cursor: default; }
+.rec-hud { position: absolute; left: 50%; top: 40px; transform: translateX(-50%); width: max-content; border-radius: 14px; padding: 10px 14px; display: flex; flex-direction: column; align-items: center; gap: 8px; font-size: 12px; max-width: calc(100% - 24px); cursor: default; }
 .rec-hud .opts { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; justify-content: center; }
 .rec-hud label { display: inline-flex; align-items: center; gap: 5px; cursor: pointer; }
 .rec-hud .tiny { font-size: 11.5px; color: var(--label-2); }
@@ -367,7 +367,7 @@ button { font: inherit; color: inherit; }
 .keycaps.gone { opacity: 0; }
 .pen-canvas { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 36; cursor: crosshair; touch-action: none; }
 .pen-canvas.through { pointer-events: none; }
-.pen-bar { position: absolute; left: 50%; top: 34px; transform: translateX(-50%); z-index: 39; display: flex; align-items: center; justify-content: center; flex-wrap: wrap; gap: 8px; padding: 5px 8px; border-radius: 20px; background: rgba(0, 0, 0, .8); color: #fff; box-shadow: 0 8px 24px rgba(0, 0, 0, .28); max-width: calc(100% - 16px); cursor: default; }
+.pen-bar { position: absolute; left: 50%; top: 34px; transform: translateX(-50%); width: max-content; z-index: 39; display: flex; align-items: center; justify-content: center; flex-wrap: wrap; gap: 8px; padding: 5px 8px; border-radius: 20px; background: rgba(0, 0, 0, .8); color: #fff; box-shadow: 0 8px 24px rgba(0, 0, 0, .28); max-width: calc(100% - 16px); cursor: default; }
 .pen-bar .grp { display: flex; align-items: center; gap: 2px; }
 .pen-bar .tool { appearance: none; border: 0; background: transparent; color: #fff; width: 30px; height: 26px; border-radius: 7px; display: grid; place-items: center; cursor: pointer; padding: 0; }
 .pen-bar .tool svg { width: 16px; height: 16px; }
@@ -377,6 +377,7 @@ button { font: inherit; color: inherit; }
 .pen-bar .dot { appearance: none; width: 16px; height: 16px; padding: 0; border-radius: 50%; border: 1px solid rgba(255, 255, 255, .25); cursor: pointer; }
 .pen-bar .dot[aria-pressed="true"] { border: 2px solid rgba(255, 255, 255, .95); }
 .pen-bar .sep { width: 1px; height: 18px; background: rgba(255, 255, 255, .25); }
+@media (max-width: 560px) { .pen-bar .sep { display: none; } }
 .pen-bar .done { appearance: none; border: 0; border-radius: 6px; padding: 5px 11px; background: rgba(255, 255, 255, .18); color: #fff; font: 500 12px/1 var(--font); cursor: pointer; }
 .pen-bar .done:hover { background: rgba(255, 255, 255, .26); }
 .cam-bubble { position: absolute; z-index: 37; border-radius: 50%; overflow: hidden; border: 3px solid rgba(255, 255, 255, .92); box-shadow: 0 10px 28px rgba(0, 0, 0, .35); background: #111; cursor: grab; touch-action: none; transition: border-radius .2s; }
@@ -392,6 +393,15 @@ button { font: inherit; color: inherit; }
 .rec-countdown { position: absolute; z-index: 30; width: 104px; height: 104px; margin: -52px 0 0 -52px; border-radius: 50%; background: rgba(0, 0, 0, .62); box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .2); color: #fff; display: grid; place-items: center; font: 600 54px/1 ui-rounded, var(--font); pointer-events: none; }
 .rec-countdown .pop-in { animation: count-in .35s ease-out; }
 @keyframes count-in { from { transform: scale(1.4); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+.teleprompter { position: absolute; z-index: 35; left: 50%; top: 36px; transform: translateX(-50%); width: min(560px, calc(100% - 24px)); height: 210px; border-radius: 16px; background: rgba(0, 0, 0, .9); color: #fff; display: flex; flex-direction: column; box-shadow: 0 14px 34px rgba(0, 0, 0, .3); cursor: grab; touch-action: none; }
+.teleprompter .tp-view { position: relative; flex: 1; overflow: hidden; -webkit-mask-image: linear-gradient(transparent, #000 18%, #000 78%, transparent); mask-image: linear-gradient(transparent, #000 18%, #000 78%, transparent); }
+.teleprompter .tp-text { position: absolute; left: 24px; right: 24px; top: 0; text-align: center; font-weight: 600; line-height: 1.45; white-space: pre-wrap; will-change: transform; }
+.teleprompter .tp-bar { display: flex; align-items: center; gap: 2px; padding: 0 10px 8px; }
+.teleprompter .tp-bar .sp { flex: 1; }
+.teleprompter .tp-bar button { appearance: none; border: 0; background: transparent; color: #fff; width: 28px; height: 24px; border-radius: 6px; display: grid; place-items: center; cursor: pointer; padding: 0; }
+.teleprompter .tp-bar button:hover { background: rgba(255, 255, 255, .16); }
+.teleprompter .tp-bar svg { width: 14px; height: 14px; }
+.teleprompter .tp-rate { font-size: 11px; color: rgba(255, 255, 255, .7); min-width: 96px; text-align: center; font-variant-numeric: tabular-nums; }
 .halo, .halo-wave { position: absolute; z-index: 45; width: 60px; height: 60px; margin: -30px 0 0 -30px; border-radius: 50%; pointer-events: none; }
 .halo { background: rgba(255, 214, 10, .28); box-shadow: inset 0 0 0 2px rgba(255, 214, 10, .75); transition: opacity .15s; }
 .halo.away { opacity: 0; }
@@ -536,6 +546,15 @@ const ICONS = {
   ellipseTool: '<circle cx="12" cy="12" r="7.6"/>',
   pointer: '<path d="M6.5 4.2l11.2 7.3-5 1.1-2.6 4.9z"/>',
   timer: '<circle cx="12" cy="13.4" r="7"/><path d="M12 13.4V9.6M10 3.6h4"/>',
+  teleprompter: '<path d="M5 6h14M7.5 10h9M5 14h14M8.5 18h7"/>',
+  play: '<path d="M8 5.5v13l10-6.5z" fill="currentColor" stroke="none"/>',
+  pause: '<path d="M8.5 5.5v13M15.5 5.5v13" stroke-width="2.6"/>',
+  restart: '<path d="M5.5 12a6.5 6.5 0 1 0 2-4.7"/><path d="M5 4.5v3.6h3.6"/>',
+  slower: '<path d="M14 7l-5 5 5 5"/>',
+  faster: '<path d="M10 7l5 5-5 5"/>',
+  smallerText: '<path d="M4 17l3.5-9 3.5 9M5.2 14h4.6M15 12h5"/>',
+  largerText: '<path d="M3.5 18l4-11 4 11M4.9 14.5h5.2M15 12h5M17.5 9.5v5"/>',
+  xmark: '<path d="M7 7l10 10M17 7L7 17"/>',
   undo: '<path d="M9 7.4l-4 4 4 4"/><path d="M5.4 11.4H15a4.6 4.6 0 0 1 0 9.2h-3"/>',
   trash: '<path d="M5 7h14M10 7V5h4v2M7 7l1 13h8l1-13"/>',
   scrollCapture: '<rect x="6" y="3.5" width="12" height="17" rx="2"/><path d="M9 7.5h6M9 10.5h6"/><path d="M12 13.5v4.2M10 15.9l2 1.9 2-1.9"/>',
@@ -673,6 +692,7 @@ const P = {
   cleanKeyboard: { icon: 'cleanKeyboard', accepts: [], keys: 'qingjiejianpan qjjp', name: { zh: '清洁键盘', en: 'Clean Keyboard' }, summary: { zh: '锁住键盘一分钟，擦键盘时不会误触；亮度、音量键也不起作用，用鼠标点「结束清洁」随时恢复', en: 'Lock the keyboard for a minute so you can wipe it without typing anything; brightness and volume keys are blocked too. Click End Cleaning with the mouse to stop any time' } },
   scrollCapture: { icon: 'scrollCapture', accepts: [], keys: 'gundongjietu gdjt changjietu cjt', name: { zh: '滚动截图', en: 'Scrolling Screenshot' }, summary: { zh: '框选一块区域，一边往下滚动一边截，拼成一张长图；网页、聊天记录、长文档都能截全，还能接着识别文字。正在截的时候再用一次就是完成', en: 'Select an area, then scroll down while Pop captures it into one long image: whole web pages, chat histories and long documents, with text recognition afterwards if you like. Use it again while capturing to finish' } },
   screenRecord: { icon: 'screenRecord', accepts: [], keys: 'luping lp', name: { zh: '录屏', en: 'Record Screen' }, summary: { zh: '拖出一块区域、单击选一个窗口或者按回车录整个屏幕，存成 MP4；可以录上电脑里的声音或者麦克风、显示鼠标点击和按下的键，录好能接着转成 GIF。正在录的时候再用一次就停止', en: 'Drag out an area, click a window or press Return to record the whole screen as MP4; can include the Mac’s sound or the microphone and show clicks and keystrokes, and the recording can then be turned into a GIF. Use it again while recording to stop' } },
+  teleprompter: { icon: 'teleprompter', accepts: ['text'], keys: 'ticiqi tcq', name: { zh: '提词器', en: 'Teleprompter' }, summary: { zh: '把选中的稿子放进屏幕上方的提词器，按设好的速度慢慢往上滚，对着摄像头读；空格暂停，↑↓ 调速度，录屏时不会录进去', en: 'Put the selected script in a teleprompter at the top of the screen that scrolls up at the speed you set, so you can read it to the camera. Space pauses, ↑ and ↓ change the speed, and screen recordings leave it out' } },
   timer: { icon: 'timer', accepts: [], keys: 'jishiqi jsq daojishi fanqiezhong fqz', name: { zh: '计时器', en: 'Timer' }, summary: { zh: '倒计时：选一个时长，或者选中「25 分钟」「1:30」这样的文字直接开始；到点时响一声、发通知。也有番茄钟：专注 25 分钟、休息 5 分钟，一直循环', en: 'Countdown: choose a duration, or select text such as “25 min” or “1:30” to start right away. Plays a sound and sends a notification when time’s up. There’s also a Pomodoro timer: 25 minutes of focus, then a 5-minute break, over and over' } },
   cameraBubble: { icon: 'cameraBubble', accepts: [], keys: 'shexiangtouxiaochuang sxtxc', name: { zh: '摄像头小窗', en: 'Camera Bubble' }, summary: { zh: '在屏幕角落用一个圆形小窗显示摄像头画面，录教程、演示时把自己也放进画面；拖动换位置，滚动或双击换大小，右键换形状和摄像头。再用一次关闭', en: 'Show the camera in a small round window in a corner of the screen, so you appear in tutorials and demos. Drag to move it, scroll or double-click to resize, right-click to change the shape or camera. Use it again to close' } },
   pointerHighlight: { icon: 'pointerHighlight', accepts: [], keys: 'tuchuxianshizhizhen tcxszz guangquan', name: { zh: '突出显示指针', en: 'Highlight Pointer' }, summary: { zh: '演示、录教程时在指针周围加一圈黄色光圈，按下鼠标时泛起波纹，让人一眼看到指针在哪；再用一次关闭', en: 'Put a yellow halo around the pointer that ripples when you click, so people can always find it in demos and tutorials. Use it again to turn it off' } },
@@ -690,7 +710,7 @@ const LAYOUT = ['translate', 'search', 'dictionary', 'openURL', 'allPlugins', 'c
 // 「全部功能」里的顺序
 const ORDER = ['translate', 'textImage', 'largeType', 'search', 'dictionary', 'speak', 'textStats', 'changeCase', 'openURL', 'webCapture', 'linkInspect', 'qrCode',
   'fileInfo', 'imageConvert', 'cropImage', 'redact', 'ocr', 'removeBackground', 'videoConvert', 'transcribe', 'trimMedia', 'pdf', 'compareFiles', 'zip',
-  'airDrop', 'sendToPhone', 'screenRecord', 'scrollCapture', 'showKeystrokes', 'screenPen', 'cameraBubble', 'pointerHighlight', 'screenshotOCR', 'annotate', 'pin', 'colorPicker', 'clipboard', 'shelf', 'menuShortcuts', 'systemActions', 'timer', 'cleanKeyboard'];
+  'airDrop', 'sendToPhone', 'screenRecord', 'scrollCapture', 'showKeystrokes', 'screenPen', 'cameraBubble', 'pointerHighlight', 'teleprompter', 'screenshotOCR', 'annotate', 'pin', 'colorPicker', 'clipboard', 'shelf', 'menuShortcuts', 'systemActions', 'timer', 'cleanKeyboard'];
 
 function canHandle(info, content) {
   if (!info) return false;
@@ -1657,6 +1677,7 @@ const RUN = {
   showKeystrokes: (content, anchor) => toggleKeystrokes(anchor),
   screenPen: () => togglePen(),
   timer: (content, anchor) => showTimerCard(anchor),
+  teleprompter: (content) => showTeleprompter(content.text),
   cameraBubble: () => toggleCameraBubble(),
   pointerHighlight: (content, anchor) => togglePointerHighlight(anchor),
 };
@@ -3013,6 +3034,91 @@ function showTimerCard(anchor) {
   presentCard(cardShell({ title: L(P.timer.name), children: [h('div', { class: 'body' }, countdownStatus() || intro)], buttons }), anchor);
 }
 
+// 提词器：选中的稿子在桌面上方慢慢往上滚，读的那一行在上三分之一处；空格暂停，↑↓ 调速度，← → 挪一点，R 从头开始，Esc 关掉
+let prompter = null;
+
+function showTeleprompter(text) {
+  prompter?.stop();
+  closeRing(false);
+  dismissCard(false);
+  const model = { speed: 40, font: 26, offset: 0, paused: false };
+  const textEl = h('div', { class: 'tp-text' }, (text || '').trim());
+  const view = h('div', { class: 'tp-view' }, textEl);
+  const rate = h('span', { class: 'tp-rate' });
+  const playButton = h('button', { type: 'button', onclick: () => togglePause() });
+  const tool = (iconName, title, onclick) => h('button', { type: 'button', title, 'aria-label': title, onclick }, icon(iconName));
+  const bar = h('div', { class: 'tp-bar' }, playButton,
+    tool('restart', L({ zh: '从头开始（R）', en: 'Start over (R)' }), () => restart()),
+    h('span', { class: 'sp' }),
+    tool('slower', L({ zh: '慢一点（↓）', en: 'Slower (↓)' }), () => setSpeed(model.speed - 8)), rate,
+    tool('faster', L({ zh: '快一点（↑）', en: 'Faster (↑)' }), () => setSpeed(model.speed + 8)),
+    h('span', { class: 'sp' }),
+    tool('smallerText', L({ zh: '字小一点（⌘-）', en: 'Smaller text (⌘-)' }), () => setFont(model.font - 4)),
+    tool('largerText', L({ zh: '字大一点（⌘+）', en: 'Larger text (⌘+)' }), () => setFont(model.font + 4)),
+    tool('xmark', L(T.close), () => stop()));
+  const el = h('div', { class: 'teleprompter', role: 'dialog', 'aria-label': L(P.teleprompter.name) }, view, bar);
+  stage.append(el);
+  const maxOffset = () => Math.max(textEl.offsetHeight - view.clientHeight / 3, 0);
+  const render = () => {
+    textEl.style.fontSize = `${model.font}px`;
+    textEl.style.paddingTop = `${view.clientHeight / 3}px`;
+    textEl.style.transform = `translateY(${-model.offset}px)`;
+    rate.textContent = L({ zh: `每分钟约 ${Math.round(model.speed * 60 / (model.font * 1.45))} 行`, en: `About ${Math.round(model.speed * 60 / (model.font * 1.45))} lines a minute` });
+    playButton.replaceChildren(icon(model.paused ? 'play' : 'pause'));
+    playButton.title = L({ zh: '暂停或继续（空格）', en: 'Pause or resume (Space)' });
+  };
+  const setSpeed = (value) => { model.speed = clamp(value, 10, 150); render(); };
+  const setFont = (value) => { model.font = clamp(value, 18, 60); render(); model.offset = Math.min(model.offset, maxOffset()); render(); };
+  const restart = () => { model.offset = 0; model.paused = false; render(); };
+  const togglePause = () => { if (model.paused && model.offset >= maxOffset()) { restart(); return; } model.paused = !model.paused; render(); };
+  let last = performance.now();
+  let frame = requestAnimationFrame(function step(now) {
+    const elapsed = Math.min((now - last) / 1000, 0.1);
+    last = now;
+    if (!model.paused) {
+      model.offset = Math.min(model.offset + model.speed * elapsed, maxOffset());
+      if (model.offset >= maxOffset()) model.paused = true;
+      render();
+    }
+    frame = requestAnimationFrame(step);
+  });
+  // 拖动换位置，滚轮往回、往前挪
+  let drag = null;
+  el.addEventListener('pointerdown', (event) => {
+    event.stopPropagation();
+    if (event.target.closest('button')) return;
+    drag = { id: event.pointerId, x: event.clientX - el.offsetLeft, y: event.clientY - el.offsetTop };
+    el.setPointerCapture(event.pointerId);
+  });
+  el.addEventListener('pointermove', (event) => {
+    if (!drag || event.pointerId !== drag.id) return;
+    el.style.left = `${clamp(event.clientX - drag.x, el.offsetWidth / 2, stage.clientWidth - el.offsetWidth / 2)}px`;
+    el.style.top = `${clamp(event.clientY - drag.y, MENUBAR + 4, stage.clientHeight - el.offsetHeight - 4)}px`;
+  });
+  el.addEventListener('pointerup', () => { drag = null; });
+  el.addEventListener('wheel', (event) => { event.preventDefault(); model.offset = clamp(model.offset + event.deltaY, 0, maxOffset()); render(); }, { passive: false });
+  function stop() { cancelAnimationFrame(frame); el.remove(); prompter = null; }
+  prompter = {
+    stop,
+    key(event) {
+      if (event.metaKey && (event.key === '=' || event.key === '+')) { setFont(model.font + 4); return true; }
+      if (event.metaKey && event.key === '-') { setFont(model.font - 4); return true; }
+      if (event.metaKey || event.ctrlKey || event.altKey) return false;
+      switch (event.key) {
+        case 'Escape': stop(); return true;
+        case ' ': togglePause(); return true;
+        case 'ArrowUp': setSpeed(model.speed + 8); return true;
+        case 'ArrowDown': setSpeed(model.speed - 8); return true;
+        case 'ArrowLeft': model.offset = clamp(model.offset - model.font * 2, 0, maxOffset()); render(); return true;
+        case 'ArrowRight': model.offset = clamp(model.offset + model.font * 2, 0, maxOffset()); render(); return true;
+        case 'r': case 'R': restart(); return true;
+        default: return false;
+      }
+    },
+  };
+  render();
+}
+
 // 摄像头小窗：桌面右下角一个圆形小窗。网页里能用摄像头时显示真的画面（像照镜子一样左右翻过来），
 // 用不了时换成一张示例画面。拖动换位置，滚动或双击换大小，右键换形状、关闭；再用一次关闭
 let camera = null;
@@ -3396,6 +3502,8 @@ document.addEventListener('keydown', (event) => {
   if (cleaning) { event.preventDefault(); return; }
   keycaps?.key(event);
   if (pen && pen.key(event)) { event.preventDefault(); return; }
+  // 提词器只在别的浮窗都没开、也没在输入框里打字时接按键
+  if (prompter && !ring && !card && !picker && !event.target.closest?.('input, textarea, [contenteditable]') && prompter.key(event)) { event.preventDefault(); return; }
   if (largeType) { largeType.key(event); event.preventDefault(); return; }
   if (scrolling) {
     if (event.key === 'Escape') { scrolling.cancel(); event.preventDefault(); }

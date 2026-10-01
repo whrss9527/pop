@@ -2237,3 +2237,14 @@
 
 /* 0.42.1：录屏和演示分组 */
 "录屏和演示" = "Recording & Presenting";
+
+/* 0.43.0：提词器 */
+"提词器" = "Teleprompter";
+"把选中的稿子放进屏幕上方的提词器，按设好的速度慢慢往上滚，对着摄像头读；空格暂停，↑↓ 调速度，录屏时不会录进去" = "Put the selected script in a teleprompter at the top of the screen that scrolls up at the speed you set, so you can read it to the camera. Space pauses, ↑ and ↓ change the speed, and screen recordings leave it out";
+"暂停或继续（空格）" = "Pause or resume (Space)";
+"从头开始（R）" = "Start over (R)";
+"慢一点（↓）" = "Slower (↓)";
+"快一点（↑）" = "Faster (↑)";
+"每分钟约 %lld 行" = "About %lld lines a minute";
+"字小一点（⌘-）" = "Smaller text (⌘-)";
+"字大一点（⌘+）" = "Larger text (⌘+)";
