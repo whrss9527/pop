@@ -62,6 +62,8 @@ final class BreakReminder: ObservableObject {
     /// 盖住屏幕之前在前台的 App，休息完还给它
     private var previousApp: NSRunningApplication?
     private var observers: [NSObjectProtocol] = []
+    /// 什么时候睡的：睡醒时「多久没碰键盘鼠标」会清零，睡了多久要自己记
+    private var sleptAt: Date?
 
     init(defaults: UserDefaults = .standard, clock: @escaping () -> Date = Date.init,
          idle: @escaping () -> TimeInterval = BreakSignals.idleSeconds,
@@ -71,13 +73,21 @@ final class BreakReminder: ObservableObject {
         self.idle = idle
         self.quiet = quiet
         self.isLive = isLive
-        let minutes = defaults.object(forKey: Self.intervalKey) as? Int ?? Self.defaultInterval
-        let seconds = defaults.object(forKey: Self.lengthKey) as? Int ?? Self.defaultLength
-        schedule = BreakSchedule(interval: TimeInterval(Self.intervalChoices.contains(minutes) ? minutes : Self.defaultInterval) * 60,
-                                 breakLength: TimeInterval(Self.lengthChoices.contains(seconds) ? seconds : Self.defaultLength))
-        isEnabled = defaults.bool(forKey: Self.enabledKey)
-        fullScreen = defaults.bool(forKey: Self.fullScreenKey)
+        let saved = Self.savedSettings(defaults)
+        schedule = BreakSchedule(interval: saved.interval, breakLength: saved.length)
+        isEnabled = saved.enabled
+        fullScreen = saved.fullScreen
         now = clock()
+    }
+
+    /// 存着的设置；存的值不在几档里时用默认的
+    private static func savedSettings(_ defaults: UserDefaults) -> (enabled: Bool, interval: TimeInterval, length: TimeInterval, fullScreen: Bool) {
+        let minutes = defaults.object(forKey: intervalKey) as? Int ?? defaultInterval
+        let seconds = defaults.object(forKey: lengthKey) as? Int ?? defaultLength
+        return (defaults.bool(forKey: enabledKey),
+                TimeInterval(intervalChoices.contains(minutes) ? minutes : defaultInterval) * 60,
+                TimeInterval(lengthChoices.contains(seconds) ? seconds : defaultLength),
+                defaults.bool(forKey: fullScreenKey))
     }
 
     var intervalMinutes: Int {
@@ -90,8 +100,13 @@ final class BreakReminder: ObservableObject {
 
     // MARK: - 设置
 
-    /// 开着的话，Pop 启动时（插件包装载时）接着计时
+    /// 插件包装载时（Pop 启动、装上插件）：按存着的设置来（卸载时可能一起删掉了），开着的话接着计时
     func startIfEnabled() {
+        let saved = Self.savedSettings(defaults)
+        isEnabled = saved.enabled
+        schedule.interval = saved.interval
+        schedule.breakLength = saved.length
+        fullScreen = saved.fullScreen
         if isEnabled {
             startTicking()
         }
@@ -101,6 +116,11 @@ final class BreakReminder: ObservableObject {
         guard enabled != isEnabled else { return }
         isEnabled = enabled
         defaults.set(enabled, forKey: Self.enabledKey)
+        // 没开的时候在卡片上点了「现在休息」：打开时让这次休息走完
+        if enabled, schedule.isOnBreak {
+            startTicking()
+            return
+        }
         schedule.reset()
         hideEverything()
         if enabled {
@@ -135,6 +155,13 @@ final class BreakReminder: ObservableObject {
         switch schedule.update(now: now, idle: idle(), quiet: isQuiet) {
         case .remind:
             show(.reminder)
+        case .none where schedule.isDue:
+            // 提醒着的时候开始放视频、开会：先收起来，结束了再弹出来
+            if isQuiet, phase == .reminder {
+                hidePanel()
+            } else if !isQuiet, phase == .hidden {
+                show(.reminder)
+            }
         case .rested:
             if phase == .reminder {
                 hideEverything()
@@ -183,6 +210,23 @@ final class BreakReminder: ObservableObject {
         hideEverything()
     }
 
+    /// 要睡了：记下时刻
+    func willSleep() {
+        sleptAt = clock()
+    }
+
+    /// 睡醒了：睡的时间够长就算休息过了，提醒着的话收起来；然后马上看一次
+    func didWake() {
+        if let sleptAt, !schedule.isOnBreak, clock().timeIntervalSince(sleptAt) >= schedule.restThreshold {
+            schedule.rest()
+            if phase == .reminder {
+                hidePanel()
+            }
+        }
+        sleptAt = nil
+        tick()
+    }
+
     /// 卸载插件包、关掉的时候
     func shutDown() {
         stopTicking()
@@ -191,12 +235,21 @@ final class BreakReminder: ObservableObject {
     }
 
     private func startTicking() {
-        guard isLive, timer == nil else { return }
-        scheduleTimer(every: schedule.isOnBreak ? 1 : Self.tickSeconds)
+        guard isLive else { return }
+        // 休息倒计时的定时器可能已经在走了；睡醒、解锁的通知照样要接
+        if timer == nil {
+            scheduleTimer(every: schedule.isOnBreak ? 1 : Self.tickSeconds)
+        }
         guard observers.isEmpty else { return }
-        // 睡醒、解锁回来马上看一次：多半已经休息过了
         let center = NSWorkspace.shared.notificationCenter
-        for name in [NSWorkspace.didWakeNotification, NSWorkspace.screensDidWakeNotification, NSWorkspace.sessionDidBecomeActiveNotification] {
+        observers.append(center.addObserver(forName: NSWorkspace.willSleepNotification, object: nil, queue: .main) { [weak self] _ in
+            MainActor.assumeIsolated { self?.willSleep() }
+        })
+        observers.append(center.addObserver(forName: NSWorkspace.didWakeNotification, object: nil, queue: .main) { [weak self] _ in
+            MainActor.assumeIsolated { self?.didWake() }
+        })
+        // 屏幕醒来、解锁回来马上看一次：离开够久的话已经算休息过了
+        for name in [NSWorkspace.screensDidWakeNotification, NSWorkspace.sessionDidBecomeActiveNotification] {
             observers.append(center.addObserver(forName: name, object: nil, queue: .main) { [weak self] _ in
                 MainActor.assumeIsolated { self?.tick() }
             })
@@ -246,7 +299,8 @@ final class BreakReminder: ObservableObject {
     nonisolated static func durationText(_ seconds: TimeInterval) -> String {
         let minutes = Int((seconds / 60).rounded(.down))
         if minutes < 1 {
-            return String(localized: "不到 1 分钟")
+            // 总是接在「已经连续用了」后面，英文要小写
+            return String(localized: "不到一分钟")
         }
         if minutes < 60 {
             return String(localized: "\(minutes) 分钟")
@@ -351,13 +405,14 @@ final class BreakReminder: ObservableObject {
         hideOverlays()
     }
 
-    /// 休息时盖住每一块屏幕，主屏幕上写着倒计时；Pop 到前台，Esc 就能提前结束
+    /// 休息时盖住每一块屏幕，指针所在的屏幕上写着倒计时；Pop 到前台，Esc 就能提前结束
     private func showOverlays() {
         guard isLive else { return }
         hideOverlays()
         previousApp = NSWorkspace.shared.frontmostApplication
         NSApp.activate()
-        let main = NSScreen.main
+        let pointer = NSEvent.mouseLocation
+        let main = NSScreen.screens.first { $0.frame.contains(pointer) } ?? NSScreen.main
         for screen in NSScreen.screens {
             let showsCountdown = screen == main || main == nil
             let window = BreakOverlayWindow(screen: screen, rootView: BreakOverlayView(model: self, showsCountdown: showsCountdown)) { [weak self] in

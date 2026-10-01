@@ -1,3 +1,4 @@
+import CoreGraphics
 import Foundation
 import IOKit.pwr_mgt
 @testable import Pop
@@ -16,6 +17,8 @@ struct BreakSchedule: Equatable {
     private(set) var breakEndsAt: Date?
     /// 提醒弹出来了，还没处理
     private(set) var isDue = false
+    /// 上一次看到有 App 不让屏幕变暗（在放视频、开会）的时刻
+    private(set) var lastQuiet: Date?
 
     init(interval: TimeInterval, breakLength: TimeInterval) {
         self.interval = interval
@@ -42,17 +45,20 @@ struct BreakSchedule: Equatable {
     }
 
     /// 每隔一会儿看一次。quiet 是有别的 App 不让屏幕变暗（在放视频、开会、演示）：这时不提醒，也不把没碰键盘鼠标算成休息
-    mutating func update(now: Date, idle: TimeInterval, quiet: Bool) -> Change {
+    mutating func update(now: Date, idle rawIdle: TimeInterval, quiet: Bool) -> Change {
         if let breakEndsAt {
             guard now >= breakEndsAt else { return .none }
             finishBreak()
             return .breakFinished
         }
+        if quiet {
+            lastQuiet = now
+        }
+        // 刚看完视频、开完会：那段时间没碰键盘鼠标不算休息，从结束的那一刻算起
+        let idle = lastQuiet.map { min(rawIdle, max(0, now.timeIntervalSince($0))) } ?? rawIdle
         if !quiet, idle >= restThreshold {
             let wasDue = isDue
-            workStart = nil
-            snoozedUntil = nil
-            isDue = false
+            rest()
             return wasDue ? .rested : .none
         }
         if workStart == nil {
@@ -65,6 +71,14 @@ struct BreakSchedule: Equatable {
         }
         isDue = true
         return .remind
+    }
+
+    /// 离开够久了（走开了，或者合上盖子睡了一觉）：算休息过了，下次碰键盘鼠标时重新算。正在休息时不管
+    mutating func rest() {
+        guard breakEndsAt == nil else { return }
+        workStart = nil
+        snoozedUntil = nil
+        isDue = false
     }
 
     /// 「跳过」：从现在起重新算一段

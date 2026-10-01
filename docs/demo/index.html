@@ -6181,7 +6181,7 @@ function brkShowBanner(kind) {
         button(zh ? `休息 ${brkLength(BREAK.length)}` : `Take a ${brkLength(BREAK.length)} Break`, () => brkTakeBreak(), { class: 'mbtn default' })));
   } else if (kind === 'break') {
     const remaining = (BREAK.endsAt - Date.now()) / 1000;
-    el = h('div', { class: 'brk-banner glass', role: 'status' },
+    el = h('div', { class: 'brk-banner glass on-break', role: 'status' },
       h('div', { class: 'head' }, brkRing(1 - remaining / BREAK.length), h('div', { class: 'text' },
         h('b', null, zh ? `休息中，还剩 ${brkCountdown(remaining)}` : `On a break, ${brkCountdown(remaining)} left`), h('span', { class: 'sub' }, brkTip())),
         button(zh ? '结束休息' : 'End Break', () => brkEndBreak())));
@@ -6218,8 +6218,25 @@ function brkTakeBreak() {
   clearInterval(BREAK.timer);
   BREAK.timer = setInterval(() => {
     if (Date.now() >= BREAK.endsAt) { brkEndBreak(true); return; }
-    if (BREAK.overlay) brkDrawOverlay(); else brkShowBanner('break');
+    brkTickBreak();
   }, 1000);
+}
+// 每秒只改倒计时和进度圈，不重新弹出小条（不然出现的动画每秒放一次）
+function brkTickBreak() {
+  const zh = lang === 'zh';
+  const remaining = (BREAK.endsAt - Date.now()) / 1000;
+  if (BREAK.overlay) {
+    const big = BREAK.overlay.querySelector('.big');
+    if (big) big.textContent = brkCountdown(remaining); else brkDrawOverlay();
+    return;
+  }
+  const el = BREAK.banner;
+  const title = el?.classList.contains('on-break') ? el.querySelector('.text b') : null;
+  if (!title) { brkShowBanner('break'); return; }
+  title.textContent = zh ? `休息中，还剩 ${brkCountdown(remaining)}` : `On a break, ${brkCountdown(remaining)} left`;
+  const bar = el.querySelector('.brk-ring .bar');
+  const length = 2 * Math.PI * 12;
+  bar?.setAttribute('stroke-dashoffset', (length * (remaining / BREAK.length)).toFixed(2));
 }
 function brkEndBreak(finished = false) {
   clearInterval(BREAK.timer);

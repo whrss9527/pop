@@ -79,6 +79,19 @@ final class BreakReminderTests: XCTestCase {
         XCTAssertFalse(schedule.isDue)
         // 看完了：该提醒就提醒
         XCTAssertEqual(schedule.update(now: start.addingTimeInterval(51 * 60), idle: 2, quiet: false), .remind)
+
+        // 开了 40 分钟的会，一直没碰键盘鼠标：会一结束不算休息过，该提醒就提醒
+        var meeting = BreakSchedule(interval: 45 * 60, breakLength: 300)
+        _ = meeting.update(now: start, idle: 0, quiet: false)
+        XCTAssertEqual(meeting.update(now: start.addingTimeInterval(20 * 60), idle: 60, quiet: true), .none)
+        XCTAssertEqual(meeting.update(now: start.addingTimeInterval(60 * 60), idle: 41 * 60, quiet: true), .none)
+        XCTAssertEqual(meeting.update(now: start.addingTimeInterval(60 * 60 + 10), idle: 41 * 60 + 10, quiet: false), .remind)
+        XCTAssertEqual(meeting.workStart, start)
+        // 开完会真的走开了：从会结束的时候算，离开够久才算休息过
+        XCTAssertEqual(meeting.update(now: start.addingTimeInterval(64 * 60), idle: 45 * 60, quiet: false), .none)
+        XCTAssertTrue(meeting.isDue)
+        XCTAssertEqual(meeting.update(now: start.addingTimeInterval(66 * 60), idle: 47 * 60, quiet: false), .rested)
+        XCTAssertNil(meeting.workStart)
     }
 
     func testBreakCountdown() {
@@ -118,8 +131,8 @@ final class BreakReminderTests: XCTestCase {
     // MARK: - 文字
 
     func testTexts() {
-        XCTAssertEqual(BreakReminder.durationText(0), "不到 1 分钟")
-        XCTAssertEqual(BreakReminder.durationText(59), "不到 1 分钟")
+        XCTAssertEqual(BreakReminder.durationText(0), "不到一分钟")
+        XCTAssertEqual(BreakReminder.durationText(59), "不到一分钟")
         XCTAssertEqual(BreakReminder.durationText(60), "1 分钟")
         XCTAssertEqual(BreakReminder.durationText(45 * 60 + 30), "45 分钟")
         XCTAssertEqual(BreakReminder.durationText(60 * 60), "1 小时")
@@ -221,6 +234,71 @@ final class BreakReminderTests: XCTestCase {
         // 关掉
         reminder.setEnabled(false)
         XCTAssertNil(reminder.schedule.workStart)
+        XCTAssertEqual(reminder.statusText, "没开。打开以后，连续用电脑 45 分钟会提醒你休息 5 分钟。")
+    }
+
+    func testSleepCountsAsRest() {
+        var now = start
+        let reminder = BreakReminder(defaults: freshDefaults(), clock: { now }, idle: { 0 }, quiet: { false }, isLive: false)
+        reminder.setEnabled(true)
+        now = start.addingTimeInterval(45 * 60)
+        reminder.tick()
+        XCTAssertEqual(reminder.phase, .reminder)
+        // 合上盖子睡了一个小时（睡醒时「多久没碰键盘鼠标」清零了）：算休息过了，提醒收起来，从睡醒算起
+        reminder.willSleep()
+        now = now.addingTimeInterval(60 * 60)
+        reminder.didWake()
+        XCTAssertEqual(reminder.phase, .hidden)
+        XCTAssertFalse(reminder.schedule.isDue)
+        XCTAssertEqual(reminder.schedule.workStart, now)
+        // 只睡了两分钟：照样算
+        now = now.addingTimeInterval(30 * 60)
+        reminder.tick()
+        reminder.willSleep()
+        now = now.addingTimeInterval(120)
+        reminder.didWake()
+        XCTAssertEqual(reminder.statusText, "已经连续用了 32 分钟，13 分钟后提醒休息")
+        // 正在休息时睡醒：休息照样倒计时
+        reminder.takeBreak()
+        reminder.willSleep()
+        now = now.addingTimeInterval(400)
+        reminder.didWake()
+        XCTAssertEqual(reminder.phase, .finished)
+    }
+
+    func testMeetingHidesTheReminderAndBreaksKeepGoing() {
+        let defaults = freshDefaults()
+        var now = start
+        var quiet = false
+        let reminder = BreakReminder(defaults: defaults, clock: { now }, idle: { 0 }, quiet: { quiet }, isLive: false)
+        reminder.setEnabled(true)
+        now = start.addingTimeInterval(45 * 60)
+        reminder.tick()
+        XCTAssertEqual(reminder.phase, .reminder)
+        // 提醒着的时候开始开会：先收起来，开完了再弹出来
+        quiet = true
+        now = now.addingTimeInterval(10)
+        reminder.tick()
+        XCTAssertEqual(reminder.phase, .hidden)
+        XCTAssertTrue(reminder.schedule.isDue)
+        quiet = false
+        now = now.addingTimeInterval(30 * 60)
+        reminder.tick()
+        XCTAssertEqual(reminder.phase, .reminder)
+
+        // 没开的时候点了「现在休息」，休息时打开：接着休息
+        let other = BreakReminder(defaults: freshDefaults(), clock: { now }, idle: { 0 }, quiet: { false }, isLive: false)
+        other.takeBreak()
+        other.setEnabled(true)
+        XCTAssertTrue(other.isEnabled)
+        XCTAssertTrue(other.schedule.isOnBreak)
+        XCTAssertEqual(other.phase, .onBreak)
+
+        // 卸载时设置一起删掉了，又装上：按存着的来，不接着计时
+        reminder.shutDown()
+        defaults.removeObject(forKey: BreakReminder.enabledKey)
+        reminder.startIfEnabled()
+        XCTAssertFalse(reminder.isEnabled)
         XCTAssertEqual(reminder.statusText, "没开。打开以后，连续用电脑 45 分钟会提醒你休息 5 分钟。")
     }
 

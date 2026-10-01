@@ -118,6 +118,7 @@ struct BreakOverlayView: View {
                             .background(Capsule().fill(Color.white.opacity(0.18)))
                     }
                     .buttonStyle(.plain)
+                    .keyboardShortcut(.cancelAction)
                     .padding(.top, 6)
                     Text("按 Esc 也能提前结束")
                         .font(.system(size: 12))
