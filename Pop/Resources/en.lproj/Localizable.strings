@@ -2273,3 +2273,6 @@
 "看文件夹里哪些东西最占地方、找出内容一样的重复文件、比较两个文件夹有哪些不同，不要的可以移到废纸篓" = "See what takes up the most space in a folder, find files with identical contents and compare two folders, then move what you don’t need to the Trash";
 "Markdown 富文本" = "Markdown Rich Text";
 "把选中的 Markdown 显示成排好版的样子，或者转成带格式的文字复制下来，粘贴到文稿、邮件、备忘录里保留格式" = "Preview the selected Markdown formatted, or copy it as formatted text that keeps its formatting when pasted into documents, mail or notes";
+"显示" = "Show";
+"还没有装插件" = "No plugins installed yet";
+"已装 %lld 个插件，一共占用 %@" = "%lld plugins installed, using %@";
