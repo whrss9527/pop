@@ -334,6 +334,12 @@ enum PluginCatalog {
         PluginPackage(id: "diskSpeed", bundleName: "PopDiskSpeed", name: String(localized: "磁盘测速"),
                       summary: String(localized: "测硬盘、U 盘、移动固态硬盘连续写入和读取有多快：选中磁盘里的文件或文件夹就测那块盘，什么都不选时测启动磁盘"),
                       symbol: "speedometer", category: .files, functions: [BuiltinPluginID.diskSpeed], defaultsKeys: ["pop.diskSpeed.size"]),
+        PluginPackage(id: "worldTime", bundleName: "PopWorldTime", name: String(localized: "时区换算"),
+                      summary: String(localized: "选中「3pm PST」「北京时间晚上 9 点」这样的时间，换算成常用的几个城市的时间；拖动滑块看别的时刻，找大家都在上班的时间开会"),
+                      symbol: "globe.asia.australia", category: .convert, functions: [BuiltinPluginID.worldTime], defaultsKeys: ["pop.worldTime.cities"]),
+        PluginPackage(id: "chart", bundleName: "PopChart", name: String(localized: "生成图表"),
+                      summary: String(localized: "选中表格、一行一个「名字 数值」或者一串数，画成柱状图、条形图、折线图或者饼图，复制成图片或者存到「下载」"),
+                      symbol: "chart.bar.xaxis", category: .convert, functions: [BuiltinPluginID.chart], defaultsKeys: ["pop.chart.showsValues"]),
     ]
 
     /// 插件包提供的所有功能

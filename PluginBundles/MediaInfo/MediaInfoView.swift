@@ -189,35 +189,14 @@ struct MediaInfoView: View {
                 }
                 Spacer(minLength: 0)
             }
-            ScrollView {
-                VStack(alignment: .leading, spacing: 10) {
-                    ForEach(Array(model.sections.enumerated()), id: \.offset) { _, section in
-                        VStack(alignment: .leading, spacing: 5) {
-                            Text(section.title)
-                                .font(.caption.weight(.semibold))
-                                .foregroundStyle(.secondary)
-                            Grid(alignment: .leadingFirstTextBaseline, horizontalSpacing: 12, verticalSpacing: 4) {
-                                ForEach(Array(section.rows.enumerated()), id: \.offset) { _, row in
-                                    GridRow {
-                                        Text(row.label)
-                                            .font(.caption)
-                                            .foregroundStyle(.secondary)
-                                            .frame(width: labelWidth, alignment: .trailing)
-                                        Text(row.value)
-                                            .font(.callout)
-                                            .foregroundStyle(row.warning ? Color.orange : Color.primary)
-                                            .monospacedDigit()
-                                            .fixedSize(horizontal: false, vertical: true)
-                                            .textSelection(.enabled)
-                                    }
-                                }
-                            }
-                        }
-                    }
+            // 放得下就按内容的高度显示，最高 380，放不下才滚动（以前按行数估高度，下面会空出一块）
+            ViewThatFits(in: .vertical) {
+                sectionList
+                ScrollView {
+                    sectionList
                 }
-                .frame(maxWidth: .infinity, alignment: .leading)
             }
-            .frame(height: listHeight)
+            .frame(maxHeight: 380)
             if model.report.location != nil {
                 locationNote
             }
@@ -238,11 +217,34 @@ struct MediaInfoView: View {
         return min(max(56, ceil(widest) + 2), 120)
     }
 
-    /// 列表的高度：按组数和行数估，最高 380，再多就滚动
-    private var listHeight: CGFloat {
-        let sections = model.sections
-        let rows = sections.reduce(0) { $0 + $1.rows.count }
-        return min(CGFloat(sections.count) * 21 + CGFloat(rows) * 21 + CGFloat(max(sections.count - 1, 0)) * 10, 380)
+    /// 每一组的标题和一行行的信息
+    private var sectionList: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            ForEach(Array(model.sections.enumerated()), id: \.offset) { _, section in
+                VStack(alignment: .leading, spacing: 5) {
+                    Text(section.title)
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(.secondary)
+                    Grid(alignment: .leadingFirstTextBaseline, horizontalSpacing: 12, verticalSpacing: 4) {
+                        ForEach(Array(section.rows.enumerated()), id: \.offset) { _, row in
+                            GridRow {
+                                Text(row.label)
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                                    .frame(width: labelWidth, alignment: .trailing)
+                                Text(row.value)
+                                    .font(.callout)
+                                    .foregroundStyle(row.warning ? Color.orange : Color.primary)
+                                    .monospacedDigit()
+                                    .fixedSize(horizontal: false, vertical: true)
+                                    .textSelection(.enabled)
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 
     /// 带着拍摄地点：说明一下，可以在地图里看，或者去掉位置另存一份

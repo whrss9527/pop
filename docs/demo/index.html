@@ -669,6 +669,66 @@ button { font: inherit; color: inherit; }
 .ds-progress[hidden] { display: none; }
 .ds-foot { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
 .ds-foot > span { flex: 1; min-width: 150px; font-size: 11px; color: var(--label-2); }
+/* 时区换算 */
+.wt-note { font-size: 11.5px; color: var(--label-2); }
+.wt-list { display: flex; flex-direction: column; gap: 2px; }
+.wt-row { display: grid; grid-template-columns: minmax(0, 124px) minmax(40px, 1fr) minmax(0, 104px); align-items: center; gap: 10px; height: 40px; padding: 0 8px; border-radius: 8px; background: var(--fill-2); }
+.wt-row:hover { background: var(--fill); }
+.wt-name { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+.wt-name b { display: flex; align-items: center; gap: 4px; font-size: 12.5px; font-weight: 600; white-space: nowrap; min-width: 0; }
+.wt-name b > em { font-style: normal; overflow: hidden; text-overflow: ellipsis; }
+.wt-name > span { font-size: 10px; color: var(--label-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.wt-tag { flex: none; font-size: 9px; font-weight: 600; padding: 0 4px; border-radius: 6px; border: 0.8px solid currentColor; color: var(--label-2); line-height: 13px; }
+.wt-icon { flex: none; width: 15px; height: 15px; padding: 0; border: 0; border-radius: 50%; background: none; color: var(--label-2); cursor: pointer; display: none; place-items: center; }
+.wt-icon svg { width: 14px; height: 14px; }
+.wt-icon.add { display: grid; color: var(--accent); }
+.wt-row:hover .wt-icon, .wt-icon:focus-visible { display: grid; }
+.wt-bar { position: relative; height: 8px; border-radius: 4px; background: linear-gradient(to right, rgba(94, 92, 230, .32) 0 29.1667%, rgba(255, 159, 10, .32) 29.1667% 37.5%, rgba(48, 209, 88, .55) 37.5% 75%, rgba(255, 159, 10, .32) 75% 91.6667%, rgba(94, 92, 230, .32) 91.6667% 100%); }
+.wt-bar i { position: absolute; top: -4px; width: 2.5px; height: 16px; border-radius: 1px; background: var(--label); }
+.wt-time { display: flex; flex-direction: column; align-items: flex-end; gap: 1px; min-width: 0; }
+.wt-time b { font: 500 17px/1.1 var(--font); font-variant-numeric: tabular-nums; }
+.wt-time span { display: flex; gap: 3px; font-size: 10px; color: var(--label-2); white-space: nowrap; }
+.wt-time span em { font-style: normal; font-weight: 600; color: #ff9f0a; }
+.wt-time span em.back { color: var(--accent); }
+.wt-slide { display: flex; align-items: center; gap: 8px; }
+.wt-slide svg { width: 15px; height: 15px; flex: none; color: var(--label-2); }
+.wt-slide input { flex: 1; min-width: 0; accent-color: var(--accent); }
+.wt-slide span { width: 92px; flex: none; text-align: right; font-size: 11px; font-variant-numeric: tabular-nums; color: var(--label-2); }
+.wt-slide span.on { color: var(--label); }
+.wt-overlap { display: flex; align-items: center; gap: 6px; font-size: 11px; color: var(--label-2); }
+.wt-overlap > span { flex: 1; min-width: 0; }
+.wt-overlap svg { width: 14px; height: 14px; flex: none; }
+.wt-search { display: flex; flex-direction: column; gap: 2px; }
+.wt-search input { width: 100%; font: inherit; font-size: 12px; padding: 4px 8px; border-radius: 6px; border: 1px solid var(--field-stroke); background: var(--field); color: var(--label); }
+.wt-result { display: flex; align-items: center; gap: 8px; width: 100%; height: 24px; padding: 0 6px; border: 0; border-radius: 6px; background: none; color: var(--label); font: inherit; font-size: 12.5px; cursor: pointer; text-align: left; }
+.wt-result:hover { background: var(--fill-2); }
+.wt-result svg { width: 14px; height: 14px; color: var(--accent); flex: none; }
+.wt-result span { font-size: 11px; color: var(--label-2); }
+.wt-result b { margin-left: auto; font-weight: 400; color: var(--label-2); font-variant-numeric: tabular-nums; }
+.wt-none { font-size: 11px; color: var(--label-2); padding: 2px 6px; }
+.wt-grow { flex: 1; }
+/* 选中表格的场景、生成图表 */
+.note-table { border-collapse: collapse; margin: 2px 0 12px; font-size: 13px; line-height: 1.5; }
+.note-table th, .note-table td { border: 1px solid var(--sep); padding: 2px 14px; text-align: right; font-variant-numeric: tabular-nums; }
+.note-table th:first-child, .note-table td:first-child { text-align: left; }
+.note-table th { font-weight: 600; }
+.note-table.sel-table th, .note-table.sel-table td { background: var(--sel); }
+.rows.pre .v { white-space: pre-wrap; word-break: normal; overflow-wrap: anywhere; }
+.ch-title { width: 100%; font: inherit; font-size: 12px; padding: 4px 8px; border-radius: 6px; border: 1px solid var(--field-stroke); background: var(--field); color: var(--label); }
+.ch-canvas { width: 100%; height: auto; aspect-ratio: 428 / 230; max-width: 100%; display: block; }
+.ch-canvas text { font: 9.5px var(--font); fill: var(--label-2); }
+.ch-canvas text.val { font-size: 9px; }
+.ch-canvas text.pct { fill: #fff; font-weight: 700; }
+.ch-canvas .axis { stroke: var(--label-3); }
+.ch-canvas .grid { stroke: var(--sep); stroke-dasharray: 2 3; }
+.ch-legend { display: flex; flex-wrap: wrap; gap: 4px 12px; font-size: 11px; color: var(--label-2); }
+.ch-legend[hidden] { display: none; }
+.ch-legend i { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 4px; }
+.ch-seg { align-self: stretch; }
+.ch-seg button { flex: 1; min-width: 0; }
+.ch-opts { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; font-size: 12px; }
+.ch-opts label { display: flex; align-items: center; gap: 4px; cursor: pointer; }
+.wt-search[hidden], .wt-overlap[hidden] { display: none; }
 /* 分辨率 */
 .rs-seg { align-self: stretch; }
 .rs-seg button { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
@@ -916,6 +976,13 @@ const ICONS = {
   soundDevices: '<rect x="6" y="2.5" width="12" height="19" rx="2.5"/><circle cx="12" cy="14.5" r="3.3"/><circle cx="12" cy="7" r="1.3"/>',
   resolution: '<rect x="3" y="4.5" width="18" height="12" rx="1.6"/><path d="M9 20h6M12 16.5V20M6.5 10.5V8h2.5M17.5 11v2.5H15"/>',
   diskSpeed: '<path d="M4.2 17.5a9 9 0 1 1 15.6 0"/><path d="M12 13.5l4.2-4.6"/><circle cx="12" cy="13.5" r="1.4"/>',
+  chart: '<path d="M4 20h16"/><rect x="5.5" y="11" width="3.2" height="7" rx=".6"/><rect x="10.4" y="6.5" width="3.2" height="11.5" rx=".6"/><rect x="15.3" y="13" width="3.2" height="5" rx=".6"/>',
+  worldTime: '<circle cx="12" cy="12" r="8.6"/><path d="M3.6 12h16.8M12 3.4c2.4 2.4 3.6 5.3 3.6 8.6s-1.2 6.2-3.6 8.6c-2.4-2.4-3.6-5.3-3.6-8.6s1.2-6.2 3.6-8.6z"/>',
+  wtShift: '<path d="M4 12a8 8 0 0 1 13.7-5.6M20 12a8 8 0 0 1-13.7 5.6"/><path d="M17.9 3.6v3h-3M6.1 20.4v-3h3"/>',
+  wtPeople: '<circle cx="9" cy="8.5" r="3"/><path d="M3.5 19c.6-3.2 2.7-5 5.5-5s4.9 1.8 5.5 5"/><circle cx="16.8" cy="9.5" r="2.4"/><path d="M15.6 14.2c2.6-.3 4.5 1.3 5 4.3"/>',
+  wtMoon: '<path d="M19.5 14.6A8 8 0 1 1 9.4 4.5a6.5 6.5 0 0 0 10.1 10.1z"/>',
+  wtPlus: '<circle cx="12" cy="12" r="8.6"/><path d="M12 8v8M8 12h8"/>',
+  wtMinus: '<circle cx="12" cy="12" r="8.6"/><path d="M8 12h8"/>',
   dsWrite: '<path d="M12 4v11M7.5 10.5 12 15l4.5-4.5M5 19.5h14"/>',
   dsRead: '<path d="M12 20V9M7.5 13.5 12 9l4.5 4.5M5 4.5h14"/>',
   rsMenubar: '<rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 8.5h18"/>',
@@ -1076,6 +1143,7 @@ const T = {
     plugins: { zh: '装卸插件', en: 'Plugins' },
     foreign: { zh: '选中外文', en: 'Foreign text' },
     link: { zh: '选中链接', en: 'A link' },
+    table: { zh: '选中表格', en: 'A table' },
     files: { zh: '选中文件', en: 'Files' },
     none: { zh: '什么都没选', en: 'Nothing selected' },
   },
@@ -1143,6 +1211,10 @@ const P = {
   soundDevices: { icon: 'soundDevices', accepts: [], keys: 'shengyinshebei sysb shengyin yinliang shuchu erji maikefeng sound audio output speaker airpods volume', name: { zh: '声音设备', en: 'Sound Devices' }, summary: { zh: '一下子换声音从哪出、用哪个麦克风：扬声器、耳机、AirPods、显示器、AirPlay，还能调音量、静音', en: 'Switch where sound plays and which microphone is used in one go: speakers, headphones, AirPods, displays or AirPlay, and adjust the volume or mute' } },
   resolution: { icon: 'resolution', accepts: [], keys: 'fenbianlv fbl xianshiqi shuaxinlv zhuxianshiqi pingmu resolution display monitor refresh rate hz retina hidpi scaled screen', name: { zh: '分辨率', en: 'Resolution' }, summary: { zh: '换显示器的分辨率（看起来像多大）和刷新率，把哪台设成主显示器；外接显示器换了以后 15 秒内不点「保留」就换回原来的', en: 'Change each display’s resolution (what it looks like) and refresh rate, or pick the main display; after a change on an external display, click Keep within 15 seconds or it switches back' } },
   diskSpeed: { icon: 'diskSpeed', accepts: [], keys: 'cipanceshu cpcs cesu yingpan upan gutaiyingpan duxie disk speed ssd usb drive benchmark read write', name: { zh: '磁盘测速', en: 'Disk Speed' }, summary: { zh: '测硬盘、U 盘、移动固态硬盘连续写入和读取有多快：选中磁盘里的文件或文件夹就测那块盘，什么都不选时测启动磁盘', en: 'Measure how fast a hard drive, USB stick or portable SSD writes and reads sequentially. Select a file or folder on a disk to test that disk, or nothing to test the startup disk' } },
+  numberStats: { icon: 'numberStats', accepts: ['table'], keys: 'shuzitongji sztj heji pingjun zhongweishu number statistics sum average median', name: { zh: '数字统计', en: 'Number Statistics' }, summary: { zh: '一列数的合计、平均、中位数、最大、最小（多行时每行取最后一个数）', en: 'Sum, average, median, max and min of a list of numbers (the last number on each line)' } },
+  chart: { icon: 'chart', accepts: ['table'], keys: 'shengchengtubiao sctb tubiao zhuzhuangtu tiaoxingtu zhexiantu bingtu chart graph column bar line pie plot', name: { zh: '生成图表', en: 'Chart' }, summary: { zh: '选中表格（从表格软件复制的、CSV、Markdown 表格）、一行一个「名字 数值」或者一串数，画成柱状图、条形图、折线图或者饼图，复制成图片或者存到「下载」', en: 'Turn a selected table (copied from a spreadsheet, CSV or a Markdown table), lines of “name value” or a list of numbers into a column, bar, line or pie chart, then copy it as an image or save it to Downloads' } },
+  tableConvert: { icon: 'tableConvert', accepts: ['table'], keys: 'biaogezhuanhuan bgzh markdown csv json tsv table convert', name: { zh: '表格转换', en: 'Convert Table' }, summary: { zh: '表格、CSV、Markdown 表格、JSON 互相转换', en: 'Convert between tables, CSV, Markdown tables and JSON' } },
+  worldTime: { icon: 'worldTime', accepts: [], keys: 'shiquhuansuan sqhs shiqu shicha shijieshizhong kaihui world time zone clock timezone pst est utc gmt meeting', name: { zh: '时区换算', en: 'Time Zones' }, summary: { zh: '选中「3pm PST」「北京时间晚上 9 点」这样的时间，换算成常用的几个城市的时间；拖动滑块看别的时刻，找大家都在上班的时间开会。什么都不选时看各地现在几点', en: 'Select a time such as “3pm PST” or “9 pm Beijing time” to see it in the cities you use. Drag the slider to try other times and find when everyone is at work. With nothing selected, see what time it is everywhere now' } },
   tidyFolder: { icon: 'tidyFolder', accepts: [], keys: 'zhengliwenjianjia zlwjj tidy', name: { zh: '整理文件夹', en: 'Tidy Folder' }, summary: { zh: '把选中的文件夹（没选时是「下载」）第一层的文件按类型或者按月份归到子文件夹里，先看预览，整理完可以撤销', en: 'Sort the files at the top of the selected folder (or Downloads if nothing is selected) into subfolders by type or by month. Preview first and undo afterwards' } },
   similarPhotos: { icon: 'similarPhotos', accepts: ['folder', 'twoImageFiles'], keys: 'xiangsizhaopian xszp similar photos lianpai', name: { zh: '相似照片', en: 'Similar Photos' }, summary: { zh: '在选中的文件夹（或者几张图片）里找出连拍、重复存的、改过大小的相似照片，每组留最清楚的一张，其余的移到废纸篓', en: 'Find burst shots and photos saved twice or resized in the selected folder (or images), keep the sharpest one of each group and move the rest to the Trash' } },
   newFile: { icon: 'newFile', accepts: [], keys: 'xinjianwenjian xjwj newfile', name: { zh: '新建文件', en: 'New File' }, summary: { zh: '在选中的文件夹（没选时是访达当前的文件夹）里新建文本、Markdown、网页、脚本这些文件，也可以把选中的文字、剪贴板里的文字和图片直接存成文件', en: 'Create a text, Markdown, web page or script file in the selected folder (or the folder open in Finder), or save the selected text or the text or image on the clipboard as a file' } },
@@ -1180,7 +1252,7 @@ for (const [id, info] of Object.entries(P)) info.id = id;
 
 // ---------- 插件包（设置 → 功能 → 插件）----------
 // 和 App 里的 PluginCatalog 一样；大小是发布页上 plugins-<版本>.json 里的（下载的压缩包、装好后的插件包）
-const PACKAGES = [{"id":"screenPen","icon":"screenPen","category":"recording","functions":["screenPen"],"download":163620,"size":682334,"name":{"zh":"屏幕画笔","en":"Draw on Screen"},"summary":{"zh":"演示、录教程时直接在屏幕上画：画笔、荧光笔、箭头、方框、椭圆，笔迹可以几秒后自动消失，也可以留着去操作下面的窗口，录屏时一起录进去；Esc 或再用一次结束","en":"Draw right on the screen for demos and tutorials: pen, highlighter, arrow, rectangle and ellipse. Strokes can fade after a few seconds or stay while you use the windows underneath, and screen recordings include them. Press Esc or use it again to finish"}},{"id":"cameraBubble","icon":"cameraBubble","category":"recording","functions":["cameraBubble"],"download":90514,"size":363565,"name":{"zh":"摄像头小窗","en":"Camera Bubble"},"summary":{"zh":"在屏幕角落用一个圆形小窗显示摄像头画面，录教程、演示时把自己也放进画面；拖动换位置，滚动或双击换大小，右键换形状和摄像头。再用一次关闭","en":"Show the camera in a small round window in a corner of the screen, so you appear in tutorials and demos. Drag to move it, scroll or double-click to resize, right-click to change the shape or camera. Use it again to close"}},{"id":"pointerHighlight","icon":"pointerHighlight","category":"recording","functions":["pointerHighlight"],"download":58229,"size":270897,"name":{"zh":"突出显示指针","en":"Highlight Pointer"},"summary":{"zh":"演示、录教程时在指针周围加一圈黄色光圈，按下鼠标时泛起波纹，让人一眼看到指针在哪；再用一次关闭","en":"Put a yellow halo around the pointer that ripples when you click, so people can always find it in demos and tutorials. Use it again to turn it off"}},{"id":"teleprompter","icon":"teleprompter","category":"recording","functions":["teleprompter"],"download":119618,"size":539725,"name":{"zh":"提词器","en":"Teleprompter"},"summary":{"zh":"把选中的稿子放进屏幕上方的提词器，按设好的速度慢慢往上滚，对着摄像头读；空格暂停，↑↓ 调速度，录屏时不会录进去","en":"Put the selected script in a teleprompter at the top of the screen that scrolls up at the speed you set, so you can read it to the camera. Space pauses, ↑ and ↓ change the speed, and screen recordings leave it out"}},{"id":"cleanKeyboard","icon":"cleanKeyboard","category":"files","functions":["cleanKeyboard"],"download":73529,"size":335176,"name":{"zh":"清洁键盘","en":"Clean Keyboard"},"summary":{"zh":"锁住键盘一分钟，擦键盘时不会误触；亮度、音量键也不起作用，用鼠标点「结束清洁」随时恢复","en":"Lock the keyboard for a minute so you can wipe it without typing anything; brightness and volume keys are blocked too. Click End Cleaning with the mouse to stop any time"}},{"id":"ruler","icon":"ruler","category":"screen","functions":["ruler"],"download":76788,"size":337036,"name":{"zh":"屏幕标尺","en":"Screen Ruler"},"summary":{"zh":"定格屏幕，量出指针处到上下左右边缘的距离，拖动量一块区域的宽高；单击复制尺寸","en":"Freeze the screen and measure distances from the pointer to the edges around it; drag to measure an area; click to copy the size"}},{"id":"largeType","icon":"largeType","category":"text","functions":["largeType"],"download":73574,"size":324062,"name":{"zh":"大字显示","en":"Large Type"},"summary":{"zh":"把选中的文字铺满整个屏幕，给别人看电话号码、Wi-Fi 密码、取件码都方便；点一下或按任意键关闭","en":"Show the selected text across the whole screen, handy for showing someone a phone number, Wi-Fi password or pickup code; click or press any key to close"}},{"id":"spellCheck","icon":"spellCheck","category":"text","functions":["spellCheck"],"download":51435,"size":244659,"name":{"zh":"拼写检查","en":"Spell Check"},"summary":{"zh":"找出外文里拼错的词，给出改法，可以直接换成改好的文字（系统自带的拼写检查，离线）","en":"Find misspelled words and suggest corrections you can apply directly (built-in macOS spell checking, offline)"}},{"id":"codeImage","icon":"codeImage","category":"developer","functions":["codeImage"],"download":85352,"size":342286,"name":{"zh":"代码截图","en":"Code Screenshot"},"summary":{"zh":"把选中的代码画成一张图片（深色编辑器、语法着色、渐变背景），可以复制、存储或贴到屏幕上","en":"Render the selected code as an image (dark editor, syntax highlighting, gradient background) to copy, save or pin"}},{"id":"cron","icon":"cron","category":"developer","functions":["cron"],"download":100187,"size":368581,"name":{"zh":"Cron 表达式","en":"Cron Expression"},"summary":{"zh":"把 cron 表达式（比如 */15 9-17 * * 1-5）说成中文，列出接下来几次运行的时间","en":"Explain a cron expression (e.g. */15 9-17 * * 1-5) in words and list the next run times"}},{"id":"jsonTypes","icon":"jsonTypes","category":"developer","functions":["jsonTypes"],"download":129024,"size":456126,"name":{"zh":"JSON 转代码","en":"JSON to Code"},"summary":{"zh":"根据选中的 JSON 生成 TypeScript、Swift、Go、Kotlin 的类型定义","en":"Generate TypeScript, Swift, Go and Kotlin type definitions from the selected JSON"}},{"id":"regexTest","icon":"regexTest","category":"developer","functions":["regexTest"],"download":154078,"size":655572,"name":{"zh":"正则测试","en":"Regex Tester"},"summary":{"zh":"在选中的文字里试正则表达式：实时标出每处匹配、列出分组，也可以试替换","en":"Try regular expressions on the selected text: live highlighting of matches, groups and replacements"}},{"id":"watermark","icon":"watermark","category":"screen","functions":["watermark"],"download":126412,"size":492542,"name":{"zh":"加水印","en":"Watermark"},"summary":{"zh":"给选中的图片或 PDF 斜着铺满一层半透明的文字（比如「仅供办理业务使用」），另存一份放在原文件旁边","en":"Tile semi-transparent text diagonally across the selected images or PDFs and save copies next to the originals"}},{"id":"palette","icon":"palette","category":"screen","functions":["palette"],"download":67757,"size":291044,"name":{"zh":"图片配色","en":"Image Colors"},"summary":{"zh":"找出图片里的主要颜色，按面积从大到小列出色值，点一下复制","en":"Find the main colors in an image, listed by area; click to copy a value"}},{"id":"tableOCR","icon":"tableOCR","category":"screen","functions":["tableOCR"],"download":78871,"size":338409,"name":{"zh":"识别表格","en":"Recognize Table"},"summary":{"zh":"识别截图或图片里的表格，转成 Markdown 表格、CSV 或者制表符分隔（macOS 26；更早的系统按普通文字识别）","en":"Recognize a table in a screenshot or image as a Markdown table, CSV or tab-separated text (macOS 26; earlier versions recognize plain text)"}},{"id":"numberStats","icon":"numberStats","category":"convert","functions":["numberStats"],"download":63860,"size":269560,"name":{"zh":"数字统计","en":"Number Statistics"},"summary":{"zh":"选中一列或一串数字，算出合计、平均、中位数、最大、最小","en":"Get the sum, average, median, max and min of a list of numbers"}},{"id":"reminder","icon":"reminder","category":"text","functions":["reminder"],"download":160874,"size":568409,"name":{"zh":"加到提醒事项","en":"Add to Reminders"},"summary":{"zh":"从选中的文字里认出时间（明天下午 3 点、周五、10 月 8 日、半小时后……），加到「提醒事项」或者「日历」","en":"Find a time in the selected Chinese text (明天下午 3 点, 周五, 10 月 8 日, 半小时后…) and add it to Reminders or Calendar"}},{"id":"codeStats","icon":"codeStats","category":"files","functions":["codeStats"],"download":87489,"size":335806,"name":{"zh":"代码行数","en":"Lines of Code"},"summary":{"zh":"按语言统计选中的文件夹里有多少个代码文件、多少行，可以复制成 Markdown 表格","en":"Count code files and lines per language in the selected folders; copy as a Markdown table"}},{"id":"compareFiles","icon":"compareFiles","category":"files","functions":["compareFiles"],"download":63975,"size":296250,"name":{"zh":"对比文件","en":"Compare Files"},"summary":{"zh":"对比选中的两个文本文件（代码、Markdown、配置、CSV……），标出删去和新增的行，改动的地方逐词标出；按修改时间，旧的当原文","en":"Compare the two selected text files (code, Markdown, config, CSV…), marking removed and added lines and the changed words in them; the older file by modification date is the original"}},{"id":"folderTools","icon":"folderTools","category":"files","functions":["diskUsage","findDuplicates","compareFolders"],"download":402788,"size":1477208,"name":{"zh":"文件夹工具","en":"Folder Tools"},"summary":{"zh":"看文件夹里哪些东西最占地方、找出内容一样的重复文件、比较两个文件夹有哪些不同，不要的可以移到废纸篓","en":"See what takes up the most space in a folder, find files with identical contents and compare two folders, then move what you don’t need to the Trash"}},{"id":"batchRename","icon":"batchRename","category":"files","functions":["batchRename"],"download":233777,"size":882440,"name":{"zh":"批量重命名","en":"Batch Rename"},"summary":{"zh":"给选中的文件统一改名：编号、替换文字、加前后缀、按照片的拍摄时间、改大小写，先看预览再改，改完可以撤销","en":"Rename the selected files together: numbering, find and replace, prefix and suffix, photo capture date, case. Preview first and undo afterwards."}},{"id":"menuShortcuts","icon":"menuShortcuts","category":"files","functions":["menuShortcuts"],"download":181501,"size":728882,"name":{"zh":"快捷键一览","en":"Keyboard Shortcuts"},"summary":{"zh":"列出当前 App 菜单里的所有快捷键，可以搜索，点一项直接执行","en":"List every keyboard shortcut in the current app’s menus; search them and click one to run it"}},{"id":"windowLayout","icon":"windowLayout","category":"files","functions":["windowLayout"],"download":90485,"size":400525,"name":{"zh":"窗口布局","en":"Window Layout"},"summary":{"zh":"把当前窗口放到屏幕的左半边、右半边、三分之一、最大化、居中，或者移到另一个显示器","en":"Move the current window to the left or right half, a third, maximize, center it, or move it to another display"}},{"id":"speak","icon":"speak","category":"text","functions":["speak","speakToFile"],"download":67707,"size":294922,"name":{"zh":"朗读","en":"Speak"},"summary":{"zh":"用系统语音朗读选中的文字，朗读中再用一次就停止；也能读出来存成音频文件","en":"Read the selected text aloud with a system voice; use it again while speaking to stop. It can also save the speech as an audio file"}},{"id":"textImage","icon":"textImage","category":"text","functions":["textImage"],"download":32433,"size":197326,"name":{"zh":"文字转图片","en":"Text to Image"},"summary":{"zh":"把选中的文字排成一张手机上看着舒服的长图（宽 1080 像素），白底、米黄、深色三种底色，可以复制、存储或贴到屏幕上","en":"Lay out the selected text as a long image that reads well on a phone (1080 pixels wide) on a white, cream or dark background; copy it, save it or pin it to the screen"}},{"id":"webCapture","icon":"webCapture","category":"text","functions":["webCapture"],"download":34441,"size":198739,"name":{"zh":"网页存档","en":"Save Web Page"},"summary":{"zh":"把选中的网址整页存成一页长 PDF（文字能选、能搜）、一张长图，或者只把正文存成 Markdown，放在「下载」里","en":"Save the whole page at the selected URL to Downloads as one long PDF (with selectable, searchable text) or a long image, or save just the article text as Markdown"}},{"id":"extractInfo","icon":"extractInfo","category":"text","functions":["extractInfo"],"download":33784,"size":198760,"name":{"zh":"提取信息","en":"Extract Info"},"summary":{"zh":"从一段文字里找出链接、邮箱、电话号码和 IP 地址，逐个复制或者一起复制","en":"Find links, email addresses, phone numbers and IP addresses in text and copy them one by one or together"}},{"id":"idNumber","icon":"idNumber","category":"text","functions":["idNumber"],"download":33205,"size":197865,"name":{"zh":"证件号码","en":"ID Numbers"},"summary":{"zh":"身份证号、统一社会信用代码、银行卡号：检查校验位，读出出生日期、年龄、性别、地区和登记管理部门，不联网","en":"Chinese ID numbers, unified social credit codes and bank card numbers: check the check digit and read out birth date, age, sex, region and registration authority, offline"}},{"id":"lineTools","icon":"lineTools","category":"text","functions":["lineTools"],"download":35393,"size":201502,"name":{"zh":"按行处理","en":"Lines"},"summary":{"zh":"一列文字加引号和逗号（SQL 的 IN 列表）、转 JSON 数组、加减序号、倒序、打乱；一行用逗号隔开的拆成多行","en":"Quote and comma-separate a list (for SQL IN), convert to a JSON array, add or remove numbering, reverse, shuffle; split a comma-separated line into lines"}},{"id":"textCleanup","icon":"textCleanup","category":"text","functions":["textCleanup"],"download":34668,"size":200536,"name":{"zh":"文字整理","en":"Clean Up Text"},"summary":{"zh":"合并换行、去掉空行和多余空格、中英文之间加空格、全角转半角、简繁转换、拼音、按行排序去重","en":"Join lines, remove blank lines and extra spaces, space Chinese and Latin text, full-width to half-width, Simplified ↔ Traditional Chinese, Pinyin, sort and deduplicate lines"}},{"id":"quickNote","icon":"quickNote","category":"text","functions":["quickNote"],"download":49797,"size":244046,"name":{"zh":"收集箱","en":"Inbox"},"summary":{"zh":"把选中的文字追加到「文稿/Pop 收集箱.md」","en":"Append the selected text to “Documents/Pop 收集箱.md”"}},{"id":"changeCase","icon":"changeCase","category":"convert","functions":["changeCase"],"download":33372,"size":199235,"name":{"zh":"大小写","en":"Case"},"summary":{"zh":"大写、小写、驼峰、下划线等写法互相转换","en":"Convert between uppercase, lowercase, camelCase, snake_case and more"}},{"id":"encodeDecode","icon":"encodeDecode","category":"convert","functions":["encodeDecode"],"download":34207,"size":200493,"name":{"zh":"编码转换","en":"Encode & Decode"},"summary":{"zh":"Base64、URL、Unicode、HTML 实体的编码和解码","en":"Encode and decode Base64, URL, Unicode and HTML entities"}},{"id":"yamlJSON","icon":"yamlJSON","category":"convert","functions":["yamlJSON"],"download":36413,"size":203081,"name":{"zh":"YAML 和 JSON","en":"YAML ↔ JSON"},"summary":{"zh":"选中 JSON 转成 YAML，选中 YAML 转成 JSON，键的顺序不变","en":"Convert selected JSON to YAML or YAML to JSON, keeping key order"}},{"id":"formatXML","icon":"formatXML","category":"convert","functions":["formatXML"],"download":35180,"size":200622,"name":{"zh":"XML 格式化","en":"Format XML"},"summary":{"zh":"格式化或压缩选中的 XML（也认 SVG、plist、XHTML）","en":"Format or minify the selected XML (SVG, plist and XHTML too)"}},{"id":"formatSQL","icon":"formatSQL","category":"convert","functions":["formatSQL"],"download":38699,"size":204222,"name":{"zh":"SQL 格式化","en":"Format SQL"},"summary":{"zh":"把选中的 SQL 按子句分行、关键字大写、子查询缩进，也可以压成一行","en":"Put each clause of the selected SQL on its own line, uppercase keywords and indent subqueries, or squeeze it onto one line"}},{"id":"tableConvert","icon":"tableConvert","category":"convert","functions":["tableConvert"],"download":36390,"size":202733,"name":{"zh":"表格转换","en":"Convert Table"},"summary":{"zh":"从表格软件复制的文字、CSV、Markdown 表格互相转换，也能转成 JSON","en":"Convert between text copied from spreadsheets, CSV and Markdown tables, or to JSON"}},{"id":"markdown","icon":"markdown","category":"convert","functions":["markdownPreview","markdownCopy"],"download":37473,"size":203897,"name":{"zh":"Markdown 富文本","en":"Markdown Rich Text"},"summary":{"zh":"把选中的 Markdown 显示成排好版的样子，或者转成带格式的文字复制下来，粘贴到文稿、邮件、备忘录里保留格式","en":"Preview the selected Markdown formatted, or copy it as formatted text that keeps its formatting when pasted into documents, mail or notes"}},{"id":"toMarkdown","icon":"toMarkdown","category":"convert","functions":["toMarkdown"],"download":36360,"size":201779,"name":{"zh":"转成 Markdown","en":"Convert to Markdown"},"summary":{"zh":"把网页、文档里选中的带格式文字转成 Markdown：标题、列表、链接、粗体、代码、表格","en":"Convert formatted text selected in web pages and documents to Markdown: headings, lists, links, bold, code, tables"}},{"id":"markdownTOC","icon":"markdownTOC","category":"convert","functions":["markdownTOC"],"download":34401,"size":201304,"name":{"zh":"Markdown 目录","en":"Markdown Table of Contents"},"summary":{"zh":"按选中的 Markdown 里的标题生成目录，点链接能跳到对应的标题（锚点和 GitHub 的写法一样）","en":"Create a table of contents from the headings in the selected Markdown, with links to each heading (GitHub-style anchors)"}},{"id":"dateSpan","icon":"dateSpan","category":"convert","functions":["dateSpan"],"download":36085,"size":202313,"name":{"zh":"日期计算","en":"Date Difference"},"summary":{"zh":"选中两个日期（比如「2026-09-29 到 2026-12-25」），算出相差多少天、几周、几个月，其中有多少个工作日","en":"Select two dates (e.g. “2026-09-29 to 2026-12-25”) to get the days, weeks and months between them and how many are workdays"}},{"id":"numberConvert","icon":"numberConvert","category":"convert","functions":["numberConvert"],"download":33400,"size":199634,"name":{"zh":"数字转换","en":"Numbers"},"summary":{"zh":"进制转换、千分位、人民币大写","en":"Bases, thousands separators, RMB in words"}},{"id":"contrast","icon":"contrast","category":"convert","functions":["contrast"],"download":34023,"size":198905,"name":{"zh":"对比度","en":"Contrast"},"summary":{"zh":"选中两个颜色（比如「#333333 #FFFFFF」），算出文字和背景的对比度，看是否达到 WCAG 的 AA、AAA","en":"Select two colors (e.g. “#333333 #FFFFFF”) to get the text/background contrast ratio and whether it meets WCAG AA and AAA"}},{"id":"hash","icon":"hash","category":"developer","functions":["hash"],"download":51101,"size":245957,"name":{"zh":"哈希","en":"Hash"},"summary":{"zh":"计算文字或文件的 MD5、SHA-1、SHA-256、SHA-512","en":"Compute MD5, SHA-1, SHA-256 and SHA-512 of text or files"}},{"id":"qrCode","icon":"qrCode","category":"developer","functions":["qrCode"],"download":40541,"size":204607,"name":{"zh":"二维码","en":"QR Code"},"summary":{"zh":"把文字或链接生成二维码（英文字母和数字还能生成条形码）；选中图片时识别里面的二维码和条形码","en":"Generate a QR code from text or a link (letters and digits can also become a barcode); with an image selected, read the QR codes and barcodes in it"}},{"id":"base64Image","icon":"base64Image","category":"developer","functions":["base64Image"],"download":39375,"size":203672,"name":{"zh":"Base64 图片","en":"Base64 Image"},"summary":{"zh":"把 Base64 或 data: 开头的图片数据显示成图片，可以复制、保存、贴到屏幕","en":"Show Base64 or data: image data as an image to copy, save or pin"}},{"id":"random","icon":"random","category":"developer","functions":["random"],"download":31114,"size":197343,"name":{"zh":"随机生成","en":"Random"},"summary":{"zh":"生成 UUID、密码和随机数字，可以直接粘贴到当前输入框","en":"Generate UUIDs, passwords and random numbers to paste into the current field"}},{"id":"linkInspect","icon":"linkInspect","category":"developer","functions":["linkInspect"],"download":38804,"size":202056,"name":{"zh":"链接解析","en":"Parse Link"},"summary":{"zh":"拆开链接的协议、主机、路径和每个参数（解码后），去掉 utm_source 这类跟踪参数","en":"Split a link into scheme, host, path and decoded parameters, and remove tracking parameters such as utm_source"}},{"id":"jwtDecode","icon":"jwtDecode","category":"developer","functions":["jwtDecode"],"download":34771,"size":199708,"name":{"zh":"JWT 解码","en":"Decode JWT"},"summary":{"zh":"解码选中的 JWT，列出签发者、过期时间等声明（只解码，不验证签名）","en":"Decode the selected JWT and list claims such as issuer and expiry (decoding only; the signature isn’t verified)"}},{"id":"charInfo","icon":"charInfo","category":"developer","functions":["charInfo"],"download":33220,"size":198105,"name":{"zh":"字符信息","en":"Character Info"},"summary":{"zh":"查看每个字符的 Unicode 码点、名称和编码；找出并去掉零宽空格这类看不见的字符","en":"See each character’s Unicode code point, name and encoding; find and remove invisible characters such as zero-width spaces"}},{"id":"screenshotTranslate","icon":"translate","category":"text","functions":["screenshotTranslate"],"download":31252,"size":197440,"name":{"zh":"截图翻译","en":"Translate Screenshot"},"summary":{"zh":"框选屏幕上的一块区域，识别里面的文字并翻译（离线）","en":"Select an area of the screen, recognize its text and translate it (offline)"}},{"id":"textDiff","icon":"compareFiles","category":"text","functions":["textDiff"],"download":37899,"size":203625,"name":{"zh":"文本对比","en":"Compare Text"},"summary":{"zh":"把选中的文字和剪贴板里的文字对比，标出删去和新增的地方","en":"Compare the selected text with the text on the clipboard and mark deletions and additions"}},{"id":"imageConvert","icon":"imageConvert","category":"screen","functions":["imageConvert"],"download":41693,"size":205069,"name":{"zh":"图片转换","en":"Convert Images"},"summary":{"zh":"把选中的图片文件转成 PNG、JPEG、HEIC，缩小一半、压缩体积或者压到指定大小以内，旋转、左右翻转，或者去掉照片里的位置和拍摄信息；结果存在原图旁边","en":"Convert the selected images to PNG, JPEG or HEIC, halve their size, compress them (or under a given size), rotate, flip, or remove location and capture info; results are saved next to the originals"}},{"id":"stitchImages","icon":"stitchImages","category":"screen","functions":["stitchImages"],"download":41357,"size":205213,"name":{"zh":"拼接图片","en":"Stitch Images"},"summary":{"zh":"把选中的几张图片按文件名的顺序竖着或者横着拼成一张，或者合成一张动图，存在第一张旁边","en":"Stitch the selected images vertically or horizontally in file name order, or make an animated image, saved next to the first one"}},{"id":"idPhoto","icon":"idPhoto","category":"screen","functions":["idPhoto"],"download":32845,"size":197252,"name":{"zh":"证件照","en":"ID Photo"},"summary":{"zh":"把人像照片换成白底、蓝底或红底，按人脸位置裁成一寸、二寸（300 dpi）；在本机处理，另存一份放在原图旁边","en":"Give a portrait a white, blue or red background and crop it around the face to 1-inch or 2-inch ID sizes (300 dpi); processed on this Mac and saved as a copy next to the original"}},{"id":"cropImage","icon":"cropImage","category":"screen","functions":["cropImage"],"download":34621,"size":198958,"name":{"zh":"裁剪图片","en":"Crop Image"},"summary":{"zh":"把选中的图片裁成 1:1、4:3、3:4、16:9、9:16，自动对准画面里的主体；另存一份放在原图旁边","en":"Crop the selected images to 1:1, 4:3, 3:4, 16:9 or 9:16, centered on the subject; a copy is saved next to the original"}},{"id":"redact","icon":"redact","category":"screen","functions":["redact"],"download":42452,"size":206111,"name":{"zh":"隐私打码","en":"Redact"},"summary":{"zh":"找出选中图片里的人脸、电话号码、邮箱、身份证号、银行卡号和车牌，打上马赛克另存一份；在本机识别，另存的那份不带拍摄信息和位置","en":"Find faces, phone numbers, email addresses, ID and bank card numbers and license plates in the selected images, pixelate them and save a copy; recognized on this Mac, and the copy carries no capture info or location"}},{"id":"removeBackground","icon":"removeBackground","category":"screen","functions":["removeBackground"],"download":37303,"size":202641,"name":{"zh":"抠图","en":"Remove Background"},"summary":{"zh":"去掉选中图片的背景，只留下人、动物或物品（离线）","en":"Remove the background of the selected image, keeping only people, animals or objects (offline)"}},{"id":"scanCode","icon":"scanCode","category":"screen","functions":["scanCode"],"download":33384,"size":198041,"name":{"zh":"扫码","en":"Scan Code"},"summary":{"zh":"框选屏幕上的二维码或条形码，识别里面的内容；链接可以直接打开，Wi-Fi 二维码列出密码","en":"Select a QR code or barcode on screen to read it; links can be opened and Wi-Fi codes show the password"}},{"id":"screenRecord","icon":"screenRecord","category":"recording","functions":["screenRecord"],"download":34904,"size":200109,"name":{"zh":"录屏","en":"Record Screen"},"summary":{"zh":"拖出一块区域、单击选一个窗口或者按回车录整个屏幕，存成 MP4；可以录上电脑里的声音或者麦克风、显示鼠标点击和按下的键，录好能接着转成 GIF。正在录的时候再用一次就停止","en":"Drag out an area, click a window or press Return to record the whole screen as MP4; can include the Mac’s sound or the microphone and show clicks and keystrokes, and the recording can then be turned into a GIF. Use it again while recording to stop"}},{"id":"scrollCapture","icon":"scrollCapture","category":"recording","functions":["scrollCapture"],"download":34060,"size":199618,"name":{"zh":"滚动截图","en":"Scrolling Screenshot"},"summary":{"zh":"框选一块区域，一边往下滚动一边截，拼成一张长图；网页、聊天记录、长文档都能截全，还能接着识别文字。正在截的时候再用一次就是完成","en":"Select an area, then scroll down while Pop captures it into one long image: whole web pages, chat histories and long documents, with text recognition afterwards if you like. Use it again while capturing to finish"}},{"id":"showKeystrokes","icon":"showKeystrokes","category":"recording","functions":["showKeystrokes"],"download":31366,"size":196647,"name":{"zh":"显示按键","en":"Show Keystrokes"},"summary":{"zh":"演示、录教程时在屏幕下方显示按下的组合键（⌘C、⇧⌘4、方向键这些），普通打字不显示；再用一次关闭。录屏时也可以勾选一起录进去","en":"Show the shortcuts you press (⌘C, ⇧⌘4, arrow keys and so on) at the bottom of the screen for demos and tutorials; ordinary typing isn’t shown. Use it again to turn it off. Screen recordings can include them too"}},{"id":"folderTree","icon":"folderTree","category":"files","functions":["folderTree"],"download":37056,"size":202243,"name":{"zh":"目录结构","en":"Folder Tree"},"summary":{"zh":"把选中文件夹里的目录结构写成树形或者 Markdown 列表，贴进文档、README 或者发给别人","en":"Write the structure of the selected folder as a tree or Markdown list for docs, READMEs or sharing"}},{"id":"zip","icon":"zip","category":"files","functions":["zip","unzip"],"download":53498,"size":244544,"name":{"zh":"压缩和解压","en":"Zip and Unzip"},"summary":{"zh":"把选中的文件或文件夹压缩成 zip，存在原来的文件夹里；把选中的 zip 解压到旁边的同名文件夹里","en":"Compress the selected files or folders into a zip in the same folder, or extract the selected zip files into folders next to them"}},{"id":"pdf","icon":"pdf","category":"files","functions":["pdf"],"download":49796,"size":242960,"name":{"zh":"PDF","en":"PDF"},"summary":{"zh":"把选中的图片和 PDF 按文件名顺序合成一个 PDF；只选了一个 PDF 时可以把每页存成图片、复制里面的文字、取出其中几页或者拆开、加页码、加密码或者去掉密码，或者压缩；扫描件可以识别文字，另存一份能搜索、复制的 PDF","en":"Combine the selected images and PDFs into one PDF in file name order. With a single PDF, save each page as an image, copy its text, extract or split pages, add page numbers, add or remove a password, or compress it. For a scan, recognize the text and save a copy you can search and copy from"}},{"id":"videoConvert","icon":"videoConvert","category":"files","functions":["videoConvert"],"download":42922,"size":237773,"name":{"zh":"视频转换","en":"Convert Video"},"summary":{"zh":"把选中的视频转成 GIF、转成 MP4、压缩到 720p、提取音频，或者均匀取 16 帧拼成一张缩略图；结果存在原视频旁边","en":"Convert the selected videos to GIF or MP4, compress to 720p, extract audio, or make a contact sheet of 16 evenly spaced frames; results are saved next to the originals"}},{"id":"trimMedia","icon":"trimMedia","category":"files","functions":["trimMedia"],"download":32888,"size":197454,"name":{"zh":"截取片段","en":"Trim"},"summary":{"zh":"截取选中的音频或视频的一段（写上开始和结束的时间），存在原文件旁边","en":"Cut a range from the selected audio or video (by start and end time), saved next to the original"}},{"id":"transcribe","icon":"transcribe","category":"files","functions":["transcribe"],"download":39689,"size":202963,"name":{"zh":"语音转文字","en":"Transcribe"},"summary":{"zh":"把录音、视频里说的话转成文字和 SRT 字幕，存在原文件旁边；普通话、英语、粤语、日语，这台 Mac 支持时在本机识别","en":"Turn speech in recordings and videos into text and SRT subtitles saved next to the original; Mandarin, English, Cantonese and Japanese, recognized on this Mac when it supports it"}},{"id":"airDrop","icon":"airDrop","category":"files","functions":["airDrop"],"download":37431,"size":200580,"name":{"zh":"隔空投送","en":"AirDrop"},"summary":{"zh":"用隔空投送把选中的文件、图片、链接或文字发到附近的 iPhone、iPad 或 Mac","en":"Send the selected files, images, links or text to a nearby iPhone, iPad or Mac with AirDrop"}},{"id":"sendToPhone","icon":"sendToPhone","category":"files","functions":["sendToPhone"],"download":35939,"size":200712,"name":{"zh":"传到手机","en":"Send to Phone"},"summary":{"zh":"手机扫码下载选中的文件、图片（文件夹先打包成 zip）或者拿到选中的文字，也能从手机传文件到「下载」文件夹；手机和 Mac 连同一个 Wi-Fi 就行，安卓手机也能用","en":"Scan a QR code with your phone to download the selected files or images (folders are zipped first) or get the selected text, and upload files from the phone to Downloads. The phone and Mac just need to be on the same Wi-Fi; Android works too."}},{"id":"openInTerminal","icon":"openInTerminal","category":"files","functions":["openInTerminal"],"download":35282,"size":199671,"name":{"zh":"在终端打开","en":"Open in Terminal"},"summary":{"zh":"在「终端」里打开选中的文件夹（选中文件时打开它所在的文件夹）","en":"Open the selected folder in Terminal (for files, the folder they’re in)"}},{"id":"keepAwake","icon":"keepAwake","category":"files","functions":["keepAwake"],"download":35590,"size":200190,"name":{"zh":"保持唤醒","en":"Keep Awake"},"summary":{"zh":"一段时间内不让屏幕变暗、电脑睡眠，适合看文档、演示、等下载","en":"Keep the display on and the Mac awake for a while: for reading, presenting or waiting for downloads"}},{"id":"systemActions","icon":"systemActions","category":"files","functions":["systemActions"],"download":31341,"size":197650,"name":{"zh":"系统操作","en":"System Actions"},"summary":{"zh":"锁屏、熄屏、睡眠、打开屏幕保护程序、切换深色和浅色模式、静音、隐藏或显示桌面图标、显示隐藏文件、推出所有磁盘","en":"Lock the screen, turn off the display, sleep, start the screen saver, switch between Dark and Light Mode, mute, hide or show desktop icons, show hidden files, or eject all disks"}},{"id":"timer","icon":"timer","category":"files","functions":["timer"],"download":36637,"size":201194,"name":{"zh":"计时器","en":"Timer"},"summary":{"zh":"倒计时：选一个时长，或者选中「25 分钟」「1:30」这样的文字直接开始；到点时响一声、发通知。也有番茄钟：专注 25 分钟、休息 5 分钟，一直循环","en":"Countdown: choose a duration, or select text such as “25 min” or “1:30” to start right away. Plays a sound and sends a notification when time’s up. There’s also a Pomodoro timer: 25 minutes of focus, then a 5-minute break, over and over"}},{"id":"spotlight","icon":"spotlight","category":"recording","functions":["spotlight"],"download":58182,"size":265006,"name":{"zh":"聚光灯","en":"Spotlight"},"summary":{"zh":"演示、录教程时把屏幕压暗，只亮着指针周围一圈，跟着指针走，让大家看你指的地方；录屏时一起录进去，再用一次关闭","en":"Dim the screen except for a circle around the pointer that follows it, so people look where you point in demos and tutorials. Screen recordings include it; use it again to turn it off"}},{"id":"zoom","icon":"zoom","category":"recording","functions":["zoom"],"download":78522,"size":339125,"name":{"zh":"屏幕放大","en":"Screen Zoom"},"summary":{"zh":"演示、录教程时把指针附近放大，看清小字：放大的是那一刻的屏幕画面，挪动指针换地方看，滚轮或 ↑↓ 调倍数，点一下或按 Esc 回去","en":"Magnify the area around the pointer in demos and tutorials so small text is easy to read. It zooms into a snapshot of the screen: move the pointer to look around, scroll or press ↑↓ to change the magnification, and click or press Esc to go back"}},{"id":"beautify","icon":"beautify","category":"screen","functions":["beautify"],"download":164173,"size":698937,"name":{"zh":"截图美化","en":"Beautify Screenshot"},"summary":{"zh":"给截图加上渐变背景、留白、圆角和阴影，可以补成 1:1、4:3、16:9，发文章、做演示更好看；选中图片就用它，没选中就先框选屏幕上的一块","en":"Put a screenshot on a gradient background with padding, rounded corners and a shadow, optionally filled out to 1:1, 4:3 or 16:9, so it looks good in posts and slides. Uses the selected image, or lets you select an area of the screen first"}},{"id":"compareImages","icon":"compareImages","category":"screen","functions":["compareImages"],"download":234282,"size":875906,"name":{"zh":"对比图片","en":"Compare Images"},"summary":{"zh":"对比选中的两张图片：并排、滑动分界线、半透明叠加，或者把不一样的像素标红、框出几处不同；改版前后的截图、设计稿和实现对照都用得上","en":"Compare two selected images side by side, with a swipe divider or a translucent overlay, or mark the pixels that differ in red and box each area that changed. Handy for before-and-after screenshots and for checking a build against its design"}},{"id":"splitImage","icon":"splitImage","category":"screen","functions":["splitImage"],"download":130573,"size":498387,"name":{"zh":"切分图片","en":"Split Image"},"summary":{"zh":"把选中的图片切成九宫格、四宫格（对准画面里的主体裁成正方形）或者横着三张，长图切成几页；按发出去的顺序编号，存在原图旁边的文件夹里","en":"Cut the selected image into a 3 × 3 or 2 × 2 grid (cropped to a square around the subject) or three squares side by side, or cut a long image into pages. The pieces are numbered in posting order and saved in a folder next to the original"}},{"id":"quitApps","icon":"quitApps","category":"files","functions":["quitApps"],"download":212267,"size":816121,"name":{"zh":"退出 App","en":"Quit Apps"},"summary":{"zh":"列出正在运行的 App 和各占多少内存、CPU，一键退出，没有响应的强制退出；也能一下退出其他所有 App，开会、演示前清清场","en":"List running apps and how much memory and CPU each one uses. Quit an app with a click, force quit one that doesn’t respond, or quit all the others at once before a meeting or a demo"}},{"id":"tidyFolder","icon":"tidyFolder","category":"files","functions":["tidyFolder"],"download":217425,"size":793523,"name":{"zh":"整理文件夹","en":"Tidy Folder"},"summary":{"zh":"把选中的文件夹（没选时是「下载」）第一层的文件按类型或者按月份归到子文件夹里，先看预览，整理完可以撤销","en":"Sort the files at the top of the selected folder (or Downloads if nothing is selected) into subfolders by type or by month. Preview first and undo afterwards"}},{"id":"appIcon","icon":"appIcon","category":"screen","functions":["appIcon"],"download":228737,"size":882996,"name":{"zh":"生成图标","en":"Make App Icon"},"summary":{"zh":"用选中的图片生成 App 图标：macOS 的 .icns 和 Xcode 用的图标集（圆角方块，和系统 App 的图标一样大）、iOS 的 1024 图标，还有网站的 favicon，存在原图旁边的文件夹里","en":"Make app icons from the selected image: a macOS .icns and an Xcode icon set (a rounded square the size of the system’s app icons), a 1024 iOS icon and a website favicon, saved in a folder next to the image"}},{"id":"uninstallApp","icon":"uninstallApp","category":"files","functions":["uninstallApp"],"download":259431,"size":950317,"name":{"zh":"卸载 App","en":"Uninstall App"},"summary":{"zh":"卸载选中的 App：连同它在「资源库」里留下的设置、缓存、容器一起找出来，看清各占多大，再一起移到废纸篓；只勾留下的文件，就是把 App 恢复成刚装好的样子","en":"Uninstall the selected app: find the settings, caches and containers it left in your Library, see how much space each takes, and move them to the Trash together. Check only the leftover files to reset the app to a fresh install"}},{"id":"newFile","icon":"newFile","category":"files","functions":["newFile"],"download":174747,"size":691444,"name":{"zh":"新建文件","en":"New File"},"summary":{"zh":"在选中的文件夹（没选时是访达当前的文件夹）里新建文本、Markdown、网页、脚本这些文件，也可以把选中的文字、剪贴板里的文字和图片直接存成文件","en":"Create a text, Markdown, web page or script file in the selected folder (or the folder open in Finder), or save the selected text or the text or image on the clipboard as a file"}},{"id":"fileEncoding","icon":"fileEncoding","category":"files","functions":["fileEncoding"],"download":227401,"size":858477,"name":{"zh":"文件编码","en":"File Encoding"},"summary":{"zh":"认出选中的文本文件是什么编码（UTF-8、GBK、Big5……）、用的什么换行，一键转成 UTF-8（Excel 打开 CSV 要带 BOM）或者 GBK，换行统一成 LF 或 CRLF；转完可以撤销","en":"See which encoding (UTF-8, GBK, Big5…) and line endings the selected text files use, and convert them to UTF-8 (with a BOM so Excel opens CSV files correctly) or GBK, with LF or CRLF line endings. Undo afterwards"}},{"id":"appInfo","icon":"appInfo","category":"files","functions":["appInfo"],"download":177420,"size":631796,"name":{"zh":"App 信息","en":"App Info"},"summary":{"zh":"看选中的 App 是给哪种芯片做的、谁签的名、有没有公证、在不在沙盒里、会要哪些权限、用什么做的、从哪下载的，可以复制下来","en":"See which chips the selected app is built for, who signed it, whether it is notarized and sandboxed, which permissions it may ask for, what it is built with and where it was downloaded from, ready to copy"}},{"id":"similarPhotos","icon":"similarPhotos","category":"files","functions":["similarPhotos"],"download":274903,"size":1018450,"name":{"zh":"相似照片","en":"Similar Photos"},"summary":{"zh":"在选中的文件夹（或者几张图片）里找出连拍、重复存的、改过大小的相似照片，每组留最清楚的一张，其余的移到废纸篓","en":"Find burst shots and photos saved twice or resized in the selected folder (or images), keep the sharpest one of each group and move the rest to the Trash"}},{"id":"mediaInfo","icon":"mediaInfo","category":"files","functions":["mediaInfo"],"download":277976,"size":1016574,"name":{"zh":"媒体信息","en":"Media Info"},"summary":{"zh":"看选中的视频或音频用的什么编码、分辨率、帧率、码率，是不是 HDR，有几条音轨和字幕，用什么设备在哪拍的；带着拍摄地点时可以去掉位置另存一份","en":"See the codec, resolution, frame rate and bit rate of the selected video or audio, whether it’s HDR, its audio and subtitle tracks, and which device shot it where; save a copy without the location if it has one"}},{"id":"subtitles","icon":"subtitles","category":"files","functions":["subtitles"],"download":263460,"size":955310,"name":{"zh":"字幕工具","en":"Subtitles"},"summary":{"zh":"选中字幕文件（SRT、WebVTT、ASS、LRC），整体提前或推后、换帧率、去掉样式标签和听障说明，转成 SRT、WebVTT、LRC 或纯文字；选两份字幕可以合成一份双语字幕","en":"Shift the selected subtitles (SRT, WebVTT, ASS, LRC) earlier or later, convert between frame rates, remove style tags and hearing-impaired descriptions, and save them as SRT, WebVTT, LRC or plain text; select two to merge them into one bilingual file"}},{"id":"fontPreview","icon":"fontPreview","category":"text","functions":["fontPreview"],"download":231442,"size":854360,"name":{"zh":"字体预览","en":"Font Preview"},"summary":{"zh":"用这台 Mac 上的每一种字体显示选中的文字（没选中时用示例），按中文、西文、等宽、收藏筛选，只看能完整显示的；复制字体名、CSS，或者复制成图片；选中字体文件时先预览再安装","en":"Show the selected text (or a sample) in every font on your Mac, filter by Chinese, Western, monospaced or favorite fonts and only those that can show all of it; copy the font name or CSS, or copy it as an image; select font files to preview and install them"}},{"id":"encryptFiles","icon":"encryptFiles","category":"files","functions":["encryptFiles"],"download":175728,"size":695645,"name":{"zh":"加密打包","en":"Encrypt Files"},"summary":{"zh":"把选中的文件和文件夹放进一个用密码加密（AES-256）的磁盘映像，在任何一台 Mac 上双击、输入密码就能打开；发给别人、存到 U 盘或者网盘前用","en":"Put the selected files and folders into a password-protected (AES-256) disk image that opens on any Mac with a double-click and the password; use it before sending files or saving them to a USB drive or cloud storage"}},{"id":"batteryInfo","icon":"batteryInfo","category":"files","functions":["batteryInfo"],"download":186592,"size":675784,"name":{"zh":"电池信息","en":"Battery Info"},"summary":{"zh":"看笔记本电池的电量、最大容量（健康度）、循环次数、状况、温度，正在充电或者耗电的功率、充电器多少瓦，还要多久充满或者用完；也列出连着的蓝牙键盘、鼠标、触控板和耳机的电量","en":"See the charge, maximum capacity (health), cycle count, condition and temperature of a MacBook battery, how many watts are going in or out, the charger’s wattage, and how long until it’s full or empty; also lists the battery levels of connected Bluetooth keyboards, mice, trackpads and headphones"}},{"id":"voiceRecorder","icon":"voiceRecorder","category":"recording","functions":["voiceRecorder"],"download":151955,"size":656994,"name":{"zh":"录音","en":"Voice Recorder"},"summary":{"zh":"用麦克风录一段声音，存成 .m4a 放进「下载」；录的时候屏幕上方有个小条，看得到时长和音量，可以暂停，录好能接着转成文字。正在录的时候再用一次就停止","en":"Record sound from the microphone and save it as an .m4a file in Downloads; while recording, a small bar at the top of the screen shows the time and level and can pause, and you can transcribe the recording afterwards. Use it again while recording to stop"}},{"id":"systemInfo","icon":"systemInfo","category":"files","functions":["systemInfo"],"download":169567,"size":629139,"name":{"zh":"系统信息","en":"System Info"},"summary":{"zh":"看这台 Mac 的型号、芯片和核心数、内存、macOS 版本、开机多久、启动磁盘还剩多少、每台显示器的分辨率和刷新率，可以一键复制，报问题、问人时用","en":"See this Mac’s model, chip and cores, memory, macOS version, uptime, free space on the startup disk, and each display’s resolution and refresh rate, and copy it all at once for bug reports or when asking for help"}},{"id":"soundDevices","icon":"soundDevices","category":"files","functions":["soundDevices"],"download":135231,"size":588573,"name":{"zh":"声音设备","en":"Sound Devices"},"summary":{"zh":"一下子换声音从哪出、用哪个麦克风：扬声器、耳机、AirPods、显示器、AirPlay，还能调音量、静音","en":"Switch where sound plays and which microphone is used in one go: speakers, headphones, AirPods, displays or AirPlay, and adjust the volume or mute"}},{"id":"resolution","icon":"resolution","category":"files","functions":["resolution"],"download":219487,"size":874243,"name":{"zh":"分辨率","en":"Resolution"},"summary":{"zh":"换显示器的分辨率（看起来像多大）和刷新率，把哪台设成主显示器；外接显示器换了以后 15 秒内不点「保留」就换回原来的","en":"Change each display’s resolution (what it looks like) and refresh rate, or pick the main display; after a change on an external display, click Keep within 15 seconds or it switches back"}},{"id":"diskSpeed","icon":"diskSpeed","category":"files","functions":["diskSpeed"],"download":64000,"size":280000,"name":{"zh":"磁盘测速","en":"Disk Speed"},"summary":{"zh":"测硬盘、U 盘、移动固态硬盘连续写入和读取有多快：选中磁盘里的文件或文件夹就测那块盘，什么都不选时测启动磁盘","en":"Measure how fast a hard drive, USB stick or portable SSD writes and reads sequentially. Select a file or folder on a disk to test that disk, or nothing to test the startup disk"}}];
+const PACKAGES = [{"id":"screenPen","icon":"screenPen","category":"recording","functions":["screenPen"],"download":163620,"size":682334,"name":{"zh":"屏幕画笔","en":"Draw on Screen"},"summary":{"zh":"演示、录教程时直接在屏幕上画：画笔、荧光笔、箭头、方框、椭圆，笔迹可以几秒后自动消失，也可以留着去操作下面的窗口，录屏时一起录进去；Esc 或再用一次结束","en":"Draw right on the screen for demos and tutorials: pen, highlighter, arrow, rectangle and ellipse. Strokes can fade after a few seconds or stay while you use the windows underneath, and screen recordings include them. Press Esc or use it again to finish"}},{"id":"cameraBubble","icon":"cameraBubble","category":"recording","functions":["cameraBubble"],"download":90514,"size":363565,"name":{"zh":"摄像头小窗","en":"Camera Bubble"},"summary":{"zh":"在屏幕角落用一个圆形小窗显示摄像头画面，录教程、演示时把自己也放进画面；拖动换位置，滚动或双击换大小，右键换形状和摄像头。再用一次关闭","en":"Show the camera in a small round window in a corner of the screen, so you appear in tutorials and demos. Drag to move it, scroll or double-click to resize, right-click to change the shape or camera. Use it again to close"}},{"id":"pointerHighlight","icon":"pointerHighlight","category":"recording","functions":["pointerHighlight"],"download":58229,"size":270897,"name":{"zh":"突出显示指针","en":"Highlight Pointer"},"summary":{"zh":"演示、录教程时在指针周围加一圈黄色光圈，按下鼠标时泛起波纹，让人一眼看到指针在哪；再用一次关闭","en":"Put a yellow halo around the pointer that ripples when you click, so people can always find it in demos and tutorials. Use it again to turn it off"}},{"id":"teleprompter","icon":"teleprompter","category":"recording","functions":["teleprompter"],"download":119618,"size":539725,"name":{"zh":"提词器","en":"Teleprompter"},"summary":{"zh":"把选中的稿子放进屏幕上方的提词器，按设好的速度慢慢往上滚，对着摄像头读；空格暂停，↑↓ 调速度，录屏时不会录进去","en":"Put the selected script in a teleprompter at the top of the screen that scrolls up at the speed you set, so you can read it to the camera. Space pauses, ↑ and ↓ change the speed, and screen recordings leave it out"}},{"id":"cleanKeyboard","icon":"cleanKeyboard","category":"files","functions":["cleanKeyboard"],"download":73529,"size":335176,"name":{"zh":"清洁键盘","en":"Clean Keyboard"},"summary":{"zh":"锁住键盘一分钟，擦键盘时不会误触；亮度、音量键也不起作用，用鼠标点「结束清洁」随时恢复","en":"Lock the keyboard for a minute so you can wipe it without typing anything; brightness and volume keys are blocked too. Click End Cleaning with the mouse to stop any time"}},{"id":"ruler","icon":"ruler","category":"screen","functions":["ruler"],"download":76788,"size":337036,"name":{"zh":"屏幕标尺","en":"Screen Ruler"},"summary":{"zh":"定格屏幕，量出指针处到上下左右边缘的距离，拖动量一块区域的宽高；单击复制尺寸","en":"Freeze the screen and measure distances from the pointer to the edges around it; drag to measure an area; click to copy the size"}},{"id":"largeType","icon":"largeType","category":"text","functions":["largeType"],"download":73574,"size":324062,"name":{"zh":"大字显示","en":"Large Type"},"summary":{"zh":"把选中的文字铺满整个屏幕，给别人看电话号码、Wi-Fi 密码、取件码都方便；点一下或按任意键关闭","en":"Show the selected text across the whole screen, handy for showing someone a phone number, Wi-Fi password or pickup code; click or press any key to close"}},{"id":"spellCheck","icon":"spellCheck","category":"text","functions":["spellCheck"],"download":51435,"size":244659,"name":{"zh":"拼写检查","en":"Spell Check"},"summary":{"zh":"找出外文里拼错的词，给出改法，可以直接换成改好的文字（系统自带的拼写检查，离线）","en":"Find misspelled words and suggest corrections you can apply directly (built-in macOS spell checking, offline)"}},{"id":"codeImage","icon":"codeImage","category":"developer","functions":["codeImage"],"download":85352,"size":342286,"name":{"zh":"代码截图","en":"Code Screenshot"},"summary":{"zh":"把选中的代码画成一张图片（深色编辑器、语法着色、渐变背景），可以复制、存储或贴到屏幕上","en":"Render the selected code as an image (dark editor, syntax highlighting, gradient background) to copy, save or pin"}},{"id":"cron","icon":"cron","category":"developer","functions":["cron"],"download":100187,"size":368581,"name":{"zh":"Cron 表达式","en":"Cron Expression"},"summary":{"zh":"把 cron 表达式（比如 */15 9-17 * * 1-5）说成中文，列出接下来几次运行的时间","en":"Explain a cron expression (e.g. */15 9-17 * * 1-5) in words and list the next run times"}},{"id":"jsonTypes","icon":"jsonTypes","category":"developer","functions":["jsonTypes"],"download":129024,"size":456126,"name":{"zh":"JSON 转代码","en":"JSON to Code"},"summary":{"zh":"根据选中的 JSON 生成 TypeScript、Swift、Go、Kotlin 的类型定义","en":"Generate TypeScript, Swift, Go and Kotlin type definitions from the selected JSON"}},{"id":"regexTest","icon":"regexTest","category":"developer","functions":["regexTest"],"download":154078,"size":655572,"name":{"zh":"正则测试","en":"Regex Tester"},"summary":{"zh":"在选中的文字里试正则表达式：实时标出每处匹配、列出分组，也可以试替换","en":"Try regular expressions on the selected text: live highlighting of matches, groups and replacements"}},{"id":"watermark","icon":"watermark","category":"screen","functions":["watermark"],"download":126412,"size":492542,"name":{"zh":"加水印","en":"Watermark"},"summary":{"zh":"给选中的图片或 PDF 斜着铺满一层半透明的文字（比如「仅供办理业务使用」），另存一份放在原文件旁边","en":"Tile semi-transparent text diagonally across the selected images or PDFs and save copies next to the originals"}},{"id":"palette","icon":"palette","category":"screen","functions":["palette"],"download":67757,"size":291044,"name":{"zh":"图片配色","en":"Image Colors"},"summary":{"zh":"找出图片里的主要颜色，按面积从大到小列出色值，点一下复制","en":"Find the main colors in an image, listed by area; click to copy a value"}},{"id":"tableOCR","icon":"tableOCR","category":"screen","functions":["tableOCR"],"download":78871,"size":338409,"name":{"zh":"识别表格","en":"Recognize Table"},"summary":{"zh":"识别截图或图片里的表格，转成 Markdown 表格、CSV 或者制表符分隔（macOS 26；更早的系统按普通文字识别）","en":"Recognize a table in a screenshot or image as a Markdown table, CSV or tab-separated text (macOS 26; earlier versions recognize plain text)"}},{"id":"numberStats","icon":"numberStats","category":"convert","functions":["numberStats"],"download":63860,"size":269560,"name":{"zh":"数字统计","en":"Number Statistics"},"summary":{"zh":"选中一列或一串数字，算出合计、平均、中位数、最大、最小","en":"Get the sum, average, median, max and min of a list of numbers"}},{"id":"reminder","icon":"reminder","category":"text","functions":["reminder"],"download":160874,"size":568409,"name":{"zh":"加到提醒事项","en":"Add to Reminders"},"summary":{"zh":"从选中的文字里认出时间（明天下午 3 点、周五、10 月 8 日、半小时后……），加到「提醒事项」或者「日历」","en":"Find a time in the selected Chinese text (明天下午 3 点, 周五, 10 月 8 日, 半小时后…) and add it to Reminders or Calendar"}},{"id":"codeStats","icon":"codeStats","category":"files","functions":["codeStats"],"download":87489,"size":335806,"name":{"zh":"代码行数","en":"Lines of Code"},"summary":{"zh":"按语言统计选中的文件夹里有多少个代码文件、多少行，可以复制成 Markdown 表格","en":"Count code files and lines per language in the selected folders; copy as a Markdown table"}},{"id":"compareFiles","icon":"compareFiles","category":"files","functions":["compareFiles"],"download":63975,"size":296250,"name":{"zh":"对比文件","en":"Compare Files"},"summary":{"zh":"对比选中的两个文本文件（代码、Markdown、配置、CSV……），标出删去和新增的行，改动的地方逐词标出；按修改时间，旧的当原文","en":"Compare the two selected text files (code, Markdown, config, CSV…), marking removed and added lines and the changed words in them; the older file by modification date is the original"}},{"id":"folderTools","icon":"folderTools","category":"files","functions":["diskUsage","findDuplicates","compareFolders"],"download":402788,"size":1477208,"name":{"zh":"文件夹工具","en":"Folder Tools"},"summary":{"zh":"看文件夹里哪些东西最占地方、找出内容一样的重复文件、比较两个文件夹有哪些不同，不要的可以移到废纸篓","en":"See what takes up the most space in a folder, find files with identical contents and compare two folders, then move what you don’t need to the Trash"}},{"id":"batchRename","icon":"batchRename","category":"files","functions":["batchRename"],"download":233777,"size":882440,"name":{"zh":"批量重命名","en":"Batch Rename"},"summary":{"zh":"给选中的文件统一改名：编号、替换文字、加前后缀、按照片的拍摄时间、改大小写，先看预览再改，改完可以撤销","en":"Rename the selected files together: numbering, find and replace, prefix and suffix, photo capture date, case. Preview first and undo afterwards."}},{"id":"menuShortcuts","icon":"menuShortcuts","category":"files","functions":["menuShortcuts"],"download":181501,"size":728882,"name":{"zh":"快捷键一览","en":"Keyboard Shortcuts"},"summary":{"zh":"列出当前 App 菜单里的所有快捷键，可以搜索，点一项直接执行","en":"List every keyboard shortcut in the current app’s menus; search them and click one to run it"}},{"id":"windowLayout","icon":"windowLayout","category":"files","functions":["windowLayout"],"download":90485,"size":400525,"name":{"zh":"窗口布局","en":"Window Layout"},"summary":{"zh":"把当前窗口放到屏幕的左半边、右半边、三分之一、最大化、居中，或者移到另一个显示器","en":"Move the current window to the left or right half, a third, maximize, center it, or move it to another display"}},{"id":"speak","icon":"speak","category":"text","functions":["speak","speakToFile"],"download":67707,"size":294922,"name":{"zh":"朗读","en":"Speak"},"summary":{"zh":"用系统语音朗读选中的文字，朗读中再用一次就停止；也能读出来存成音频文件","en":"Read the selected text aloud with a system voice; use it again while speaking to stop. It can also save the speech as an audio file"}},{"id":"textImage","icon":"textImage","category":"text","functions":["textImage"],"download":32433,"size":197326,"name":{"zh":"文字转图片","en":"Text to Image"},"summary":{"zh":"把选中的文字排成一张手机上看着舒服的长图（宽 1080 像素），白底、米黄、深色三种底色，可以复制、存储或贴到屏幕上","en":"Lay out the selected text as a long image that reads well on a phone (1080 pixels wide) on a white, cream or dark background; copy it, save it or pin it to the screen"}},{"id":"webCapture","icon":"webCapture","category":"text","functions":["webCapture"],"download":34441,"size":198739,"name":{"zh":"网页存档","en":"Save Web Page"},"summary":{"zh":"把选中的网址整页存成一页长 PDF（文字能选、能搜）、一张长图，或者只把正文存成 Markdown，放在「下载」里","en":"Save the whole page at the selected URL to Downloads as one long PDF (with selectable, searchable text) or a long image, or save just the article text as Markdown"}},{"id":"extractInfo","icon":"extractInfo","category":"text","functions":["extractInfo"],"download":33784,"size":198760,"name":{"zh":"提取信息","en":"Extract Info"},"summary":{"zh":"从一段文字里找出链接、邮箱、电话号码和 IP 地址，逐个复制或者一起复制","en":"Find links, email addresses, phone numbers and IP addresses in text and copy them one by one or together"}},{"id":"idNumber","icon":"idNumber","category":"text","functions":["idNumber"],"download":33205,"size":197865,"name":{"zh":"证件号码","en":"ID Numbers"},"summary":{"zh":"身份证号、统一社会信用代码、银行卡号：检查校验位，读出出生日期、年龄、性别、地区和登记管理部门，不联网","en":"Chinese ID numbers, unified social credit codes and bank card numbers: check the check digit and read out birth date, age, sex, region and registration authority, offline"}},{"id":"lineTools","icon":"lineTools","category":"text","functions":["lineTools"],"download":35393,"size":201502,"name":{"zh":"按行处理","en":"Lines"},"summary":{"zh":"一列文字加引号和逗号（SQL 的 IN 列表）、转 JSON 数组、加减序号、倒序、打乱；一行用逗号隔开的拆成多行","en":"Quote and comma-separate a list (for SQL IN), convert to a JSON array, add or remove numbering, reverse, shuffle; split a comma-separated line into lines"}},{"id":"textCleanup","icon":"textCleanup","category":"text","functions":["textCleanup"],"download":34668,"size":200536,"name":{"zh":"文字整理","en":"Clean Up Text"},"summary":{"zh":"合并换行、去掉空行和多余空格、中英文之间加空格、全角转半角、简繁转换、拼音、按行排序去重","en":"Join lines, remove blank lines and extra spaces, space Chinese and Latin text, full-width to half-width, Simplified ↔ Traditional Chinese, Pinyin, sort and deduplicate lines"}},{"id":"quickNote","icon":"quickNote","category":"text","functions":["quickNote"],"download":49797,"size":244046,"name":{"zh":"收集箱","en":"Inbox"},"summary":{"zh":"把选中的文字追加到「文稿/Pop 收集箱.md」","en":"Append the selected text to “Documents/Pop 收集箱.md”"}},{"id":"changeCase","icon":"changeCase","category":"convert","functions":["changeCase"],"download":33372,"size":199235,"name":{"zh":"大小写","en":"Case"},"summary":{"zh":"大写、小写、驼峰、下划线等写法互相转换","en":"Convert between uppercase, lowercase, camelCase, snake_case and more"}},{"id":"encodeDecode","icon":"encodeDecode","category":"convert","functions":["encodeDecode"],"download":34207,"size":200493,"name":{"zh":"编码转换","en":"Encode & Decode"},"summary":{"zh":"Base64、URL、Unicode、HTML 实体的编码和解码","en":"Encode and decode Base64, URL, Unicode and HTML entities"}},{"id":"yamlJSON","icon":"yamlJSON","category":"convert","functions":["yamlJSON"],"download":36413,"size":203081,"name":{"zh":"YAML 和 JSON","en":"YAML ↔ JSON"},"summary":{"zh":"选中 JSON 转成 YAML，选中 YAML 转成 JSON，键的顺序不变","en":"Convert selected JSON to YAML or YAML to JSON, keeping key order"}},{"id":"formatXML","icon":"formatXML","category":"convert","functions":["formatXML"],"download":35180,"size":200622,"name":{"zh":"XML 格式化","en":"Format XML"},"summary":{"zh":"格式化或压缩选中的 XML（也认 SVG、plist、XHTML）","en":"Format or minify the selected XML (SVG, plist and XHTML too)"}},{"id":"formatSQL","icon":"formatSQL","category":"convert","functions":["formatSQL"],"download":38699,"size":204222,"name":{"zh":"SQL 格式化","en":"Format SQL"},"summary":{"zh":"把选中的 SQL 按子句分行、关键字大写、子查询缩进，也可以压成一行","en":"Put each clause of the selected SQL on its own line, uppercase keywords and indent subqueries, or squeeze it onto one line"}},{"id":"tableConvert","icon":"tableConvert","category":"convert","functions":["tableConvert"],"download":36390,"size":202733,"name":{"zh":"表格转换","en":"Convert Table"},"summary":{"zh":"从表格软件复制的文字、CSV、Markdown 表格互相转换，也能转成 JSON","en":"Convert between text copied from spreadsheets, CSV and Markdown tables, or to JSON"}},{"id":"markdown","icon":"markdown","category":"convert","functions":["markdownPreview","markdownCopy"],"download":37473,"size":203897,"name":{"zh":"Markdown 富文本","en":"Markdown Rich Text"},"summary":{"zh":"把选中的 Markdown 显示成排好版的样子，或者转成带格式的文字复制下来，粘贴到文稿、邮件、备忘录里保留格式","en":"Preview the selected Markdown formatted, or copy it as formatted text that keeps its formatting when pasted into documents, mail or notes"}},{"id":"toMarkdown","icon":"toMarkdown","category":"convert","functions":["toMarkdown"],"download":36360,"size":201779,"name":{"zh":"转成 Markdown","en":"Convert to Markdown"},"summary":{"zh":"把网页、文档里选中的带格式文字转成 Markdown：标题、列表、链接、粗体、代码、表格","en":"Convert formatted text selected in web pages and documents to Markdown: headings, lists, links, bold, code, tables"}},{"id":"markdownTOC","icon":"markdownTOC","category":"convert","functions":["markdownTOC"],"download":34401,"size":201304,"name":{"zh":"Markdown 目录","en":"Markdown Table of Contents"},"summary":{"zh":"按选中的 Markdown 里的标题生成目录，点链接能跳到对应的标题（锚点和 GitHub 的写法一样）","en":"Create a table of contents from the headings in the selected Markdown, with links to each heading (GitHub-style anchors)"}},{"id":"dateSpan","icon":"dateSpan","category":"convert","functions":["dateSpan"],"download":36085,"size":202313,"name":{"zh":"日期计算","en":"Date Difference"},"summary":{"zh":"选中两个日期（比如「2026-09-29 到 2026-12-25」），算出相差多少天、几周、几个月，其中有多少个工作日","en":"Select two dates (e.g. “2026-09-29 to 2026-12-25”) to get the days, weeks and months between them and how many are workdays"}},{"id":"numberConvert","icon":"numberConvert","category":"convert","functions":["numberConvert"],"download":33400,"size":199634,"name":{"zh":"数字转换","en":"Numbers"},"summary":{"zh":"进制转换、千分位、人民币大写","en":"Bases, thousands separators, RMB in words"}},{"id":"contrast","icon":"contrast","category":"convert","functions":["contrast"],"download":34023,"size":198905,"name":{"zh":"对比度","en":"Contrast"},"summary":{"zh":"选中两个颜色（比如「#333333 #FFFFFF」），算出文字和背景的对比度，看是否达到 WCAG 的 AA、AAA","en":"Select two colors (e.g. “#333333 #FFFFFF”) to get the text/background contrast ratio and whether it meets WCAG AA and AAA"}},{"id":"hash","icon":"hash","category":"developer","functions":["hash"],"download":51101,"size":245957,"name":{"zh":"哈希","en":"Hash"},"summary":{"zh":"计算文字或文件的 MD5、SHA-1、SHA-256、SHA-512","en":"Compute MD5, SHA-1, SHA-256 and SHA-512 of text or files"}},{"id":"qrCode","icon":"qrCode","category":"developer","functions":["qrCode"],"download":40541,"size":204607,"name":{"zh":"二维码","en":"QR Code"},"summary":{"zh":"把文字或链接生成二维码（英文字母和数字还能生成条形码）；选中图片时识别里面的二维码和条形码","en":"Generate a QR code from text or a link (letters and digits can also become a barcode); with an image selected, read the QR codes and barcodes in it"}},{"id":"base64Image","icon":"base64Image","category":"developer","functions":["base64Image"],"download":39375,"size":203672,"name":{"zh":"Base64 图片","en":"Base64 Image"},"summary":{"zh":"把 Base64 或 data: 开头的图片数据显示成图片，可以复制、保存、贴到屏幕","en":"Show Base64 or data: image data as an image to copy, save or pin"}},{"id":"random","icon":"random","category":"developer","functions":["random"],"download":31114,"size":197343,"name":{"zh":"随机生成","en":"Random"},"summary":{"zh":"生成 UUID、密码和随机数字，可以直接粘贴到当前输入框","en":"Generate UUIDs, passwords and random numbers to paste into the current field"}},{"id":"linkInspect","icon":"linkInspect","category":"developer","functions":["linkInspect"],"download":38804,"size":202056,"name":{"zh":"链接解析","en":"Parse Link"},"summary":{"zh":"拆开链接的协议、主机、路径和每个参数（解码后），去掉 utm_source 这类跟踪参数","en":"Split a link into scheme, host, path and decoded parameters, and remove tracking parameters such as utm_source"}},{"id":"jwtDecode","icon":"jwtDecode","category":"developer","functions":["jwtDecode"],"download":34771,"size":199708,"name":{"zh":"JWT 解码","en":"Decode JWT"},"summary":{"zh":"解码选中的 JWT，列出签发者、过期时间等声明（只解码，不验证签名）","en":"Decode the selected JWT and list claims such as issuer and expiry (decoding only; the signature isn’t verified)"}},{"id":"charInfo","icon":"charInfo","category":"developer","functions":["charInfo"],"download":33220,"size":198105,"name":{"zh":"字符信息","en":"Character Info"},"summary":{"zh":"查看每个字符的 Unicode 码点、名称和编码；找出并去掉零宽空格这类看不见的字符","en":"See each character’s Unicode code point, name and encoding; find and remove invisible characters such as zero-width spaces"}},{"id":"screenshotTranslate","icon":"translate","category":"text","functions":["screenshotTranslate"],"download":31252,"size":197440,"name":{"zh":"截图翻译","en":"Translate Screenshot"},"summary":{"zh":"框选屏幕上的一块区域，识别里面的文字并翻译（离线）","en":"Select an area of the screen, recognize its text and translate it (offline)"}},{"id":"textDiff","icon":"compareFiles","category":"text","functions":["textDiff"],"download":37899,"size":203625,"name":{"zh":"文本对比","en":"Compare Text"},"summary":{"zh":"把选中的文字和剪贴板里的文字对比，标出删去和新增的地方","en":"Compare the selected text with the text on the clipboard and mark deletions and additions"}},{"id":"imageConvert","icon":"imageConvert","category":"screen","functions":["imageConvert"],"download":41693,"size":205069,"name":{"zh":"图片转换","en":"Convert Images"},"summary":{"zh":"把选中的图片文件转成 PNG、JPEG、HEIC，缩小一半、压缩体积或者压到指定大小以内，旋转、左右翻转，或者去掉照片里的位置和拍摄信息；结果存在原图旁边","en":"Convert the selected images to PNG, JPEG or HEIC, halve their size, compress them (or under a given size), rotate, flip, or remove location and capture info; results are saved next to the originals"}},{"id":"stitchImages","icon":"stitchImages","category":"screen","functions":["stitchImages"],"download":41357,"size":205213,"name":{"zh":"拼接图片","en":"Stitch Images"},"summary":{"zh":"把选中的几张图片按文件名的顺序竖着或者横着拼成一张，或者合成一张动图，存在第一张旁边","en":"Stitch the selected images vertically or horizontally in file name order, or make an animated image, saved next to the first one"}},{"id":"idPhoto","icon":"idPhoto","category":"screen","functions":["idPhoto"],"download":32845,"size":197252,"name":{"zh":"证件照","en":"ID Photo"},"summary":{"zh":"把人像照片换成白底、蓝底或红底，按人脸位置裁成一寸、二寸（300 dpi）；在本机处理，另存一份放在原图旁边","en":"Give a portrait a white, blue or red background and crop it around the face to 1-inch or 2-inch ID sizes (300 dpi); processed on this Mac and saved as a copy next to the original"}},{"id":"cropImage","icon":"cropImage","category":"screen","functions":["cropImage"],"download":34621,"size":198958,"name":{"zh":"裁剪图片","en":"Crop Image"},"summary":{"zh":"把选中的图片裁成 1:1、4:3、3:4、16:9、9:16，自动对准画面里的主体；另存一份放在原图旁边","en":"Crop the selected images to 1:1, 4:3, 3:4, 16:9 or 9:16, centered on the subject; a copy is saved next to the original"}},{"id":"redact","icon":"redact","category":"screen","functions":["redact"],"download":42452,"size":206111,"name":{"zh":"隐私打码","en":"Redact"},"summary":{"zh":"找出选中图片里的人脸、电话号码、邮箱、身份证号、银行卡号和车牌，打上马赛克另存一份；在本机识别，另存的那份不带拍摄信息和位置","en":"Find faces, phone numbers, email addresses, ID and bank card numbers and license plates in the selected images, pixelate them and save a copy; recognized on this Mac, and the copy carries no capture info or location"}},{"id":"removeBackground","icon":"removeBackground","category":"screen","functions":["removeBackground"],"download":37303,"size":202641,"name":{"zh":"抠图","en":"Remove Background"},"summary":{"zh":"去掉选中图片的背景，只留下人、动物或物品（离线）","en":"Remove the background of the selected image, keeping only people, animals or objects (offline)"}},{"id":"scanCode","icon":"scanCode","category":"screen","functions":["scanCode"],"download":33384,"size":198041,"name":{"zh":"扫码","en":"Scan Code"},"summary":{"zh":"框选屏幕上的二维码或条形码，识别里面的内容；链接可以直接打开，Wi-Fi 二维码列出密码","en":"Select a QR code or barcode on screen to read it; links can be opened and Wi-Fi codes show the password"}},{"id":"screenRecord","icon":"screenRecord","category":"recording","functions":["screenRecord"],"download":34904,"size":200109,"name":{"zh":"录屏","en":"Record Screen"},"summary":{"zh":"拖出一块区域、单击选一个窗口或者按回车录整个屏幕，存成 MP4；可以录上电脑里的声音或者麦克风、显示鼠标点击和按下的键，录好能接着转成 GIF。正在录的时候再用一次就停止","en":"Drag out an area, click a window or press Return to record the whole screen as MP4; can include the Mac’s sound or the microphone and show clicks and keystrokes, and the recording can then be turned into a GIF. Use it again while recording to stop"}},{"id":"scrollCapture","icon":"scrollCapture","category":"recording","functions":["scrollCapture"],"download":34060,"size":199618,"name":{"zh":"滚动截图","en":"Scrolling Screenshot"},"summary":{"zh":"框选一块区域，一边往下滚动一边截，拼成一张长图；网页、聊天记录、长文档都能截全，还能接着识别文字。正在截的时候再用一次就是完成","en":"Select an area, then scroll down while Pop captures it into one long image: whole web pages, chat histories and long documents, with text recognition afterwards if you like. Use it again while capturing to finish"}},{"id":"showKeystrokes","icon":"showKeystrokes","category":"recording","functions":["showKeystrokes"],"download":31366,"size":196647,"name":{"zh":"显示按键","en":"Show Keystrokes"},"summary":{"zh":"演示、录教程时在屏幕下方显示按下的组合键（⌘C、⇧⌘4、方向键这些），普通打字不显示；再用一次关闭。录屏时也可以勾选一起录进去","en":"Show the shortcuts you press (⌘C, ⇧⌘4, arrow keys and so on) at the bottom of the screen for demos and tutorials; ordinary typing isn’t shown. Use it again to turn it off. Screen recordings can include them too"}},{"id":"folderTree","icon":"folderTree","category":"files","functions":["folderTree"],"download":37056,"size":202243,"name":{"zh":"目录结构","en":"Folder Tree"},"summary":{"zh":"把选中文件夹里的目录结构写成树形或者 Markdown 列表，贴进文档、README 或者发给别人","en":"Write the structure of the selected folder as a tree or Markdown list for docs, READMEs or sharing"}},{"id":"zip","icon":"zip","category":"files","functions":["zip","unzip"],"download":53498,"size":244544,"name":{"zh":"压缩和解压","en":"Zip and Unzip"},"summary":{"zh":"把选中的文件或文件夹压缩成 zip，存在原来的文件夹里；把选中的 zip 解压到旁边的同名文件夹里","en":"Compress the selected files or folders into a zip in the same folder, or extract the selected zip files into folders next to them"}},{"id":"pdf","icon":"pdf","category":"files","functions":["pdf"],"download":49796,"size":242960,"name":{"zh":"PDF","en":"PDF"},"summary":{"zh":"把选中的图片和 PDF 按文件名顺序合成一个 PDF；只选了一个 PDF 时可以把每页存成图片、复制里面的文字、取出其中几页或者拆开、加页码、加密码或者去掉密码，或者压缩；扫描件可以识别文字，另存一份能搜索、复制的 PDF","en":"Combine the selected images and PDFs into one PDF in file name order. With a single PDF, save each page as an image, copy its text, extract or split pages, add page numbers, add or remove a password, or compress it. For a scan, recognize the text and save a copy you can search and copy from"}},{"id":"videoConvert","icon":"videoConvert","category":"files","functions":["videoConvert"],"download":42922,"size":237773,"name":{"zh":"视频转换","en":"Convert Video"},"summary":{"zh":"把选中的视频转成 GIF、转成 MP4、压缩到 720p、提取音频，或者均匀取 16 帧拼成一张缩略图；结果存在原视频旁边","en":"Convert the selected videos to GIF or MP4, compress to 720p, extract audio, or make a contact sheet of 16 evenly spaced frames; results are saved next to the originals"}},{"id":"trimMedia","icon":"trimMedia","category":"files","functions":["trimMedia"],"download":32888,"size":197454,"name":{"zh":"截取片段","en":"Trim"},"summary":{"zh":"截取选中的音频或视频的一段（写上开始和结束的时间），存在原文件旁边","en":"Cut a range from the selected audio or video (by start and end time), saved next to the original"}},{"id":"transcribe","icon":"transcribe","category":"files","functions":["transcribe"],"download":39689,"size":202963,"name":{"zh":"语音转文字","en":"Transcribe"},"summary":{"zh":"把录音、视频里说的话转成文字和 SRT 字幕，存在原文件旁边；普通话、英语、粤语、日语，这台 Mac 支持时在本机识别","en":"Turn speech in recordings and videos into text and SRT subtitles saved next to the original; Mandarin, English, Cantonese and Japanese, recognized on this Mac when it supports it"}},{"id":"airDrop","icon":"airDrop","category":"files","functions":["airDrop"],"download":37431,"size":200580,"name":{"zh":"隔空投送","en":"AirDrop"},"summary":{"zh":"用隔空投送把选中的文件、图片、链接或文字发到附近的 iPhone、iPad 或 Mac","en":"Send the selected files, images, links or text to a nearby iPhone, iPad or Mac with AirDrop"}},{"id":"sendToPhone","icon":"sendToPhone","category":"files","functions":["sendToPhone"],"download":35939,"size":200712,"name":{"zh":"传到手机","en":"Send to Phone"},"summary":{"zh":"手机扫码下载选中的文件、图片（文件夹先打包成 zip）或者拿到选中的文字，也能从手机传文件到「下载」文件夹；手机和 Mac 连同一个 Wi-Fi 就行，安卓手机也能用","en":"Scan a QR code with your phone to download the selected files or images (folders are zipped first) or get the selected text, and upload files from the phone to Downloads. The phone and Mac just need to be on the same Wi-Fi; Android works too."}},{"id":"openInTerminal","icon":"openInTerminal","category":"files","functions":["openInTerminal"],"download":35282,"size":199671,"name":{"zh":"在终端打开","en":"Open in Terminal"},"summary":{"zh":"在「终端」里打开选中的文件夹（选中文件时打开它所在的文件夹）","en":"Open the selected folder in Terminal (for files, the folder they’re in)"}},{"id":"keepAwake","icon":"keepAwake","category":"files","functions":["keepAwake"],"download":35590,"size":200190,"name":{"zh":"保持唤醒","en":"Keep Awake"},"summary":{"zh":"一段时间内不让屏幕变暗、电脑睡眠，适合看文档、演示、等下载","en":"Keep the display on and the Mac awake for a while: for reading, presenting or waiting for downloads"}},{"id":"systemActions","icon":"systemActions","category":"files","functions":["systemActions"],"download":31341,"size":197650,"name":{"zh":"系统操作","en":"System Actions"},"summary":{"zh":"锁屏、熄屏、睡眠、打开屏幕保护程序、切换深色和浅色模式、静音、隐藏或显示桌面图标、显示隐藏文件、推出所有磁盘","en":"Lock the screen, turn off the display, sleep, start the screen saver, switch between Dark and Light Mode, mute, hide or show desktop icons, show hidden files, or eject all disks"}},{"id":"timer","icon":"timer","category":"files","functions":["timer"],"download":36637,"size":201194,"name":{"zh":"计时器","en":"Timer"},"summary":{"zh":"倒计时：选一个时长，或者选中「25 分钟」「1:30」这样的文字直接开始；到点时响一声、发通知。也有番茄钟：专注 25 分钟、休息 5 分钟，一直循环","en":"Countdown: choose a duration, or select text such as “25 min” or “1:30” to start right away. Plays a sound and sends a notification when time’s up. There’s also a Pomodoro timer: 25 minutes of focus, then a 5-minute break, over and over"}},{"id":"spotlight","icon":"spotlight","category":"recording","functions":["spotlight"],"download":58182,"size":265006,"name":{"zh":"聚光灯","en":"Spotlight"},"summary":{"zh":"演示、录教程时把屏幕压暗，只亮着指针周围一圈，跟着指针走，让大家看你指的地方；录屏时一起录进去，再用一次关闭","en":"Dim the screen except for a circle around the pointer that follows it, so people look where you point in demos and tutorials. Screen recordings include it; use it again to turn it off"}},{"id":"zoom","icon":"zoom","category":"recording","functions":["zoom"],"download":78522,"size":339125,"name":{"zh":"屏幕放大","en":"Screen Zoom"},"summary":{"zh":"演示、录教程时把指针附近放大，看清小字：放大的是那一刻的屏幕画面，挪动指针换地方看，滚轮或 ↑↓ 调倍数，点一下或按 Esc 回去","en":"Magnify the area around the pointer in demos and tutorials so small text is easy to read. It zooms into a snapshot of the screen: move the pointer to look around, scroll or press ↑↓ to change the magnification, and click or press Esc to go back"}},{"id":"beautify","icon":"beautify","category":"screen","functions":["beautify"],"download":164173,"size":698937,"name":{"zh":"截图美化","en":"Beautify Screenshot"},"summary":{"zh":"给截图加上渐变背景、留白、圆角和阴影，可以补成 1:1、4:3、16:9，发文章、做演示更好看；选中图片就用它，没选中就先框选屏幕上的一块","en":"Put a screenshot on a gradient background with padding, rounded corners and a shadow, optionally filled out to 1:1, 4:3 or 16:9, so it looks good in posts and slides. Uses the selected image, or lets you select an area of the screen first"}},{"id":"compareImages","icon":"compareImages","category":"screen","functions":["compareImages"],"download":234282,"size":875906,"name":{"zh":"对比图片","en":"Compare Images"},"summary":{"zh":"对比选中的两张图片：并排、滑动分界线、半透明叠加，或者把不一样的像素标红、框出几处不同；改版前后的截图、设计稿和实现对照都用得上","en":"Compare two selected images side by side, with a swipe divider or a translucent overlay, or mark the pixels that differ in red and box each area that changed. Handy for before-and-after screenshots and for checking a build against its design"}},{"id":"splitImage","icon":"splitImage","category":"screen","functions":["splitImage"],"download":130573,"size":498387,"name":{"zh":"切分图片","en":"Split Image"},"summary":{"zh":"把选中的图片切成九宫格、四宫格（对准画面里的主体裁成正方形）或者横着三张，长图切成几页；按发出去的顺序编号，存在原图旁边的文件夹里","en":"Cut the selected image into a 3 × 3 or 2 × 2 grid (cropped to a square around the subject) or three squares side by side, or cut a long image into pages. The pieces are numbered in posting order and saved in a folder next to the original"}},{"id":"quitApps","icon":"quitApps","category":"files","functions":["quitApps"],"download":212267,"size":816121,"name":{"zh":"退出 App","en":"Quit Apps"},"summary":{"zh":"列出正在运行的 App 和各占多少内存、CPU，一键退出，没有响应的强制退出；也能一下退出其他所有 App，开会、演示前清清场","en":"List running apps and how much memory and CPU each one uses. Quit an app with a click, force quit one that doesn’t respond, or quit all the others at once before a meeting or a demo"}},{"id":"tidyFolder","icon":"tidyFolder","category":"files","functions":["tidyFolder"],"download":217425,"size":793523,"name":{"zh":"整理文件夹","en":"Tidy Folder"},"summary":{"zh":"把选中的文件夹（没选时是「下载」）第一层的文件按类型或者按月份归到子文件夹里，先看预览，整理完可以撤销","en":"Sort the files at the top of the selected folder (or Downloads if nothing is selected) into subfolders by type or by month. Preview first and undo afterwards"}},{"id":"appIcon","icon":"appIcon","category":"screen","functions":["appIcon"],"download":228737,"size":882996,"name":{"zh":"生成图标","en":"Make App Icon"},"summary":{"zh":"用选中的图片生成 App 图标：macOS 的 .icns 和 Xcode 用的图标集（圆角方块，和系统 App 的图标一样大）、iOS 的 1024 图标，还有网站的 favicon，存在原图旁边的文件夹里","en":"Make app icons from the selected image: a macOS .icns and an Xcode icon set (a rounded square the size of the system’s app icons), a 1024 iOS icon and a website favicon, saved in a folder next to the image"}},{"id":"uninstallApp","icon":"uninstallApp","category":"files","functions":["uninstallApp"],"download":259431,"size":950317,"name":{"zh":"卸载 App","en":"Uninstall App"},"summary":{"zh":"卸载选中的 App：连同它在「资源库」里留下的设置、缓存、容器一起找出来，看清各占多大，再一起移到废纸篓；只勾留下的文件，就是把 App 恢复成刚装好的样子","en":"Uninstall the selected app: find the settings, caches and containers it left in your Library, see how much space each takes, and move them to the Trash together. Check only the leftover files to reset the app to a fresh install"}},{"id":"newFile","icon":"newFile","category":"files","functions":["newFile"],"download":174747,"size":691444,"name":{"zh":"新建文件","en":"New File"},"summary":{"zh":"在选中的文件夹（没选时是访达当前的文件夹）里新建文本、Markdown、网页、脚本这些文件，也可以把选中的文字、剪贴板里的文字和图片直接存成文件","en":"Create a text, Markdown, web page or script file in the selected folder (or the folder open in Finder), or save the selected text or the text or image on the clipboard as a file"}},{"id":"fileEncoding","icon":"fileEncoding","category":"files","functions":["fileEncoding"],"download":227401,"size":858477,"name":{"zh":"文件编码","en":"File Encoding"},"summary":{"zh":"认出选中的文本文件是什么编码（UTF-8、GBK、Big5……）、用的什么换行，一键转成 UTF-8（Excel 打开 CSV 要带 BOM）或者 GBK，换行统一成 LF 或 CRLF；转完可以撤销","en":"See which encoding (UTF-8, GBK, Big5…) and line endings the selected text files use, and convert them to UTF-8 (with a BOM so Excel opens CSV files correctly) or GBK, with LF or CRLF line endings. Undo afterwards"}},{"id":"appInfo","icon":"appInfo","category":"files","functions":["appInfo"],"download":177420,"size":631796,"name":{"zh":"App 信息","en":"App Info"},"summary":{"zh":"看选中的 App 是给哪种芯片做的、谁签的名、有没有公证、在不在沙盒里、会要哪些权限、用什么做的、从哪下载的，可以复制下来","en":"See which chips the selected app is built for, who signed it, whether it is notarized and sandboxed, which permissions it may ask for, what it is built with and where it was downloaded from, ready to copy"}},{"id":"similarPhotos","icon":"similarPhotos","category":"files","functions":["similarPhotos"],"download":274903,"size":1018450,"name":{"zh":"相似照片","en":"Similar Photos"},"summary":{"zh":"在选中的文件夹（或者几张图片）里找出连拍、重复存的、改过大小的相似照片，每组留最清楚的一张，其余的移到废纸篓","en":"Find burst shots and photos saved twice or resized in the selected folder (or images), keep the sharpest one of each group and move the rest to the Trash"}},{"id":"mediaInfo","icon":"mediaInfo","category":"files","functions":["mediaInfo"],"download":277976,"size":1016574,"name":{"zh":"媒体信息","en":"Media Info"},"summary":{"zh":"看选中的视频或音频用的什么编码、分辨率、帧率、码率，是不是 HDR，有几条音轨和字幕，用什么设备在哪拍的；带着拍摄地点时可以去掉位置另存一份","en":"See the codec, resolution, frame rate and bit rate of the selected video or audio, whether it’s HDR, its audio and subtitle tracks, and which device shot it where; save a copy without the location if it has one"}},{"id":"subtitles","icon":"subtitles","category":"files","functions":["subtitles"],"download":263460,"size":955310,"name":{"zh":"字幕工具","en":"Subtitles"},"summary":{"zh":"选中字幕文件（SRT、WebVTT、ASS、LRC），整体提前或推后、换帧率、去掉样式标签和听障说明，转成 SRT、WebVTT、LRC 或纯文字；选两份字幕可以合成一份双语字幕","en":"Shift the selected subtitles (SRT, WebVTT, ASS, LRC) earlier or later, convert between frame rates, remove style tags and hearing-impaired descriptions, and save them as SRT, WebVTT, LRC or plain text; select two to merge them into one bilingual file"}},{"id":"fontPreview","icon":"fontPreview","category":"text","functions":["fontPreview"],"download":231442,"size":854360,"name":{"zh":"字体预览","en":"Font Preview"},"summary":{"zh":"用这台 Mac 上的每一种字体显示选中的文字（没选中时用示例），按中文、西文、等宽、收藏筛选，只看能完整显示的；复制字体名、CSS，或者复制成图片；选中字体文件时先预览再安装","en":"Show the selected text (or a sample) in every font on your Mac, filter by Chinese, Western, monospaced or favorite fonts and only those that can show all of it; copy the font name or CSS, or copy it as an image; select font files to preview and install them"}},{"id":"encryptFiles","icon":"encryptFiles","category":"files","functions":["encryptFiles"],"download":175728,"size":695645,"name":{"zh":"加密打包","en":"Encrypt Files"},"summary":{"zh":"把选中的文件和文件夹放进一个用密码加密（AES-256）的磁盘映像，在任何一台 Mac 上双击、输入密码就能打开；发给别人、存到 U 盘或者网盘前用","en":"Put the selected files and folders into a password-protected (AES-256) disk image that opens on any Mac with a double-click and the password; use it before sending files or saving them to a USB drive or cloud storage"}},{"id":"batteryInfo","icon":"batteryInfo","category":"files","functions":["batteryInfo"],"download":186592,"size":675784,"name":{"zh":"电池信息","en":"Battery Info"},"summary":{"zh":"看笔记本电池的电量、最大容量（健康度）、循环次数、状况、温度，正在充电或者耗电的功率、充电器多少瓦，还要多久充满或者用完；也列出连着的蓝牙键盘、鼠标、触控板和耳机的电量","en":"See the charge, maximum capacity (health), cycle count, condition and temperature of a MacBook battery, how many watts are going in or out, the charger’s wattage, and how long until it’s full or empty; also lists the battery levels of connected Bluetooth keyboards, mice, trackpads and headphones"}},{"id":"voiceRecorder","icon":"voiceRecorder","category":"recording","functions":["voiceRecorder"],"download":151955,"size":656994,"name":{"zh":"录音","en":"Voice Recorder"},"summary":{"zh":"用麦克风录一段声音，存成 .m4a 放进「下载」；录的时候屏幕上方有个小条，看得到时长和音量，可以暂停，录好能接着转成文字。正在录的时候再用一次就停止","en":"Record sound from the microphone and save it as an .m4a file in Downloads; while recording, a small bar at the top of the screen shows the time and level and can pause, and you can transcribe the recording afterwards. Use it again while recording to stop"}},{"id":"systemInfo","icon":"systemInfo","category":"files","functions":["systemInfo"],"download":169567,"size":629139,"name":{"zh":"系统信息","en":"System Info"},"summary":{"zh":"看这台 Mac 的型号、芯片和核心数、内存、macOS 版本、开机多久、启动磁盘还剩多少、每台显示器的分辨率和刷新率，可以一键复制，报问题、问人时用","en":"See this Mac’s model, chip and cores, memory, macOS version, uptime, free space on the startup disk, and each display’s resolution and refresh rate, and copy it all at once for bug reports or when asking for help"}},{"id":"soundDevices","icon":"soundDevices","category":"files","functions":["soundDevices"],"download":135231,"size":588573,"name":{"zh":"声音设备","en":"Sound Devices"},"summary":{"zh":"一下子换声音从哪出、用哪个麦克风：扬声器、耳机、AirPods、显示器、AirPlay，还能调音量、静音","en":"Switch where sound plays and which microphone is used in one go: speakers, headphones, AirPods, displays or AirPlay, and adjust the volume or mute"}},{"id":"resolution","icon":"resolution","category":"files","functions":["resolution"],"download":219487,"size":874243,"name":{"zh":"分辨率","en":"Resolution"},"summary":{"zh":"换显示器的分辨率（看起来像多大）和刷新率，把哪台设成主显示器；外接显示器换了以后 15 秒内不点「保留」就换回原来的","en":"Change each display’s resolution (what it looks like) and refresh rate, or pick the main display; after a change on an external display, click Keep within 15 seconds or it switches back"}},{"id":"diskSpeed","icon":"diskSpeed","category":"files","functions":["diskSpeed"],"download":64000,"size":280000,"name":{"zh":"磁盘测速","en":"Disk Speed"},"summary":{"zh":"测硬盘、U 盘、移动固态硬盘连续写入和读取有多快：选中磁盘里的文件或文件夹就测那块盘，什么都不选时测启动磁盘","en":"Measure how fast a hard drive, USB stick or portable SSD writes and reads sequentially. Select a file or folder on a disk to test that disk, or nothing to test the startup disk"}},{"id":"worldTime","icon":"worldTime","category":"convert","functions":["worldTime"],"download":82000,"size":360000,"name":{"zh":"时区换算","en":"Time Zones"},"summary":{"zh":"选中「3pm PST」「北京时间晚上 9 点」这样的时间，换算成常用的几个城市的时间；拖动滑块看别的时刻，找大家都在上班的时间开会","en":"Select a time such as “3pm PST” or “9 pm Beijing time” to see it in the cities you use. Drag the slider to try other times and find when everyone is at work"}},{"id":"chart","icon":"chart","category":"convert","functions":["chart"],"download":78000,"size":340000,"name":{"zh":"生成图表","en":"Chart"},"summary":{"zh":"选中表格、一行一个「名字 数值」或者一串数，画成柱状图、条形图、折线图或者饼图，复制成图片或者存到「下载」","en":"Turn a selected table, lines of “name value” or a list of numbers into a column, bar, line or pie chart, then copy it as an image or save it to Downloads"}}];
 const CATEGORY_TITLES = {
   text: { zh: '文字', en: 'Text' }, convert: { zh: '转换', en: 'Convert' }, developer: { zh: '开发', en: 'Developer' },
   screen: { zh: '屏幕与图片', en: 'Screen & Images' }, recording: { zh: '录屏和演示', en: 'Recording & Presenting' }, files: { zh: '文件和系统', en: 'Files & System' },
@@ -1194,7 +1266,7 @@ const DEFAULT_INSTALLED = PACKAGES.filter((pkg) => pkg.functions.some((fn) => P[
 // 圆盘的默认布局：上半圈处理选中的文字，下半圈什么都没选时也能用
 const LAYOUT = ['translate', 'search', 'dictionary', 'openURL', 'allPlugins', 'clipboard', 'screenshotOCR', 'colorPicker'];
 // 「全部功能」里的顺序
-const ORDER = ['translate', 'textImage', 'largeType', 'fontPreview', 'search', 'dictionary', 'speak', 'speakToFile', 'textStats', 'changeCase', 'openURL', 'webCapture', 'linkInspect', 'qrCode',
+const ORDER = ['translate', 'textImage', 'largeType', 'fontPreview', 'search', 'dictionary', 'speak', 'speakToFile', 'textStats', 'changeCase', 'worldTime', 'numberStats', 'chart', 'tableConvert', 'openURL', 'webCapture', 'linkInspect', 'qrCode',
   'fileInfo', 'mediaInfo', 'subtitles', 'imageConvert', 'cropImage', 'splitImage', 'beautify', 'compareImages', 'appIcon', 'redact', 'ocr', 'removeBackground', 'videoConvert', 'transcribe', 'trimMedia', 'pdf', 'compareFiles', 'zip', 'encryptFiles', 'tidyFolder', 'similarPhotos', 'newFile', 'fileEncoding',
   'airDrop', 'sendToPhone', 'screenRecord', 'voiceRecorder', 'scrollCapture', 'showKeystrokes', 'screenPen', 'cameraBubble', 'pointerHighlight', 'spotlight', 'zoom', 'teleprompter', 'screenshotOCR', 'annotate', 'pin', 'colorPicker', 'clipboard', 'shelf', 'menuShortcuts', 'systemActions', 'quitApps', 'uninstallApp', 'appInfo', 'batteryInfo', 'systemInfo', 'soundDevices', 'resolution', 'diskSpeed', 'timer', 'cleanKeyboard'];
 
@@ -1274,6 +1346,14 @@ const ARTICLE = {
     },
     qr: 'zh',
   },
+};
+
+// 「选中表格」场景：备忘录里的一张表格，整张选中（从表格里拷贝出来是制表符分隔的文字）
+const TABLE = {
+  zh: { title: '上半年销售', before: '各月的销售额和成本（万元）：', after: '下半年的目标再往上提一成。', head: ['月份', '销售额', '成本'],
+    rows: [['1月', '120', '82'], ['2月', '135', '86'], ['3月', '162', '95'], ['4月', '151', '91'], ['5月', '178', '102'], ['6月', '196', '110']] },
+  en: { title: 'H1 sales', before: 'Monthly revenue and cost (thousand USD):', after: 'Aim for 10% more in the second half.', head: ['Month', 'Revenue', 'Cost'],
+    rows: [['Jan', '120', '82'], ['Feb', '135', '86'], ['Mar', '162', '95'], ['Apr', '151', '91'], ['May', '178', '102'], ['Jun', '196', '110']] },
 };
 
 const LINK = {
@@ -1544,7 +1624,7 @@ const MENUS = {
 
 // 每个场景里前台的 App
 function appKey() {
-  return { foreign: 'safari', link: 'notes', files: 'finder', none: 'finder' }[state.scene] || 'finder';
+  return { foreign: 'safari', link: 'notes', table: 'notes', files: 'finder', none: 'finder' }[state.scene] || 'finder';
 }
 
 // 系统操作里的「换成深色/浅色模式」：演示里换的是这个页面
@@ -1659,6 +1739,18 @@ function renderWindow() {
       h('div', { class: 'content' }, h('div', { class: 'notes' },
         h('div', { class: 'side' }, n.list.map(([title, sub], i) => h('div', { class: 'note-item' + (i === 0 ? ' on' : '') }, h('b', null, title), h('span', null, sub)))),
         h('div', { class: 'note' }, h('h3', null, n.title), h('p', null, n.before), h('p', { class: 'url' }, h('span', { class: 'sel', 'data-selection': '' }, LINK.url)), h('p', null, n.after)))));
+  } else if (state.scene === 'table') {
+    const t = TABLE[lang];
+    const notes = [[t.title, t.before], ...LINK.note[lang].list];
+    win = h('div', { class: 'win' },
+      h('div', { class: 'bar' }, trafficLights(), h('div', { class: 'nav' }, icon('sidebar')), h('span', { class: 'title' }, lang === 'zh' ? '备忘录' : 'Notes'), h('div', { class: 'addr', style: 'visibility:hidden' }), h('div', { class: 'nav' }, icon('compose'))),
+      h('div', { class: 'content' }, h('div', { class: 'notes' },
+        h('div', { class: 'side' }, notes.map(([title, sub], i) => h('div', { class: 'note-item' + (i === 0 ? ' on' : '') }, h('b', null, title), h('span', null, sub)))),
+        h('div', { class: 'note' }, h('h3', null, t.title), h('p', null, t.before),
+          h('table', { class: 'note-table sel-table', 'data-selection': '' },
+            h('thead', null, h('tr', null, t.head.map((cell) => h('th', null, cell)))),
+            h('tbody', null, t.rows.map((row) => h('tr', null, row.map((cell) => h('td', null, cell)))))),
+          h('p', null, t.after)))));
   } else if (state.scene === 'files') {
     const all = allFiles();
     const sidebar = lang === 'zh' ? ['桌面', '下载', '文稿', '图片'] : ['Desktop', 'Downloads', 'Documents', 'Pictures'];
@@ -1698,6 +1790,10 @@ function currentContent() {
     }
     case 'link':
       return { kinds: ['text', 'url', 'latin'], text: LINK.url, summary: L(T.linkKind) };
+    case 'table': {
+      const text = tableText();
+      return { kinds: ['text', 'table'], text, summary: L(T.chars(text.length)) };
+    }
     case 'files': {
       const files = selectedFiles();
       const file = files[0];
@@ -1726,7 +1822,7 @@ function renderChrome() {
   $('#download').textContent = L(T.download);
   $('#source').textContent = L(T.source);
   for (const button of document.querySelectorAll('#lang-switch button')) button.setAttribute('aria-pressed', String(button.dataset.lang === lang));
-  const tabs = [['foreign', 'translate'], ['link', 'linkInspect'], ['files', 'folder'], ['none', 'desktop'], ['plugins', 'allPlugins']];
+  const tabs = [['foreign', 'translate'], ['link', 'linkInspect'], ['table', 'tableConvert'], ['files', 'folder'], ['none', 'desktop'], ['plugins', 'allPlugins']];
   $('#scenes').replaceChildren(...tabs.map(([id, iconName]) => h('button', { type: 'button', role: 'tab', 'aria-selected': String(state.scene === id), 'data-scene': id }, icon(iconName), L(T.scenes[id]))));
 }
 
@@ -2261,6 +2357,10 @@ const RUN = {
   soundDevices: (content, anchor) => showSoundDevices(anchor),
   resolution: (content, anchor) => showResolution(anchor),
   diskSpeed: (content, anchor) => showDiskSpeed(anchor),
+  worldTime: (content, anchor) => showWorldTime(content, anchor),
+  chart: (content, anchor) => showChart(content, anchor),
+  tableConvert: (content, anchor) => showTableConvert(content, anchor),
+  numberStats: (content, anchor) => showNumberStats(content, anchor),
   newFile: (content, anchor) => showNewFile(content, anchor),
   fileEncoding: (content, anchor) => showFileEncoding(content.files, anchor),
   similarPhotos: (content, anchor) => showSimilarPhotos(content, anchor),
@@ -5445,6 +5545,418 @@ function showDiskSpeed(anchor) {
   ] });
   draw();
   presentCard(el, anchor);
+}
+
+// 时区换算：常用城市（App 里有 69 个，这里挑了一部分），时间按浏览器自带的时区数据算。
+// 示例里能选中的文字都没写时间，所以和 App 里什么都不选时一样：看各地现在几点，拖动滑块看别的时刻
+const WT_CITIES = [
+  { id: 'utc', zone: 'UTC', name: { zh: 'UTC', en: 'UTC' }, keys: 'utc gmt xietiaoshijieshi xtsjs greenwich' },
+  { id: 'beijing', zone: 'Asia/Shanghai', name: { zh: '北京', en: 'Beijing' }, keys: 'beijing bj zhongguo china' },
+  { id: 'shanghai', zone: 'Asia/Shanghai', name: { zh: '上海', en: 'Shanghai' }, keys: 'shanghai sh zhongguo china' },
+  { id: 'hongKong', zone: 'Asia/Hong_Kong', name: { zh: '香港', en: 'Hong Kong' }, keys: 'xianggang xg hongkong hkt' },
+  { id: 'taipei', zone: 'Asia/Taipei', name: { zh: '台北', en: 'Taipei' }, keys: 'taibei tb taiwan' },
+  { id: 'tokyo', zone: 'Asia/Tokyo', name: { zh: '东京', en: 'Tokyo' }, keys: 'dongjing dj riben japan jst' },
+  { id: 'seoul', zone: 'Asia/Seoul', name: { zh: '首尔', en: 'Seoul' }, keys: 'shouer se hanguo korea kst' },
+  { id: 'singapore', zone: 'Asia/Singapore', name: { zh: '新加坡', en: 'Singapore' }, keys: 'xinjiapo xjp sgt' },
+  { id: 'bangkok', zone: 'Asia/Bangkok', name: { zh: '曼谷', en: 'Bangkok' }, keys: 'mangu mg taiguo thailand' },
+  { id: 'newDelhi', zone: 'Asia/Kolkata', name: { zh: '新德里', en: 'New Delhi' }, keys: 'xindeli xdl yindu india delhi ist' },
+  { id: 'dubai', zone: 'Asia/Dubai', name: { zh: '迪拜', en: 'Dubai' }, keys: 'dibai db alianqiu uae' },
+  { id: 'moscow', zone: 'Europe/Moscow', name: { zh: '莫斯科', en: 'Moscow' }, keys: 'mosike msk eluosi russia' },
+  { id: 'london', zone: 'Europe/London', name: { zh: '伦敦', en: 'London' }, keys: 'lundun ld yingguo uk britain bst' },
+  { id: 'paris', zone: 'Europe/Paris', name: { zh: '巴黎', en: 'Paris' }, keys: 'bali bl faguo france cet cest' },
+  { id: 'berlin', zone: 'Europe/Berlin', name: { zh: '柏林', en: 'Berlin' }, keys: 'bolin bl deguo germany' },
+  { id: 'amsterdam', zone: 'Europe/Amsterdam', name: { zh: '阿姆斯特丹', en: 'Amsterdam' }, keys: 'amusitedan amstd helan netherlands' },
+  { id: 'newYork', zone: 'America/New_York', name: { zh: '纽约', en: 'New York' }, keys: 'niuyue ny meiguo usa nyc est edt et' },
+  { id: 'toronto', zone: 'America/Toronto', name: { zh: '多伦多', en: 'Toronto' }, keys: 'duolunduo dld jianada canada' },
+  { id: 'chicago', zone: 'America/Chicago', name: { zh: '芝加哥', en: 'Chicago' }, keys: 'zhijiage zjg meiguo usa cst cdt ct' },
+  { id: 'denver', zone: 'America/Denver', name: { zh: '丹佛', en: 'Denver' }, keys: 'danfo df meiguo usa mst mdt mt' },
+  { id: 'losAngeles', zone: 'America/Los_Angeles', name: { zh: '洛杉矶', en: 'Los Angeles' }, keys: 'luoshanji lsj meiguo usa pst pdt pt' },
+  { id: 'sanFrancisco', zone: 'America/Los_Angeles', name: { zh: '旧金山', en: 'San Francisco' }, keys: 'jiujinshan jjs guigu silicon valley meiguo usa' },
+  { id: 'seattle', zone: 'America/Los_Angeles', name: { zh: '西雅图', en: 'Seattle' }, keys: 'xiyatu xyt meiguo usa' },
+  { id: 'vancouver', zone: 'America/Vancouver', name: { zh: '温哥华', en: 'Vancouver' }, keys: 'wengehua wgh jianada canada' },
+  { id: 'honolulu', zone: 'Pacific/Honolulu', name: { zh: '檀香山', en: 'Honolulu' }, keys: 'tanxiangshan txs xiaweiyi hawaii hst' },
+  { id: 'saoPaulo', zone: 'America/Sao_Paulo', name: { zh: '圣保罗', en: 'São Paulo' }, keys: 'shengbaoluo sbl baxi brazil sao paulo' },
+  { id: 'sydney', zone: 'Australia/Sydney', name: { zh: '悉尼', en: 'Sydney' }, keys: 'xini xn aodaliya aozhou australia aest aedt' },
+  { id: 'auckland', zone: 'Pacific/Auckland', name: { zh: '奥克兰', en: 'Auckland' }, keys: 'aokelan akl xinxilan new zealand nzst nzdt' },
+];
+const WORLD_TIME = { cities: ['beijing', 'london', 'newYork', 'sanFrancisco', 'tokyo'], shift: 0, adding: false, search: '' };
+const WT_FORMATS = new Map();
+
+function wtFormat(zone, options) {
+  const key = zone + JSON.stringify(options);
+  if (!WT_FORMATS.has(key)) {
+    try { WT_FORMATS.set(key, new Intl.DateTimeFormat('en-US', Object.assign({ timeZone: zone }, options))); }
+    catch (error) { WT_FORMATS.set(key, new Intl.DateTimeFormat('en-US', Object.assign({ timeZone: 'UTC' }, options))); }
+  }
+  return WT_FORMATS.get(key);
+}
+
+// 那个时区里的年月日、几点几分、星期几（0 是星期日）
+function wtParts(ms, zone) {
+  const parts = {};
+  for (const part of wtFormat(zone, { hourCycle: 'h23', year: 'numeric', month: 'numeric', day: 'numeric', hour: 'numeric', minute: 'numeric', weekday: 'short' }).formatToParts(new Date(ms))) parts[part.type] = part.value;
+  return { y: Number(parts.year), m: Number(parts.month), d: Number(parts.day), h: Number(parts.hour) % 24, min: Number(parts.minute),
+    wd: ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].indexOf(parts.weekday) };
+}
+
+// 比 UTC 快多少分钟
+function wtOffset(ms, zone) {
+  const p = wtParts(ms, zone);
+  return Math.round((Date.UTC(p.y, p.m - 1, p.d, p.h, p.min) - Math.floor(ms / 60000) * 60000) / 60000);
+}
+
+function wtOffsetText(ms, zone) {
+  const offset = wtOffset(ms, zone);
+  if (!offset) return 'UTC';
+  const minutes = Math.abs(offset);
+  return `UTC${offset > 0 ? '+' : '−'}${Math.floor(minutes / 60)}${minutes % 60 ? ':' + String(minutes % 60).padStart(2, '0') : ''}`;
+}
+
+function wtIsDST(ms, zone) {
+  const year = wtParts(ms, zone).y;
+  return wtOffset(ms, zone) > Math.min(wtOffset(Date.UTC(year, 0, 1), zone), wtOffset(Date.UTC(year, 6, 1), zone));
+}
+
+// PDT、BST 这类缩写；只有「GMT+8」这种的时候不写
+function wtAbbreviation(ms, zone) {
+  for (const locale of ['en-US', 'en-GB']) {
+    try {
+      const name = new Intl.DateTimeFormat(locale, { timeZone: zone, timeZoneName: 'short' }).formatToParts(new Date(ms)).find((part) => part.type === 'timeZoneName')?.value;
+      if (name && /^[A-Z]{2,5}$/.test(name) && name !== 'UTC' && name !== 'GMT') return name;
+    } catch (error) { return null; }
+  }
+  return null;
+}
+
+function wtTime(ms, zone) {
+  const p = wtParts(ms, zone);
+  return `${String(p.h).padStart(2, '0')}:${String(p.min).padStart(2, '0')}`;
+}
+
+function wtDate(ms, zone) {
+  const p = wtParts(ms, zone);
+  return lang === 'zh' ? `${p.m}月${p.d}日周${'日一二三四五六'[p.wd]}` : wtFormat(zone, { weekday: 'short', month: 'short', day: 'numeric' }).format(new Date(ms));
+}
+
+function wtDayNumber(ms, zone) {
+  const p = wtParts(ms, zone);
+  return Math.round(Date.UTC(p.y, p.m - 1, p.d) / 86400000);
+}
+
+function wtLocalZone() {
+  try { return Intl.DateTimeFormat().resolvedOptions().timeZone || 'Asia/Shanghai'; } catch (error) { return 'Asia/Shanghai'; }
+}
+
+function wtCity(id) {
+  return WT_CITIES.find((city) => city.id === id) || null;
+}
+
+// 代表一个时区的城市：表里第一个用这个时区的，没有的话用时区标识里的城市名
+function wtRepresentative(zone) {
+  const city = WT_CITIES.find((c) => c.zone === zone);
+  if (city) return city;
+  const name = (zone.split('/').pop() || zone).replace(/_/g, ' ');
+  return { id: 'tz:' + zone, zone, name: { zh: name, en: name }, keys: name.toLowerCase() };
+}
+
+function wtSearch(query) {
+  const needle = query.trim().toLowerCase();
+  if (!needle) return [];
+  const words = (city) => [city.name.zh, city.name.en.toLowerCase(), city.zone.toLowerCase(), ...city.keys.split(' ')];
+  const open = WT_CITIES.filter((city) => !WORLD_TIME.cities.includes(city.id));
+  const prefixed = open.filter((city) => words(city).some((word) => word.startsWith(needle)));
+  const contained = needle.length < 2 ? [] : open.filter((city) => !prefixed.includes(city) && words(city).some((word) => word.includes(needle)));
+  return prefixed.concat(contained).slice(0, 6);
+}
+
+// 本地那一天里，所有时区都在 9:00–18:00 之间的第一段（15 分钟一格）
+function wtOverlap(ms, zones, local) {
+  const p = wtParts(ms, local);
+  const day = Date.UTC(p.y, p.m - 1, p.d) - wtOffset(ms, local) * 60000;
+  let start = null;
+  for (let step = 0; step <= 96; step++) {
+    const moment = day + step * 900000;
+    const working = step < 96 && zones.every((zone) => { const q = wtParts(moment, zone); const minute = q.h * 60 + q.min; return minute >= 540 && minute < 1080; });
+    if (working && start == null) start = moment;
+    else if (!working && start != null) return { start, end: moment };
+  }
+  return null;
+}
+
+function showWorldTime(content, anchor) {
+  const zh = lang === 'zh';
+  const W = WORLD_TIME;
+  // 和 App 一样：每次打开都从现在看起，常用城市记着
+  W.shift = 0;
+  W.adding = false;
+  W.search = '';
+  const local = wtLocalZone();
+  // 去掉秒：挪到的时刻都落在整分钟上
+  const nowMinute = () => Math.floor(Date.now() / 60000) * 60000;
+  let base = nowMinute();
+  const list = h('div', { class: 'wt-list' });
+  const slider = h('input', { type: 'range', min: '-1440', max: '1440', step: '15', 'aria-label': zh ? '往前、往后挪' : 'Move back or forward',
+    title: zh ? '往前、往后挪，看那时各地是几点（最多一天）' : 'Move back or forward to see the time everywhere then (up to a day)',
+    oninput: () => { W.shift = Number(slider.value); draw(); } });
+  const shiftLabel = h('span');
+  const overlap = h('div', { class: 'wt-overlap' });
+  const search = h('div', { class: 'wt-search' });
+  const field = h('input', { type: 'search', placeholder: zh ? '搜索城市、国家或时区：东京、dj、Tokyo、PST' : 'Search for a city, country or time zone: Tokyo, PST, Asia/Seoul',
+    'aria-label': zh ? '搜索城市' : 'Search cities',
+    oninput: () => { W.search = field.value; drawSearch(); },
+    onkeydown: (event) => { if (event.key === 'Enter') { const first = wtSearch(W.search)[0]; if (first) add(first); } } });
+  const results = h('div');
+  search.append(field, results);
+  const foot = h('div', { class: 'btns' });
+  const instant = () => base + W.shift * 60000;
+
+  function rows() {
+    const saved = W.cities.map(wtCity).filter(Boolean);
+    const list = saved.some((city) => city.zone === local) ? [] : [{ city: wtRepresentative(local), saved: false }];
+    return list.concat(saved.map((city) => ({ city, saved: true })));
+  }
+  function add(city) {
+    if (!W.cities.includes(city.id)) W.cities.push(city.id);
+    W.search = '';
+    W.adding = false;
+    draw();
+  }
+  function shiftText() {
+    if (!W.shift) return zh ? '拖动换个时间' : 'Drag to try another time';
+    const sign = W.shift > 0 ? '+' : '−';
+    const hours = Math.floor(Math.abs(W.shift) / 60), minutes = Math.abs(W.shift) % 60;
+    if (!hours) return sign + (zh ? `${minutes} 分钟` : `${minutes} min`);
+    if (!minutes) return sign + (zh ? `${hours} 小时` : `${hours} hr`);
+    return sign + (zh ? `${hours} 小时 ${minutes} 分钟` : `${hours} hr ${minutes} min`);
+  }
+  function drawSearch() {
+    const found = wtSearch(W.search);
+    const ms = instant();
+    results.replaceChildren(...(found.length || !W.search.trim() ? found.map((city) => h('button', { type: 'button', class: 'wt-result', onclick: () => add(city) },
+      icon('wtPlus'), L(city.name), h('span', null, wtOffsetText(ms, city.zone)), h('b', null, wtTime(ms, city.zone)))) : [h('div', { class: 'wt-none' }, zh ? '没有找到' : 'Nothing found')]));
+  }
+  function draw() {
+    const ms = instant();
+    const all = rows();
+    list.replaceChildren(...all.map(({ city, saved }) => {
+      const isLocal = city.zone === local;
+      const abbreviation = city.id === 'utc' ? null : wtAbbreviation(ms, city.zone);
+      const detail = city.id === 'utc' ? (zh ? '协调世界时' : 'Coordinated Universal Time')
+        : wtOffsetText(ms, city.zone) + (abbreviation ? ' · ' + abbreviation : wtIsDST(ms, city.zone) ? (zh ? ' · 夏令时' : ' · DST') : '');
+      const days = wtDayNumber(ms, city.zone) - wtDayNumber(ms, local);
+      const p = wtParts(ms, city.zone);
+      const left = Math.min(Math.max(((p.h * 60 + p.min) / 1440) * 100, 0), 100);
+      const action = !saved
+        ? h('button', { type: 'button', class: 'wt-icon add', title: zh ? '加到常用城市' : 'Add to My Cities', 'aria-label': zh ? '加到常用城市' : 'Add to My Cities', onclick: () => add(city) }, icon('wtPlus'))
+        : W.cities.length > 1 ? h('button', { type: 'button', class: 'wt-icon', title: zh ? '从列表里拿掉' : 'Remove from List', 'aria-label': zh ? '从列表里拿掉' : 'Remove from List',
+          onclick: () => { W.cities = W.cities.filter((id) => id !== city.id); draw(); } }, icon('wtMinus')) : null;
+      return h('div', { class: 'wt-row', title: city.zone },
+        h('div', { class: 'wt-name' }, h('b', null, h('em', null, L(city.name)), isLocal ? h('span', { class: 'wt-tag' }, zh ? '本地' : 'Local') : null, action), h('span', null, detail)),
+        h('div', { class: 'wt-bar', 'aria-hidden': 'true' }, h('i', { style: `left: calc(${left.toFixed(2)}% - 1.25px)` })),
+        h('div', { class: 'wt-time' }, h('b', null, wtTime(ms, city.zone)),
+          h('span', null, days ? h('em', { class: days < 0 ? 'back' : '' }, `${days > 0 ? '+' : '−'}${Math.abs(days)} ${zh ? '天' : 'd'}`) : null, wtDate(ms, city.zone))));
+    }));
+    slider.value = String(W.shift);
+    shiftLabel.textContent = shiftText();
+    shiftLabel.className = W.shift ? 'on' : '';
+    const zones = all.map((row) => row.city.zone);
+    const offsets = new Set(zones.map((zone) => wtOffset(ms, zone)));
+    if (offsets.size > 1) {
+      const span = wtOverlap(ms, zones, local);
+      overlap.hidden = false;
+      overlap.replaceChildren(...[icon(span ? 'wtPeople' : 'wtMoon'),
+        h('span', null, span ? (zh ? `大家都在上班（9:00–18:00）：本地 ${wtTime(span.start, local)}–${wtTime(span.end, local)}` : `Everyone is at work (9:00–18:00): ${wtTime(span.start, local)}–${wtTime(span.end, local)} local time`)
+          : (zh ? '这几个地方没有都在 9:00–18:00 之间的时间' : 'There’s no time when all of these places are between 9:00 and 18:00')),
+        span ? button(zh ? '看看那时' : 'Show Me', () => { W.shift = Math.max(-1440, Math.min(1440, Math.round((span.start - base) / 60000))); draw(); }) : null].filter(Boolean));
+    } else {
+      overlap.hidden = true;
+    }
+    search.hidden = !W.adding;
+    if (W.adding) { field.value = W.search; drawSearch(); }
+    foot.replaceChildren(...[
+      button(W.adding ? (zh ? '收起' : 'Hide') : (zh ? '添加城市' : 'Add City'), () => { W.adding = !W.adding; draw(); if (W.adding) field.focus(); }),
+      W.shift ? button(zh ? '回到现在' : 'Back to Now', () => { W.shift = 0; base = nowMinute(); draw(); }) : null,
+      h('span', { class: 'wt-grow' }),
+      button(zh ? '复制' : 'Copy', () => copyText(rows().map(({ city }) => `${L(city.name)} ${wtDate(instant(), city.zone)} ${wtTime(instant(), city.zone)}${zh ? '（' : ' ('}${wtOffsetText(instant(), city.zone)}${zh ? '）' : ')'}`).join('\n'), null, anchor)),
+    ].filter(Boolean));
+  }
+  const el = cardShell({ title: zh ? '时区换算' : 'Time Zones', width: 400, children: [
+    content && content.text ? h('div', { class: 'wt-note' }, zh ? '没认出选中的文字里的时间，下面是各地现在的时间' : 'Couldn’t find a time in the selected text. Here is the time everywhere now') : null,
+    list, h('div', { class: 'wt-slide' }, icon('wtShift'), slider, shiftLabel), overlap, search, foot,
+  ] });
+  draw();
+  // 跟着现在走：每 15 秒更新一次；挪过时间以后停在挪到的那一刻
+  const timer = setInterval(() => { if (!el.isConnected) { clearInterval(timer); return; } if (!W.shift) { base = nowMinute(); draw(); } }, 15000);
+  presentCard(el, anchor);
+}
+
+// 生成图表：和 App 里一样认表格（第一行是表头、第一列是名字），按月份排的先画成折线；用 SVG 画柱状图、条形图、折线图、饼图
+const CHART_COLORS = ['#007aff', '#ff9500', '#34c759', '#af52de', '#ff2d55', '#30b0c7', '#ffcc00', '#5856d6', '#00c7be', '#a2845e', '#8e8e93', '#ff6b9e'];
+const CHART_STATE = { values: true };
+const CHART_KINDS = [['bar', { zh: '柱状图', en: 'Column' }], ['horizontal', { zh: '条形图', en: 'Bar' }], ['line', { zh: '折线图', en: 'Line' }], ['pie', { zh: '饼图', en: 'Pie' }]];
+
+function tableText() {
+  const t = TABLE[lang];
+  return [t.head, ...t.rows].map((row) => row.join('\t')).join('\n');
+}
+
+function chartData(text) {
+  const rows = text.split('\n').map((line) => line.split('\t'));
+  const [head, ...body] = rows;
+  return { labels: body.map((row) => row[0]), series: head.slice(1).map((name, i) => ({ name, values: body.map((row) => Number(row[i + 1])) })) };
+}
+
+// 坐标轴的刻度：1、2、2.5、5 乘 10 的几次方
+function chartScale(min, max, ticks) {
+  const raw = (max - min) / ticks || 1;
+  const power = Math.pow(10, Math.floor(Math.log10(raw)));
+  const step = [1, 2, 2.5, 5, 10].map((m) => m * power).find((s) => s >= raw) || raw;
+  return { lo: Math.floor(min / step) * step, hi: Math.ceil(max / step) * step || step, step };
+}
+
+function chartSVG(data, kind, showValues) {
+  const W = 428, H = 230;
+  const out = [];
+  const esc = (text) => String(text).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  const fmt = (v) => v.toLocaleString('en-US', { maximumFractionDigits: 2 });
+  const color = (i) => CHART_COLORS[i % CHART_COLORS.length];
+  if (kind === 'pie') {
+    const values = data.series[0].values;
+    const total = values.reduce((a, b) => a + b, 0) || 1;
+    const cx = 112, cy = H / 2, r = 104, r0 = 52;
+    const at = (angle, radius) => [cx + radius * Math.cos(angle), cy + radius * Math.sin(angle)].map((n) => n.toFixed(2));
+    let angle = -Math.PI / 2;
+    values.forEach((value, i) => {
+      const sweep = (value / total) * Math.PI * 2;
+      const a0 = angle + 0.012, a1 = angle + sweep - 0.012, large = a1 - a0 > Math.PI ? 1 : 0;
+      const [x0, y0] = at(a0, r), [x1, y1] = at(a1, r), [x2, y2] = at(a1, r0), [x3, y3] = at(a0, r0);
+      out.push(`<path d="M${x0} ${y0}A${r} ${r} 0 ${large} 1 ${x1} ${y1}L${x2} ${y2}A${r0} ${r0} 0 ${large} 0 ${x3} ${y3}Z" fill="${color(i)}"/>`);
+      if (showValues && value / total >= 0.05) {
+        const [tx, ty] = at(angle + sweep / 2, (r + r0) / 2);
+        out.push(`<text class="pct" x="${tx}" y="${ty}" text-anchor="middle" dominant-baseline="central">${Math.round((value / total) * 100)}%</text>`);
+      }
+      angle += sweep;
+    });
+    data.labels.forEach((label, i) => {
+      const y = cy - (data.labels.length - 1) * 9 + i * 18;
+      out.push(`<circle cx="246" cy="${y}" r="4" fill="${color(i)}"/><text x="256" y="${y}" dominant-baseline="central">${esc(label)}</text>`);
+    });
+    return { viewBox: `0 0 ${W} ${H}`, html: out.join('') };
+  }
+  const all = data.series.flatMap((s) => s.values);
+  const scale = chartScale(Math.min(0, ...all), Math.max(0, ...all), 4);
+  const n = data.labels.length, m = data.series.length;
+  if (kind === 'horizontal') {
+    const left = Math.min(90, Math.max(...data.labels.map((l) => l.length)) * 7 + 14), right = 34, top = 6, bottom = 18;
+    const plotW = W - left - right, plotH = H - top - bottom, rowH = plotH / n, barH = (rowH * 0.68) / m;
+    const x = (v) => left + ((v - scale.lo) / (scale.hi - scale.lo)) * plotW;
+    for (let t = scale.lo; t <= scale.hi + 1e-9; t += scale.step) {
+      out.push(`<line class="grid" x1="${x(t)}" y1="${top}" x2="${x(t)}" y2="${top + plotH}"/><text x="${x(t)}" y="${H - 4}" text-anchor="middle">${fmt(t)}</text>`);
+    }
+    data.labels.forEach((label, i) => {
+      out.push(`<text x="${left - 6}" y="${top + (i + 0.5) * rowH}" text-anchor="end" dominant-baseline="central">${esc(label)}</text>`);
+      data.series.forEach((series, s) => {
+        const v = series.values[i], y = top + i * rowH + rowH * 0.16 + s * barH;
+        const x0 = x(Math.min(v, 0)), x1 = x(Math.max(v, 0));
+        out.push(`<rect x="${x0}" y="${y}" width="${Math.max(x1 - x0, 1)}" height="${barH}" rx="2" fill="${color(s)}"/>`);
+        if (showValues) out.push(`<text class="val" x="${(v < 0 ? x0 - 3 : x1 + 3)}" y="${y + barH / 2}" text-anchor="${v < 0 ? 'end' : 'start'}" dominant-baseline="central">${fmt(v)}</text>`);
+      });
+    });
+    return { viewBox: `0 0 ${W} ${H}`, html: out.join('') };
+  }
+  const left = 34, right = 8, top = 14, bottom = 22;
+  const plotW = W - left - right, plotH = H - top - bottom, groupW = plotW / n;
+  const y = (v) => top + ((scale.hi - v) / (scale.hi - scale.lo)) * plotH;
+  for (let t = scale.lo; t <= scale.hi + 1e-9; t += scale.step) {
+    out.push(`<line class="${t === 0 ? 'axis' : 'grid'}" x1="${left}" y1="${y(t)}" x2="${W - right}" y2="${y(t)}"/><text x="${left - 5}" y="${y(t)}" text-anchor="end" dominant-baseline="central">${fmt(t)}</text>`);
+  }
+  data.labels.forEach((label, i) => out.push(`<text x="${left + (i + 0.5) * groupW}" y="${H - 6}" text-anchor="middle">${esc(label)}</text>`));
+  if (kind === 'line') {
+    data.series.forEach((series, s) => {
+      const points = series.values.map((v, i) => [left + (i + 0.5) * groupW, y(v)]);
+      out.push(`<polyline points="${points.map((p) => p.join(',')).join(' ')}" fill="none" stroke="${color(s)}" stroke-width="2" stroke-linejoin="round"/>`);
+      points.forEach(([px, py], i) => {
+        out.push(`<circle cx="${px}" cy="${py}" r="3" fill="${color(s)}"/>`);
+        if (showValues) out.push(`<text class="val" x="${px}" y="${py - 7}" text-anchor="middle">${fmt(series.values[i])}</text>`);
+      });
+    });
+  } else {
+    const barW = (groupW * 0.68) / m;
+    data.labels.forEach((label, i) => data.series.forEach((series, s) => {
+      const v = series.values[i], bx = left + i * groupW + groupW * 0.16 + s * barW;
+      const y0 = y(Math.max(v, 0)), y1 = y(Math.min(v, 0));
+      out.push(`<rect x="${bx}" y="${y0}" width="${barW}" height="${Math.max(y1 - y0, 1)}" rx="2" fill="${color(s)}"/>`);
+      if (showValues) out.push(`<text class="val" x="${bx + barW / 2}" y="${v < 0 ? y1 + 9 : y0 - 3}" text-anchor="middle">${fmt(v)}</text>`);
+    }));
+  }
+  return { viewBox: `0 0 ${W} ${H}`, html: out.join('') };
+}
+
+function showChart(content, anchor) {
+  const zh = lang === 'zh';
+  const original = chartData(content.text || tableText());
+  const kinds = CHART_KINDS.filter(([id]) => id !== 'pie' || original.series.length === 1);
+  const o = { kind: 'line', sorted: false, title: '' };
+  const svg = s('svg', { class: 'ch-canvas', role: 'img', 'aria-label': zh ? '图表' : 'Chart', preserveAspectRatio: 'xMidYMid meet' });
+  const legend = h('div', { class: 'ch-legend' });
+  const seg = h('div', { class: 'seg ch-seg', role: 'group', 'aria-label': zh ? '样子' : 'Style' });
+  const opts = h('div', { class: 'ch-opts' });
+  const title = h('input', { class: 'ch-title', type: 'text', placeholder: zh ? '标题（可以不填，存成图片时写在上面）' : 'Title (optional, shown on the saved image)',
+    'aria-label': zh ? '标题' : 'Title', oninput: () => { o.title = title.value; } });
+  const canSort = () => o.kind !== 'line' && original.labels.length > 2;
+  function data() {
+    if (!o.sorted || !canSort()) return original;
+    const order = original.labels.map((_, i) => i).sort((a, b) => original.series[0].values[b] - original.series[0].values[a] || a - b);
+    return { labels: order.map((i) => original.labels[i]), series: original.series.map((series) => ({ name: series.name, values: order.map((i) => series.values[i]) })) };
+  }
+  function draw() {
+    const d = data();
+    const chart = chartSVG(d, o.kind, CHART_STATE.values);
+    svg.setAttribute('viewBox', chart.viewBox);
+    svg.innerHTML = chart.html;
+    legend.hidden = o.kind === 'pie' || d.series.length < 2;
+    legend.replaceChildren(...d.series.map((series, i) => h('span', null, h('i', { style: `background:${CHART_COLORS[i]}` }), series.name)));
+    seg.replaceChildren(...kinds.map(([id, name]) => h('button', { type: 'button', 'aria-pressed': String(o.kind === id), onclick: () => { o.kind = id; draw(); } }, L(name))));
+    const check = (label, on, change) => h('label', null, h('input', { type: 'checkbox', checked: on, onchange: (event) => change(event.target.checked) }), label);
+    opts.replaceChildren(...[
+      check(zh ? '显示数值' : 'Show Values', CHART_STATE.values, (on) => { CHART_STATE.values = on; draw(); }),
+      canSort() ? check(zh ? '从大到小' : 'Largest First', o.sorted, (on) => { o.sorted = on; draw(); }) : null,
+    ].filter(Boolean));
+  }
+  draw();
+  const name = () => o.title.trim() || (zh ? '图表' : 'Chart');
+  presentCard(cardShell({ title: zh ? '生成图表' : 'Chart', subtitle: zh ? `${original.labels.length} 项 · ${original.series.length} 组数` : `${original.labels.length} items · ${original.series.length} series`,
+    width: 460, children: [title, svg, legend, seg, opts],
+    buttons: [
+      button(zh ? '存到「下载」' : 'Save to Downloads', () => showToast(L({ zh: `已存到「下载」：${name()}.png`, en: `Saved to Downloads: ${name()}.png` }), anchor)),
+      button(zh ? '复制图片' : 'Copy Image', () => showToast(zh ? '已复制图片' : 'Image copied', anchor), { class: 'mbtn default' }),
+    ] }), anchor);
+}
+
+// 表格转换：制表符分隔的表格转成 Markdown 表格、CSV、JSON
+function showTableConvert(content, anchor) {
+  const rowsOf = (content.text || tableText()).split('\n').map((line) => line.split('\t'));
+  const [head, ...body] = rowsOf;
+  const markdown = [`| ${head.join(' | ')} |`, `|${head.map(() => ' --- ').join('|')}|`, ...body.map((row) => `| ${row.join(' | ')} |`)].join('\n');
+  const csv = rowsOf.map((row) => row.join(',')).join('\n');
+  const json = `[\n${body.map((row) => `  {${head.map((key, i) => `${JSON.stringify(key)}: ${JSON.stringify(row[i])}`).join(', ')}}`).join(',\n')}\n]`;
+  const list = rows([['Markdown', markdown], ['CSV', csv], ['JSON', json]], { anchor });
+  list.classList.add('pre');
+  presentCard(cardShell({ title: L(P.tableConvert.name), width: 420, children: [list] }), anchor);
+}
+
+// 数字统计：多行时每行取最后一个数（这张表里是「成本」那一列）
+function showNumberStats(content, anchor) {
+  const values = (content.text || tableText()).split('\n').map((line) => (line.match(/-?\d[\d,]*(?:\.\d+)?(?!.*\d)/) || [])[0]).filter(Boolean).map((v) => Number(v.replace(/,/g, '')));
+  const sorted = [...values].sort((a, b) => a - b);
+  const sum = values.reduce((a, b) => a + b, 0);
+  const middle = Math.floor(sorted.length / 2);
+  const median = sorted.length % 2 ? sorted[middle] : (sorted[middle - 1] + sorted[middle]) / 2;
+  const fmt = (v) => String(Math.round(v * 100) / 100);
+  presentCard(cardShell({ title: L(P.numberStats.name), children: [rows([
+    [{ zh: '合计', en: 'Sum' }, fmt(sum)], [{ zh: '平均', en: 'Average' }, fmt(sum / values.length)], [{ zh: '中位数', en: 'Median' }, fmt(median)],
+    [{ zh: '最大', en: 'Max' }, fmt(sorted[sorted.length - 1])], [{ zh: '最小', en: 'Min' }, fmt(sorted[0])], [{ zh: '个数', en: 'Count' }, String(values.length)],
+  ], { anchor })] }), anchor);
 }
 
 // 分辨率：示例的 MacBook Pro（主显示器）和一台 Studio Display。外接的换了以后要在 15 秒内点「保留」，
