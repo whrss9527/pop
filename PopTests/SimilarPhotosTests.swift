@@ -69,6 +69,22 @@ final class SimilarPhotosTests: XCTestCase {
         XCTAssertGreaterThan(fingerprint.distance(to: PhotoSimilarity.fingerprint(of: try picture(flipped: true))), 24)
     }
 
+    func testFlatAreasDoNotFlipBits() throws {
+        // 纯色的图哪一位都是 0，不管多大
+        for (width, height) in [(320, 240), (161, 97), (64, 64)] {
+            let context = try XCTUnwrap(CGContext(data: nil, width: width, height: height, bitsPerComponent: 8, bytesPerRow: 0,
+                                                  space: CGColorSpace(name: CGColorSpace.sRGB)!, bitmapInfo: CGImageAlphaInfo.noneSkipLast.rawValue))
+            context.setFillColor(CGColor(srgbRed: 0.3, green: 0.6, blue: 0.9, alpha: 1))
+            context.fill(CGRect(x: 0, y: 0, width: width, height: height))
+            XCTAssertEqual(PhotoSimilarity.fingerprint(of: try XCTUnwrap(context.makeImage())), PhotoSimilarity.Fingerprint(horizontal: 0, vertical: 0))
+        }
+        // 同一张图存成各种尺寸，指纹都差得很少
+        let fingerprint = PhotoSimilarity.fingerprint(of: try picture())
+        for size in [(240, 180), (200, 150), (160, 120), (100, 75)] {
+            XCTAssertLessThanOrEqual(fingerprint.distance(to: PhotoSimilarity.fingerprint(of: try picture(width: size.0, height: size.1))), 6, "\(size)")
+        }
+    }
+
     func testGroupsKeepTheBestPhotoFirst() throws {
         let base = try picture()
         let photos = [

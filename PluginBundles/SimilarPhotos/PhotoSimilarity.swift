@@ -6,7 +6,7 @@ import UniformTypeIdentifiers
 
 /// 找相似的照片：连拍、重复存的、改过大小或者重新压缩过的。
 ///
-/// 每张照片算一个「差值指纹」：缩成 9×9 的灰度图，比较左右相邻、上下相邻两格的明暗，一共 128 位；
+/// 每张照片算一个「差值指纹」：缩成 9×9 的灰度图，比较左右相邻、上下相邻两格的明暗（差不到 3 级的算一样亮），一共 128 位；
 /// 两张照片指纹里不一样的位越少越像，少于门槛的归成一组。每组按像素多少、清晰程度、文件大小挑出最好的一张留着。
 enum PhotoSimilarity {
     struct Fingerprint: Equatable {
@@ -125,7 +125,11 @@ enum PhotoSimilarity {
                      bytes: Int64(values?.fileSize ?? 0), modified: values?.contentModificationDate, sharpness: sharpness(of: thumbnail))
     }
 
-    /// 缩成 9×9 的灰度图（先缩到 64 见方，一步缩太多会漏掉细节），比左右、上下相邻两格的明暗
+    /// 相邻两格差不到这么多级（一共 0～255 级）算一样亮。纯色和天空这种平的地方两格本来一样亮，
+    /// 缩放时的舍入和边缘附近的振铃会让它们差一两级，直接比大小的话这些位会随着图片尺寸、压缩乱跳
+    static let flatMargin = 3
+
+    /// 缩成 9×9 的灰度图（先缩到 64 见方，一步缩太多会漏掉细节），比左右、上下相邻两格的明暗：后一格亮出 flatMargin 级以上的记 1
     static func fingerprint(of image: CGImage) -> Fingerprint {
         let small = gray(image, side: 64).flatMap { gray($0, side: 9) }
         guard let small, let data = small.dataProvider?.data, let bytes = CFDataGetBytePtr(data) else {
@@ -138,8 +142,9 @@ enum PhotoSimilarity {
             for x in 0..<8 {
                 horizontal <<= 1
                 vertical <<= 1
-                if bytes[y * stride + x] < bytes[y * stride + x + 1] { horizontal |= 1 }
-                if bytes[y * stride + x] < bytes[(y + 1) * stride + x] { vertical |= 1 }
+                let here = Int(bytes[y * stride + x])
+                if Int(bytes[y * stride + x + 1]) - here > flatMargin { horizontal |= 1 }
+                if Int(bytes[(y + 1) * stride + x]) - here > flatMargin { vertical |= 1 }
             }
         }
         return Fingerprint(horizontal: horizontal, vertical: vertical)
