@@ -4801,7 +4801,7 @@ function showAppInfo(anchor) {
   presentCard(el, anchor);
 }
 
-// 朗读存成音频：按字数估个长度（中文一秒四个字，外文一秒两个半词），提示存进「下载」的文件名
+// 朗读存成音频：先提示正在存，再按字数估个长度（中文一秒四个字，外文一秒两个半词），提示存进「下载」的文件名
 function speakToFile(text, anchor) {
   const zh = lang === 'zh';
   const clean = (text || '').replace(/\s+/g, ' ').trim();
@@ -4811,7 +4811,8 @@ function speakToFile(text, anchor) {
   const words = clean.replace(/[㐀-鿿]/g, ' ').split(/\s+/).filter(Boolean).length;
   const seconds = Math.max(1, Math.round(han / 4 + words / 2.5));
   const length = seconds < 60 ? (zh ? `${seconds} 秒` : `${seconds} s`) : (zh ? `${Math.floor(seconds / 60)} 分 ${seconds % 60} 秒` : `${Math.floor(seconds / 60)} min ${seconds % 60} s`);
-  showToast(zh ? `存好了「${name}」，长 ${length}` : `Saved “${name}” (${length} long)`, anchor);
+  showToast(zh ? '正在存成音频…' : 'Saving as audio…', anchor);
+  setTimeout(() => showToast(zh ? `存好了「${name}」，长 ${length}` : `Saved “${name}” (${length} long)`, anchor), 1200);
 }
 
 // 相似照片：示例照片画在画布上（和 App 里 CI 截图用的一样）；每组留最好的一张，其余勾上

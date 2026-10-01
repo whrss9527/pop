@@ -43,7 +43,8 @@ struct SpeakToFilePlugin: PopPlugin {
             ?? FileManager.default.homeDirectoryForCurrentUser.appending(path: "Downloads", directoryHint: .isDirectory)
         let url = FileNames.available(in: downloads, base: SpeechExporter.fileName(for: text), extension: "m4a")
         return .present(PluginPresentation { session in
-            session.end()
+            // 长的文字要存一会儿，先说一声；存好时再提示一次
+            session.finish(toast: String(localized: "正在存成音频…"))
             Task { @MainActor in
                 do {
                     let output = try await SpeechExporter().export(text, voice: SpeechExporter.voice(for: language), to: url)
