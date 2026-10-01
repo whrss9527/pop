@@ -41,6 +41,9 @@ enum OverlayDemo {
                                      ResultCard.Row(label: String(localized: "单词"), value: "2"),
                                      ResultCard.Row(label: String(localized: "行"), value: "1")])
         let unit = Motion.timeScale
+        // 一步停多久再换下一步：截图脚本在每一步开始后最多 3 秒（放慢 6 倍时，也就是 0.5 × unit）拍照，
+        // 拍完留一点余量就换，不多等。截图更晚的两步（「全部功能」列表、松开以后）单独写
+        let holdTime = 0.5 * unit + 1.0
 
         Task { @MainActor in
             await pause(1.5)
@@ -114,7 +117,7 @@ enum OverlayDemo {
             }
 
             // 贴图：一段文字和一张图片贴在屏幕上，然后全部关掉
-            await pause(1.4 * unit)
+            await pause(holdTime)
             step("pin")
             overlay.hide()
             PinBoard.shared.pin(text: "5 km ≈ 3.11 英里\n贴在屏幕上的文字，可以拖动、缩放", around: CGPoint(x: center.x + 40, y: center.y + 60))
@@ -122,7 +125,7 @@ enum OverlayDemo {
                 PinBoard.shared.pin(imageData: image, around: CGPoint(x: center.x + 260, y: center.y - 250))
             }
 
-            await pause(1.4 * unit)
+            await pause(holdTime)
             step("unpin")
             PinBoard.shared.closeAll()
 
@@ -135,10 +138,10 @@ enum OverlayDemo {
                              anchor: center)
 
             // 插件包的步骤：窗口布局卡片
-            await playPluginScenes(after: "ai", in: demo, unit: unit)
+            await playPluginScenes(after: "ai", in: demo, unit: unit, holdTime: holdTime)
 
             // 翻译卡片（CI 上没有离线语言包，显示的是引导下载的样子），左上角可以换目标语言
-            await pause(1.4 * unit)
+            await pause(holdTime)
             step("translate")
             let translation = TranslationModel(text: "Liquid glass", sourceLanguage: "en", targetLanguage: "zh-Hans")
             overlay.showCard(TranslationCardView(model: translation, canReplace: false, onAction: { _ in }, onMore: {},
@@ -146,7 +149,7 @@ enum OverlayDemo {
                              anchor: center)
 
             // 翻译对比：AI 和 DeepL 用演示的译文，系统翻译照常检查语言包
-            await pause(1.4 * unit)
+            await pause(holdTime)
             step("translate-compare")
             let comparison = TranslationModel(text: "Liquid glass reflects and refracts what is behind it, so every control feels alive.",
                                               sourceLanguage: "en", targetLanguage: "zh-Hans", services: demoTranslation)
@@ -156,7 +159,7 @@ enum OverlayDemo {
                              anchor: center)
 
             // 常用短语列表
-            await pause(1.4 * unit)
+            await pause(holdTime)
             step("snippets")
             let snippets = SnippetPickerModel(snippets: settings.snippets + [
                 Snippet(title: "回复模板", text: "感谢反馈！我们会在 {date} 前回复你。"),
@@ -165,7 +168,7 @@ enum OverlayDemo {
             overlay.showCard(SnippetPickerView(model: snippets, onClose: {}), anchor: center)
 
             // 文本对比卡片
-            await pause(1.4 * unit)
+            await pause(holdTime)
             step("diff")
             let diff = TextDiff.compare("长按右键唤起圆盘\n松开就执行\n支持 50 多个功能",
                                         "长按右键弹出圆盘\n松开就执行\n支持 60 多个功能\n还可以写自己的插件")
@@ -176,10 +179,10 @@ enum OverlayDemo {
                              anchor: center)
 
             // 插件包的步骤：图片配色
-            await playPluginScenes(after: "diff", in: demo, unit: unit)
+            await playPluginScenes(after: "diff", in: demo, unit: unit, holdTime: holdTime)
 
             // 暂存架：放上几个示例文件
-            await pause(1.4 * unit)
+            await pause(holdTime)
             overlay.hide()
             let files = sampleFiles()
             FileShelf.shared.add(files)
@@ -187,7 +190,7 @@ enum OverlayDemo {
             step("shelf")
 
             // 打开方式卡片（示例文字文件能用哪些 App 打开）
-            await pause(1.4 * unit)
+            await pause(holdTime)
             FileShelf.shared.hide()
             FileShelf.shared.clear()
             if let note = files.first(where: { $0.pathExtension == "txt" }) {
@@ -197,7 +200,7 @@ enum OverlayDemo {
             step("openWith")
 
             // Markdown 预览卡片（深色外观下文字也要看得清）
-            await pause(1.4 * unit)
+            await pause(holdTime)
             let markdown = "## 发布清单\n\n- 更新 **CHANGELOG**\n- 改 `MARKETING_VERSION`\n\n> 合并到 main 后自动发版"
             overlay.showCard(ResultCardView(card: ResultCard(title: String(localized: "Markdown 预览"), markdown: markdown,
                                                              buttons: [CardButton(title: String(localized: "复制为富文本"), action: .copyRichText(markdown))]),
@@ -206,7 +209,7 @@ enum OverlayDemo {
             step("markdown")
 
             // 提取信息卡片
-            await pause(1.4 * unit)
+            await pause(holdTime)
             let notice = "联系 pop@example.com，电话 138-1234-5678；下载 https://github.com/whrss9527/pop/releases，文档在 www.example.com；测试机 192.168.1.20:8080，备用 support@example.com"
             overlay.showCard(ResultCardView(card: InfoExtractor.card(for: InfoExtractor.extract(notice)),
                                             onAction: { _ in }, onMore: {}, onClose: {}),
@@ -214,10 +217,10 @@ enum OverlayDemo {
             step("extract")
 
             // 插件包的步骤：JSON 转代码
-            await playPluginScenes(after: "extract", in: demo, unit: unit)
+            await playPluginScenes(after: "extract", in: demo, unit: unit, holdTime: holdTime)
 
             // 网页内容转成 Markdown
-            await pause(1.4 * unit)
+            await pause(holdTime)
             let html = "<h2>发布说明</h2><p>这一版加了<strong>提取信息</strong>和<a href=\"https://github.com/whrss9527/pop\">JSON 转代码</a>。</p><ul><li>支持 <code>HTML</code> 和 RTF</li><li>表格也能转</li></ul><table><tr><th>功能</th><th>分类</th></tr><tr><td>按行处理</td><td>文字</td></tr></table>"
             if let converted = HTMLToMarkdown.convert(html) {
                 overlay.showCard(ResultCardView(card: ResultCard(title: String(localized: "转成 Markdown"), body: converted, monospaced: true,
@@ -228,17 +231,17 @@ enum OverlayDemo {
             step("toMarkdown")
 
             // 插件包的步骤：正则测试
-            await playPluginScenes(after: "toMarkdown", in: demo, unit: unit)
+            await playPluginScenes(after: "toMarkdown", in: demo, unit: unit, holdTime: holdTime)
 
             // 剪贴板历史：几条示例记录，⌘ 点选两条准备合在一起粘贴
-            await pause(1.4 * unit)
+            await pause(holdTime)
             if let history = sampleClipboardHistory() {
                 overlay.showCard(ClipboardHistoryView(model: history, onClose: {}), anchor: center)
             }
             step("history")
 
             // 剪贴板历史按图片里的文字搜索：示例截图在本机识别出文字，搜「账户」能找到它
-            await pause(1.4 * unit)
+            await pause(holdTime)
             if let history = sampleClipboardHistory(marking: false), let capture = sampleScreenshot() {
                 let store = history.service.store
                 if let id = store.add(ClipboardCapture(kind: .image, text: "", imagePNG: capture.png)) {
@@ -250,10 +253,10 @@ enum OverlayDemo {
             step("history-search")
 
             // 插件包的步骤：加到提醒事项、识别表格
-            await playPluginScenes(after: "history-search", in: demo, unit: unit)
+            await playPluginScenes(after: "history-search", in: demo, unit: unit, holdTime: holdTime)
 
             // 文件信息：一张带拍摄信息和位置的示例照片，可以在地图里看、另存去掉位置的一份
-            await pause(1.4 * unit)
+            await pause(holdTime)
             if let photo = samplePhoto(),
                case .card(let photoCard) = await FileInfoPlugin().run(ContentClassifier.classify(.files([photo])),
                                                                       context: PluginContext(settings: AppSettings(), openSettings: {})) {
@@ -262,10 +265,10 @@ enum OverlayDemo {
             step("photo")
 
             // 插件包的步骤：批量重命名、SQL 格式化
-            await playPluginScenes(after: "photo", in: demo, unit: unit)
+            await playPluginScenes(after: "photo", in: demo, unit: unit, holdTime: holdTime)
 
             // 生词本：几个示例单词（放在临时文件里，不动真的生词本）
-            await pause(1.4 * unit)
+            await pause(holdTime)
             let words = VocabularyStore(url: FileManager.default.temporaryDirectory.appending(path: "pop-demo-vocabulary.json"))
             words.remove(Set(words.entries.map(\.id)))
             for (word, meaning) in [("resilient", "有韧性的；能迅速恢复的"), ("liquid glass", "液态玻璃"), ("ephemeral", "短暂的"),
@@ -281,20 +284,20 @@ enum OverlayDemo {
             step("vocabulary")
 
             // 插件包的步骤：查找重复文件
-            await playPluginScenes(after: "vocabulary", in: demo, unit: unit)
+            await playPluginScenes(after: "vocabulary", in: demo, unit: unit, holdTime: holdTime)
 
             // PDF 页面：一份 12 页的 PDF，写好了要取出的页码（卡片只用到文件名和页数）
-            await pause(1.4 * unit)
+            await pause(holdTime)
             let pdfPages = PDFPagesModel(pdf: FileManager.default.temporaryDirectory.appending(path: "产品手册.pdf"), pageCount: 12)
             pdfPages.input = "1-3, 5, 8-"
             overlay.showCard(PDFPagesView(model: pdfPages, onExtract: { _ in }, onSplit: {}, onClose: {}), anchor: center)
             step("pdfPages")
 
             // 插件包的步骤：占用空间
-            await playPluginScenes(after: "pdfPages", in: demo, unit: unit)
+            await playPluginScenes(after: "pdfPages", in: demo, unit: unit, holdTime: holdTime)
 
             // 给 PDF 加密码：两次输入的密码一样
-            await pause(1.4 * unit)
+            await pause(holdTime)
             let password = PDFPasswordModel(pdf: FileManager.default.temporaryDirectory.appending(path: "合同.pdf"), mode: .add)
             password.password = "pop-2026"
             password.confirmation = "pop-2026"
@@ -302,18 +305,18 @@ enum OverlayDemo {
             step("pdfPassword")
 
             // 选中文字后的工具条：假装在圆盘的位置选中了一段英文
-            await pause(1.4 * unit)
+            await pause(holdTime)
             overlay.hide()
             coordinator.showToolbarForDemo(text: "Liquid glass", selection: CGRect(x: center.x - 50, y: center.y - 20, width: 100, height: 18))
             step("toolbar")
-            await pause(1.4 * unit)
+            await pause(holdTime)
             coordinator.hideToolbar()
 
             // 插件包的步骤：加水印
-            await playPluginScenes(after: "toolbar", in: demo, unit: unit)
+            await playPluginScenes(after: "toolbar", in: demo, unit: unit, holdTime: holdTime)
 
             // 传到手机：二维码和能下载的文件（演示时不开网页服务，网址是示例）
-            await pause(1.4 * unit)
+            await pause(holdTime)
             if let address = URL(string: "http://192.168.1.23:52731/k7m2p9qx4t/") {
                 overlay.showCard(ResultCardView(card: PhoneShare.card(address: address, files: sampleFiles()),
                                                 onAction: { _ in }, onMore: {}, onClose: {}),
@@ -322,14 +325,14 @@ enum OverlayDemo {
             step("sendToPhone")
 
             // 证件号码：国家标准里的示例身份证号
-            await pause(1.4 * unit)
+            await pause(holdTime)
             if let info = IDNumber.parse("11010519491231002X") {
                 overlay.showCard(ResultCardView(card: IDNumber.card(info), onAction: { _ in }, onMore: {}, onClose: {}), anchor: center)
             }
             step("idNumber")
 
             // 语音转文字的结果：示例录音的文字和字幕
-            await pause(1.4 * unit)
+            await pause(holdTime)
             let meeting = FileManager.default.temporaryDirectory.appending(path: "pop-demo/周会录音.m4a")
             let spoken: [(String, TimeInterval, TimeInterval)] = [("大家好", 0.4, 0.8), ("。", 1.2, 0.1), ("今天先确认", 1.6, 1.0),
                                                                    ("发布时间", 2.6, 0.8), ("，", 3.4, 0.1), ("再看一下截图", 3.6, 1.2),
@@ -343,7 +346,7 @@ enum OverlayDemo {
             step("transcribe")
 
             // 证件照：画一个简单的人像，换成蓝底一寸
-            await pause(1.4 * unit)
+            await pause(holdTime)
             if let portrait = samplePortrait() {
                 let photo = FileManager.default.temporaryDirectory.appending(path: "pop-demo/证件照.jpg")
                 overlay.showCard(IDPhotoView(model: IDPhotoModel(file: photo, cutout: portrait), onSave: {}, onClose: {}), anchor: center)
@@ -351,7 +354,7 @@ enum OverlayDemo {
             step("idPhoto")
 
             // 网页存档：选中一个网址
-            await pause(1.4 * unit)
+            await pause(holdTime)
             if let page = URL(string: "https://github.com/whrss9527/pop/releases") {
                 overlay.showCard(ResultCardView(card: WebCapture.card(page), onAction: { _ in }, onMore: {}, onClose: {}),
                                  anchor: center)
@@ -359,17 +362,17 @@ enum OverlayDemo {
             step("webCapture")
 
             // 裁剪图片：五种比例
-            await pause(1.4 * unit)
+            await pause(holdTime)
             let beach = FileManager.default.temporaryDirectory.appending(path: "pop-demo/海边.jpg")
             overlay.showCard(ResultCardView(card: SmartCrop.card([beach]), onAction: { _ in }, onMore: {}, onClose: {}),
                              anchor: center)
             step("cropImage")
 
             // 插件包的步骤：截图美化
-            await playPluginScenes(after: "cropImage", in: demo, unit: unit)
+            await playPluginScenes(after: "cropImage", in: demo, unit: unit, holdTime: holdTime)
 
             // 录屏：先是选区域的界面（截屏幕上方的提示条），再是倒数，然后是录的时候的边框、控制面板和按键显示，最后是录好的卡片
-            await pause(1.4 * unit)
+            await pause(holdTime)
             overlay.hide()
             Task { @MainActor in
                 _ = await RegionPicker.pick()
@@ -377,7 +380,7 @@ enum OverlayDemo {
             await pause(0.4 * unit)
             logRegion(CGRect(x: screen.frame.midX - 380, y: screen.frame.maxY - 300, width: 760, height: 300), screen: screen)
             step("screenRecord-picker")
-            await pause(1.4 * unit)
+            await pause(holdTime)
             RegionPicker.cancel()
             logRegion(cardRegion, screen: screen)
             let recordRegion = CGRect(x: center.x - 150, y: center.y - 380, width: 560, height: 320)
@@ -389,7 +392,7 @@ enum OverlayDemo {
             let hideIndicators = ScreenRecorder.shared.showIndicatorsForDemo(region: recordRegion, screen: screen, elapsed: "00:12")
             KeystrokeOverlay.shared.showForDemo("⌘Z ×3", in: recordRegion)
             step("screenRecord-recording")
-            await pause(1.4 * unit)
+            await pause(holdTime)
             hideIndicators()
             KeystrokeOverlay.shared.stop()
             let clip = ScreenRecording.Clip(url: FileManager.default.temporaryDirectory.appending(path: "pop-demo/录屏 2026-09-30 15.30.12.mp4"),
@@ -398,14 +401,14 @@ enum OverlayDemo {
             step("screenRecord")
 
             // 系统操作：插着一个移动硬盘时的样子
-            await pause(1.4 * unit)
+            await pause(holdTime)
             overlay.showCard(ResultCardView(card: SystemActions.card(desktopIconsVisible: true, darkMode: false, ejectable: 1),
                                             onAction: { _ in }, onMore: {}, onClose: {}),
                              anchor: center)
             step("systemActions")
 
             // 文字转图片：一段示例文字排成的长图
-            await pause(1.4 * unit)
+            await pause(holdTime)
             let passage = "周五的发布会改到下午三点，地点不变。\n\n会前请把演示用的 Mac 更新到最新系统，提前半小时到场调试投屏。"
             if case .card(let textCard) = TextImage.outcome(passage, style: .warm) {
                 overlay.showCard(ResultCardView(card: textCard, onAction: { _ in }, onMore: {}, onClose: {}), anchor: center)
@@ -413,16 +416,16 @@ enum OverlayDemo {
             step("textImage")
 
             // 插件包的步骤：快捷键一览
-            await playPluginScenes(after: "textImage", in: demo, unit: unit)
+            await playPluginScenes(after: "textImage", in: demo, unit: unit, holdTime: holdTime)
 
             // 滚动截图：截的时候的边框和面板，然后是拼好的长图卡片（示例长图用文字转图片画一篇长文）
-            await pause(1.4 * unit)
+            await pause(holdTime)
             overlay.hide()
             let hideScrollIndicators = ScrollCapture.shared.showIndicatorsForDemo(
                 region: CGRect(x: center.x - 150, y: center.y - 380, width: 560, height: 320), screen: screen,
                 progress: ScrollCaptureProgress(height: 4280, frameHeight: 640))
             step("scrollCapture-capturing")
-            await pause(1.4 * unit)
+            await pause(holdTime)
             hideScrollIndicators()
             let article = (1...6).map { "第 \($0) 段：长按右键弹出圆盘，往一个方向划一下再松开，就能翻译、搜索、识别文字、截图。选中文件时换成处理文件的功能。" }
                 .joined(separator: "\n\n")
@@ -433,12 +436,12 @@ enum OverlayDemo {
             step("scrollCapture")
 
             // 装载的插件包加的步骤：屏幕画笔、摄像头小窗、突出显示指针、提词器……
-            await pause(1.4 * unit)
+            await pause(holdTime)
             overlay.hide()
-            await playPluginScenes(after: "scrollCapture", in: demo, unit: unit)
+            await playPluginScenes(after: "scrollCapture", in: demo, unit: unit, holdTime: holdTime)
 
             // 截图标注窗口：拿一张画好的示例图，标上方框、箭头、文字、马赛克和序号；截图区域换成标注窗口
-            await pause(1.4 * unit)
+            await pause(holdTime)
             overlay.hide()
             if let capture = sampleScreenshot() {
                 let annotation = AnnotationWindowController.present(capture, near: center)
@@ -449,7 +452,7 @@ enum OverlayDemo {
                 }
             }
             step("annotate")
-            await pause(1.4 * unit)
+            await pause(holdTime)
             NSApp.windows.first { $0.isVisible && $0.title == String(localized: "截图标注") }?.close()
 
             // 设置窗口里新加的几页：截图区域换成设置窗口
@@ -651,15 +654,15 @@ enum OverlayDemo {
         model.background = .sky
     }
 
-    /// 插件包注册的演示步骤：按顺序一个个显示、记下截图区域、停一会儿再收起
-    private static func playPluginScenes(after step: String, in context: PluginHost.DemoContext, unit: Double) async {
+    /// 插件包注册的演示步骤：按顺序一个个显示、记下截图区域、停一会儿再收起。最多停到截图拍完（holdTime）
+    private static func playPluginScenes(after step: String, in context: PluginHost.DemoContext, unit: Double, holdTime: Double) async {
         for scene in PluginHost.shared.demoScenes(after: step) {
-            await pause(scene.delay * unit)
+            await pause(min(scene.delay * unit, holdTime))
             if let region = await scene.show(context) {
                 logRegion(region == context.cardRegion ? region : region.insetBy(dx: -24, dy: -24), screen: context.screen)
             }
             Self.step(scene.name)
-            await pause(scene.hold * unit)
+            await pause(min(scene.hold * unit, holdTime))
             scene.hide()
         }
     }

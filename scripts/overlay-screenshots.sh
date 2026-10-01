@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # 给浮窗拍一组截图：用演示模式启动 Pop（POP_DEMO=1，动画放慢 POP_ANIMATION_SCALE 倍），
-# 按 Pop 写出的步骤时间在固定的时刻截屏，裁出浮窗那一块，存成 JPEG。
+# 按 Pop 写出的步骤时间在固定的时刻截下浮窗那一块，最后一起转成 JPEG。
 # 圆盘展开、指向、滑动、选中、结果卡片、提示、列表、取消、贴图、常用短语、文本对比、图片配色、暂存架、打开方式、
 # Markdown 预览、截图标注都会拍到，包括动画的中间帧。
 # 之后用深色外观再拍一组停下来之后的样子（文件名以 dark- 开头），POP_SKIP_DARK=1 时不拍。
@@ -172,10 +172,19 @@ def wait_for(name, timeout=120):
         time.sleep(0.03)
     raise SystemExit(f"等不到演示步骤 {name}，Pop 可能没有启动")
 
+def screen_rect(region):
+    """截图区域换成 screencapture -R 用的矩形：AppKit 坐标 y 向上，-R 的 y 向下；超出屏幕的部分去掉"""
+    x, y, w, h, screen_w, screen_h = region
+    left = max(0, x)
+    top = max(0, screen_h - y - h)
+    right = min(screen_w, x + w)
+    bottom = min(screen_h, screen_h - y)
+    return left, top, max(1, right - left), max(1, bottom - top)
+
 shots = []
 index = 0
 for name, offsets in plan:
-    start, region = wait_for(name)
+    start, _ = wait_for(name)
     for offset in offsets:
         target = start + offset * factor
         delay = target - time.time()
@@ -183,34 +192,40 @@ for name, offsets in plan:
             time.sleep(delay)
         index += 1
         taken = time.time() - start
+        # 只截浮窗那一块，按拍照时最新的截图区域（设置窗口那几张的区域不一样）
+        region = markers()[1]
+        if not region:
+            raise SystemExit("演示没有写出截图区域")
+        left, top, width, height = screen_rect(region)
         path = os.path.join(work, f"{prefix}{index:02d}-{name}-{taken:.2f}s.png")
-        subprocess.run(["screencapture", "-x", "-t", "png", path], check=False)
-        # 按拍照时最新的截图区域裁图（设置窗口那几张的区域不一样）
-        shots.append((path, markers()[1]))
+        subprocess.run(["screencapture", "-x", "-t", "png", f"-R{left},{top},{width},{height}", path], check=False)
+        shots.append(path)
 wait_for("end")
 
-for path, region in shots:
-    if not region:
-        raise SystemExit("演示没有写出截图区域")
-    x, y, w, h, screen_w, screen_h = region
-    if not os.path.exists(path):
+# 一次转好：长边缩到 640，存成 JPEG（每张单独调用 sips 要多花几分钟）
+taken_shots = []
+for path in shots:
+    if os.path.exists(path):
+        taken_shots.append(path)
+    else:
         print(f"没有截到 {os.path.basename(path)}")
-        continue
-    info = subprocess.run(["sips", "-g", "pixelWidth", "-g", "pixelHeight", path], capture_output=True, text=True).stdout
-    pixel_w = int(info.split("pixelWidth:")[1].split()[0])
-    pixel_h = int(info.split("pixelHeight:")[1].split()[0])
-    s = pixel_w / screen_w
-    # AppKit 坐标 y 向上，图片 y 向下；超出屏幕的部分裁掉
-    left = max(0, min(int(x * s), pixel_w - 1))
-    top = max(0, min(int((screen_h - y - h) * s), pixel_h - 1))
-    width = min(int(w * s), pixel_w - left)
-    height = min(int(h * s), pixel_h - top)
-    cropped = path[:-4] + "-crop.png"
-    subprocess.run(["sips", "-c", str(height), str(width), "--cropOffset", str(top), str(left), path, "--out", cropped],
+if shots and not taken_shots:
+    raise SystemExit("一张都没有截到")
+converted = os.path.join(work, f"{appearance}-jpeg")
+os.makedirs(converted, exist_ok=True)
+if taken_shots:
+    subprocess.run(["sips", "-Z", "640", "-s", "format", "jpeg", "-s", "formatOptions", "72", *taken_shots, "--out", converted],
                    capture_output=True, check=True)
-    name = os.path.basename(path)[:-4] + ".jpg"
-    subprocess.run(["sips", "-Z", "640", "-s", "format", "jpeg", "-s", "formatOptions", "72", cropped,
-                    "--out", os.path.join(out, name)], capture_output=True, check=True)
+for path in taken_shots:
+    base = os.path.basename(path)[:-4]
+    # sips 存到文件夹里时沿用原来的文件名，扩展名统一换成 .jpg
+    for candidate in (base + ".png", base + ".jpg", base + ".jpeg"):
+        source = os.path.join(converted, candidate)
+        if os.path.exists(source):
+            os.replace(source, os.path.join(out, base + ".jpg"))
+            break
+    else:
+        print(f"没有转好 {base}")
 print(f"{appearance}：截图 {len(shots)} 张，存在 {out}")
 PY
 }
