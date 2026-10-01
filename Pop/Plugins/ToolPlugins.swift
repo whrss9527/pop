@@ -1,25 +1,5 @@
 import Foundation
 
-// MARK: - 日期计算
-
-struct DateSpanPlugin: PopPlugin {
-    let info = PluginInfo(id: BuiltinPluginID.dateSpan, name: String(localized: "日期计算"), symbol: "calendar.badge.clock",
-                          summary: String(localized: "选中两个日期（比如「2026-09-29 到 2026-12-25」），算出相差多少天、几周、几个月，其中有多少个工作日"),
-                          accepts: [.text], maxLength: 80, check: .twoDates)
-
-    @MainActor func run(_ content: ClassifiedContent, context: PluginContext) async -> PluginOutcome {
-        guard let text = content.text, let result = DateSpan.find(in: text) else {
-            return .failure(String(localized: "需要两个日期，比如「2026-09-29 到 2026-12-25」"))
-        }
-        let formatter = DateFormatter()
-        formatter.locale = Localization.locale
-        formatter.dateFormat = "yyyy-MM-dd EEE"
-        return .card(ResultCard(title: String(localized: "日期计算"),
-                                detail: String(localized: "从 \(formatter.string(from: result.start)) 到 \(formatter.string(from: result.end))"),
-                                rows: DateSpan.rows(for: result)))
-    }
-}
-
 // MARK: - 目录结构
 
 struct FolderTreePlugin: PopPlugin {
@@ -40,21 +20,5 @@ struct FolderTreePlugin: PopPlugin {
             ResultCard.Tab(title: String(localized: "树形"), text: result.tree),
             ResultCard.Tab(title: String(localized: "Markdown 列表"), text: result.markdown),
         ]))
-    }
-}
-
-// MARK: - Markdown 目录
-
-struct MarkdownTOCPlugin: PopPlugin {
-    let info = PluginInfo(id: BuiltinPluginID.markdownTOC, name: String(localized: "Markdown 目录"), symbol: "list.bullet.rectangle",
-                          summary: String(localized: "按选中的 Markdown 里的标题生成目录，点链接能跳到对应的标题（锚点和 GitHub 的写法一样）"),
-                          accepts: [.text], maxLength: 500_000, check: .markdownHeadings)
-
-    @MainActor func run(_ content: ClassifiedContent, context: PluginContext) async -> PluginOutcome {
-        guard let text = content.text else { return .failure(String(localized: "没有选中文字")) }
-        let headings = MarkdownTOC.headings(in: text)
-        guard !headings.isEmpty else { return .failure(String(localized: "没有找到 # 开头的标题")) }
-        let toc = MarkdownTOC.toc(for: headings)
-        return .card(ResultCard(title: String(localized: "Markdown 目录"), body: toc, detail: String(localized: "\(headings.count) 个标题"), monospaced: true, copyText: toc))
     }
 }

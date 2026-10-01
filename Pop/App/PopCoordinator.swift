@@ -702,7 +702,7 @@ final class PopCoordinator: MouseTriggerDelegate {
         case .system(let action):
             runSystemAction(action)
         case .textImage(let text, let style):
-            present(TextImagePlugin.outcome(text, style: style))
+            present(TextImage.outcome(text, style: style))
         case .barcode(let text):
             if let png = QRCode.barcode(text) {
                 present(.card(ResultCard(title: String(localized: "条形码"), body: text, detail: String(localized: "Code 128 条形码"), image: png,

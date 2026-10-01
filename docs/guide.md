@@ -67,9 +67,9 @@ These actions are plugins now (they're also listed in the Built-in actions table
 
 | Category | Plugins |
 | --- | --- |
-| Text | Large Type, Spell Check, Add to Reminders |
-| Convert | Number Statistics |
-| Developer | Code Screenshot, Cron Expression, JSON to Code, Regex Tester |
+| Text | Speak, Save Web Page, Text to Image, Large Type, Clean Up Text, Extract Info, ID Numbers, Lines, Add to Reminders, Spell Check, Inbox |
+| Convert | Number Statistics, Case, Encode & Decode, YAML ↔ JSON, Format XML, Format SQL, Convert Table, Markdown Rich Text (Markdown Preview, Copy as Rich Text), Convert to Markdown, Markdown Table of Contents, Date Difference, Numbers, Contrast |
+| Developer | Hash, QR Code, Base64 Image, Random, Parse Link, Decode JWT, Regex Tester, Cron Expression, Code Screenshot, JSON to Code, Character Info |
 | Screen & Images | Screen Ruler, Watermark, Image Colors, Recognize Table |
 | Recording & Presenting | Draw on Screen, Camera Bubble, Highlight Pointer, Teleprompter |
 | Files & System | Clean Keyboard, Lines of Code, Compare Files, Batch Rename, Keyboard Shortcuts, Window Layout, Folder Tools (Disk Usage, Find Duplicates, Compare Folders) |

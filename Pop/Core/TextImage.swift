@@ -127,4 +127,10 @@ enum TextImage {
         return ResultCard(title: String(localized: "文字转图片"), detail: String(localized: "\(count) 个字，图片宽 1080 像素；按住拖动预览图也能拖到别的 App 里"),
                           image: png, buttons: buttons)
     }
+
+    /// 画好的图片卡片；画不出来时是失败
+    @MainActor static func outcome(_ text: String, style: Style) -> PluginOutcome {
+        guard let png = render(text, style: style) else { return .failure(String(localized: "没能把这段文字画成图片")) }
+        return .card(card(text, style: style, png: png))
+    }
 }

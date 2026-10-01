@@ -275,6 +275,249 @@ targets:
         POP_PLUGIN_ID: windowLayout
         POP_PLUGIN_ENTRY: PopWindowLayoutEntry
 
+  PopSpeak:
+    templates: [PopPlugin]
+    sources: [PluginBundles/Speak]
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: io.github.whrss9527.pop.plugin.speak
+        POP_PLUGIN_ID: speak
+        POP_PLUGIN_ENTRY: PopSpeakEntry
+
+  PopTextImage:
+    templates: [PopPlugin]
+    sources: [PluginBundles/TextImage]
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: io.github.whrss9527.pop.plugin.textImage
+        POP_PLUGIN_ID: textImage
+        POP_PLUGIN_ENTRY: PopTextImageEntry
+
+  PopWebCapture:
+    templates: [PopPlugin]
+    sources: [PluginBundles/WebCapture]
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: io.github.whrss9527.pop.plugin.webCapture
+        POP_PLUGIN_ID: webCapture
+        POP_PLUGIN_ENTRY: PopWebCaptureEntry
+
+  PopExtractInfo:
+    templates: [PopPlugin]
+    sources: [PluginBundles/ExtractInfo]
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: io.github.whrss9527.pop.plugin.extractInfo
+        POP_PLUGIN_ID: extractInfo
+        POP_PLUGIN_ENTRY: PopExtractInfoEntry
+
+  PopIDNumber:
+    templates: [PopPlugin]
+    sources: [PluginBundles/IDNumber]
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: io.github.whrss9527.pop.plugin.idNumber
+        POP_PLUGIN_ID: idNumber
+        POP_PLUGIN_ENTRY: PopIDNumberEntry
+
+  PopLineTools:
+    templates: [PopPlugin]
+    sources: [PluginBundles/LineTools]
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: io.github.whrss9527.pop.plugin.lineTools
+        POP_PLUGIN_ID: lineTools
+        POP_PLUGIN_ENTRY: PopLineToolsEntry
+
+  PopTextCleanup:
+    templates: [PopPlugin]
+    sources: [PluginBundles/TextCleanup]
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: io.github.whrss9527.pop.plugin.textCleanup
+        POP_PLUGIN_ID: textCleanup
+        POP_PLUGIN_ENTRY: PopTextCleanupEntry
+
+  PopQuickNote:
+    templates: [PopPlugin]
+    sources: [PluginBundles/QuickNote]
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: io.github.whrss9527.pop.plugin.quickNote
+        POP_PLUGIN_ID: quickNote
+        POP_PLUGIN_ENTRY: PopQuickNoteEntry
+
+  PopChangeCase:
+    templates: [PopPlugin]
+    sources: [PluginBundles/ChangeCase]
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: io.github.whrss9527.pop.plugin.changeCase
+        POP_PLUGIN_ID: changeCase
+        POP_PLUGIN_ENTRY: PopChangeCaseEntry
+
+  PopEncodeDecode:
+    templates: [PopPlugin]
+    sources: [PluginBundles/EncodeDecode]
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: io.github.whrss9527.pop.plugin.encodeDecode
+        POP_PLUGIN_ID: encodeDecode
+        POP_PLUGIN_ENTRY: PopEncodeDecodeEntry
+
+  PopYAMLJSON:
+    templates: [PopPlugin]
+    sources: [PluginBundles/YAMLJSON]
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: io.github.whrss9527.pop.plugin.yamlJSON
+        POP_PLUGIN_ID: yamlJSON
+        POP_PLUGIN_ENTRY: PopYAMLJSONEntry
+
+  PopFormatXML:
+    templates: [PopPlugin]
+    sources: [PluginBundles/FormatXML]
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: io.github.whrss9527.pop.plugin.formatXML
+        POP_PLUGIN_ID: formatXML
+        POP_PLUGIN_ENTRY: PopFormatXMLEntry
+
+  PopFormatSQL:
+    templates: [PopPlugin]
+    sources: [PluginBundles/FormatSQL]
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: io.github.whrss9527.pop.plugin.formatSQL
+        POP_PLUGIN_ID: formatSQL
+        POP_PLUGIN_ENTRY: PopFormatSQLEntry
+
+  PopTableConvert:
+    templates: [PopPlugin]
+    sources: [PluginBundles/TableConvert]
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: io.github.whrss9527.pop.plugin.tableConvert
+        POP_PLUGIN_ID: tableConvert
+        POP_PLUGIN_ENTRY: PopTableConvertEntry
+
+  PopMarkdown:
+    templates: [PopPlugin]
+    sources: [PluginBundles/Markdown]
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: io.github.whrss9527.pop.plugin.markdown
+        POP_PLUGIN_ID: markdown
+        POP_PLUGIN_ENTRY: PopMarkdownEntry
+
+  PopToMarkdown:
+    templates: [PopPlugin]
+    sources: [PluginBundles/ToMarkdown]
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: io.github.whrss9527.pop.plugin.toMarkdown
+        POP_PLUGIN_ID: toMarkdown
+        POP_PLUGIN_ENTRY: PopToMarkdownEntry
+
+  PopMarkdownTOC:
+    templates: [PopPlugin]
+    sources: [PluginBundles/MarkdownTOC]
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: io.github.whrss9527.pop.plugin.markdownTOC
+        POP_PLUGIN_ID: markdownTOC
+        POP_PLUGIN_ENTRY: PopMarkdownTOCEntry
+
+  PopDateSpan:
+    templates: [PopPlugin]
+    sources: [PluginBundles/DateSpan]
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: io.github.whrss9527.pop.plugin.dateSpan
+        POP_PLUGIN_ID: dateSpan
+        POP_PLUGIN_ENTRY: PopDateSpanEntry
+
+  PopNumberConvert:
+    templates: [PopPlugin]
+    sources: [PluginBundles/NumberConvert]
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: io.github.whrss9527.pop.plugin.numberConvert
+        POP_PLUGIN_ID: numberConvert
+        POP_PLUGIN_ENTRY: PopNumberConvertEntry
+
+  PopContrast:
+    templates: [PopPlugin]
+    sources: [PluginBundles/Contrast]
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: io.github.whrss9527.pop.plugin.contrast
+        POP_PLUGIN_ID: contrast
+        POP_PLUGIN_ENTRY: PopContrastEntry
+
+  PopHash:
+    templates: [PopPlugin]
+    sources: [PluginBundles/Hash]
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: io.github.whrss9527.pop.plugin.hash
+        POP_PLUGIN_ID: hash
+        POP_PLUGIN_ENTRY: PopHashEntry
+
+  PopQRCode:
+    templates: [PopPlugin]
+    sources: [PluginBundles/QRCode]
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: io.github.whrss9527.pop.plugin.qrCode
+        POP_PLUGIN_ID: qrCode
+        POP_PLUGIN_ENTRY: PopQRCodeEntry
+
+  PopBase64Image:
+    templates: [PopPlugin]
+    sources: [PluginBundles/Base64Image]
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: io.github.whrss9527.pop.plugin.base64Image
+        POP_PLUGIN_ID: base64Image
+        POP_PLUGIN_ENTRY: PopBase64ImageEntry
+
+  PopRandom:
+    templates: [PopPlugin]
+    sources: [PluginBundles/Random]
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: io.github.whrss9527.pop.plugin.random
+        POP_PLUGIN_ID: random
+        POP_PLUGIN_ENTRY: PopRandomEntry
+
+  PopLinkInspect:
+    templates: [PopPlugin]
+    sources: [PluginBundles/LinkInspect]
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: io.github.whrss9527.pop.plugin.linkInspect
+        POP_PLUGIN_ID: linkInspect
+        POP_PLUGIN_ENTRY: PopLinkInspectEntry
+
+  PopJWT:
+    templates: [PopPlugin]
+    sources: [PluginBundles/JWT]
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: io.github.whrss9527.pop.plugin.jwtDecode
+        POP_PLUGIN_ID: jwtDecode
+        POP_PLUGIN_ENTRY: PopJWTEntry
+
+  PopCharInfo:
+    templates: [PopPlugin]
+    sources: [PluginBundles/CharInfo]
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: io.github.whrss9527.pop.plugin.charInfo
+        POP_PLUGIN_ID: charInfo
+        POP_PLUGIN_ENTRY: PopCharInfoEntry
+
   PopTests:
     type: bundle.unit-test
     platform: macOS
@@ -285,6 +528,33 @@ targets:
       - path: PluginBundles/CameraBubble
       - path: PluginBundles/PointerHighlight
       - path: PluginBundles/Teleprompter
+      - path: PluginBundles/CharInfo
+      - path: PluginBundles/JWT
+      - path: PluginBundles/LinkInspect
+      - path: PluginBundles/Random
+      - path: PluginBundles/Base64Image
+      - path: PluginBundles/QRCode
+      - path: PluginBundles/Hash
+      - path: PluginBundles/Contrast
+      - path: PluginBundles/NumberConvert
+      - path: PluginBundles/DateSpan
+      - path: PluginBundles/MarkdownTOC
+      - path: PluginBundles/ToMarkdown
+      - path: PluginBundles/Markdown
+      - path: PluginBundles/TableConvert
+      - path: PluginBundles/FormatSQL
+      - path: PluginBundles/FormatXML
+      - path: PluginBundles/YAMLJSON
+      - path: PluginBundles/EncodeDecode
+      - path: PluginBundles/ChangeCase
+      - path: PluginBundles/QuickNote
+      - path: PluginBundles/TextCleanup
+      - path: PluginBundles/LineTools
+      - path: PluginBundles/IDNumber
+      - path: PluginBundles/ExtractInfo
+      - path: PluginBundles/WebCapture
+      - path: PluginBundles/TextImage
+      - path: PluginBundles/Speak
       - path: PluginBundles/WindowLayout
       - path: PluginBundles/MenuShortcuts
       - path: PluginBundles/BatchRename
@@ -320,6 +590,33 @@ schemes:
         PopCameraBubble: all
         PopPointerHighlight: all
         PopTeleprompter: all
+        PopCharInfo: all
+        PopJWT: all
+        PopLinkInspect: all
+        PopRandom: all
+        PopBase64Image: all
+        PopQRCode: all
+        PopHash: all
+        PopContrast: all
+        PopNumberConvert: all
+        PopDateSpan: all
+        PopMarkdownTOC: all
+        PopToMarkdown: all
+        PopMarkdown: all
+        PopTableConvert: all
+        PopFormatSQL: all
+        PopFormatXML: all
+        PopYAMLJSON: all
+        PopEncodeDecode: all
+        PopChangeCase: all
+        PopQuickNote: all
+        PopTextCleanup: all
+        PopLineTools: all
+        PopIDNumber: all
+        PopExtractInfo: all
+        PopWebCapture: all
+        PopTextImage: all
+        PopSpeak: all
         PopWindowLayout: all
         PopMenuShortcuts: all
         PopBatchRename: all

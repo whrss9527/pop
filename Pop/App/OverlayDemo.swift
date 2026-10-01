@@ -261,18 +261,8 @@ enum OverlayDemo {
             }
             step("photo")
 
-            // 插件包的步骤：批量重命名
+            // 插件包的步骤：批量重命名、SQL 格式化
             await playPluginScenes(after: "photo", in: demo, unit: unit)
-
-            // SQL 格式化：写在一行里的查询按子句分行
-            await pause(1.4 * unit)
-            let query = "select u.id, u.name, count(o.id) as orders from users u left join orders o on o.user_id = u.id "
-                + "where u.created_at >= '2026-01-01' and u.vip = true group by u.id, u.name order by orders desc limit 20"
-            if case .card(let sqlCard) = await FormatSQLPlugin().run(ContentClassifier.classify(.text(query)),
-                                                                      context: PluginContext(settings: AppSettings(), openSettings: {})) {
-                overlay.showCard(ResultCardView(card: sqlCard, onAction: { _ in }, onMore: {}, onClose: {}), anchor: center)
-            }
-            step("sql")
 
             // 生词本：几个示例单词（放在临时文件里，不动真的生词本）
             await pause(1.4 * unit)
@@ -363,7 +353,7 @@ enum OverlayDemo {
             // 网页存档：选中一个网址
             await pause(1.4 * unit)
             if let page = URL(string: "https://github.com/whrss9527/pop/releases") {
-                overlay.showCard(ResultCardView(card: WebCapturePlugin.card(page), onAction: { _ in }, onMore: {}, onClose: {}),
+                overlay.showCard(ResultCardView(card: WebCapture.card(page), onAction: { _ in }, onMore: {}, onClose: {}),
                                  anchor: center)
             }
             step("webCapture")
@@ -414,7 +404,7 @@ enum OverlayDemo {
             // 文字转图片：一段示例文字排成的长图
             await pause(1.4 * unit)
             let passage = "周五的发布会改到下午三点，地点不变。\n\n会前请把演示用的 Mac 更新到最新系统，提前半小时到场调试投屏。"
-            if case .card(let textCard) = TextImagePlugin.outcome(passage, style: .warm) {
+            if case .card(let textCard) = TextImage.outcome(passage, style: .warm) {
                 overlay.showCard(ResultCardView(card: textCard, onAction: { _ in }, onMore: {}, onClose: {}), anchor: center)
             }
             step("textImage")

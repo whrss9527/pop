@@ -26,6 +26,13 @@ enum WebCapture {
         var errorDescription: String? { message }
     }
 
+    /// 选中网址时的卡片：三种存法各一个按钮
+    static func card(_ url: URL) -> ResultCard {
+        ResultCard(title: String(localized: "网页存档"), body: url.absoluteString,
+                   detail: String(localized: "在后台打开网页存到「下载」：PDF 和长图是整页，Markdown 只取正文；要登录的页面存下来是登录页"),
+                   buttons: Format.allCases.map { CardButton(title: $0.title, action: .captureWeb(url, $0)) })
+    }
+
     /// 存下来的网页：一页 PDF 和网页标题
     struct Page {
         let pdf: Data
