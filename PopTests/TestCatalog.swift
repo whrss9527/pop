@@ -77,6 +77,7 @@ enum TestCatalog {
         FontPreviewEntry.self,
         EncryptFilesEntry.self,
         BatteryInfoEntry.self,
+        VoiceRecorderEntry.self,
         SimilarPhotosEntry.self,
     ]
 

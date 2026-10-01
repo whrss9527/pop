@@ -318,6 +318,9 @@ enum PluginCatalog {
         PluginPackage(id: "batteryInfo", bundleName: "PopBatteryInfo", name: String(localized: "电池信息"),
                       summary: String(localized: "看笔记本电池的电量、最大容量（健康度）、循环次数、状况、温度，正在充电或者耗电的功率、充电器多少瓦，还要多久充满或者用完；也列出连着的蓝牙键盘、鼠标、触控板和耳机的电量"),
                       symbol: "battery.100", category: .files, functions: [BuiltinPluginID.batteryInfo]),
+        PluginPackage(id: "voiceRecorder", bundleName: "PopVoiceRecorder", name: String(localized: "录音"),
+                      summary: String(localized: "用麦克风录一段声音，存成 .m4a 放进「下载」；录的时候屏幕上方有个小条，看得到时长和音量，可以暂停，录好能接着转成文字。正在录的时候再用一次就停止"),
+                      symbol: "mic", category: .recording, functions: [BuiltinPluginID.voiceRecorder]),
     ]
 
     /// 插件包提供的所有功能

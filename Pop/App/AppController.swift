@@ -134,6 +134,9 @@ final class AppController {
             self?.settingsWindow.showPluginLibrary()
         }
         coordinator.pluginManager = pluginManager
+        PluginHost.shared.runFunction = { [weak self] pluginID, files in
+            self?.coordinator.runFromLink(pluginID: pluginID, text: nil, files: files)
+        }
         trigger.delegate = coordinator
         PinBoard.shared.onToast = { [weak self] message, point in
             self?.coordinator.showToast(message, at: point)

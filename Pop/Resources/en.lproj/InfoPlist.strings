@@ -4,6 +4,6 @@
 "NSCalendarsWriteOnlyAccessUsageDescription" = "Pop needs this to add the selected text to Calendar. It only adds events and never reads your calendars.";
 "NSCalendarsUsageDescription" = "Pop needs this to add the selected text to Calendar. It only adds events and never reads your calendars.";
 "NSSpeechRecognitionUsageDescription" = "Pop needs speech recognition to turn speech in recordings and videos into text. When this Mac supports it, recognition happens on the Mac and no audio is uploaded.";
-"NSMicrophoneUsageDescription" = "Pop uses the microphone only when you choose Microphone for a screen recording, to record what you say along with the video.";
+"NSMicrophoneUsageDescription" = "Pop uses the microphone only when you use Voice Recorder or choose Microphone for a screen recording, to record what you say.";
 "NSAppleEventsUsageDescription" = "When you switch between Dark and Light Mode in System Actions, Pop asks System Events to change the system appearance.";
 "NSCameraUsageDescription" = "Pop uses the camera only when you open Camera Bubble, to show you in a small window on the screen. Pop doesn’t save or upload the camera picture on its own.";

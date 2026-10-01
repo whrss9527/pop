@@ -54,7 +54,7 @@
 	<key>NSCameraUsageDescription</key>
 	<string>打开「摄像头小窗」时才会用到摄像头，在屏幕角落显示你自己；Pop 不会单独保存或上传摄像头的画面。</string>
 	<key>NSMicrophoneUsageDescription</key>
-	<string>录屏时选了「麦克风」才会用到麦克风，把你说的话一起录进视频。</string>
+	<string>用「录音」或者录屏时选了「麦克风」才会用到麦克风，录下你说的话。</string>
 	<key>NSSpeechRecognitionUsageDescription</key>
 	<string>把录音、视频里说的话转成文字时需要语音识别权限。这台 Mac 支持时只在本机识别，不上传音频。</string>
 	<key>NSRemindersFullAccessUsageDescription</key>

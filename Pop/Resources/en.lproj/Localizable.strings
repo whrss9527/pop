@@ -2717,3 +2717,15 @@
 "移到废纸篓（%lld 张）" = "Move to Trash (%lld)";
 "留着" = "Keep";
 "选中一个文件夹，或者至少两张图片" = "Select a folder or at least two images";
+"录音" = "Voice Recorder";
+"用麦克风录一段声音，存成 .m4a 放进「下载」；录的时候屏幕上方有个小条，看得到时长和音量，可以暂停，录好能接着转成文字。正在录的时候再用一次就停止" = "Record sound from the microphone and save it as an .m4a file in Downloads; while recording, a small bar at the top of the screen shows the time and level and can pause, and you can transcribe the recording afterwards. Use it again while recording to stop";
+"要先在「系统设置 → 隐私与安全性 → 麦克风」里允许 Pop，才能录音" = "Allow Pop in System Settings → Privacy & Security → Microphone to record";
+"录音 %@" = "Recording %@";
+"录音没能开始：%@" = "Couldn’t start recording: %@";
+"录音没能开始：没有找到能用的麦克风" = "Couldn’t start recording: no microphone is available";
+"录音没能存进「下载」：%@" = "Couldn’t save the recording to Downloads: %@";
+"存进了「下载」，长 %@" = "Saved to Downloads, %@ long";
+"暂停" = "Pause";
+"接着录" = "Resume";
+"停止并保存" = "Stop and Save";
+"转成文字" = "Transcribe";
