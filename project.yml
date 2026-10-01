@@ -887,6 +887,15 @@ targets:
         POP_PLUGIN_ID: encryptFiles
         POP_PLUGIN_ENTRY: PopEncryptFilesEntry
 
+  PopBatteryInfo:
+    templates: [PopPlugin]
+    sources: [PluginBundles/BatteryInfo]
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: io.github.whrss9527.pop.plugin.batteryInfo
+        POP_PLUGIN_ID: batteryInfo
+        POP_PLUGIN_ENTRY: PopBatteryInfoEntry
+
   PopTests:
     type: bundle.unit-test
     platform: macOS
@@ -912,6 +921,7 @@ targets:
       - path: PluginBundles/Subtitles
       - path: PluginBundles/FontPreview
       - path: PluginBundles/EncryptFiles
+      - path: PluginBundles/BatteryInfo
       - path: PluginBundles/Beautify
       - path: PluginBundles/Spotlight
       - path: PluginBundles/Timer
@@ -1015,6 +1025,7 @@ schemes:
         PopSubtitles: all
         PopFontPreview: all
         PopEncryptFiles: all
+        PopBatteryInfo: all
         PopBeautify: all
         PopSpotlight: all
         PopTimer: all

@@ -163,6 +163,32 @@
 "有的名字不能用" = "Some names can’t be used";
 "改名失败：%@" = "Couldn’t rename: %@";
 
+/* BatteryInfoPlugin.swift */
+"看笔记本电池的电量、最大容量（健康度）、循环次数、状况、温度，正在充电或者耗电的功率、充电器多少瓦，还要多久充满或者用完" = "See the charge, maximum capacity (health), cycle count, condition and temperature of a MacBook battery, how many watts are going in or out, the charger’s wattage, and how long until it’s full or empty";
+"这台 Mac 没有电池" = "This Mac doesn’t have a battery";
+
+/* BatteryInfoView.swift */
+"正在充电" = "Charging";
+"已充满" = "Fully charged";
+"接着电源，暂停充电" = "On power, charging paused";
+"用电池" = "On battery";
+"充满还要 %@" = "%@ until full";
+"还能用 %@" = "%@ remaining";
+"（现在 %@ mAh，出厂 %@ mAh）" = " (%@ mAh now, %@ mAh when new)";
+"最大容量" = "Maximum Capacity";
+"%@ 次（设计寿命 %@ 次）" = "%@ (designed for %@)";
+"%@ 次" = "%@";
+"循环次数" = "Cycle Count";
+"状况" = "Condition";
+"建议维修" = "Service Recommended";
+"正常" = "Normal";
+"电压" = "Voltage";
+"电源适配器" = "Power Adapter";
+"已接上" = "Connected";
+"电量 %@，%@" = "Charge %@, %@";
+"电池信息" = "Battery Info";
+"电池设置" = "Battery Settings";
+
 /* BuiltinPlugins.swift */
 "转换" = "Convert";
 "开发" = "Developer";
