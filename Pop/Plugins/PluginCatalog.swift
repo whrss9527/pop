@@ -316,7 +316,7 @@ enum PluginCatalog {
                       summary: String(localized: "把选中的文件和文件夹放进一个用密码加密（AES-256）的磁盘映像，在任何一台 Mac 上双击、输入密码就能打开；发给别人、存到 U 盘或者网盘前用"),
                       symbol: "lock.doc", category: .files, functions: [BuiltinPluginID.encryptFiles]),
         PluginPackage(id: "batteryInfo", bundleName: "PopBatteryInfo", name: String(localized: "电池信息"),
-                      summary: String(localized: "看笔记本电池的电量、最大容量（健康度）、循环次数、状况、温度，正在充电或者耗电的功率、充电器多少瓦，还要多久充满或者用完"),
+                      summary: String(localized: "看笔记本电池的电量、最大容量（健康度）、循环次数、状况、温度，正在充电或者耗电的功率、充电器多少瓦，还要多久充满或者用完；也列出连着的蓝牙键盘、鼠标、触控板和耳机的电量"),
                       symbol: "battery.100", category: .files, functions: [BuiltinPluginID.batteryInfo]),
     ]
 

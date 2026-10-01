@@ -164,8 +164,14 @@
 "改名失败：%@" = "Couldn’t rename: %@";
 
 /* BatteryInfoPlugin.swift */
-"看笔记本电池的电量、最大容量（健康度）、循环次数、状况、温度，正在充电或者耗电的功率、充电器多少瓦，还要多久充满或者用完" = "See the charge, maximum capacity (health), cycle count, condition and temperature of a MacBook battery, how many watts are going in or out, the charger’s wattage, and how long until it’s full or empty";
-"这台 Mac 没有电池" = "This Mac doesn’t have a battery";
+"看笔记本电池的电量、最大容量（健康度）、循环次数、状况、温度，正在充电或者耗电的功率、充电器多少瓦，还要多久充满或者用完；也列出连着的蓝牙键盘、鼠标、触控板和耳机的电量" = "See the charge, maximum capacity (health), cycle count, condition and temperature of a MacBook battery, how many watts are going in or out, the charger’s wattage, and how long until it’s full or empty; also lists the battery levels of connected Bluetooth keyboards, mice, trackpads and headphones";
+"这台 Mac 没有电池，也没有连着能看电量的蓝牙设备" = "This Mac doesn’t have a battery, and no connected Bluetooth device reports its battery level";
+"蓝牙设备" = "Bluetooth Devices";
+"左耳 %@" = "Left %@";
+"右耳 %@" = "Right %@";
+"充电盒 %@" = "Case %@";
+"妙控键盘" = "Magic Keyboard";
+"妙控鼠标" = "Magic Mouse";
 
 /* BatteryInfoView.swift */
 "正在充电" = "Charging";

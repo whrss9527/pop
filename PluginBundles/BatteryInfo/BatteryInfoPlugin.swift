@@ -9,9 +9,9 @@ final class BatteryInfoEntry: NSObject, PopPluginBundle {
     }
 
     @MainActor static func didLoad(_ host: PluginHost.Registrar) {
-        // CI 截图：一块用了一年多的电池在充电（CI 的机器没有电池，用示例数据）
+        // CI 截图：一块用了一年多的电池在充电，还连着键盘、鼠标和耳机（CI 的机器没有电池，用示例数据）
         host.addDemoScene(PluginHost.DemoScene(name: "batteryInfo", after: "pdfPages", order: 11, delay: 1.4, hold: 0, show: { demo in
-            let model = BatteryInfoModel(report: BatteryInfoPlugin.demoReport(), read: { nil })
+            let model = BatteryInfoModel(report: BatteryInfoPlugin.demoReport(), bluetooth: BatteryInfoPlugin.demoDevices(), sources: .none)
             demo.overlay.showCard(BatteryInfoView(model: model, onCopy: {}, onOpenSettings: {}, onClose: {}), anchor: demo.center)
             return demo.cardRegion
         }))
@@ -20,15 +20,23 @@ final class BatteryInfoEntry: NSObject, PopPluginBundle {
 
 struct BatteryInfoPlugin: PopPlugin {
     let info = PluginInfo(id: BuiltinPluginID.batteryInfo, name: String(localized: "电池信息"), symbol: "battery.100",
-                          summary: String(localized: "看笔记本电池的电量、最大容量（健康度）、循环次数、状况、温度，正在充电或者耗电的功率、充电器多少瓦，还要多久充满或者用完"),
+                          summary: String(localized: "看笔记本电池的电量、最大容量（健康度）、循环次数、状况、温度，正在充电或者耗电的功率、充电器多少瓦，还要多久充满或者用完；也列出连着的蓝牙键盘、鼠标、触控板和耳机的电量"),
                           accepts: [])
 
     @MainActor func run(_ content: ClassifiedContent, context: PluginContext) async -> PluginOutcome {
-        guard let report = await runInBackground({ BatteryReader.read() }) else {
-            return .failure(String(localized: "这台 Mac 没有电池"))
+        let report = await runInBackground({ BatteryReader.read() })
+        let hid = await runInBackground({ DeviceBatteries.hidDevices() })
+        // 台式 Mac 没有电池：先问一下蓝牙设备，一个都没有才说
+        var bluetooth: [DeviceBatteries.Device] = []
+        if report == nil, hid.isEmpty {
+            bluetooth = await DeviceBatteries.bluetoothDevices() ?? []
+            guard !bluetooth.isEmpty else {
+                return .failure(String(localized: "这台 Mac 没有电池，也没有连着能看电量的蓝牙设备"))
+            }
         }
+        let found = bluetooth
         return .present(PluginPresentation { session in
-            let model = BatteryInfoModel(report: report)
+            let model = BatteryInfoModel(report: report, hid: hid, bluetooth: found)
             session.showCard(BatteryInfoView(model: model,
                                              onCopy: { session.perform(.copy(model.text)) },
                                              onOpenSettings: {
@@ -39,6 +47,13 @@ struct BatteryInfoPlugin: PopPlugin {
                                              },
                                              onClose: { session.end() }))
         })
+    }
+
+    /// 演示用：妙控键盘、快没电的鼠标和一副 AirPods Pro
+    static func demoDevices() -> [DeviceBatteries.Device] {
+        [DeviceBatteries.Device(address: "F0B3EC000001", name: String(localized: "妙控键盘"), kind: .keyboard, main: 85),
+         DeviceBatteries.Device(address: "F0B3EC000002", name: String(localized: "妙控鼠标"), kind: .mouse, main: 18),
+         DeviceBatteries.Device(address: "F0B3EC000003", name: "AirPods Pro", kind: .headphones, left: 100, right: 99, caseLevel: 50)]
     }
 
     /// 演示用：用了一年多的电池，接着 96 瓦的充电器在充

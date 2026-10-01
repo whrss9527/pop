@@ -55,7 +55,7 @@ final class BatteryInfoTests: XCTestCase {
 
     @MainActor
     func testCardRows() throws {
-        let model = BatteryInfoModel(report: BatteryInfoPlugin.demoReport(), read: { nil })
+        let model = BatteryInfoModel(report: BatteryInfoPlugin.demoReport(), sources: .none)
         XCTAssertEqual(model.state, "正在充电")
         XCTAssertEqual(model.power, "43.1 W")
         XCTAssertEqual(model.remaining, "充满还要 0:38")
@@ -65,7 +65,7 @@ final class BatteryInfoTests: XCTestCase {
         XCTAssertTrue(model.text.hasPrefix("电量 76%，正在充电\n最大容量：91%"))
         // 读不到时保留上一次的
         model.refresh()
-        XCTAssertEqual(model.report.percent, 76)
+        XCTAssertEqual(model.report?.percent, 76)
 
         var unplugged = BatteryInfoPlugin.demoReport()
         unplugged.isCharging = false
@@ -74,14 +74,88 @@ final class BatteryInfoTests: XCTestCase {
         unplugged.amperage = -0.7
         unplugged.fullCapacity = 4500
         unplugged.condition = "Service Recommended"
-        let battery = BatteryInfoModel(report: unplugged, read: { nil })
+        let battery = BatteryInfoModel(report: unplugged, sources: .none)
         XCTAssertEqual(battery.state, "用电池")
         XCTAssertEqual(battery.remaining, "还能用 5:12")
         XCTAssertEqual(battery.rows.map { $0.label }, ["最大容量", "循环次数", "状况", "温度", "电压"])
         XCTAssertEqual(battery.rows.filter { $0.warning }.map { $0.label }, ["最大容量", "状况"])
         var paused = BatteryInfoPlugin.demoReport()
         paused.isCharging = false
-        XCTAssertEqual(BatteryInfoModel(report: paused, read: { nil }).state, "接着电源，暂停充电")
+        XCTAssertEqual(BatteryInfoModel(report: paused, sources: .none).state, "接着电源，暂停充电")
+    }
+
+    func testReadsBluetoothDevices() throws {
+        // IOKit：同一个键盘有两个 HID 服务，只留一个；没报电量的不要
+        let hid = DeviceBatteries.devices(fromHID: [
+            ["Product": "Magic Keyboard with Touch ID", "BatteryPercent": 84, "DeviceAddress": "f0-b3-ec-12-34-56"],
+            ["Product": "Magic Keyboard with Touch ID", "BatteryPercent": 84, "DeviceAddress": "f0-b3-ec-12-34-56"],
+            ["Product": "Magic Mouse", "BatteryPercent": 18],
+            ["Product": "USB Receiver"],
+        ])
+        XCTAssertEqual(hid.map(\.name), ["Magic Keyboard with Touch ID", "Magic Mouse"])
+        XCTAssertEqual(hid.map(\.kind), [.keyboard, .mouse])
+        XCTAssertEqual(hid[0].address, "F0B3EC123456")
+
+        // system_profiler：只看连着的、报了电量的
+        let json = #"""
+        {"SPBluetoothDataType": [{
+          "controller_properties": {"controller_state": "attrib_on"},
+          "device_connected": [
+            {"AirPods Pro": {"device_address": "AA:BB:CC:DD:EE:01", "device_batteryLevelCase": "50%", "device_batteryLevelLeft": "100%",
+                             "device_batteryLevelRight": "99%", "device_minorType": "Headphones"}},
+            {"张三的妙控键盘": {"device_address": "F0:B3:EC:12:34:56", "device_batteryLevelMain": "85%", "device_minorType": "Keyboard"}},
+            {"音箱": {"device_address": "AA:BB:CC:DD:EE:02", "device_minorType": "Speaker"}}
+          ],
+          "device_not_connected": [
+            {"旧耳机": {"device_address": "AA:BB:CC:DD:EE:03", "device_batteryLevelMain": "40%", "device_minorType": "Headphones"}}
+          ]
+        }]}
+        """#
+        let bluetooth = try XCTUnwrap(DeviceBatteries.devices(fromBluetoothJSON: Data(json.utf8)))
+        XCTAssertEqual(Set(bluetooth.map(\.name)), ["AirPods Pro", "张三的妙控键盘"])
+        XCTAssertNil(DeviceBatteries.devices(fromBluetoothJSON: Data("不是 JSON".utf8)))
+
+        // 合在一起：键盘用蓝牙里的名字、IOKit 的电量，鼠标只有 IOKit 有；按键盘、鼠标、耳机排
+        let merged = DeviceBatteries.merge(hid: hid, bluetooth: bluetooth)
+        XCTAssertEqual(merged.map(\.name), ["张三的妙控键盘", "Magic Mouse", "AirPods Pro"])
+        XCTAssertEqual(merged.map(\.levels), ["84%", "18%", "左耳 100% · 右耳 99% · 充电盒 50%"])
+        XCTAssertEqual(merged.map(\.isLow), [false, true, false])
+        XCTAssertEqual(merged.map(\.symbol), ["keyboard", "magicmouse", "airpodspro"])
+
+        XCTAssertEqual(DeviceBatteries.level("85%"), 85)
+        XCTAssertEqual(DeviceBatteries.level(NSNumber(value: 40)), 40)
+        XCTAssertNil(DeviceBatteries.level("150%"))
+        XCTAssertNil(DeviceBatteries.level("满"))
+        XCTAssertNil(DeviceBatteries.normalizedAddress("12:34"))
+        XCTAssertEqual(DeviceBatteries.kind(ofMinorType: nil, name: "Beats Studio Buds"), .headphones)
+        XCTAssertEqual(DeviceBatteries.kind(ofMinorType: "Trackpad", name: "触控板"), .trackpad)
+    }
+
+    @MainActor
+    func testCardWithDevices() {
+        // 台式 Mac：没有电池，只列设备
+        let desktop = BatteryInfoModel(report: nil, bluetooth: BatteryInfoPlugin.demoDevices(), sources: .none)
+        XCTAssertEqual(desktop.state, "")
+        XCTAssertTrue(desktop.rows.isEmpty)
+        XCTAssertNil(desktop.power)
+        XCTAssertEqual(desktop.text, "妙控键盘：85%\n妙控鼠标：18%\nAirPods Pro：左耳 100% · 右耳 99% · 充电盒 50%")
+        // 笔记本：电池在前，设备在后；读不到设备时保留上一次的
+        let laptop = BatteryInfoModel(report: BatteryInfoPlugin.demoReport(), bluetooth: BatteryInfoPlugin.demoDevices(), sources: .none)
+        laptop.refresh()
+        XCTAssertEqual(laptop.devices.count, 3)
+        XCTAssertTrue(laptop.text.hasPrefix("电量 76%，正在充电\n"))
+        XCTAssertTrue(laptop.text.hasSuffix("\nAirPods Pro：左耳 100% · 右耳 99% · 充电盒 50%"))
+        // 键盘、鼠标换了电量
+        var hidCalls = 0
+        let live = BatteryInfoModel(report: nil, bluetooth: BatteryInfoPlugin.demoDevices(),
+                                    sources: BatteryInfoModel.Sources(battery: { nil }, hid: {
+                                        hidCalls += 1
+                                        return [DeviceBatteries.Device(address: "F0B3EC000002", name: "Magic Mouse", kind: .mouse, main: 17)]
+                                    }, bluetooth: { nil }))
+        live.refresh()
+        XCTAssertEqual(hidCalls, 1)
+        XCTAssertEqual(live.devices.map(\.name), ["妙控键盘", "妙控鼠标", "AirPods Pro"])
+        XCTAssertEqual(live.devices[1].main, 17)
     }
 
     func testPluginNeedsNoSelection() {
