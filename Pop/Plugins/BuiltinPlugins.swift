@@ -40,7 +40,7 @@ enum BuiltinPlugins {
     /// 「全部功能」和设置里的顺序。Pop 自带的功能和插件包提供的功能按这个顺序排在一起，不在里面的排到最后。
     static let displayOrder: [String] = [
         BuiltinPluginID.translate, BuiltinPluginID.screenshotTranslate, BuiltinPluginID.search, BuiltinPluginID.dictionary,
-        BuiltinPluginID.vocabulary, BuiltinPluginID.speak, BuiltinPluginID.openURL, BuiltinPluginID.linkInspect,
+        BuiltinPluginID.vocabulary, BuiltinPluginID.speak, BuiltinPluginID.speakToFile, BuiltinPluginID.openURL, BuiltinPluginID.linkInspect,
         BuiltinPluginID.webCapture, BuiltinPluginID.textImage, BuiltinPluginID.largeType, BuiltinPluginID.calculate,
         BuiltinPluginID.numberStats, BuiltinPluginID.unitConvert, BuiltinPluginID.copyPlain, BuiltinPluginID.textCleanup,
         BuiltinPluginID.extractInfo, BuiltinPluginID.idNumber, BuiltinPluginID.lineTools, BuiltinPluginID.reminder,
@@ -113,7 +113,7 @@ enum BuiltinCategory: CaseIterable, Identifiable {
 
     private static let members: [BuiltinCategory: [String]] = [
         .text: [BuiltinPluginID.translate, BuiltinPluginID.screenshotTranslate, BuiltinPluginID.search,
-                BuiltinPluginID.dictionary, BuiltinPluginID.vocabulary, BuiltinPluginID.speak, BuiltinPluginID.openURL,
+                BuiltinPluginID.dictionary, BuiltinPluginID.vocabulary, BuiltinPluginID.speak, BuiltinPluginID.speakToFile, BuiltinPluginID.openURL,
                 BuiltinPluginID.webCapture, BuiltinPluginID.textImage, BuiltinPluginID.largeType,
                 BuiltinPluginID.copyPlain,
                 BuiltinPluginID.textCleanup, BuiltinPluginID.extractInfo, BuiltinPluginID.idNumber, BuiltinPluginID.lineTools,

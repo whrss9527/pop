@@ -2518,3 +2518,10 @@
 "用「%@」下载的" = "Downloaded with %@";
 "系统自带" = "Comes with macOS";
 "复制信息" = "Copy Info";
+"用系统语音朗读选中的文字，朗读中再用一次就停止；也能读出来存成音频文件" = "Read the selected text aloud with a system voice; use it again while speaking to stop. It can also save the speech as an audio file";
+"朗读存成音频" = "Save Speech as Audio";
+"用系统语音把选中的文字读出来，存成音频文件（.m4a）放进「下载」，配音、听力材料都能用" = "Read the selected text with a system voice and save it as an audio file (.m4a) in Downloads, for voice-overs or listening practice";
+"这个语音不能存成音频，到「系统设置 → 辅助功能 → 朗读内容」里换一个系统语音试试" = "This voice can’t be saved as audio. Try another system voice in System Settings → Accessibility → Spoken Content";
+"存音频时出错了：%@" = "Couldn’t save the audio: %@";
+"朗读 %@" = "Speech %@";
+"存好了「%@」，长 %@" = "Saved “%@” (%@ long)";
