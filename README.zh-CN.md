@@ -38,6 +38,14 @@
 
 需要 macOS 15 或更新版本。
 
+用 [Homebrew](https://brew.sh) 安装：
+
+```sh
+brew install --cask whrss9527/tap/pop
+```
+
+或者手动安装：
+
 1. 在 [Releases](https://github.com/whrss9527/pop/releases) 下载最新的 `Pop-<版本>.zip`，解压后把 `Pop.app` 拖进「应用程序」。
 2. 第一次打开时，按提示在「系统设置 → 隐私与安全性 → 辅助功能」里打开 Pop。
 3. 以后有新版本，在 App 里点一下就更新好。
