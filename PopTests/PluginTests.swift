@@ -109,6 +109,11 @@ final class RouterTests: XCTestCase {
         for category in BuiltinCategory.allCases {
             XCTAssertTrue(catalog.contains { BuiltinCategory.of($0.id) == category }, category.title)
         }
+        // 录屏和演示用的单独一组
+        let recording = catalog.map(\.id).filter { BuiltinCategory.of($0) == .recording }
+        XCTAssertEqual(Set(recording), [BuiltinPluginID.screenRecord, BuiltinPluginID.scrollCapture, BuiltinPluginID.showKeystrokes,
+                                        BuiltinPluginID.screenPen, BuiltinPluginID.cameraBubble, BuiltinPluginID.pointerHighlight])
+        XCTAssertEqual(BuiltinCategory.of(BuiltinPluginID.annotate), .screen)
     }
 
     /// 每个内置功能的图标在这个系统上都有：新系统才有的图标在 macOS 15 上会显示成空白

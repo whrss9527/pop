@@ -33,9 +33,9 @@ final class ScreenRecorder: NSObject {
     private var problem: String?
     /// 停下来、收拾好以后要做的事（比如退出 Pop）
     private var afterStop: [() -> Void] = []
-    /// 这次录屏显示了按键：录完关掉；原来单独开着的，放回原来的地方
+    /// 这次录屏显示了按键：录完关掉；原来单独开着的，回到跟着指针所在的屏幕
     private var showsKeysForRecording = false
-    private var keysAreaBeforeRecording: CGRect?
+    private var keysWereShowing = false
 
     var isRecording: Bool { stream != nil }
 
@@ -120,11 +120,14 @@ final class ScreenRecorder: NSObject {
                 }
             }
             onTick()
-            // 按键显示放在录的区域下边，会一起录进去；单独开着的先挪过来
+            // 按键显示钉在录的区域下边，会一起录进去；单独开着的先挪过来
             if selection.options.showKeys {
                 let keys = KeystrokeOverlay.shared
-                keysAreaBeforeRecording = keys.isActive ? keys.area : nil
-                showsKeysForRecording = keys.start(in: selection.rect) == nil
+                keysWereShowing = keys.isActive
+                if keysWereShowing || keys.start() == nil {
+                    keys.pin(to: selection.rect)
+                    showsKeysForRecording = true
+                }
             }
         } catch {
             frame?.orderOut(nil)
@@ -233,13 +236,12 @@ final class ScreenRecorder: NSObject {
         timer = nil
         if showsKeysForRecording {
             let keys = KeystrokeOverlay.shared
-            if let area = keysAreaBeforeRecording, keys.isActive {
-                keys.move(to: area)
+            if keysWereShowing, keys.isActive {
+                keys.unpin()
             } else {
                 keys.stop()
             }
             showsKeysForRecording = false
-            keysAreaBeforeRecording = nil
         }
         frameWindow?.orderOut(nil)
         frameWindow = nil

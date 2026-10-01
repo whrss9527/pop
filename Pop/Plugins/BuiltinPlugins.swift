@@ -122,6 +122,7 @@ enum BuiltinCategory: CaseIterable, Identifiable {
     case convert
     case developer
     case screen
+    case recording
     case files
     case other
 
@@ -134,6 +135,7 @@ enum BuiltinCategory: CaseIterable, Identifiable {
         case .convert: return String(localized: "转换")
         case .developer: return String(localized: "开发")
         case .screen: return String(localized: "屏幕与图片")
+        case .recording: return String(localized: "录屏和演示")
         case .files: return String(localized: "文件和系统")
         case .other: return String(localized: "其他")
         }
@@ -161,13 +163,13 @@ enum BuiltinCategory: CaseIterable, Identifiable {
                      BuiltinPluginID.jwtDecode, BuiltinPluginID.regexTest, BuiltinPluginID.cron, BuiltinPluginID.codeImage,
                      BuiltinPluginID.jsonTypes, BuiltinPluginID.charInfo],
         .screen: [BuiltinPluginID.ocr, BuiltinPluginID.screenshotOCR, BuiltinPluginID.tableOCR, BuiltinPluginID.scanCode,
-                  BuiltinPluginID.annotate, BuiltinPluginID.screenRecord, BuiltinPluginID.scrollCapture, BuiltinPluginID.showKeystrokes,
-                  BuiltinPluginID.screenPen, BuiltinPluginID.cameraBubble, BuiltinPluginID.pointerHighlight,
-                  BuiltinPluginID.pin, BuiltinPluginID.removeBackground,
+                  BuiltinPluginID.annotate, BuiltinPluginID.pin, BuiltinPluginID.removeBackground,
                   BuiltinPluginID.imageConvert, BuiltinPluginID.stitchImages, BuiltinPluginID.watermark, BuiltinPluginID.idPhoto,
                   BuiltinPluginID.cropImage, BuiltinPluginID.redact,
                   BuiltinPluginID.palette, BuiltinPluginID.colorPicker,
                   BuiltinPluginID.ruler],
+        .recording: [BuiltinPluginID.screenRecord, BuiltinPluginID.scrollCapture, BuiltinPluginID.showKeystrokes,
+                     BuiltinPluginID.screenPen, BuiltinPluginID.cameraBubble, BuiltinPluginID.pointerHighlight],
         .files: [BuiltinPluginID.copyPath, BuiltinPluginID.fileInfo, BuiltinPluginID.folderTree, BuiltinPluginID.findDuplicates,
                  BuiltinPluginID.diskUsage, BuiltinPluginID.codeStats, BuiltinPluginID.compareFolders,
                  BuiltinPluginID.compareFiles,
