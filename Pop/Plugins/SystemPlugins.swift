@@ -102,9 +102,7 @@ struct ShowKeystrokesPlugin: PopPlugin {
             overlay.stop()
             return .done(toast: String(localized: "不再显示按键"))
         }
-        let point = context.anchor ?? NSEvent.mouseLocation
-        let screen = NSScreen.screens.first { NSMouseInRect(point, $0.frame, false) } ?? NSScreen.main
-        if let problem = overlay.start(in: screen?.visibleFrame ?? .zero) {
+        if let problem = overlay.start() {
             return .failure(problem)
         }
         return .done(toast: String(localized: "开始显示按下的组合键，再用一次就关闭"))

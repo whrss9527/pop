@@ -2,7 +2,7 @@ import AppKit
 import SwiftUI
 
 /// 在屏幕上显示按下的组合键：一个半透明的胶囊，停一会儿淡出。
-/// 录屏时放在录的区域下边（会被一起录进去），单独打开时放在指针所在屏幕的下方正中。
+/// 录屏时钉在录的区域下边（会被一起录进去），单独打开时放在指针所在那块屏幕的下方正中，换屏幕时跟过去。
 @MainActor
 final class KeystrokeOverlay {
     static let shared = KeystrokeOverlay()
@@ -17,14 +17,13 @@ final class KeystrokeOverlay {
     private let model = KeystrokeModel()
     private var display: Keystrokes.Display?
     private var hideWork: DispatchWorkItem?
-    /// 显示在哪块区域的下边（全局坐标）
-    private(set) var area: CGRect = .zero
+    /// 录屏时钉在录的区域下边（全局坐标）；没钉的时候跟着指针所在的屏幕
+    private var pinnedArea: CGRect?
 
     var isActive: Bool { tap != nil }
 
-    /// 开始显示，已经在显示的换到 area 下边；没有辅助功能权限时返回原因
-    func start(in area: CGRect) -> String? {
-        move(to: area)
+    /// 开始显示；没有辅助功能权限时返回原因
+    func start() -> String? {
         guard tap == nil else { return nil }
         let types: [CGEventType] = [.keyDown]
         let mask = types.reduce(CGEventMask(0)) { $0 | (CGEventMask(1) << CGEventMask($1.rawValue)) }
@@ -56,11 +55,20 @@ final class KeystrokeOverlay {
         panel?.orderOut(nil)
         panel = nil
         display = nil
+        pinnedArea = nil
     }
 
-    /// 换到 area 下边显示
-    func move(to area: CGRect) {
-        self.area = area
+    /// 钉在 area 下边显示（录屏时用）
+    func pin(to area: CGRect) {
+        pinnedArea = area
+        if let panel {
+            place(panel)
+        }
+    }
+
+    /// 不再钉住，回到跟着指针所在的屏幕
+    func unpin() {
+        pinnedArea = nil
         if let panel {
             place(panel)
         }
@@ -68,9 +76,17 @@ final class KeystrokeOverlay {
 
     /// 演示用：直接显示一个组合，不拦按键
     func showForDemo(_ label: String, in area: CGRect) {
-        self.area = area
+        pinnedArea = area
         model.label = label
         present()
+    }
+
+    /// 现在该显示在哪块区域的下边：钉住的区域，或者指针所在屏幕去掉菜单栏、程序坞以后的部分
+    private var area: CGRect {
+        if let pinnedArea { return pinnedArea }
+        let point = NSEvent.mouseLocation
+        let screen = NSScreen.screens.first { NSMouseInRect(point, $0.frame, false) } ?? NSScreen.main
+        return screen?.visibleFrame ?? .zero
     }
 
     fileprivate func reenable() {
