@@ -92,6 +92,11 @@ enum RunningApps {
         return nanoseconds(ticks)
     }
 
+    /// 只算进程自己（不算子进程）用了多少 CPU 时间（纳秒）
+    static func ownCPUTime(of pid: pid_t) -> UInt64? {
+        usage(pid).map { nanoseconds($0.ri_user_time + $0.ri_system_time) }
+    }
+
     /// 两次读数之间的 CPU 占用（%）：这段时间里用了多少 CPU 时间，除以过了多久。子进程退出了、少了的算 0
     static func cpuPercent(from old: UInt64, to new: UInt64, seconds: Double) -> Double {
         guard seconds > 0, new > old else { return 0 }

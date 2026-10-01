@@ -41,7 +41,8 @@ final class QuitAppsTests: XCTestCase {
 
     func testReadsCPUTimeOfProcesses() throws {
         let pid = ProcessInfo.processInfo.processIdentifier
-        let before = try XCTUnwrap(RunningApps.cpuTime(of: pid))
+        // 只比进程自己的：连子进程一起算的话，中间有子进程退出，总数会变少
+        let before = try XCTUnwrap(RunningApps.ownCPUTime(of: pid))
         // 忙一会儿，用掉一点 CPU
         var value = 0.0
         let start = Date()
@@ -49,8 +50,10 @@ final class QuitAppsTests: XCTestCase {
             value += sin(value) + 1
         }
         XCTAssertGreaterThan(value, 0)
-        let after = try XCTUnwrap(RunningApps.cpuTime(of: pid))
+        let after = try XCTUnwrap(RunningApps.ownCPUTime(of: pid))
         XCTAssertGreaterThan(after, before)
+        // 连子进程一起算的不会比自己的少
+        XCTAssertGreaterThanOrEqual(try XCTUnwrap(RunningApps.cpuTime(of: pid)), after)
         XCTAssertNil(RunningApps.cpuTime(of: -1))
         XCTAssertEqual(RunningApps.tree(of: pid).first, pid)
     }
