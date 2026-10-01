@@ -121,17 +121,27 @@ enum ChartData {
             return Double(filled.filter { number($0) != nil }.count) / Double(filled.count)
         }
         // 某一列下面都是数、第一行这一格却不是数：第一行是表头
-        let hasHeader = (0..<width).contains { column in
+        var hasHeader = (0..<width).contains { column in
             ratio(column, in: cells.dropFirst()) >= 0.8 && number(cells[0][column]) == nil && !cells[0][column].isEmpty
+        }
+        // 表头是一排年份（「城市,2023,2024」）：年份也像数，上面认不出来
+        if !hasHeader, cells.count >= 3 {
+            let below = cells.dropFirst()
+            let numbers = (0..<width).filter { ratio($0, in: below) >= 0.8 }
+            hasHeader = !numbers.isEmpty && numbers.count < width
+                && numbers.allSatisfy { column in isTimeColumn([cells[0][column]]) && !isTimeColumn(below.map { $0[column] }) }
+                && (0..<width).contains { !numbers.contains($0) && !cells[0][$0].isEmpty && number(cells[0][$0]) == nil }
         }
         let body = hasHeader ? cells.dropFirst() : cells[...]
         guard body.count >= 2, body.count <= maxRows else { return nil }
         let numeric = (0..<width).filter { ratio($0, in: body) >= 0.8 }
         guard !numeric.isEmpty else { return nil }
         // 「1月」「2024」也算数（带单位的数、年份），名字那一列这样找：第一个不全是数的列；
-        // 都是数的话，年份、月份、季度这类的列；再没有就第一列（序号）
+        // 都是数的话，年份、月份、季度这类的列；再没有就第一列（序号）。
+        // 只认第一列或者表头像时间的列：「价格」一列正好都是 1999、2099 也是数
         func isTime(_ column: Int) -> Bool {
-            isTimeColumn(body.map { $0[column] })
+            guard column == 0 || (hasHeader && isTimeHeader(cells[0][column])) else { return false }
+            return isTimeColumn(body.map { $0[column] })
         }
         var labelColumn = (0..<width).first { !numeric.contains($0) }
         if labelColumn == nil, width >= 2 {
@@ -230,6 +240,13 @@ enum ChartData {
     private static func commonUnit(_ numbers: [Number]) -> String? {
         let units = Set(numbers.map(\.unit))
         return units.count == 1 ? units.first ?? nil : nil
+    }
+
+    /// 表头像时间：年份、月份、日期、季度这类
+    private static func isTimeHeader(_ header: String) -> Bool {
+        let lower = header.lowercased()
+        return ["年", "月", "日", "季度", "周", "星期", "时间", "year", "month", "quarter", "date", "week", "day", "time", "period"]
+            .contains { lower.contains($0) }
     }
 
     /// 一列都是年份、月份、季度、日期、星期（空格不算）

@@ -64,6 +64,15 @@ final class ChartTests: XCTestCase {
         XCTAssertEqual(months.labelTitle, "月份")
         // 只有一行数据的表画不成图
         XCTAssertNil(ChartData.parse("名字,分数\n张三,90"))
+        // 价格正好像年份：还是一组数
+        let prices = try XCTUnwrap(ChartData.parse("型号,价格,销量\nA,1999,320\nB,2099,280\nC,1999,410"))
+        XCTAssertEqual(prices.labels, ["A", "B", "C"])
+        XCTAssertEqual(prices.series.map(\.name), ["价格", "销量"])
+        // 表头是一排年份
+        let byYear = try XCTUnwrap(ChartData.parse("城市,2023,2024\n北京,21,25\n上海,24,27"))
+        XCTAssertEqual(byYear.labels, ["北京", "上海"])
+        XCTAssertEqual(byYear.series, [ChartData.Series(name: "2023", values: [21, 24]), ChartData.Series(name: "2024", values: [25, 27])])
+        XCTAssertEqual(byYear.labelTitle, "城市")
     }
 
     func testLinesAndLists() throws {
