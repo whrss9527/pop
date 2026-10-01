@@ -321,8 +321,9 @@ final class PluginRegistry: ObservableObject {
     let builtins: [any PopPlugin]
     @Published private(set) var userPlugins: [ManifestPlugin] = []
 
+    /// 没给 builtins 时用 Pop 自带的功能，加上已经装载的插件包提供的功能
     init(builtins: [any PopPlugin]? = nil) {
-        self.builtins = builtins ?? BuiltinPlugins.make()
+        self.builtins = builtins ?? BuiltinPlugins.sorted(BuiltinPlugins.make() + PluginBundles.shared.plugins)
     }
 
     var plugins: [any PopPlugin] {

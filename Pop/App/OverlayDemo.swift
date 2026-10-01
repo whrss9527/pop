@@ -540,14 +540,8 @@ enum OverlayDemo {
             CameraBubble.shared.stop()
             PointerHighlight.shared.stop()
 
-            // 提词器：屏幕上方一段示例稿子，停在开头
-            await pause(0.4 * unit)
-            let script = "大家好，今天花三分钟介绍一下 Pop 的录屏。\n长按右键弹出圆盘，选「录屏」，拖出要录的区域。\n勾上「显示按下的键」，按的快捷键会出现在画面下方。\n录完可以直接转成 GIF，发给同事看。"
-            let prompter = Teleprompter.shared.showForDemo(script, on: screen)
-            logRegion(prompter.insetBy(dx: -24, dy: -24), screen: screen)
-            step("teleprompter")
-            await pause(1.4 * unit)
-            Teleprompter.shared.close()
+            // 装载的插件包加的步骤（比如提词器）
+            await playPluginScenes(after: "presenting", on: screen, unit: unit)
 
             // 截图标注窗口：拿一张画好的示例图，标上方框、箭头、文字、马赛克和序号；截图区域换成标注窗口
             await pause(1.4 * unit)
@@ -761,6 +755,19 @@ enum OverlayDemo {
         model.commitText()
         model.tool = .arrow
         model.background = .sky
+    }
+
+    /// 插件包注册的演示步骤：显示、记下截图区域、停一会儿再收起
+    private static func playPluginScenes(after step: String, on screen: NSScreen, unit: Double) async {
+        for scene in PluginHost.shared.demoScenes(after: step) {
+            await pause(0.4 * unit)
+            if let region = scene.show(screen) {
+                logRegion(region.insetBy(dx: -24, dy: -24), screen: screen)
+            }
+            Self.step(scene.name)
+            await pause(1.4 * unit)
+            scene.hide()
+        }
     }
 
     /// 截图区域（点，AppKit 坐标）和屏幕大小，截图脚本按它裁图

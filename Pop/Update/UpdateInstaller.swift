@@ -1,3 +1,4 @@
+import CryptoKit
 import Foundation
 import Security
 
@@ -51,6 +52,27 @@ enum CodeSignature {
         guard SecCodeCopyDesignatedRequirement(code, [], &requirement) == errSecSuccess else { return nil }
         return requirement
     }()
+
+    /// 当前 Pop 签名证书的 SHA-1（十六进制）；本地签名时是 nil
+    static let currentLeafCertificateHash: String? = {
+        guard let code = staticCode(Bundle.main.bundleURL), let leaf = certificates(of: code).first else { return nil }
+        let data = SecCertificateCopyData(leaf) as Data
+        return Insecure.SHA1.hash(data: data).map { String(format: "%02x", $0) }.joined()
+    }()
+
+    /// 插件包可以装载：签名完整（每个架构都查）；当前 Pop 是用证书签的话，插件包也必须是同一张证书签的。
+    /// 本地签名（ad-hoc）的 Pop 只检查插件包的签名完整。
+    static func isTrustedPlugin(_ url: URL) -> Bool {
+        guard let code = staticCode(url) else { return false }
+        var requirement: SecRequirement?
+        if let leaf = currentLeafCertificateHash {
+            guard SecRequirementCreateWithString("certificate leaf = H\"\(leaf)\"" as CFString, [], &requirement) == errSecSuccess else {
+                return false
+            }
+        }
+        let flags = SecCSFlags(rawValue: kSecCSCheckAllArchitectures | kSecCSStrictValidate)
+        return SecStaticCodeCheckValidity(code, flags, requirement) == errSecSuccess
+    }
 
     /// url 处的程序签名完整（每个架构都查），并且满足 requirement。
     static func satisfies(_ url: URL, requirement: SecRequirement) -> Bool {

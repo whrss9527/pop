@@ -6,7 +6,7 @@
 # 本地签名时不开 Hardened Runtime：本地签名 + Hardened Runtime 会触发库校验，较新的 macOS 上可能直接启动失败。
 #
 # 用法：scripts/build-app.sh <版本号> [输出目录]
-# 成功后最后一行输出 Pop.app 的路径（其他信息都打到标准错误）。
+# 成功后最后一行输出 Pop.app 的路径（其他信息都打到标准错误）；插件包（PopXxx.bundle）在 Pop.app 旁边。
 set -euo pipefail
 
 VERSION="${1:?用法: scripts/build-app.sh <版本号> [输出目录]}"
@@ -18,6 +18,8 @@ OUT="$(cd "$OUT" && pwd)"
 
 # CFBundleVersion 用提交数，保证单调递增
 BUILD_NUMBER="$(git rev-list --count HEAD 2>/dev/null || echo 1)"
+# 这次构建的标识：插件包只装载到同一次构建出来的 Pop 里
+BUILD_ID="${VERSION}+$(git rev-parse --short=12 HEAD 2>/dev/null || echo local)"
 
 xcodegen generate > /dev/null
 
@@ -30,6 +32,7 @@ if ! xcodebuild build \
   -clonedSourcePackagesDirPath "$OUT/SourcePackages" \
   MARKETING_VERSION="$VERSION" \
   CURRENT_PROJECT_VERSION="$BUILD_NUMBER" \
+  POP_BUILD_ID="$BUILD_ID" \
   POP_ENTITLEMENTS=Pop/Resources/Pop-NoCloud.entitlements \
   ENABLE_HARDENED_RUNTIME=NO \
   CODE_SIGN_STYLE=Manual \
@@ -49,4 +52,6 @@ else
   codesign --verify --deep --strict "$APP"
   echo "签名：本地签名（ad-hoc）" >&2
 fi
+# 插件包和 Pop.app 放在同一个文件夹里，用同一张证书签名
+"$ROOT/scripts/sign-plugins.sh" "$(dirname "$APP")" >&2
 echo "$APP"

@@ -18,6 +18,9 @@ settings:
     CURRENT_PROJECT_VERSION: "1"
     CODE_SIGN_STYLE: Automatic
     DEAD_CODE_STRIPPING: YES
+    # 这次构建的标识，写进 Pop 和插件包的 Info.plist：插件包只装载到同一次构建出来的 Pop 里。
+    # scripts/build-app.sh 换成「版本号+提交」，在 Xcode 里直接运行时是 dev
+    POP_BUILD_ID: dev
 
 targets:
   Pop:
@@ -37,12 +40,41 @@ targets:
         GENERATE_INFOPLIST_FILE: NO
         # 编译时把代码里的界面文字抽出来（.stringsdata），CI 用它检查每条中文都有英文翻译
         SWIFT_EMIT_LOC_STRINGS: YES
+        # 插件包（Plugins/ 下面单独编译的 .bundle）直接用 Pop 里的类型（@testable import Pop），
+        # 所以 Release 也要打开 testability，并且只去掉局部符号，留着插件包要找的全局符号
+        ENABLE_TESTABILITY: YES
+        STRIP_STYLE: non-global
+
+  # 插件包：单独编译成 .bundle，装上以后由 Pop 装载（见 Pop/Plugins/PluginBundles.swift）。
+  # 每个插件包一个 target，Info.plist 共用 Plugins/Info.plist，POP_PLUGIN_ID 是插件包的 ID，POP_PLUGIN_ENTRY 是入口类的名字。
+  PopTeleprompter:
+    type: bundle
+    platform: macOS
+    sources:
+      - path: Plugins/Teleprompter
+    dependencies:
+      - target: Pop
+        link: false
+        embed: false
+    settings:
+      base:
+        INFOPLIST_FILE: Plugins/Info.plist
+        GENERATE_INFOPLIST_FILE: NO
+        PRODUCT_BUNDLE_IDENTIFIER: io.github.whrss9527.pop.plugin.teleprompter
+        POP_PLUGIN_ID: teleprompter
+        POP_PLUGIN_ENTRY: PopTeleprompterEntry
+        BUNDLE_LOADER: $(BUILT_PRODUCTS_DIR)/Pop.app/Contents/MacOS/Pop
+        SWIFT_INCLUDE_PATHS: $(BUILT_PRODUCTS_DIR)
+        SWIFT_EMIT_LOC_STRINGS: YES
+        SKIP_INSTALL: YES
 
   PopTests:
     type: bundle.unit-test
     platform: macOS
     sources:
       - path: PopTests
+      # 插件包的代码也编进单元测试，直接测
+      - path: Plugins/Teleprompter
     dependencies:
       - target: Pop
     settings:
@@ -55,6 +87,7 @@ schemes:
     build:
       targets:
         Pop: all
+        PopTeleprompter: all
         PopTests: [test]
     run:
       config: Debug

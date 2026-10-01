@@ -31,6 +31,8 @@ final class AppController {
     init() {
         settingsStore = SettingsStore()
         pluginStore = PluginStore()
+        // 先装载装好的插件包，功能列表里才有它们提供的功能
+        PluginBundles.shared.loadInstalled()
         registry = PluginRegistry()
         permissions = PermissionMonitor()
         overlay = OverlayController()

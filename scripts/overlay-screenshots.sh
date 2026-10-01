@@ -41,8 +41,10 @@ run_demo() {
     pgrep -x Pop > /dev/null || break
     sleep 0.5
   done
+  # Pop.app 旁边的插件包一起装载，演示里也有插件包的步骤
   open -n --env POP_DEMO=1 --env "POP_ANIMATION_SCALE=${scale}" --env "POP_DEMO_LOG=${log}" \
-    --env "POP_APPEARANCE=${appearance}" --env "POP_PLUGIN_INDEX_URL=${PLUGIN_INDEX}" "$APP"
+    --env "POP_APPEARANCE=${appearance}" --env "POP_PLUGIN_INDEX_URL=${PLUGIN_INDEX}" \
+    --env "POP_PLUGIN_DIR=$(cd "$(dirname "$APP")" && pwd)" "$APP"
   python3 - "$log" "$WORK" "$OUT" "$scale" "$appearance" "$prefix" <<'PY'
 import os, subprocess, sys, time
 

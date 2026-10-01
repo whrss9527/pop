@@ -47,6 +47,7 @@ struct PopFunctionQuery: EntityStringQuery {
 @MainActor
 enum PopIntentSupport {
     static func registry() -> PluginRegistry {
+        PluginBundles.shared.loadInstalled()
         let registry = PluginRegistry()
         registry.setUserManifests(PluginStore.readAll(in: PluginStore.defaultDirectory).manifests)
         return registry

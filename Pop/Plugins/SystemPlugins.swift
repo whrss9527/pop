@@ -165,22 +165,6 @@ struct PointerHighlightPlugin: PopPlugin {
     }
 }
 
-// MARK: - 提词器
-
-struct TeleprompterPlugin: PopPlugin {
-    let info = PluginInfo(id: BuiltinPluginID.teleprompter, name: String(localized: "提词器"), symbol: "text.aligncenter",
-                          summary: String(localized: "把选中的稿子放进屏幕上方的提词器，按设好的速度慢慢往上滚，对着摄像头读；空格暂停，↑↓ 调速度，录屏时不会录进去"),
-                          accepts: [.text], minLength: 10, maxLength: 100_000)
-
-    @MainActor func run(_ content: ClassifiedContent, context: PluginContext) async -> PluginOutcome {
-        guard let text = content.text?.trimmingCharacters(in: .whitespacesAndNewlines), !text.isEmpty else {
-            return .failure(String(localized: "没有文字"))
-        }
-        Teleprompter.shared.show(text, near: context.anchor ?? NSEvent.mouseLocation)
-        return .done(toast: nil)
-    }
-}
-
 // MARK: - 清洁键盘
 
 struct KeyboardCleanerPlugin: PopPlugin {

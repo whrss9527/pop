@@ -1,4 +1,5 @@
 import Foundation
+@testable import Pop
 
 /// 提词器：稿子按一定速度往上滚，可以暂停、调速度、调字号、从头再来
 @MainActor

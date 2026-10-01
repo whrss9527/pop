@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 # 像用户双击一样启动 Pop.app，确认它没有闪退、创建了菜单栏图标，并且首次启动的设置窗口显示在最前面。
+# Pop.app 旁边有插件包（scripts/build-app.sh 构建出来的 PopXxx.bundle）时，让 Pop 一起装载，确认每个都装载上了。
 #
 # 用法：scripts/launch-smoke.sh <Pop.app 路径>
 set -euo pipefail
@@ -12,8 +13,22 @@ pkill -x Pop 2>/dev/null || true
 defaults delete "$BUNDLE_ID" 2>/dev/null || true
 xattr -dr com.apple.quarantine "$APP" 2>/dev/null || true
 
+# Pop.app 旁边的插件包
+PLUGIN_DIR="$(cd "$(dirname "$APP")" && pwd)"
+PLUGINS=()
+for bundle in "$PLUGIN_DIR"/*.bundle; do
+  [ -f "$bundle/Contents/Info.plist" ] || continue
+  id="$(/usr/libexec/PlistBuddy -c 'Print :PopPluginID' "$bundle/Contents/Info.plist" 2>/dev/null)" || continue
+  PLUGINS+=("$id")
+done
+
 START="$(date '+%Y-%m-%d %H:%M:%S')"
-open "$APP"
+if [ ${#PLUGINS[@]} -gt 0 ]; then
+  echo "一起装载的插件包：${PLUGINS[*]}"
+  open --env "POP_PLUGIN_DIR=${PLUGIN_DIR}" "$APP"
+else
+  open "$APP"
+fi
 sleep 10
 
 dump_logs() {
@@ -64,6 +79,20 @@ if log show --start "$START" --style compact --predicate 'process == "Pop"' 2>/d
   echo "❌ 设置窗口是以非前台方式弹出的，会被其他 App 的窗口挡住"
   dump_logs
   exit 1
+fi
+
+# 每个插件包都装载上了（日志里有「loaded plugin <ID>」）
+if [ ${#PLUGINS[@]} -gt 0 ]; then
+  PLUGIN_LOG="$(log show --start "$START" --style compact --predicate 'process == "Pop" AND category == "plugins"' 2>/dev/null || true)"
+  for id in "${PLUGINS[@]}"; do
+    if ! grep -q "loaded plugin ${id} " <<< "$PLUGIN_LOG"; then
+      echo "❌ 插件包 ${id} 没有装载上"
+      echo "$PLUGIN_LOG" | tail -20
+      dump_logs
+      exit 1
+    fi
+  done
+  echo "插件包都装载上了：${PLUGINS[*]}"
 fi
 
 pkill -x Pop || true

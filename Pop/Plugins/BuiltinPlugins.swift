@@ -66,7 +66,6 @@ enum BuiltinPlugins {
             ScreenPenPlugin(),
             CameraBubblePlugin(),
             PointerHighlightPlugin(),
-            TeleprompterPlugin(),
             PinPlugin(),
             RemoveBackgroundPlugin(),
             ImageConvertPlugin(),
@@ -113,6 +112,49 @@ enum BuiltinPlugins {
             OpenSettingsPlugin(),
         ]
         return text + ai + others
+    }
+
+    /// 「全部功能」和设置里的顺序。Pop 自带的功能和插件包提供的功能按这个顺序排在一起，不在里面的排到最后。
+    static let displayOrder: [String] = [
+        BuiltinPluginID.translate, BuiltinPluginID.screenshotTranslate, BuiltinPluginID.search, BuiltinPluginID.dictionary,
+        BuiltinPluginID.vocabulary, BuiltinPluginID.speak, BuiltinPluginID.openURL, BuiltinPluginID.linkInspect,
+        BuiltinPluginID.webCapture, BuiltinPluginID.textImage, BuiltinPluginID.largeType, BuiltinPluginID.calculate,
+        BuiltinPluginID.numberStats, BuiltinPluginID.unitConvert, BuiltinPluginID.copyPlain, BuiltinPluginID.textCleanup,
+        BuiltinPluginID.extractInfo, BuiltinPluginID.idNumber, BuiltinPluginID.lineTools, BuiltinPluginID.reminder,
+        BuiltinPluginID.spellCheck, BuiltinPluginID.aiAssistant, BuiltinPluginID.aiPolish, BuiltinPluginID.aiSummarize,
+        BuiltinPluginID.aiExplain, BuiltinPluginID.changeCase, BuiltinPluginID.encodeDecode, BuiltinPluginID.charInfo,
+        BuiltinPluginID.textStats, BuiltinPluginID.textDiff, BuiltinPluginID.formatJSON, BuiltinPluginID.yamlJSON,
+        BuiltinPluginID.formatXML, BuiltinPluginID.formatSQL, BuiltinPluginID.jsonTypes, BuiltinPluginID.tableConvert,
+        BuiltinPluginID.jwtDecode, BuiltinPluginID.regexTest, BuiltinPluginID.cron, BuiltinPluginID.markdownCopy,
+        BuiltinPluginID.markdownPreview, BuiltinPluginID.toMarkdown, BuiltinPluginID.markdownTOC, BuiltinPluginID.codeImage,
+        BuiltinPluginID.timestamp, BuiltinPluginID.dateSpan, BuiltinPluginID.numberConvert, BuiltinPluginID.colorConvert,
+        BuiltinPluginID.contrast, BuiltinPluginID.hash, BuiltinPluginID.qrCode, BuiltinPluginID.base64Image, BuiltinPluginID.ocr,
+        BuiltinPluginID.screenshotOCR, BuiltinPluginID.tableOCR, BuiltinPluginID.scanCode, BuiltinPluginID.annotate,
+        BuiltinPluginID.screenRecord, BuiltinPluginID.scrollCapture, BuiltinPluginID.showKeystrokes, BuiltinPluginID.screenPen,
+        BuiltinPluginID.cameraBubble, BuiltinPluginID.pointerHighlight, BuiltinPluginID.teleprompter, BuiltinPluginID.pin,
+        BuiltinPluginID.removeBackground, BuiltinPluginID.imageConvert, BuiltinPluginID.stitchImages, BuiltinPluginID.watermark,
+        BuiltinPluginID.idPhoto, BuiltinPluginID.cropImage, BuiltinPluginID.redact, BuiltinPluginID.palette,
+        BuiltinPluginID.colorPicker, BuiltinPluginID.ruler, BuiltinPluginID.random, BuiltinPluginID.quickNote,
+        BuiltinPluginID.windowLayout, BuiltinPluginID.menuShortcuts, BuiltinPluginID.airDrop, BuiltinPluginID.sendToPhone,
+        BuiltinPluginID.copyPath, BuiltinPluginID.fileInfo, BuiltinPluginID.folderTree, BuiltinPluginID.findDuplicates,
+        BuiltinPluginID.diskUsage, BuiltinPluginID.codeStats, BuiltinPluginID.compareFolders, BuiltinPluginID.compareFiles,
+        BuiltinPluginID.batchRename, BuiltinPluginID.revealInFinder, BuiltinPluginID.openWith, BuiltinPluginID.zip,
+        BuiltinPluginID.unzip, BuiltinPluginID.pdf, BuiltinPluginID.videoConvert, BuiltinPluginID.trimMedia,
+        BuiltinPluginID.transcribe, BuiltinPluginID.shelf, BuiltinPluginID.openInTerminal, BuiltinPluginID.keepAwake,
+        BuiltinPluginID.systemActions, BuiltinPluginID.cleanKeyboard, BuiltinPluginID.timer, BuiltinPluginID.clipboardHistory,
+        BuiltinPluginID.snippets, BuiltinPluginID.allPlugins, BuiltinPluginID.settings,
+    ]
+
+    /// 按 displayOrder 排好；不在里面的保持原来的先后
+    static func sorted(_ plugins: [any PopPlugin]) -> [any PopPlugin] {
+        let rank = Dictionary(displayOrder.enumerated().map { ($1, $0) }, uniquingKeysWith: { first, _ in first })
+        return plugins.enumerated()
+            .sorted { a, b in
+                let x = rank[a.element.info.id] ?? Int.max
+                let y = rank[b.element.info.id] ?? Int.max
+                return x != y ? x < y : a.offset < b.offset
+            }
+            .map(\.element)
     }
 }
 
