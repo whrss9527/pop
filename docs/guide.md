@@ -63,7 +63,18 @@ Which actions are installed, which slot each one takes, and which kind of conten
 
 Some actions come as separate plugin bundles that aren't part of the Pop download. Install one when you need it under Plugins at the top of Settings → Actions: it downloads from this version's GitHub release in a few seconds and works right away, without a restart. Each plugin shows its download size and how much space it takes once installed. Click Uninstall when you no longer need it: the plugin and its settings are deleted, and the action is removed from the ring and from shortcuts. With iCloud sync on, installing and uninstalling sync to your other Macs.
 
-These actions are plugins now: Draw on Screen, Camera Bubble, Highlight Pointer and Teleprompter, with more to follow. When you upgrade from an older version, the ones you use (on the ring, with a shortcut, or used recently) are installed automatically; install the others when you need them. After Pop updates, installed plugins are replaced with the matching new versions automatically.
+These actions are plugins now (they're also listed in the Built-in actions table below), with more to follow:
+
+| Category | Plugins |
+| --- | --- |
+| Text | Large Type, Spell Check, Add to Reminders |
+| Convert | Number Statistics |
+| Developer | Code Screenshot, Cron Expression, JSON to Code, Regex Tester |
+| Screen & Images | Screen Ruler, Watermark, Image Colors, Recognize Table |
+| Recording & Presenting | Draw on Screen, Camera Bubble, Highlight Pointer, Teleprompter |
+| Files & System | Clean Keyboard, Lines of Code, Compare Files, Batch Rename, Keyboard Shortcuts, Window Layout, Folder Tools (Disk Usage, Find Duplicates, Compare Folders) |
+
+When you upgrade from an older version, the ones you use (on the ring, with a shortcut, or used recently) are installed automatically; install the others when you need them. After Pop updates, installed plugins are replaced with the matching new versions automatically. Recognize Table in the clipboard history's image menu needs the Recognize Table plugin.
 
 ### Built-in actions
 
