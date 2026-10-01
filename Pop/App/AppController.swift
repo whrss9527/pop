@@ -133,6 +133,7 @@ final class AppController {
         coordinator.openPluginLibrary = { [weak self] in
             self?.settingsWindow.showPluginLibrary()
         }
+        coordinator.pluginManager = pluginManager
         trigger.delegate = coordinator
         PinBoard.shared.onToast = { [weak self] message, point in
             self?.coordinator.showToast(message, at: point)

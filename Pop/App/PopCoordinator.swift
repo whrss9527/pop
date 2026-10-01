@@ -1,4 +1,5 @@
 import AppKit
+import Combine
 import os
 
 /// 一次唤起的完整流程：读取选中内容 → 分类 → 命中直达规则就直接执行，否则弹出圆盘 → 执行插件 → 展示结果。
@@ -7,6 +8,10 @@ final class PopCoordinator: MouseTriggerDelegate {
     var openSettings: (SettingsTab?) -> Void = { _ in }
     /// 打开设置里的插件库（演示截图用）
     var openPluginLibrary: () -> Void = {}
+    /// 插件包的安装和卸载（「全部功能」里装没装的插件用）
+    weak var pluginManager: PluginManager?
+    /// 「全部功能」里正在装的插件包：装好时还开着「全部功能」就直接用
+    private var chooserInstall: AnyCancellable?
     var isPaused = false
 
     private let settingsStore: SettingsStore
@@ -1391,15 +1396,51 @@ final class PopCoordinator: MouseTriggerDelegate {
         }
         // 最近用过的排在前面，⌘1–5 就能直接选到
         let ordered = PluginUsage.ordered(plugins, recent: PluginUsage.shared.recent())
+        // 这台 Mac 上没装的插件包：搜索时也列出来，点一下装上
+        let available = PluginCatalog.packages.filter { !PluginBundles.shared.isLoaded($0.id) }
         let model = PluginChooserModel(plugins: ordered.plugins,
-                                       recent: Set(ordered.plugins.prefix(ordered.recentCount).map(\.id)))
+                                       recent: Set(ordered.plugins.prefix(ordered.recentCount).map(\.id)),
+                                       packages: pluginManager == nil ? [] : available,
+                                       manager: pluginManager)
         model.onRun = { [weak self] info in
             self?.run(info.id)
+        }
+        model.onInstall = { [weak self] package in
+            self?.installFromChooser(package)
         }
         session?.panel = .chooser
         overlay.showCard(PluginChooserView(model: model, onClose: { [weak self] in self?.endSession() }),
                          anchor: current.anchor,
                          keyHandler: { event in model.handleKey(event) })
+    }
+
+    /// 「全部功能」里点了没装的插件：装上；装好时「全部功能」还开着，能处理当前内容就直接用，处理不了就提示装好了
+    private func installFromChooser(_ package: PluginPackage) {
+        guard let manager = pluginManager, let current = session else { return }
+        if case .installing = manager.status(of: package) { return }
+        manager.install(package)
+        let sessionID = current.id
+        chooserInstall = manager.$statuses
+            .compactMap { $0[package.id] }
+            .first { (status: PluginManager.Status) -> Bool in
+                switch status {
+                case .installed, .failed: return true
+                case .installing, .notInstalled: return false
+                }
+            }
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] status in
+                MainActor.assumeIsolated {
+                    guard let self, case .installed = status, let current = self.session,
+                          current.id == sessionID, current.panel == .chooser else { return }
+                    let content = current.content ?? .empty
+                    if let id = package.functions.first(where: { self.registry.plugin(id: $0)?.info.canHandle(content) == true }) {
+                        self.run(id)
+                    } else {
+                        self.showToast(String(localized: "装好了「\(package.name)」"), at: current.anchor)
+                    }
+                }
+            }
     }
 
     private func presentClipboardHistory() {
