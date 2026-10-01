@@ -330,6 +330,9 @@ enum PluginCatalog {
         PluginPackage(id: "resolution", bundleName: "PopResolution", name: String(localized: "分辨率"),
                       summary: String(localized: "换显示器的分辨率（看起来像多大）和刷新率，把哪台设成主显示器；外接显示器换了以后 15 秒内不点「保留」就换回原来的"),
                       symbol: "display", category: .files, functions: [BuiltinPluginID.resolution]),
+        PluginPackage(id: "diskSpeed", bundleName: "PopDiskSpeed", name: String(localized: "磁盘测速"),
+                      summary: String(localized: "测硬盘、U 盘、移动固态硬盘连续写入和读取有多快：选中磁盘里的文件或文件夹就测那块盘，什么都不选时测启动磁盘"),
+                      symbol: "speedometer", category: .files, functions: [BuiltinPluginID.diskSpeed], defaultsKeys: ["pop.diskSpeed.size"]),
     ]
 
     /// 插件包提供的所有功能
