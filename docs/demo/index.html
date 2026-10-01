@@ -389,6 +389,9 @@ button { font: inherit; color: inherit; }
 .cam-menu button:hover { background: var(--accent); color: #fff; }
 .cam-menu button[aria-checked="true"]::before { content: '✓'; position: absolute; left: 8px; }
 .cam-menu hr { border: 0; border-top: 1px solid var(--fill); margin: 4px 6px; }
+.rec-countdown { position: absolute; z-index: 30; width: 104px; height: 104px; margin: -52px 0 0 -52px; border-radius: 50%; background: rgba(0, 0, 0, .62); box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .2); color: #fff; display: grid; place-items: center; font: 600 54px/1 ui-rounded, var(--font); pointer-events: none; }
+.rec-countdown .pop-in { animation: count-in .35s ease-out; }
+@keyframes count-in { from { transform: scale(1.4); opacity: 0; } to { transform: scale(1); opacity: 1; } }
 .halo, .halo-wave { position: absolute; z-index: 45; width: 60px; height: 60px; margin: -30px 0 0 -30px; border-radius: 50%; pointer-events: none; }
 .halo { background: rgba(255, 214, 10, .28); box-shadow: inset 0 0 0 2px rgba(255, 214, 10, .75); transition: opacity .15s; }
 .halo.away { opacity: 0; }
@@ -670,6 +673,7 @@ const P = {
   cleanKeyboard: { icon: 'cleanKeyboard', accepts: [], keys: 'qingjiejianpan qjjp', name: { zh: '清洁键盘', en: 'Clean Keyboard' }, summary: { zh: '锁住键盘一分钟，擦键盘时不会误触；亮度、音量键也不起作用，用鼠标点「结束清洁」随时恢复', en: 'Lock the keyboard for a minute so you can wipe it without typing anything; brightness and volume keys are blocked too. Click End Cleaning with the mouse to stop any time' } },
   scrollCapture: { icon: 'scrollCapture', accepts: [], keys: 'gundongjietu gdjt changjietu cjt', name: { zh: '滚动截图', en: 'Scrolling Screenshot' }, summary: { zh: '框选一块区域，一边往下滚动一边截，拼成一张长图；网页、聊天记录、长文档都能截全，还能接着识别文字。正在截的时候再用一次就是完成', en: 'Select an area, then scroll down while Pop captures it into one long image: whole web pages, chat histories and long documents, with text recognition afterwards if you like. Use it again while capturing to finish' } },
   screenRecord: { icon: 'screenRecord', accepts: [], keys: 'luping lp', name: { zh: '录屏', en: 'Record Screen' }, summary: { zh: '拖出一块区域、单击选一个窗口或者按回车录整个屏幕，存成 MP4；可以录上电脑里的声音或者麦克风、显示鼠标点击和按下的键，录好能接着转成 GIF。正在录的时候再用一次就停止', en: 'Drag out an area, click a window or press Return to record the whole screen as MP4; can include the Mac’s sound or the microphone and show clicks and keystrokes, and the recording can then be turned into a GIF. Use it again while recording to stop' } },
+  timer: { icon: 'timer', accepts: [], keys: 'jishiqi jsq daojishi fanqiezhong fqz', name: { zh: '计时器', en: 'Timer' }, summary: { zh: '倒计时：选一个时长，或者选中「25 分钟」「1:30」这样的文字直接开始；到点时响一声、发通知。也有番茄钟：专注 25 分钟、休息 5 分钟，一直循环', en: 'Countdown: choose a duration, or select text such as “25 min” or “1:30” to start right away. Plays a sound and sends a notification when time’s up. There’s also a Pomodoro timer: 25 minutes of focus, then a 5-minute break, over and over' } },
   cameraBubble: { icon: 'cameraBubble', accepts: [], keys: 'shexiangtouxiaochuang sxtxc', name: { zh: '摄像头小窗', en: 'Camera Bubble' }, summary: { zh: '在屏幕角落用一个圆形小窗显示摄像头画面，录教程、演示时把自己也放进画面；拖动换位置，滚动或双击换大小，右键换形状和摄像头。再用一次关闭', en: 'Show the camera in a small round window in a corner of the screen, so you appear in tutorials and demos. Drag to move it, scroll or double-click to resize, right-click to change the shape or camera. Use it again to close' } },
   pointerHighlight: { icon: 'pointerHighlight', accepts: [], keys: 'tuchuxianshizhizhen tcxszz guangquan', name: { zh: '突出显示指针', en: 'Highlight Pointer' }, summary: { zh: '演示、录教程时在指针周围加一圈黄色光圈，按下鼠标时泛起波纹，让人一眼看到指针在哪；再用一次关闭', en: 'Put a yellow halo around the pointer that ripples when you click, so people can always find it in demos and tutorials. Use it again to turn it off' } },
   screenPen: { icon: 'screenPen', accepts: [], keys: 'pingmuhuabi pmhb', name: { zh: '屏幕画笔', en: 'Draw on Screen' }, summary: { zh: '演示、录教程时直接在屏幕上画：画笔、荧光笔、箭头、方框、椭圆，笔迹可以几秒后自动消失，也可以留着去操作下面的窗口，录屏时一起录进去；Esc 或再用一次结束', en: 'Draw right on the screen for demos and tutorials: pen, highlighter, arrow, rectangle and ellipse. Strokes can fade after a few seconds or stay while you use the windows underneath, and screen recordings include them. Press Esc or use it again to finish' } },
@@ -686,7 +690,7 @@ const LAYOUT = ['translate', 'search', 'dictionary', 'openURL', 'allPlugins', 'c
 // 「全部功能」里的顺序
 const ORDER = ['translate', 'textImage', 'largeType', 'search', 'dictionary', 'speak', 'textStats', 'changeCase', 'openURL', 'webCapture', 'linkInspect', 'qrCode',
   'fileInfo', 'imageConvert', 'cropImage', 'redact', 'ocr', 'removeBackground', 'videoConvert', 'transcribe', 'trimMedia', 'pdf', 'compareFiles', 'zip',
-  'airDrop', 'sendToPhone', 'screenRecord', 'scrollCapture', 'showKeystrokes', 'screenPen', 'cameraBubble', 'pointerHighlight', 'screenshotOCR', 'annotate', 'pin', 'colorPicker', 'clipboard', 'shelf', 'menuShortcuts', 'systemActions', 'cleanKeyboard'];
+  'airDrop', 'sendToPhone', 'screenRecord', 'scrollCapture', 'showKeystrokes', 'screenPen', 'cameraBubble', 'pointerHighlight', 'screenshotOCR', 'annotate', 'pin', 'colorPicker', 'clipboard', 'shelf', 'menuShortcuts', 'systemActions', 'timer', 'cleanKeyboard'];
 
 function canHandle(info, content) {
   if (!info) return false;
@@ -1652,6 +1656,7 @@ const RUN = {
   cleanKeyboard: () => startKeyboardCleaning(),
   showKeystrokes: (content, anchor) => toggleKeystrokes(anchor),
   screenPen: () => togglePen(),
+  timer: (content, anchor) => showTimerCard(anchor),
   cameraBubble: () => toggleCameraBubble(),
   pointerHighlight: (content, anchor) => togglePointerHighlight(anchor),
 };
@@ -2514,7 +2519,7 @@ function startRecordPicker(anchor, mode = 'record') {
   const scroll = mode === 'scroll';
   closeRing(false);
   dismissCard(false);
-  const options = { audio: 'off', clicks: false, keys: false };
+  const options = { audio: 'off', clicks: false, keys: false, countdown: false };
   const el = h('div', { class: 'picker dim' });
   const winhl = h('div', { class: 'winhl', hidden: true });
   const area = h('div', { class: 'area', hidden: true });
@@ -2524,6 +2529,7 @@ function startRecordPicker(anchor, mode = 'record') {
   drawAudio();
   const clicks = h('input', { type: 'checkbox', id: 'rec-clicks', onchange: () => { options.clicks = clicks.checked; } });
   const keys = h('input', { type: 'checkbox', id: 'rec-keys', onchange: () => { options.keys = keys.checked; } });
+  const countdownBox = h('input', { type: 'checkbox', id: 'rec-countdown', onchange: () => { options.countdown = countdownBox.checked; } });
   const hud = scroll
     ? h('div', { class: 'rec-hud glass', onpointerdown: (event) => event.stopPropagation() },
       h('div', null, lang === 'zh' ? '拖出要滚动截取的区域 · 单击截窗口 · Esc 取消' : 'Drag over the area to capture · Click to capture a window · Esc to cancel'),
@@ -2531,7 +2537,8 @@ function startRecordPicker(anchor, mode = 'record') {
     : h('div', { class: 'rec-hud glass', onpointerdown: (event) => event.stopPropagation() },
       h('div', null, lang === 'zh' ? '拖出要录的区域 · 单击录窗口 · 回车录整个屏幕 · Esc 取消' : 'Drag to choose an area · Click a window · Return for the whole screen · Esc to cancel'),
       h('div', { class: 'opts' }, h('span', { class: 'tiny' }, lang === 'zh' ? '声音' : 'Sound'), audio, h('label', { for: 'rec-clicks' }, clicks, lang === 'zh' ? '显示鼠标点击' : 'Show clicks'),
-        h('label', { for: 'rec-keys', title: lang === 'zh' ? '按下 ⌘、⌃ 组合键和回车、方向键这些特殊键时，在录的区域下边显示出来；普通打字不显示' : 'Shows ⌘ and ⌃ shortcuts and special keys such as Return and the arrow keys at the bottom of the recorded area; ordinary typing isn’t shown' }, keys, lang === 'zh' ? '显示按下的键' : 'Show keystrokes')));
+        h('label', { for: 'rec-keys', title: lang === 'zh' ? '按下 ⌘、⌃ 组合键和回车、方向键这些特殊键时，在录的区域下边显示出来；普通打字不显示' : 'Shows ⌘ and ⌃ shortcuts and special keys such as Return and the arrow keys at the bottom of the recorded area; ordinary typing isn’t shown' }, keys, lang === 'zh' ? '显示按下的键' : 'Show keystrokes'),
+        h('label', { for: 'rec-countdown', title: lang === 'zh' ? '选好区域以后先倒数 3、2、1 再开始录，留出时间切到要录的窗口；倒数时按 Esc 取消' : 'Count down 3, 2, 1 after you choose the area before recording starts, so you have time to switch to the window you want to record; press Esc during the countdown to cancel' }, countdownBox, lang === 'zh' ? '倒数 3 秒再开始' : '3-second countdown')));
   el.append(winhl, area, size, hud);
   stage.append(el);
   const winEl = () => stage.querySelector('.win');
@@ -2544,7 +2551,34 @@ function startRecordPicker(anchor, mode = 'record') {
   const inside = (p, r) => r && p.x >= r.x && p.x <= r.x + r.w && p.y >= r.y && p.y <= r.y + r.h;
   const pixels = (r) => { let w = Math.round(r.w * 2), hh = Math.round(r.h * 2); const k = Math.min(1, 3840 / w, 2160 / hh); w = Math.round(w * k / 2) * 2; hh = Math.round(hh * k / 2) * 2; return [w, hh]; };
   let start = null;
-  const done = (rect) => { el.remove(); picker = null; if (rect) { if (scroll) startScrollCapture(rect); else startRecording(rect, options); } };
+  const done = (rect) => {
+    el.remove();
+    picker = null;
+    if (!rect) return;
+    if (scroll) startScrollCapture(rect);
+    else if (options.countdown) startCountdownThenRecord(rect);
+    else startRecording(rect, options);
+  };
+  // 倒数 3、2、1 再开始录；倒数时按 Esc 取消
+  function startCountdownThenRecord(rect) {
+    const number = h('span');
+    const el2 = h('div', { class: 'rec-countdown', style: `left:${rect.x + rect.w / 2}px;top:${rect.y + rect.h / 2}px` }, number);
+    stage.append(el2);
+    let left = 3;
+    const tick = () => {
+      if (left === 0) { stop(); startRecording(rect, options); return; }
+      number.textContent = String(left);
+      number.classList.remove('pop-in');
+      void number.offsetWidth;
+      number.classList.add('pop-in');
+      left -= 1;
+      timer = setTimeout(tick, 1000);
+    };
+    let timer = 0;
+    const stop = () => { clearTimeout(timer); el2.remove(); picker = null; };
+    picker = { cancel: () => stop(), key: () => false };
+    tick();
+  }
   el.addEventListener('pointermove', (event) => {
     const p = stagePoint(event);
     if (start) {
@@ -2909,6 +2943,74 @@ function togglePen() {
   };
   render();
   resize();
+}
+
+// 计时器：选一个时长倒计时；番茄钟是专注 25 分钟、休息 5 分钟轮流来（每四个番茄休息 15 分钟），一直到结束
+let countdown = null;
+const TIMER_PRESETS = [1, 3, 5, 10, 15, 25, 45, 60];
+
+function durationTitle(seconds) {
+  const minutes = Math.round(seconds / 60);
+  return minutes >= 60 && minutes % 60 === 0 ? L({ zh: `${minutes / 60} 小时`, en: `${minutes / 60} hr` }) : L({ zh: `${minutes} 分钟`, en: `${minutes} min` });
+}
+
+function clockText(seconds) {
+  const h0 = Math.floor(seconds / 3600), m = Math.floor(seconds % 3600 / 60), r = seconds % 60;
+  return h0 > 0 ? `${h0}:${String(m).padStart(2, '0')}:${String(r).padStart(2, '0')}` : `${m}:${String(r).padStart(2, '0')}`;
+}
+
+const pomodoroLength = (step) => (step.phase === 'focus' ? 25 : step.round % 4 === 0 ? 15 : 5) * 60;
+
+function startCountdown(seconds, pomodoro = null) {
+  clearTimeout(countdown?.timer);
+  countdown = { endsAt: Date.now() + seconds * 1000, duration: seconds, pomodoro, timer: setTimeout(finishCountdown, seconds * 1000) };
+}
+
+function finishCountdown() {
+  const current = countdown;
+  if (!current) return;
+  if (current.pomodoro) {
+    const step = current.pomodoro;
+    const next = step.phase === 'focus' ? { phase: 'rest', round: step.round } : { phase: 'focus', round: step.round + 1 };
+    showToast(step.phase === 'focus'
+      ? L({ zh: `第 ${step.round} 个番茄完成，休息 ${durationTitle(pomodoroLength(next))}`, en: `Pomodoro ${step.round} done. Take a ${durationTitle(pomodoroLength(next))} break` })
+      : L({ zh: `休息结束，开始第 ${step.round + 1} 个番茄`, en: `Break’s over. Starting pomodoro ${step.round + 1}` }));
+    startCountdown(pomodoroLength(next), next);
+    return;
+  }
+  countdown = null;
+  showToast(L({ zh: `时间到：${durationTitle(current.duration)}的计时到了`, en: `Time’s up: Your ${durationTitle(current.duration)} timer is done` }));
+}
+
+function countdownStatus() {
+  if (!countdown) return null;
+  const left = clockText(Math.max(Math.ceil((countdown.endsAt - Date.now()) / 1000), 0));
+  const end = new Date(countdown.endsAt);
+  const until = `${String(end.getHours()).padStart(2, '0')}:${String(end.getMinutes()).padStart(2, '0')}`;
+  const step = countdown.pomodoro;
+  if (step?.phase === 'focus') return L({ zh: `第 ${step.round} 个番茄，专注还剩 ${left}（到 ${until}）`, en: `Pomodoro ${step.round}: ${left} of focus left (until ${until})` });
+  if (step) return L({ zh: `番茄钟休息还剩 ${left}（到 ${until}）`, en: `Pomodoro break: ${left} left (until ${until})` });
+  return L({ zh: `计时还剩 ${left}（到 ${until}）`, en: `Timer: ${left} left (until ${until})` });
+}
+
+function showTimerCard(anchor) {
+  const buttons = TIMER_PRESETS.map((minutes) => button(durationTitle(minutes * 60), () => {
+    startCountdown(minutes * 60);
+    showToast(L({ zh: `开始计时 ${durationTitle(minutes * 60)}`, en: `Timer started: ${durationTitle(minutes * 60)}` }), anchor);
+  }));
+  buttons.push(button(lang === 'zh' ? '番茄钟' : 'Pomodoro', () => {
+    startCountdown(25 * 60, { phase: 'focus', round: 1 });
+    showToast(L({ zh: '番茄钟开始：先专注 25 分钟', en: 'Pomodoro started: focus for 25 minutes' }), anchor);
+  }));
+  if (countdown) {
+    buttons.push(button(countdown.pomodoro ? (lang === 'zh' ? '结束番茄钟' : 'End Pomodoro') : (lang === 'zh' ? '取消计时' : 'Cancel Timer'), () => {
+      clearTimeout(countdown.timer);
+      countdown = null;
+      showToast(lang === 'zh' ? '已取消计时' : 'Timer canceled', anchor);
+    }));
+  }
+  const intro = L({ zh: '选一个时长开始倒计时；到点时响一声、发一条通知。也可以选中「25 分钟」「1:30」这样的文字再用它。番茄钟是专注 25 分钟、休息 5 分钟轮流来（每四个番茄休息 15 分钟），一直到你结束。', en: 'Choose a duration to start a countdown. When time’s up, Pop plays a sound and sends a notification. You can also select text such as “25 min” or “1:30” and use the timer. The Pomodoro timer alternates 25 minutes of focus with a 5-minute break (15 minutes after every fourth) until you end it.' });
+  presentCard(cardShell({ title: L(P.timer.name), children: [h('div', { class: 'body' }, countdownStatus() || intro)], buttons }), anchor);
 }
 
 // 摄像头小窗：桌面右下角一个圆形小窗。网页里能用摄像头时显示真的画面（像照镜子一样左右翻过来），

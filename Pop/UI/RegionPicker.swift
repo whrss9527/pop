@@ -3,7 +3,7 @@ import Carbon.HIToolbox
 import SwiftUI
 
 /// 录屏、滚动截图前选地方：拖出一块区域，单击选指针下面的窗口（没有窗口就是整个屏幕），回车选整个屏幕，Esc 或右键取消。
-/// 录屏时屏幕上方的提示条里可以选录不录声音、勾选「显示鼠标点击」「显示按下的键」，下次还记得。
+/// 录屏时屏幕上方的提示条里可以选录不录声音、勾选「显示鼠标点击」「显示按下的键」「倒数 3 秒再开始」，下次还记得。
 @MainActor
 final class RegionPicker {
     /// 选来做什么：提示和标签的说法不一样
@@ -133,6 +133,9 @@ private struct PickerHUD: View {
                 Toggle("显示按下的键", isOn: $model.options.showKeys)
                     .toggleStyle(.checkbox)
                     .help("按下 ⌘、⌃ 组合键和回车、方向键这些特殊键时，在录的区域下边显示出来；普通打字不显示")
+                Toggle("倒数 3 秒再开始", isOn: $model.options.countdown)
+                    .toggleStyle(.checkbox)
+                    .help("选好区域以后先倒数 3、2、1 再开始录，留出时间切到要录的窗口；倒数时按 Esc 取消")
             }
             .font(.system(size: 12))
         }

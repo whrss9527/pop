@@ -178,6 +178,7 @@ enum CardAction: Equatable {
     case expandLink(URL)
     /// 开始倒计时（秒）
     case startTimer(seconds: TimeInterval)
+    case startPomodoro
     case cancelTimer
     /// 停止「传到手机」
     case stopPhoneShare

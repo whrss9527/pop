@@ -1,9 +1,53 @@
 import AppKit
 
 /// 倒计时：到点时响一声、发一条通知、在屏幕上提示。退出 Pop 后不再计时。
+/// 也可以是番茄钟：专注和休息轮流来，一直到取消。
 @MainActor
 final class CountdownTimer: ObservableObject {
     static let shared = CountdownTimer()
+
+    /// 番茄钟的一段：专注 25 分钟，然后休息 5 分钟（每四个番茄休息 15 分钟），再开始下一个
+    struct Pomodoro: Equatable {
+        enum Phase: Equatable {
+            case focus
+            case rest
+        }
+
+        static let focusMinutes = 25
+        static let restMinutes = 5
+        static let longRestMinutes = 15
+
+        var phase: Phase
+        /// 第几个番茄（从 1 开始）
+        var round: Int
+
+        static let first = Pomodoro(phase: .focus, round: 1)
+
+        var duration: TimeInterval {
+            switch phase {
+            case .focus: return TimeInterval(Self.focusMinutes * 60)
+            case .rest: return TimeInterval((round % 4 == 0 ? Self.longRestMinutes : Self.restMinutes) * 60)
+            }
+        }
+
+        /// 这一段结束以后的下一段
+        var next: Pomodoro {
+            switch phase {
+            case .focus: return Pomodoro(phase: .rest, round: round)
+            case .rest: return Pomodoro(phase: .focus, round: round + 1)
+            }
+        }
+
+        /// 这一段结束时的提示
+        var finishedMessage: String {
+            switch phase {
+            case .focus:
+                return String(localized: "第 \(round) 个番茄完成，休息 \(CountdownTimer.title(seconds: next.duration))")
+            case .rest:
+                return String(localized: "休息结束，开始第 \(round + 1) 个番茄")
+            }
+        }
+    }
 
     /// 卡片上可以直接选的时长（分钟）
     static let presets = [1, 3, 5, 10, 15, 25, 45, 60]
@@ -12,6 +56,8 @@ final class CountdownTimer: ObservableObject {
     @Published private(set) var endsAt: Date?
     /// 这次计时有多长（秒）
     private(set) var duration: TimeInterval = 0
+    /// 番茄钟进行到哪一段；普通计时时为 nil
+    @Published private(set) var pomodoro: Pomodoro?
     private var timer: Timer?
     /// 到点时在屏幕上提示（AppController 接上浮窗的提示）
     var onFinish: (String) -> Void = { _ in }
@@ -19,8 +65,18 @@ final class CountdownTimer: ObservableObject {
     var isRunning: Bool { endsAt != nil }
 
     func start(seconds: TimeInterval) {
+        start(seconds: seconds, pomodoro: nil)
+    }
+
+    /// 番茄钟从第一个番茄开始
+    func startPomodoro() {
+        start(seconds: Pomodoro.first.duration, pomodoro: .first)
+    }
+
+    private func start(seconds: TimeInterval, pomodoro: Pomodoro?) {
         cancel()
         duration = seconds
+        self.pomodoro = pomodoro
         endsAt = Date().addingTimeInterval(seconds)
         timer = Timer.scheduledTimer(withTimeInterval: seconds, repeats: false) { [weak self] _ in
             MainActor.assumeIsolated {
@@ -33,9 +89,20 @@ final class CountdownTimer: ObservableObject {
         timer?.invalidate()
         timer = nil
         endsAt = nil
+        pomodoro = nil
     }
 
     private func finish() {
+        // 番茄钟：提示一下，接着开始下一段
+        if let pomodoro {
+            let message = pomodoro.finishedMessage
+            NSSound(named: "Glass")?.play()
+            Notifier.shared.showReminder(title: String(localized: "番茄钟"), body: message)
+            onFinish(message)
+            let next = pomodoro.next
+            start(seconds: next.duration, pomodoro: next)
+            return
+        }
         let message = String(localized: "\(Self.title(seconds: duration))的计时到了")
         cancel()
         NSSound(named: "Glass")?.play()
@@ -49,11 +116,19 @@ final class CountdownTimer: ObservableObject {
         let remaining = max(Int(endsAt.timeIntervalSince(now).rounded(.up)), 0)
         let formatter = DateFormatter()
         formatter.dateFormat = "HH:mm"
-        return String(localized: "计时还剩 \(Self.clock(remaining))（到 \(formatter.string(from: endsAt))）")
+        let end = formatter.string(from: endsAt)
+        switch pomodoro?.phase {
+        case .focus?:
+            return String(localized: "第 \(pomodoro?.round ?? 1) 个番茄，专注还剩 \(Self.clock(remaining))（到 \(end)）")
+        case .rest?:
+            return String(localized: "番茄钟休息还剩 \(Self.clock(remaining))（到 \(end)）")
+        case nil:
+            return String(localized: "计时还剩 \(Self.clock(remaining))（到 \(end)）")
+        }
     }
 
     /// 90 → 「1:30」，3700 → 「1:01:40」
-    static func clock(_ seconds: Int) -> String {
+    nonisolated static func clock(_ seconds: Int) -> String {
         let hours = seconds / 3600
         let minutes = seconds % 3600 / 60
         let rest = seconds % 60
@@ -61,7 +136,7 @@ final class CountdownTimer: ObservableObject {
     }
 
     /// 1500 → 「25 分钟」，90 → 「1 分 30 秒」，5400 → 「1 小时 30 分钟」
-    static func title(seconds: TimeInterval) -> String {
+    nonisolated static func title(seconds: TimeInterval) -> String {
         let total = Int(seconds.rounded())
         let hours = total / 3600
         let minutes = total % 3600 / 60

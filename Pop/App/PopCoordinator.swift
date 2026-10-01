@@ -694,6 +694,9 @@ final class PopCoordinator: MouseTriggerDelegate {
         case .startTimer(let seconds):
             CountdownTimer.shared.start(seconds: seconds)
             finish(toast: String(localized: "开始计时 \(CountdownTimer.title(seconds: seconds))"))
+        case .startPomodoro:
+            CountdownTimer.shared.startPomodoro()
+            finish(toast: String(localized: "番茄钟开始：先专注 \(CountdownTimer.Pomodoro.focusMinutes) 分钟"))
         case .cancelTimer:
             CountdownTimer.shared.cancel()
             finish(toast: String(localized: "已取消计时"))
