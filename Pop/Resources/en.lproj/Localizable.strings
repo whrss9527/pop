@@ -2278,3 +2278,7 @@
 "已装 %lld 个插件，一共占用 %@" = "%lld plugins installed, using %@";
 "压缩和解压" = "Zip and Unzip";
 "把选中的文件或文件夹压缩成 zip，存在原来的文件夹里；把选中的 zip 解压到旁边的同名文件夹里" = "Compress the selected files or folders into a zip in the same folder, or extract the selected zip files into folders next to them";
+"聚光灯" = "Spotlight";
+"演示、录教程时把屏幕压暗，只亮着指针周围一圈，跟着指针走，让大家看你指的地方；录屏时一起录进去，再用一次关闭" = "Dim the screen except for a circle around the pointer that follows it, so people look where you point in demos and tutorials. Screen recordings include it; use it again to turn it off";
+"关掉了聚光灯" = "Spotlight off";
+"打开了聚光灯，再用一次就关闭" = "Spotlight on. Use it again to turn it off";

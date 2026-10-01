@@ -60,6 +60,7 @@ enum TestCatalog {
         KeepAwakeEntry.self,
         SystemActionsEntry.self,
         TimerEntry.self,
+        SpotlightEntry.self,
     ]
 
     static func plugins() -> [any PopPlugin] {

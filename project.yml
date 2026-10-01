@@ -734,6 +734,15 @@ targets:
         POP_PLUGIN_ID: timer
         POP_PLUGIN_ENTRY: PopTimerEntry
 
+  PopSpotlight:
+    templates: [PopPlugin]
+    sources: [PluginBundles/Spotlight]
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: io.github.whrss9527.pop.plugin.spotlight
+        POP_PLUGIN_ID: spotlight
+        POP_PLUGIN_ENTRY: PopSpotlightEntry
+
   PopTests:
     type: bundle.unit-test
     platform: macOS
@@ -744,6 +753,7 @@ targets:
       - path: PluginBundles/CameraBubble
       - path: PluginBundles/PointerHighlight
       - path: PluginBundles/Teleprompter
+      - path: PluginBundles/Spotlight
       - path: PluginBundles/Timer
       - path: PluginBundles/SystemActions
       - path: PluginBundles/KeepAwake
@@ -830,6 +840,7 @@ schemes:
         PopCameraBubble: all
         PopPointerHighlight: all
         PopTeleprompter: all
+        PopSpotlight: all
         PopTimer: all
         PopSystemActions: all
         PopKeepAwake: all

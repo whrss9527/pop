@@ -246,6 +246,9 @@ enum PluginCatalog {
         PluginPackage(id: "timer", bundleName: "PopTimer", name: String(localized: "计时器"),
                       summary: String(localized: "倒计时：选一个时长，或者选中「25 分钟」「1:30」这样的文字直接开始；到点时响一声、发通知。也有番茄钟：专注 25 分钟、休息 5 分钟，一直循环"),
                       symbol: "timer", category: .files, functions: [BuiltinPluginID.timer]),
+        PluginPackage(id: "spotlight", bundleName: "PopSpotlight", name: String(localized: "聚光灯"),
+                      summary: String(localized: "演示、录教程时把屏幕压暗，只亮着指针周围一圈，跟着指针走，让大家看你指的地方；录屏时一起录进去，再用一次关闭"),
+                      symbol: "flashlight.on.fill", category: .recording, functions: [BuiltinPluginID.spotlight]),
     ]
 
     /// 插件包提供的所有功能
