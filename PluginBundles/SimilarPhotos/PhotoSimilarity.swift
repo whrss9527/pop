@@ -71,7 +71,7 @@ enum PhotoSimilarity {
     static let limit = 3000
 
     /// 文件夹里（包括子文件夹）的图片；隐藏文件和 App 这类包里面的不算
-    static func imageFiles(in roots: [URL], limit: Int = limit) -> (urls: [URL], truncated: Bool) {
+    static func imageFiles(in roots: [URL], limit: Int = PhotoSimilarity.limit) -> (urls: [URL], truncated: Bool) {
         var urls: [URL] = []
         var seen = Set<String>()
         func add(_ url: URL) -> Bool {
