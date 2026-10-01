@@ -1422,7 +1422,7 @@ const P = {
   systemInfo: { icon: 'systemInfo', accepts: [], keys: 'xitongxinxi xtxx guanyubenji xinghao neicun xinpian xianshiqi system info about mac', name: { zh: '系统信息', en: 'System Info' }, summary: { zh: '看这台 Mac 的型号、芯片和核心数、内存、macOS 版本、开机多久、启动磁盘还剩多少、每台显示器的分辨率和刷新率，可以一键复制，报问题、问人时用', en: 'See this Mac’s model, chip and cores, memory, macOS version, uptime, free space on the startup disk, and each display’s resolution and refresh rate, and copy it all at once for bug reports or when asking for help' } },
   soundDevices: { icon: 'soundDevices', accepts: [], keys: 'shengyinshebei sysb shengyin yinliang shuchu erji maikefeng sound audio output speaker airpods volume', name: { zh: '声音设备', en: 'Sound Devices' }, summary: { zh: '一下子换声音从哪出、用哪个麦克风：扬声器、耳机、AirPods、显示器、AirPlay，还能调音量、静音', en: 'Switch where sound plays and which microphone is used in one go: speakers, headphones, AirPods, displays or AirPlay, and adjust the volume or mute' } },
   bluetooth: { icon: 'bluetooth', accepts: [], keys: 'lanyashebei lysb lanya bluetooth airpods erji jianpan shubiao chukongban lianjie duankai connect disconnect headphones keyboard mouse trackpad', name: { zh: '蓝牙设备', en: 'Bluetooth Devices' }, summary: { zh: '一下子连接、断开配对过的蓝牙设备：AirPods 和别的耳机、键盘、鼠标、触控板、手柄，连着的键盘鼠标写着电量', en: 'Connect or disconnect paired Bluetooth devices in one go: AirPods and other headphones, keyboards, mice, trackpads and game controllers, with the battery level of connected keyboards and mice' } },
-  mouseWheel: { icon: 'mouseWheel', accepts: [], keys: 'shubiaogunlun sbgl gunlun gl fanxiang ziranundong gundongfangxiang mouse wheel scroll reverse natural scrolling speed', name: { zh: '鼠标滚轮', en: 'Mouse Wheel' }, summary: { zh: '把鼠标滚轮的方向反过来（触控板还是自然滚动），也可以让它滚得快一点；只改滚轮鼠标，触控板、妙控鼠标照旧', en: 'Reverse the scroll direction of a mouse wheel while the trackpad keeps natural scrolling, or make it scroll faster; only wheel mice change, trackpads and Magic Mouse stay as they are' } },
+  mouseWheel: { icon: 'mouseWheel', accepts: [], keys: 'shubiaogunlun sbgl gunlun gl fanxiang zirangundong gundongfangxiang mouse wheel scroll reverse natural scrolling speed', name: { zh: '鼠标滚轮', en: 'Mouse Wheel' }, summary: { zh: '把鼠标滚轮的方向反过来（触控板还是自然滚动），也可以让它滚得快一点；只改滚轮鼠标，触控板、妙控鼠标照旧', en: 'Reverse the scroll direction of a mouse wheel while the trackpad keeps natural scrolling, or make it scroll faster; only wheel mice change, trackpads and Magic Mouse stay as they are' } },
   calendar: { icon: 'calendar', accepts: [], keys: 'wannianli wnl rili nongli jieqi jieri yueli huangli zhongqiu chunjie calendar lunar solar term festival holiday month', name: { zh: '万年历', en: 'Calendar' }, summary: { zh: '看一个月的日历，每天写着农历、节气和节日；选中「2026-10-01」「中秋节」「农历八月十五」这样的文字再用，直接翻到那一天，看是星期几、离今天几天', en: 'A month calendar with each day’s Chinese lunar date, solar term and festival. Select text such as “2026-10-01”, “Mid-Autumn Festival” or “农历八月十五” first to jump to that day and see its weekday and how far it is from today' } },
   resolution: { icon: 'resolution', accepts: [], keys: 'fenbianlv fbl xianshiqi shuaxinlv zhuxianshiqi pingmu resolution display monitor refresh rate hz retina hidpi scaled screen', name: { zh: '分辨率', en: 'Resolution' }, summary: { zh: '换显示器的分辨率（看起来像多大）和刷新率，把哪台设成主显示器；外接显示器换了以后 15 秒内不点「保留」就换回原来的', en: 'Change each display’s resolution (what it looks like) and refresh rate, or pick the main display; after a change on an external display, click Keep within 15 seconds or it switches back' } },
   diskSpeed: { icon: 'diskSpeed', accepts: [], keys: 'cipanceshu cpcs cesu yingpan upan gutaiyingpan duxie disk speed ssd usb drive benchmark read write', name: { zh: '磁盘测速', en: 'Disk Speed' }, summary: { zh: '测硬盘、U 盘、移动固态硬盘连续写入和读取有多快：选中磁盘里的文件或文件夹就测那块盘，什么都不选时测启动磁盘', en: 'Measure how fast a hard drive, USB stick or portable SSD writes and reads sequentially. Select a file or folder on a disk to test that disk, or nothing to test the startup disk' } },
@@ -6143,8 +6143,8 @@ function showSoundDevices(anchor) {
 // 触控板那种连续的小幅滚动照旧（网页里分不清时，按一格一格的大幅滚动当作滚轮）
 const WHEEL = { reverse: false, horizontal: false, speed: 1 };
 const wheelActive = () => WHEEL.reverse || WHEEL.horizontal || WHEEL.speed !== 1;
-const looksLikeWheel = (event) => event.deltaMode !== 0 || (event.wheelDeltaY ? Math.abs(event.wheelDeltaY) % 120 === 0 : false)
-  || (event.deltaX === 0 && Number.isInteger(event.deltaY) && Math.abs(event.deltaY) >= 50);
+// 一格一格的滚轮：按行滚，或者 wheelDeltaY 是 120 的整倍数（触控板快速一划也会有很大的 deltaY，不算）
+const looksLikeWheel = (event) => event.deltaMode !== 0 || (Math.abs(event.wheelDeltaY || 0) >= 120 && event.wheelDeltaY % 120 === 0);
 stage.addEventListener('wheel', (event) => {
   if (!wheelActive() || !looksLikeWheel(event)) return;
   let box = event.target instanceof Element ? event.target.closest('.scroll, .content, .files') : null;
@@ -6187,13 +6187,13 @@ function showMouseWheel(anchor) {
   draw();
   presentCard(cardShell({ title: L(P.mouseWheel.name), width: 360, children: [
     h('div', { class: 'mw-row' }, h('span', null, zh ? '滚轮方向反过来' : 'Reverse Wheel Direction'), toggle),
-    h('p', { class: 'mw-hint' }, zh ? '系统开着「自然滚动」：滚轮往下滚，页面往上翻（和 Windows 相反）。反过来以后，鼠标滚轮和 Windows 上一样，触控板还是自然滚动'
-      : 'Natural scrolling is on: rolling the wheel down moves the page back up, the opposite of Windows. Reversed, the mouse wheel works as on Windows while the trackpad keeps natural scrolling'),
+    h('p', { class: 'mw-hint' }, zh ? '系统开着「自然滚动」：滚轮往下滚，页面往上翻。反过来以后，鼠标滚轮往下滚时页面往下翻，触控板还是自然滚动'
+      : 'Natural scrolling is on: rolling the wheel down moves the page up. Reversed, rolling the mouse wheel down moves the page down, and the trackpad keeps natural scrolling'),
     h('label', { class: 'mw-check' }, horizontal, zh ? '左右滚动也反过来' : 'Reverse Horizontal Scrolling Too'),
     h('div', { class: 'mw-speed' }, h('span', null, zh ? '滚动速度' : 'Scroll Speed'), seg),
     status,
-    h('p', { class: 'mw-hint' }, zh ? '只改一格一格的滚轮鼠标；触控板、妙控鼠标照旧。设置会记住，Pop 启动时接着生效。'
-      : 'Only mice with a notched scroll wheel change; trackpads and Magic Mouse stay as they are. Settings are remembered and apply again when Pop starts.'),
+    h('p', { class: 'mw-hint' }, zh ? '只改一格一格的滚轮鼠标；触控板、妙控鼠标，还有开着平滑滚动的鼠标照旧。设置会记住，Pop 启动时接着生效。'
+      : 'Only mice with a notched scroll wheel change; trackpads, Magic Mouse and mice with smooth scrolling turned on stay as they are. Settings are remembered and apply again when Pop starts.'),
     h('p', { class: 'mw-try' }, zh ? '试试看：打开以后，在桌面的窗口里用鼠标滚轮滚一下' : 'Try it: turn it on, then roll the mouse wheel over the window on the desktop')],
     buttons: [button(zh ? '完成' : 'Done', () => dismissCard(), { class: 'mbtn default' })] }), anchor);
 }

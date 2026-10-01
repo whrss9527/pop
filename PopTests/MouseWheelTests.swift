@@ -145,6 +145,18 @@ final class MouseWheelTests: XCTestCase {
         XCTAssertTrue(wheel.directionHint.hasPrefix("系统关着「自然滚动」"))
     }
 
+    func testWheelTapKeepsTheOptionsWhenStopped() {
+        // 拦截的线程上读的设置：没开始拦也能改，停了再停也没事
+        let tap = WheelTap()
+        XCTAssertFalse(tap.isRunning)
+        XCTAssertFalse(tap.isHealthy)
+        tap.options = WheelOptions(reverseVertical: true, reverseHorizontal: false, speed: 3)
+        XCTAssertEqual(tap.options, WheelOptions(reverseVertical: true, reverseHorizontal: false, speed: 3))
+        tap.stop()
+        tap.stop()
+        XCTAssertFalse(tap.isRunning)
+    }
+
     func testPluginAndDemo() {
         XCTAssertTrue(MouseWheelPlugin().info.canHandle(.empty))
         XCTAssertEqual(Set(MouseWheel.defaultsKeys), Set(PluginCatalog.packages.first { $0.id == "mouseWheel" }?.defaultsKeys ?? []))

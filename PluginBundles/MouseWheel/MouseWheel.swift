@@ -2,7 +2,7 @@ import AppKit
 import CoreGraphics
 @testable import Pop
 
-/// 鼠标滚轮：用 CGEventTap 拦下滚动事件，按设置把一格一格的鼠标滚轮反过来、加快；触控板、妙控鼠标照旧。
+/// 鼠标滚轮：拦下滚动事件（WheelTap），按设置把一格一格的鼠标滚轮反过来、加快；触控板、妙控鼠标照旧。
 /// 设置都记住，Pop 启动时（插件包装载时）接着生效；要辅助功能权限（Pop 唤起圆盘本来就要）
 @MainActor
 final class MouseWheel: ObservableObject {
@@ -20,15 +20,19 @@ final class MouseWheel: ObservableObject {
     @Published private(set) var isRunning = false
     /// 要改，但还没有辅助功能权限
     @Published private(set) var needsPermission = false
+    /// 有权限，但系统没让拦滚动事件（隔几秒再试）
+    @Published private(set) var tapFailed = false
 
     private let defaults: UserDefaults
     /// 测试、演示时不拦真的事件
     private let isLive: Bool
     private let isTrusted: () -> Bool
-    private var tap: CFMachPort?
-    private var source: CFRunLoopSource?
-    /// 没有权限时每隔几秒看一次，给了就开始
+    private let wheelTap = WheelTap()
+    /// 没有权限（或者没拦成）时每隔几秒看一次，给了就开始
     private var permissionTimer: Timer?
+    /// 拦着的时候隔一会儿看看 tap 还管不管用（睡眠醒来、权限收回以后可能失效）
+    private var healthTimer: Timer?
+    private var wakeObserver: NSObjectProtocol?
 
     init(defaults: UserDefaults = .standard, isLive: Bool = true, isTrusted: @escaping () -> Bool = { Permissions.isAccessibilityTrusted }) {
         self.defaults = defaults
@@ -76,6 +80,14 @@ final class MouseWheel: ObservableObject {
         permissionTimer?.invalidate()
         permissionTimer = nil
         needsPermission = false
+        tapFailed = false
+    }
+
+    /// tap 失效了（睡眠醒来、权限收回）：重新建一个，没有权限了就说一声
+    func recoverIfNeeded() {
+        guard isLive, isRunning, !wheelTap.isHealthy else { return }
+        stopTap()
+        update()
     }
 
     /// 按现在的设置开、关拦截
@@ -87,13 +99,20 @@ final class MouseWheel: ObservableObject {
         guard isTrusted() else {
             stopTap()
             needsPermission = true
+            tapFailed = false
             watchPermission()
             return
         }
         needsPermission = false
+        wheelTap.options = options
+        guard startTap() else {
+            tapFailed = true
+            watchPermission()
+            return
+        }
+        tapFailed = false
         permissionTimer?.invalidate()
         permissionTimer = nil
-        startTap()
     }
 
     private func watchPermission() {
@@ -110,50 +129,38 @@ final class MouseWheel: ObservableObject {
 
     // MARK: - 拦滚动事件
 
-    private func startTap() {
+    /// 开始拦；没拦成返回 false
+    private func startTap() -> Bool {
         guard isLive else {
             isRunning = true
-            return
+            return true
         }
-        guard tap == nil else { return }
-        let mask = CGEventMask(1) << CGEventMask(CGEventType.scrollWheel.rawValue)
-        guard let tap = CGEvent.tapCreate(tap: .cgSessionEventTap, place: .headInsertEventTap, options: .defaultTap,
-                                          eventsOfInterest: mask, callback: mouseWheelCallback,
-                                          userInfo: Unmanaged.passUnretained(self).toOpaque()) else {
-            needsPermission = true
-            watchPermission()
-            return
-        }
-        let source = CFMachPortCreateRunLoopSource(kCFAllocatorDefault, tap, 0)
-        CFRunLoopAddSource(CFRunLoopGetMain(), source, .commonModes)
-        CGEvent.tapEnable(tap: tap, enable: true)
-        self.tap = tap
-        self.source = source
+        guard wheelTap.start() else { return false }
         isRunning = true
+        if healthTimer == nil {
+            let timer = Timer(timeInterval: 30, repeats: true) { [weak self] _ in
+                MainActor.assumeIsolated { self?.recoverIfNeeded() }
+            }
+            RunLoop.main.add(timer, forMode: .common)
+            healthTimer = timer
+        }
+        if wakeObserver == nil {
+            wakeObserver = NSWorkspace.shared.notificationCenter.addObserver(forName: NSWorkspace.didWakeNotification, object: nil, queue: .main) { [weak self] _ in
+                MainActor.assumeIsolated { self?.recoverIfNeeded() }
+            }
+        }
+        return true
     }
 
     private func stopTap() {
-        if let tap {
-            CGEvent.tapEnable(tap: tap, enable: false)
-            CFMachPortInvalidate(tap)
+        wheelTap.stop()
+        healthTimer?.invalidate()
+        healthTimer = nil
+        if let wakeObserver {
+            NSWorkspace.shared.notificationCenter.removeObserver(wakeObserver)
         }
-        if let source {
-            CFRunLoopRemoveSource(CFRunLoopGetMain(), source, .commonModes)
-        }
-        tap = nil
-        source = nil
+        wakeObserver = nil
         isRunning = false
-    }
-
-    /// 回调里调：改滚动事件；被系统停用了（回调太慢、用户输入）就重新启用
-    fileprivate func handle(type: CGEventType, event: CGEvent) {
-        if type == .tapDisabledByTimeout || type == .tapDisabledByUserInput {
-            if let tap {
-                CGEvent.tapEnable(tap: tap, enable: true)
-            }
-            return
-        }
-        WheelAdjust.apply(options, to: event)
     }
 
     // MARK: - 卡片上的字
@@ -162,6 +169,9 @@ final class MouseWheel: ObservableObject {
     var statusText: String {
         if needsPermission {
             return String(localized: "要先在「系统设置 → 隐私与安全性 → 辅助功能」里允许 Pop，才能调整鼠标滚轮")
+        }
+        if tapFailed {
+            return String(localized: "系统暂时没让 Pop 拦下滚动事件，过几秒会再试一次")
         }
         guard options.isActive else {
             return String(localized: "没开：鼠标滚轮按系统设置滚动")
@@ -183,7 +193,7 @@ final class MouseWheel: ObservableObject {
     /// 系统现在的滚动方向，说明打开以后会怎样
     var directionHint: String {
         WheelAdjust.naturalScrolling(defaults)
-            ? String(localized: "系统开着「自然滚动」：滚轮往下滚，页面往上翻（和 Windows 相反）。反过来以后，鼠标滚轮和 Windows 上一样，触控板还是自然滚动")
+            ? String(localized: "系统开着「自然滚动」：滚轮往下滚，页面往上翻。反过来以后，鼠标滚轮往下滚时页面往下翻，触控板还是自然滚动")
             : String(localized: "系统关着「自然滚动」：滚轮往下滚，页面往下翻。反过来以后，鼠标滚轮往下滚时页面往上翻，和触控板相反")
     }
 
@@ -203,15 +213,4 @@ final class MouseWheel: ObservableObject {
         wheel.setSpeed(2)
         return wheel
     }
-}
-
-/// CGEventTap 的回调（C 函数）。Tap 的 RunLoop source 挂在主线程上，所以这里一定在主线程
-private func mouseWheelCallback(proxy: CGEventTapProxy, type: CGEventType, event: CGEvent,
-                                userInfo: UnsafeMutableRawPointer?) -> Unmanaged<CGEvent>? {
-    guard let userInfo else { return Unmanaged.passUnretained(event) }
-    let wheel = Unmanaged<MouseWheel>.fromOpaque(userInfo).takeUnretainedValue()
-    MainActor.assumeIsolated {
-        wheel.handle(type: type, event: event)
-    }
-    return Unmanaged.passUnretained(event)
 }

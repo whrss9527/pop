@@ -28,7 +28,8 @@ enum WheelAdjust {
         let speed = max(1, options.speed)
         let vertical = (options.reverseVertical ? -1 : 1) * speed
         let horizontal = (options.reverseHorizontal ? -1 : 1) * speed
-        // 行数、像素、定点数三种写法都改（不同的 App 读不同的那个）；先全读出来再写，免得写一个时另外两个跟着变
+        // 行数、像素、定点数三种写法都改（不同的 App 读不同的那个）。先全读出来再写；行数要最先写：
+        // 写行数时系统会顺手按它重算定点数和像素（像素是八倍左右），后写的定点数、像素才是要的值
         let lines = (event.getIntegerValueField(.scrollWheelEventDeltaAxis1), event.getIntegerValueField(.scrollWheelEventDeltaAxis2))
         let points = (event.getIntegerValueField(.scrollWheelEventPointDeltaAxis1), event.getIntegerValueField(.scrollWheelEventPointDeltaAxis2))
         let fixed = (event.getDoubleValueField(.scrollWheelEventFixedPtDeltaAxis1), event.getDoubleValueField(.scrollWheelEventFixedPtDeltaAxis2))

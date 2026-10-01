@@ -26,15 +26,15 @@ struct MouseWheelView: View {
             }
             .pickerStyle(.segmented)
             HStack(alignment: .top, spacing: 8) {
-                Image(systemName: model.needsPermission ? "exclamationmark.triangle" : "computermouse")
-                    .foregroundStyle(model.needsPermission ? Color.orange : (model.isRunning ? Color.accentColor : .secondary))
+                Image(systemName: model.needsPermission || model.tapFailed ? "exclamationmark.triangle" : "computermouse")
+                    .foregroundStyle(model.needsPermission || model.tapFailed ? Color.orange : (model.isRunning ? Color.accentColor : .secondary))
                     .frame(width: 16)
                 Text(verbatim: model.statusText)
                     .font(.callout)
                     .foregroundStyle(model.options.isActive ? .primary : .secondary)
                     .fixedSize(horizontal: false, vertical: true)
             }
-            Text("只改一格一格的滚轮鼠标；触控板、妙控鼠标照旧。设置会记住，Pop 启动时接着生效。")
+            Text("只改一格一格的滚轮鼠标；触控板、妙控鼠标，还有开着平滑滚动的鼠标照旧。设置会记住，Pop 启动时接着生效。")
                 .font(.caption)
                 .foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
