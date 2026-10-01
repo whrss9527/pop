@@ -14,7 +14,7 @@ configFiles:
 settings:
   base:
     SWIFT_VERSION: "5.0"
-    MARKETING_VERSION: "0.54.0"
+    MARKETING_VERSION: "0.55.0"
     CURRENT_PROJECT_VERSION: "1"
     CODE_SIGN_STYLE: Automatic
     DEAD_CODE_STRIPPING: YES
@@ -923,6 +923,15 @@ targets:
         POP_PLUGIN_ID: soundDevices
         POP_PLUGIN_ENTRY: PopSoundDevicesEntry
 
+  PopResolution:
+    templates: [PopPlugin]
+    sources: [PluginBundles/Resolution]
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: io.github.whrss9527.pop.plugin.resolution
+        POP_PLUGIN_ID: resolution
+        POP_PLUGIN_ENTRY: PopResolutionEntry
+
   PopTests:
     type: bundle.unit-test
     platform: macOS
@@ -952,6 +961,7 @@ targets:
       - path: PluginBundles/VoiceRecorder
       - path: PluginBundles/SystemInfo
       - path: PluginBundles/SoundDevices
+      - path: PluginBundles/Resolution
       - path: PluginBundles/Beautify
       - path: PluginBundles/Spotlight
       - path: PluginBundles/Timer
@@ -1059,6 +1069,7 @@ schemes:
         PopVoiceRecorder: all
         PopSystemInfo: all
         PopSoundDevices: all
+        PopResolution: all
         PopBeautify: all
         PopSpotlight: all
         PopTimer: all

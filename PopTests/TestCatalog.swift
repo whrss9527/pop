@@ -80,6 +80,7 @@ enum TestCatalog {
         VoiceRecorderEntry.self,
         SystemInfoEntry.self,
         SoundDevicesEntry.self,
+        ResolutionEntry.self,
         SimilarPhotosEntry.self,
     ]
 
