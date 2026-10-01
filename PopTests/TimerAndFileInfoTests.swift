@@ -41,12 +41,40 @@ final class CountdownTimerTests: XCTestCase {
         XCTAssertFalse(countdown.isRunning)
     }
 
+    func testPomodoroAlternatesFocusAndBreaks() throws {
+        var step = CountdownTimer.Pomodoro.first
+        XCTAssertEqual(step.duration, 25 * 60)
+        step = step.next
+        XCTAssertEqual(step, CountdownTimer.Pomodoro(phase: .rest, round: 1))
+        XCTAssertEqual(step.duration, 5 * 60)
+        XCTAssertEqual(step.next, CountdownTimer.Pomodoro(phase: .focus, round: 2))
+        // 每四个番茄长休息一次
+        XCTAssertEqual(CountdownTimer.Pomodoro(phase: .rest, round: 4).duration, 15 * 60)
+        XCTAssertEqual(CountdownTimer.Pomodoro.first.finishedMessage, "第 1 个番茄完成，休息 5 分钟")
+        XCTAssertEqual(CountdownTimer.Pomodoro(phase: .focus, round: 4).finishedMessage, "第 4 个番茄完成，休息 15 分钟")
+        XCTAssertEqual(CountdownTimer.Pomodoro(phase: .rest, round: 1).finishedMessage, "休息结束，开始第 2 个番茄")
+
+        let countdown = CountdownTimer()
+        countdown.startPomodoro()
+        XCTAssertEqual(countdown.pomodoro, .first)
+        let status = try XCTUnwrap(countdown.statusText())
+        XCTAssertTrue(status.hasPrefix("第 1 个番茄，专注还剩 25:00"), status)
+        countdown.cancel()
+        XCTAssertNil(countdown.pomodoro)
+        XCTAssertFalse(countdown.isRunning)
+        // 普通计时不是番茄钟
+        countdown.start(seconds: 60)
+        XCTAssertNil(countdown.pomodoro)
+        countdown.cancel()
+    }
+
     func testPluginOffersPresetsOrStartsFromSelection() async {
         let context = PluginContext(settings: AppSettings(), openSettings: {})
         let outcome = await TimerPlugin().run(.empty, context: context)
         guard case .card(let card) = outcome else { return XCTFail("应该返回结果卡片") }
         XCTAssertEqual(card.buttons.first?.action, .startTimer(seconds: 60))
         XCTAssertEqual(card.buttons.map(\.title).prefix(3), ["1 分钟", "3 分钟", "5 分钟"])
+        XCTAssertEqual(card.buttons.last?.action, .startPomodoro)
 
         let started = await TimerPlugin().run(ContentClassifier.classify(.text("1:30")), context: context)
         XCTAssertEqual(started, .done(toast: "开始计时 1 分 30 秒"))

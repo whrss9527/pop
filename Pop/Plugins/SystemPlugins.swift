@@ -76,6 +76,10 @@ struct ScreenRecordPlugin: PopPlugin {
             return .failure(ScreenRecording.permissionHint)
         }
         guard let selection = await RegionPicker.pick() else { return .done(toast: nil) }
+        // 倒数时按了 Esc：不录了
+        if selection.options.countdown, !(await RecordingCountdown.run(in: selection.rect)) {
+            return .done(toast: nil)
+        }
         do {
             try await recorder.start(selection)
             return .done(toast: nil)
@@ -215,7 +219,7 @@ struct ScrollCapturePlugin: PopPlugin {
 
 struct TimerPlugin: PopPlugin {
     let info = PluginInfo(id: BuiltinPluginID.timer, name: String(localized: "计时器"), symbol: "timer",
-                          summary: String(localized: "倒计时：选一个时长，或者选中「25 分钟」「1:30」这样的文字直接开始；到点时响一声、发通知"),
+                          summary: String(localized: "倒计时：选一个时长，或者选中「25 分钟」「1:30」这样的文字直接开始；到点时响一声、发通知。也有番茄钟：专注 25 分钟、休息 5 分钟，一直循环"),
                           accepts: [], optionalContent: true)
 
     @MainActor func run(_ content: ClassifiedContent, context: PluginContext) async -> PluginOutcome {
@@ -229,10 +233,11 @@ struct TimerPlugin: PopPlugin {
             let seconds = TimeInterval(minutes * 60)
             return CardButton(title: CountdownTimer.title(seconds: seconds), action: .startTimer(seconds: seconds))
         }
+        buttons.append(CardButton(title: String(localized: "番茄钟"), action: .startPomodoro))
         if countdown.isRunning {
-            buttons.append(CardButton(title: String(localized: "取消计时"), action: .cancelTimer))
+            buttons.append(CardButton(title: countdown.pomodoro == nil ? String(localized: "取消计时") : String(localized: "结束番茄钟"), action: .cancelTimer))
         }
-        let body = countdown.statusText() ?? String(localized: "选一个时长开始倒计时；到点时响一声、发一条通知。也可以选中「25 分钟」「1:30」这样的文字再用它。")
+        let body = countdown.statusText() ?? String(localized: "选一个时长开始倒计时；到点时响一声、发一条通知。也可以选中「25 分钟」「1:30」这样的文字再用它。番茄钟是专注 25 分钟、休息 5 分钟轮流来（每四个番茄休息 15 分钟），一直到你结束。")
         return .card(ResultCard(title: String(localized: "计时器"), body: body, buttons: buttons))
     }
 }

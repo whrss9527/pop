@@ -433,7 +433,7 @@ enum OverlayDemo {
                              anchor: center)
             step("cropImage")
 
-            // 录屏：先是选区域的界面（截屏幕上方的提示条），再是录的时候的边框、控制面板和按键显示，最后是录好的卡片
+            // 录屏：先是选区域的界面（截屏幕上方的提示条），再是倒数，然后是录的时候的边框、控制面板和按键显示，最后是录好的卡片
             await pause(1.4 * unit)
             overlay.hide()
             Task { @MainActor in
@@ -446,6 +446,11 @@ enum OverlayDemo {
             RegionPicker.cancel()
             logRegion(cardRegion, screen: screen)
             let recordRegion = CGRect(x: center.x - 150, y: center.y - 380, width: 560, height: 320)
+            // 选好区域以后的倒数
+            let hideCountdown = RecordingCountdown.showForDemo(value: 3, in: recordRegion)
+            step("screenRecord-countdown")
+            await pause(1.0 * unit)
+            hideCountdown()
             let hideIndicators = ScreenRecorder.shared.showIndicatorsForDemo(region: recordRegion, screen: screen, elapsed: "00:12")
             KeystrokeOverlay.shared.showForDemo("⌘Z ×3", in: recordRegion)
             step("screenRecord-recording")

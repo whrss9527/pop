@@ -26,24 +26,29 @@ enum ScreenRecording {
         var showClicks = false
         /// 在录的区域下边显示按下的组合键
         var showKeys = false
+        /// 选好区域以后先倒数 3 秒再开始录
+        var countdown = false
 
         static let audioKey = "pop.screenRecord.audio"
         /// 0.30.0 的「录上电脑里的声音」勾选，读旧设置用
         static let systemAudioKey = "pop.screenRecord.systemAudio"
         static let showClicksKey = "pop.screenRecord.showClicks"
         static let showKeysKey = "pop.screenRecord.showKeys"
+        static let countdownKey = "pop.screenRecord.countdown"
 
         /// 上次选的
         static func saved(in defaults: UserDefaults = .standard) -> Options {
             let audio = defaults.string(forKey: audioKey).flatMap(Audio.init(rawValue:))
                 ?? (defaults.bool(forKey: systemAudioKey) ? .system : .off)
-            return Options(audio: audio, showClicks: defaults.bool(forKey: showClicksKey), showKeys: defaults.bool(forKey: showKeysKey))
+            return Options(audio: audio, showClicks: defaults.bool(forKey: showClicksKey), showKeys: defaults.bool(forKey: showKeysKey),
+                           countdown: defaults.bool(forKey: countdownKey))
         }
 
         func save(in defaults: UserDefaults = .standard) {
             defaults.set(audio.rawValue, forKey: Self.audioKey)
             defaults.set(showClicks, forKey: Self.showClicksKey)
             defaults.set(showKeys, forKey: Self.showKeysKey)
+            defaults.set(countdown, forKey: Self.countdownKey)
         }
     }
 
