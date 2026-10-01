@@ -18,8 +18,8 @@ enum WorldTime {
 
     // MARK: - 城市
 
-    /// 常用的城市；同一个时区可以有几个城市（北京、上海）
-    static var cities: [City] {
+    /// 常用的城市；同一个时区可以有几个城市（北京、上海）。只建一次：界面语言要重新打开 Pop 才换
+    static let cities: [City] = {
         let table: [City?] = [
             city("utc", "UTC", "UTC", ["UTC", "协调世界时", "世界标准时间"], ["GMT", "Greenwich", "格林尼治", "格林威治", "Zulu"]),
             city("beijing", "Asia/Shanghai", String(localized: "北京"), ["北京", "Beijing", "Peking"], ["中国", "China", "深圳", "Shenzhen", "广州", "Guangzhou"]),
@@ -95,7 +95,7 @@ enum WorldTime {
             city("auckland", "Pacific/Auckland", String(localized: "奥克兰"), ["奥克兰", "Auckland"], ["新西兰", "New Zealand", "惠灵顿", "Wellington"]),
         ]
         return table.compactMap { $0 }
-    }
+    }()
 
     /// 时区标识在这个系统上没有的城市不列出来
     private static func city(_ id: String, _ zone: String, _ name: String, _ names: [String], _ keywords: [String]) -> City? {
@@ -444,7 +444,9 @@ enum WorldTime {
         if let result = match(chineseCity), let word = group(result, 1), let zone = phraseTable.chinese.first(where: { $0.0 == word })?.1 {
             return found(TimeZone(identifier: zone), result)
         }
-        if let result = match(englishCity), let word = group(result, 1)?.lowercased(), let zone = phraseTable.english.first(where: { $0.0 == word })?.1 {
+        // 英文的要大写开头：「turkey dinner」里的 turkey 不是土耳其
+        if let result = englishCity.matches(in: text, range: full).first(where: { group($0, 1)?.first?.isUppercase == true }),
+           let word = group(result, 1)?.lowercased(), let zone = phraseTable.english.first(where: { $0.0 == word })?.1 {
             return found(TimeZone(identifier: zone), result)
         }
         return nil
@@ -619,9 +621,14 @@ enum WorldTime {
            let adjusted = hour24(hour, period: group(result, 2)) {
             return Time(hour: adjusted.hour, minute: 0, nextDay: adjusted.nextDay)
         }
-        // 晚上 9 点、下午三点半、10 点 15 分
-        if let result = chineseTime.firstMatch(in: text, range: full), let hourText = group(result, 2),
-           let hour = Int(hourText) ?? chineseNumber(hourText) {
+        // 晚上 9 点、下午三点半、10 点 15 分。光写「一点」不算：「晚一点再说」「差一点」
+        for result in chineseTime.matches(in: text, range: full) {
+            guard let hourText = group(result, 2), let hour = Int(hourText) ?? chineseNumber(hourText) else { continue }
+            let end = result.range.location + result.range.length
+            let clockWord = end < string.length && string.substring(with: NSRange(location: end, length: 1)) == "钟"
+            if hourText == "一", group(result, 1) == nil, group(result, 3) == nil, !clockWord {
+                continue
+            }
             var minute = 0
             switch group(result, 3) {
             case "半"?: minute = 30
