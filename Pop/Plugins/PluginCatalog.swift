@@ -257,6 +257,11 @@ enum PluginCatalog {
         PluginPackage(id: "zoom", bundleName: "PopZoom", name: String(localized: "屏幕放大"),
                       summary: String(localized: "演示、录教程时把指针附近放大，看清小字：放大的是那一刻的屏幕画面，挪动指针换地方看，滚轮或 ↑↓ 调倍数，点一下或按 Esc 回去"),
                       symbol: "plus.magnifyingglass", category: .recording, functions: [BuiltinPluginID.zoom]),
+        PluginPackage(id: "compareImages", bundleName: "PopCompareImages", name: String(localized: "对比图片"),
+                      summary: String(localized: "对比选中的两张图片：并排、滑动分界线、半透明叠加，或者把不一样的像素标红、框出几处不同；改版前后的截图、设计稿和实现对照都用得上"),
+                      symbol: "square.split.2x1", category: .screen, functions: [BuiltinPluginID.compareImages],
+                      // 和插件包里 ImageCompareModel 的键一样
+                      defaultsKeys: ["pop.compareImages.mode", "pop.compareImages.ignoreSubtle"]),
     ]
 
     /// 插件包提供的所有功能
