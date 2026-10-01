@@ -110,11 +110,11 @@ enum AppUninstaller {
         let info = bundle.infoDictionary ?? [:]
         let bundleID = info["CFBundleIdentifier"] as? String
         let name = (info["CFBundleDisplayName"] as? String) ?? (info["CFBundleName"] as? String) ?? url.deletingPathExtension().lastPathComponent
-        let signing = signing(of: url)
+        let signed = signing(of: url)
         return App(url: url, name: name, bundleID: bundleID, version: info["CFBundleShortVersionString"] as? String,
                    executable: info["CFBundleExecutable"] as? String,
                    relatedIDs: Set([bundleID].compactMap { $0 } + embeddedIDs(in: url)),
-                   groups: signing.groups, teamID: signing.team)
+                   groups: signed.groups, teamID: signed.team)
     }
 
     /// App 里面带的扩展、登录项、辅助程序的 bundle ID（它们的设置、容器也算这个 App 的）
@@ -244,7 +244,7 @@ enum AppUninstaller {
         let home = FileManager.default.homeDirectoryForCurrentUser.path(percentEncoded: false)
         let trimmed = path.hasSuffix("/") ? String(path.dropLast()) : path
         guard trimmed.hasPrefix(home) else { return trimmed }
-        let rest = trimmed.dropFirst(home.count)
-        return "~" + (rest.hasPrefix("/") ? rest : "/" + rest)
+        let rest = String(trimmed.dropFirst(home.count))
+        return rest.hasPrefix("/") ? "~" + rest : "~/" + rest
     }
 }
