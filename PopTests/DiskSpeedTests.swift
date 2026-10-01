@@ -62,6 +62,8 @@ final class DiskSpeedTests: XCTestCase {
         XCTAssertEqual(progress.total, 100)
         // 最近半秒里只有一块：从上一块（0.2 秒）算起
         XCTAssertEqual(progress.speed, 10 / 0.8, accuracy: 0.5)
+        // 平均速度从开始算
+        XCTAssertEqual(progress.average, 30, accuracy: 1)
     }
 
     func testDescribesVolumesAndSpeeds() throws {

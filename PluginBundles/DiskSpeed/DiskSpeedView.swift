@@ -53,6 +53,8 @@ final class DiskSpeedModel: ObservableObject {
     private let folderFor: (DiskSpeed.Volume) -> URL
     private let cancelled = SpeedTestStop()
     private var task: Task<Void, Never>?
+    /// 写的那一遍到现在的平均速度：开始读以后先显示它，测完换成算上落盘时间的
+    private var writeAverage: Double?
 
     init(volumes: [DiskSpeed.Volume] = DiskSpeed.volumes(), selecting volume: URL? = nil, folderFor: @escaping (DiskSpeed.Volume) -> URL = DiskSpeed.folder(for:),
          bytesOverride: Int64? = nil) {
@@ -147,13 +149,16 @@ final class DiskSpeedModel: ObservableObject {
         // 进度：写占前一半，读占后一半
         let part = progress.total > 0 ? Double(progress.done) / Double(progress.total) : 0
         fraction = progress.pass == .write ? part / 2 : 0.5 + part / 2
-        if progress.pass == .read, writeSpeed == nil {
-            writeSpeed = progress.speed
+        if progress.pass == .write {
+            writeAverage = progress.average
+        } else if writeSpeed == nil {
+            writeSpeed = writeAverage
         }
     }
 
     private func reset() {
         phase = .idle
+        writeAverage = nil
         writeSpeed = nil
         readSpeed = nil
         current = nil

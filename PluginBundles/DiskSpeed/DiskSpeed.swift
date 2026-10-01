@@ -31,6 +31,8 @@ enum DiskSpeed {
         let total: Int64
         /// 最近半秒左右的速度（字节每秒）
         let speed: Double
+        /// 这一项从开始到现在的平均速度
+        let average: Double
     }
 
     struct Speeds: Equatable {
@@ -163,7 +165,8 @@ enum DiskSpeed {
             }
             let first = window[0]
             let speed = time > first.time ? Double(done - first.done) / (time - first.time) : 0
-            return Progress(pass: pass, done: done, total: total, speed: speed)
+            let average = time > start ? Double(done) / (time - start) : 0
+            return Progress(pass: pass, done: done, total: total, speed: speed, average: average)
         }
 
         var average: Double {
