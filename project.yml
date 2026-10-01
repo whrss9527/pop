@@ -950,6 +950,15 @@ targets:
         POP_PLUGIN_ID: worldTime
         POP_PLUGIN_ENTRY: PopWorldTimeEntry
 
+  PopChart:
+    templates: [PopPlugin]
+    sources: [PluginBundles/Chart]
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: io.github.whrss9527.pop.plugin.chart
+        POP_PLUGIN_ID: chart
+        POP_PLUGIN_ENTRY: PopChartEntry
+
   PopTests:
     type: bundle.unit-test
     platform: macOS
@@ -982,6 +991,7 @@ targets:
       - path: PluginBundles/Resolution
       - path: PluginBundles/DiskSpeed
       - path: PluginBundles/WorldTime
+      - path: PluginBundles/Chart
       - path: PluginBundles/Beautify
       - path: PluginBundles/Spotlight
       - path: PluginBundles/Timer
@@ -1092,6 +1102,7 @@ schemes:
         PopResolution: all
         PopDiskSpeed: all
         PopWorldTime: all
+        PopChart: all
         PopBeautify: all
         PopSpotlight: all
         PopTimer: all
