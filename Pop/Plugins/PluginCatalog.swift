@@ -344,6 +344,10 @@ enum PluginCatalog {
                       summary: String(localized: "放白噪音、粉红噪音、棕色噪音、雨声或者海浪，盖住周围的说话声，专心做事、午睡时用；可以调音量、定时停止。声音在本机实时生成，关掉卡片也接着放，菜单栏的耳机图标可以暂停、停止"),
                       symbol: "headphones", category: .files, functions: [BuiltinPluginID.focusSounds],
                       defaultsKeys: ["pop.focusSounds.sound", "pop.focusSounds.volume", "pop.focusSounds.timer"]),
+        PluginPackage(id: "emojiSymbols", bundleName: "PopEmojiSymbols", name: String(localized: "表情和符号"),
+                      summary: String(localized: "用中文、拼音或者英文搜表情（「笑」「猫」「smile」），也有常用的特殊符号：对勾、箭头、带圈数字、数学符号、单位和货币、希腊字母、上下标；点一下插到正在打字的地方。选中一个词再用，能直接换成表情"),
+                      symbol: "face.smiling", category: .text, functions: [BuiltinPluginID.emojiSymbols],
+                      defaultsKeys: ["pop.emojiSymbols.recent", "pop.emojiSymbols.tone"]),
     ]
 
     /// 插件包提供的所有功能

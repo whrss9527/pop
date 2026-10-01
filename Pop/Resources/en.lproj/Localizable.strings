@@ -490,6 +490,40 @@
 "留" = "Keep";
 "正在比较内容：%lld / %lld" = "Comparing contents: %lld / %lld";
 
+/* EmojiSymbols.swift */
+"笑脸和情感" = "Smileys & Emotion";
+"人物和手势" = "People & Body";
+"动物和自然" = "Animals & Nature";
+"食物和饮料" = "Food & Drink";
+"旅行和地点" = "Travel & Places";
+"活动" = "Activities";
+"物品" = "Objects";
+"符号" = "Symbols";
+"旗帜" = "Flags";
+"数学" = "Math";
+"数字序号" = "Numbers";
+"标点" = "Punctuation";
+"单位和货币" = "Units & Currency";
+"形状" = "Shapes";
+"希腊字母" = "Greek Letters";
+"上标和下标" = "Superscripts & Subscripts";
+"键盘" = "Keyboard";
+
+/* EmojiSymbolsPlugin.swift */
+"用中文、拼音或者英文搜表情（「笑」「猫」「smile」），也有常用的特殊符号：对勾、箭头、带圈数字、数学符号、单位和货币、希腊字母、上下标；点一下插到正在打字的地方。选中一个词再用，能直接换成表情" = "Search emoji in Chinese, pinyin or English (“笑”, “猫”, “smile”), plus everyday special symbols: check marks, arrows, circled numbers, math, units and currency, Greek letters, superscripts and subscripts. Click one to insert it where you are typing, or select a word first to replace it with an emoji";
+
+/* EmojiSymbolsView.swift */
+"最近" = "Recent";
+"表情" = "Emoji";
+"没有找到，换个说法试试：中文、拼音或者英文" = "Nothing found. Try another word, in Chinese, pinyin or English";
+"还没用过。插入过的表情和符号会排在这里" = "Nothing yet. Emoji and symbols you insert will show up here";
+"表情和符号" = "Emoji & Symbols";
+"搜表情和符号：笑、猫、对勾、箭头、smile" = "Search emoji and symbols: smile, cat, check, arrow";
+"肤色" = "Skin Tone";
+"分类" = "Category";
+"插入" = "Insert";
+"回车插入 · ⌘C 复制" = "Return to insert · ⌘C to copy";
+
 /* EncryptedImage.swift */
 "密码至少 %@ 位" = "The password needs at least %@ characters";
 "密码里不能有空字符" = "The password can’t contain null characters";

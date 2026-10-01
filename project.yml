@@ -968,6 +968,15 @@ targets:
         POP_PLUGIN_ID: focusSounds
         POP_PLUGIN_ENTRY: PopFocusSoundsEntry
 
+  PopEmojiSymbols:
+    templates: [PopPlugin]
+    sources: [PluginBundles/EmojiSymbols]
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: io.github.whrss9527.pop.plugin.emojiSymbols
+        POP_PLUGIN_ID: emojiSymbols
+        POP_PLUGIN_ENTRY: PopEmojiSymbolsEntry
+
   PopTests:
     type: bundle.unit-test
     platform: macOS
@@ -978,6 +987,7 @@ targets:
       - path: PluginBundles/CameraBubble
       - path: PluginBundles/PointerHighlight
       - path: PluginBundles/Teleprompter
+      - path: PluginBundles/EmojiSymbols
       - path: PluginBundles/FocusSounds
       - path: PluginBundles/Zoom
       - path: PluginBundles/CompareImages
@@ -1090,6 +1100,7 @@ schemes:
         PopCameraBubble: all
         PopPointerHighlight: all
         PopTeleprompter: all
+        PopEmojiSymbols: all
         PopFocusSounds: all
         PopZoom: all
         PopCompareImages: all
