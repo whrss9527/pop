@@ -257,6 +257,24 @@ enum PluginCatalog {
         PluginPackage(id: "zoom", bundleName: "PopZoom", name: String(localized: "屏幕放大"),
                       summary: String(localized: "演示、录教程时把指针附近放大，看清小字：放大的是那一刻的屏幕画面，挪动指针换地方看，滚轮或 ↑↓ 调倍数，点一下或按 Esc 回去"),
                       symbol: "plus.magnifyingglass", category: .recording, functions: [BuiltinPluginID.zoom]),
+        PluginPackage(id: "compareImages", bundleName: "PopCompareImages", name: String(localized: "对比图片"),
+                      summary: String(localized: "对比选中的两张图片：并排、滑动分界线、半透明叠加，或者把不一样的像素标红、框出几处不同；改版前后的截图、设计稿和实现对照都用得上"),
+                      symbol: "square.split.2x1", category: .screen, functions: [BuiltinPluginID.compareImages],
+                      // 和插件包里 ImageCompareModel 的键一样
+                      defaultsKeys: ["pop.compareImages.mode", "pop.compareImages.ignoreSubtle"]),
+        PluginPackage(id: "splitImage", bundleName: "PopSplitImage", name: String(localized: "切分图片"),
+                      summary: String(localized: "把选中的图片切成九宫格、四宫格（对准画面里的主体裁成正方形）或者横着三张，长图切成几页；按发出去的顺序编号，存在原图旁边的文件夹里"),
+                      symbol: "square.grid.3x3", category: .screen, functions: [BuiltinPluginID.splitImage],
+                      // 和插件包里 SplitImageModel 的键一样
+                      defaultsKeys: ["pop.splitImage.layout"]),
+        PluginPackage(id: "quitApps", bundleName: "PopQuitApps", name: String(localized: "退出 App"),
+                      summary: String(localized: "列出正在运行的 App 和各占多少内存，一键退出，没有响应的强制退出；也能一下退出其他所有 App，开会、演示前清清场"),
+                      symbol: "xmark.app", category: .files, functions: [BuiltinPluginID.quitApps]),
+        PluginPackage(id: "tidyFolder", bundleName: "PopTidyFolder", name: String(localized: "整理文件夹"),
+                      summary: String(localized: "把选中的文件夹（没选时是「下载」）第一层的文件按类型或者按月份归到子文件夹里，先看预览，整理完可以撤销"),
+                      symbol: "folder.badge.gearshape", category: .files, functions: [BuiltinPluginID.tidyFolder],
+                      // 和插件包里 TidyFolderModel 的键一样
+                      defaultsKeys: ["pop.tidyFolder.mode"]),
     ]
 
     /// 插件包提供的所有功能
