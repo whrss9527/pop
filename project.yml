@@ -1022,6 +1022,15 @@ targets:
         POP_PLUGIN_ID: mouseWheel
         POP_PLUGIN_ENTRY: PopMouseWheelEntry
 
+  PopHoldToQuit:
+    templates: [PopPlugin]
+    sources: [PluginBundles/HoldToQuit]
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: io.github.whrss9527.pop.plugin.holdToQuit
+        POP_PLUGIN_ID: holdToQuit
+        POP_PLUGIN_ENTRY: PopHoldToQuitEntry
+
   PopTests:
     type: bundle.unit-test
     platform: macOS
@@ -1032,6 +1041,7 @@ targets:
       - path: PluginBundles/CameraBubble
       - path: PluginBundles/PointerHighlight
       - path: PluginBundles/Teleprompter
+      - path: PluginBundles/HoldToQuit
       - path: PluginBundles/MouseWheel
       - path: PluginBundles/WindowPiP
       - path: PluginBundles/BreakReminder
@@ -1150,6 +1160,7 @@ schemes:
         PopCameraBubble: all
         PopPointerHighlight: all
         PopTeleprompter: all
+        PopHoldToQuit: all
         PopMouseWheel: all
         PopWindowPiP: all
         PopBreakReminder: all
