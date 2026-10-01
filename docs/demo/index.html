@@ -1102,7 +1102,7 @@ const FILES = [
   { key: 'logo', kind: 'imageFile', icon: 'logo', name: { zh: 'Logo.png', en: 'Logo.png' },
     info: [[{ zh: '种类', en: 'Kind' }, { zh: 'PNG 图像', en: 'PNG Image' }], [{ zh: '大小', en: 'Size' }, '64 KB'], [{ zh: '尺寸', en: 'Dimensions' }, '1024 × 1024'], [{ zh: '修改时间', en: 'Modified' }, '2026-09-30 21:08']] },
   { key: 'video', kind: 'video', icon: 'video', name: { zh: '发布会.mp4', en: 'Keynote.mp4' },
-    info: [[{ zh: '种类', en: 'Kind' }, { zh: 'MPEG-4 影片', en: 'MPEG-4 Movie' }], [{ zh: '大小', en: 'Size' }, '248 MB'], [{ zh: '尺寸', en: 'Dimensions' }, '1920 × 1080'], [{ zh: '时长', en: 'Duration' }, '12:48'], [{ zh: '修改时间', en: 'Modified' }, '2026-09-28 10:05']] },
+    info: [[{ zh: '种类', en: 'Kind' }, { zh: 'MPEG-4 影片', en: 'MPEG-4 Movie' }], [{ zh: '大小', en: 'Size' }, '248 MB'], [{ zh: '尺寸', en: 'Dimensions' }, '1920 × 1080'], [{ zh: '时长', en: 'Duration' }, '12:48'], [{ zh: '拍摄时间', en: 'Taken' }, '2026-08-30 19:00'], [{ zh: '修改时间', en: 'Modified' }, '2026-09-28 10:05']] },
   { key: 'audio', kind: 'audio', icon: 'audio', name: { zh: '会议录音.m4a', en: 'Meeting.m4a' },
     info: [[{ zh: '种类', en: 'Kind' }, { zh: 'Apple MPEG-4 音频', en: 'Apple MPEG-4 Audio' }], [{ zh: '大小', en: 'Size' }, '18.6 MB'], [{ zh: '时长', en: 'Duration' }, '32:10'], [{ zh: '修改时间', en: 'Modified' }, '2026-09-29 16:20']] },
   { key: 'pdf', kind: 'pdf', icon: 'pdf', name: { zh: '季度报告.pdf', en: 'Q3 Report.pdf' },
@@ -4833,14 +4833,22 @@ function tidyMonth(file) {
   return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
 }
 
+// 按拍摄日期时看照片、视频的拍摄时间；没有的不动
+function tidyTaken(file) {
+  const row = (file.info || []).find(([label]) => L(label) === L({ zh: '拍摄时间', en: 'Taken' }));
+  const found = row && /(\d{4})-(\d{2})-\d{2}/.exec(L(row[1]));
+  return found ? `${found[1]}-${found[2]}` : null;
+}
+
 function tidyPlan(mode) {
   const files = allFiles().filter((file) => file.kind !== 'folder' && file.kind !== 'app' && !file.hidden && !String(file.key).startsWith('tidy-'));
   const groups = new Map();
   for (const file of files) {
-    const id = mode === 'kind' ? tidyKind(file) : tidyMonth(file);
+    const id = mode === 'kind' ? tidyKind(file) : mode === 'taken' ? tidyTaken(file) : tidyMonth(file);
+    if (!id) continue;
     if (!groups.has(id)) {
       const kind = TIDY.kinds.find(([k]) => k === id);
-      groups.set(id, { id, name: kind ? kind[1] : { zh: id, en: id }, icon: kind ? kind[2] : 'clock', keys: [] });
+      groups.set(id, { id, name: kind ? kind[1] : { zh: id, en: id }, icon: kind ? kind[2] : mode === 'taken' ? 'cameraBubble' : 'clock', keys: [] });
     }
     groups.get(id).keys.push(file.key);
   }
@@ -4857,7 +4865,7 @@ function showTidyFolder(anchor) {
   }
   let mode = TIDY.mode;
   const seg = h('div', { class: 'seg', role: 'group', 'aria-label': zh ? '整理方式' : 'Sort' },
-    [['kind', { zh: '按类型', en: 'By Type' }], ['month', { zh: '按月份', en: 'By Month' }]].map(([id, label]) => h('button', { type: 'button', 'data-id': id, onclick: () => { mode = id; TIDY.mode = id; draw(); } }, L(label))));
+    [['kind', { zh: '按类型', en: 'By Type' }], ['month', { zh: '按月份', en: 'By Month' }], ['taken', { zh: '按拍摄日期', en: 'By Date Taken' }]].map(([id, label]) => h('button', { type: 'button', 'data-id': id, onclick: () => { mode = id; TIDY.mode = id; draw(); } }, L(label))));
   const body = h('div', { class: 'td-body' });
   const btns = h('div', { class: 'btns' });
   const el = cardShell({ title: L(P.tidyFolder.name), subtitle: folderName, width: 400, children: [body, btns] });
@@ -4869,8 +4877,13 @@ function showTidyFolder(anchor) {
     body.replaceChildren(seg,
       h('div', { class: 'td-list' }, plan.map((group) => h('div', { class: 'td-row' }, h('span', { class: 'td-icon' }, icon(group.icon)), h('span', { class: 'td-name' }, L(group.name)),
         h('span', { class: 'td-count' }, zh ? `${group.keys.length} 个` : String(group.keys.length))))),
-      h('div', { class: 'detail' }, zh ? `会把 ${count} 个文件放进 ${plan.length} 个子文件夹；子文件夹、隐藏文件和没下载完的文件不动` : `Moves ${count} files into ${plan.length} subfolders. Subfolders, hidden files and unfinished downloads stay put`));
-    btns.replaceChildren(button(zh ? '整理' : 'Tidy', apply, { class: 'mbtn default' }));
+      h('div', { class: 'detail' }, mode === 'taken'
+        ? (count ? (zh ? `会把 ${count} 张照片和视频按拍摄的月份放进 ${plan.length} 个子文件夹；别的文件不动` : `Moves ${count} photos and videos into ${plan.length} subfolders by the month they were taken. Other files stay put`)
+          : (zh ? '没有读得到拍摄日期的照片和视频' : 'No photos or videos with a capture date'))
+        : (zh ? `会把 ${count} 个文件放进 ${plan.length} 个子文件夹；子文件夹、隐藏文件和没下载完的文件不动` : `Moves ${count} files into ${plan.length} subfolders. Subfolders, hidden files and unfinished downloads stay put`)));
+    const tidy = button(zh ? '整理' : 'Tidy', apply, { class: 'mbtn default' });
+    tidy.disabled = !count;
+    btns.replaceChildren(tidy);
   }
 
   function apply() {
