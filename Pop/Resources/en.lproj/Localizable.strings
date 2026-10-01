@@ -1574,6 +1574,39 @@
 "检查更新…" = "Check for Updates…";
 "停止录屏（%@）" = "Stop Recording (%@)";
 
+/* SubtitlesPlugin.swift */
+"选中字幕文件（SRT、WebVTT、ASS、LRC），整体提前或推后、换帧率、去掉样式标签和听障说明，转成 SRT、WebVTT、LRC 或纯文字；选两份字幕可以合成一份双语字幕" = "Shift the selected subtitles (SRT, WebVTT, ASS, LRC) earlier or later, convert between frame rates, remove style tags and hearing-impaired descriptions, and save them as SRT, WebVTT, LRC or plain text; select two to merge them into one bilingual file";
+"没有选中字幕文件" = "No subtitle files selected";
+"读不了「%@」：不是字幕，或者里面没有一句" = "Can’t read “%@”: it isn’t a subtitle file or has no lines";
+
+/* SubtitlesView.swift */
+"%@ 句" = "%@ lines";
+"不调" = "No shift";
+"推后 %@ 秒" = "%@ s later";
+"提前 %@ 秒" = "%@ s earlier";
+"存不了：%@" = "Couldn’t save: %@";
+"存好了%@" = "Saved %@";
+"改好了%@，存成 UTF-8" = "Updated %@ and saved it as UTF-8";
+"字幕工具" = "Subtitles";
+"时间" = "Timing";
+"清理" = "Clean Up";
+"去掉样式标签" = "Remove style tags";
+"去掉听障说明" = "Remove hearing-impaired descriptions";
+"双语" = "Bilingual";
+"合成一份" = "Merge into one";
+"上面一行" = "Top line";
+"存成" = "Save As";
+"%@ 份字幕" = "%@ subtitle files";
+"另存一份双语字幕" = "Saves a new bilingual file";
+"直接改原文件，可以撤销" = "Changes the original file; you can undo";
+"另存一份，原文件不动" = "Saves a copy; the original stays as it is";
+"存好" = "Save";
+
+/* SubtitleTools.swift */
+"纯文字" = "Plain Text";
+"不换帧率" = "No change";
+"%@ 双语" = "%@ bilingual";
+
 /* SystemActions.swift */
 "锁屏" = "Lock Screen";
 "熄屏" = "Turn Off Display";

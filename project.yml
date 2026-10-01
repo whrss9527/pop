@@ -860,6 +860,15 @@ targets:
         POP_PLUGIN_ID: mediaInfo
         POP_PLUGIN_ENTRY: PopMediaInfoEntry
 
+  PopSubtitles:
+    templates: [PopPlugin]
+    sources: [PluginBundles/Subtitles]
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: io.github.whrss9527.pop.plugin.subtitles
+        POP_PLUGIN_ID: subtitles
+        POP_PLUGIN_ENTRY: PopSubtitlesEntry
+
   PopTests:
     type: bundle.unit-test
     platform: macOS
@@ -882,6 +891,7 @@ targets:
       - path: PluginBundles/AppInfo
       - path: PluginBundles/SimilarPhotos
       - path: PluginBundles/MediaInfo
+      - path: PluginBundles/Subtitles
       - path: PluginBundles/Beautify
       - path: PluginBundles/Spotlight
       - path: PluginBundles/Timer
@@ -982,6 +992,7 @@ schemes:
         PopAppInfo: all
         PopSimilarPhotos: all
         PopMediaInfo: all
+        PopSubtitles: all
         PopBeautify: all
         PopSpotlight: all
         PopTimer: all

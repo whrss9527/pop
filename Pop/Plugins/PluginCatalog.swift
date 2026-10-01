@@ -304,6 +304,9 @@ enum PluginCatalog {
         PluginPackage(id: "mediaInfo", bundleName: "PopMediaInfo", name: String(localized: "媒体信息"),
                       summary: String(localized: "看选中的视频或音频用的什么编码、分辨率、帧率、码率，是不是 HDR，有几条音轨和字幕，用什么设备在哪拍的；带着拍摄地点时可以去掉位置另存一份"),
                       symbol: "film.stack", category: .files, functions: [BuiltinPluginID.mediaInfo]),
+        PluginPackage(id: "subtitles", bundleName: "PopSubtitles", name: String(localized: "字幕工具"),
+                      summary: String(localized: "选中字幕文件（SRT、WebVTT、ASS、LRC），整体提前或推后、换帧率、去掉样式标签和听障说明，转成 SRT、WebVTT、LRC 或纯文字；选两份字幕可以合成一份双语字幕"),
+                      symbol: "captions.bubble", category: .files, functions: [BuiltinPluginID.subtitles]),
     ]
 
     /// 插件包提供的所有功能
