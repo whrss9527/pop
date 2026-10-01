@@ -301,6 +301,9 @@ enum PluginCatalog {
                       symbol: "photo.stack", category: .files, functions: [BuiltinPluginID.similarPhotos],
                       // 和插件包里 SimilarPhotosModel 的键一样
                       defaultsKeys: ["pop.similarPhotos.sensitivity"]),
+        PluginPackage(id: "mediaInfo", bundleName: "PopMediaInfo", name: String(localized: "媒体信息"),
+                      summary: String(localized: "看选中的视频或音频用的什么编码、分辨率、帧率、码率，是不是 HDR，有几条音轨和字幕，用什么设备在哪拍的；带着拍摄地点时可以去掉位置另存一份"),
+                      symbol: "film.stack", category: .files, functions: [BuiltinPluginID.mediaInfo]),
     ]
 
     /// 插件包提供的所有功能

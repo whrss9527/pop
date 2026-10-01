@@ -851,6 +851,15 @@ targets:
         POP_PLUGIN_ID: similarPhotos
         POP_PLUGIN_ENTRY: PopSimilarPhotosEntry
 
+  PopMediaInfo:
+    templates: [PopPlugin]
+    sources: [PluginBundles/MediaInfo]
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: io.github.whrss9527.pop.plugin.mediaInfo
+        POP_PLUGIN_ID: mediaInfo
+        POP_PLUGIN_ENTRY: PopMediaInfoEntry
+
   PopTests:
     type: bundle.unit-test
     platform: macOS
@@ -872,6 +881,7 @@ targets:
       - path: PluginBundles/FileEncoding
       - path: PluginBundles/AppInfo
       - path: PluginBundles/SimilarPhotos
+      - path: PluginBundles/MediaInfo
       - path: PluginBundles/Beautify
       - path: PluginBundles/Spotlight
       - path: PluginBundles/Timer
@@ -971,6 +981,7 @@ schemes:
         PopFileEncoding: all
         PopAppInfo: all
         PopSimilarPhotos: all
+        PopMediaInfo: all
         PopBeautify: all
         PopSpotlight: all
         PopTimer: all

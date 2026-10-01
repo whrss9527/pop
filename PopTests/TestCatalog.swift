@@ -72,6 +72,7 @@ enum TestCatalog {
         NewFileEntry.self,
         FileEncodingEntry.self,
         AppInfoEntry.self,
+        MediaInfoEntry.self,
         SimilarPhotosEntry.self,
     ]
 
