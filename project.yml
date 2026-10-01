@@ -905,6 +905,14 @@ targets:
         POP_PLUGIN_ID: voiceRecorder
         POP_PLUGIN_ENTRY: PopVoiceRecorderEntry
 
+  PopSystemInfo:
+    templates: [PopPlugin]
+    sources: [PluginBundles/SystemInfo]
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: io.github.whrss9527.pop.plugin.systemInfo
+        POP_PLUGIN_ID: systemInfo
+        POP_PLUGIN_ENTRY: PopSystemInfoEntry
 
   PopTests:
     type: bundle.unit-test
@@ -933,6 +941,7 @@ targets:
       - path: PluginBundles/EncryptFiles
       - path: PluginBundles/BatteryInfo
       - path: PluginBundles/VoiceRecorder
+      - path: PluginBundles/SystemInfo
       - path: PluginBundles/Beautify
       - path: PluginBundles/Spotlight
       - path: PluginBundles/Timer
@@ -1038,6 +1047,7 @@ schemes:
         PopEncryptFiles: all
         PopBatteryInfo: all
         PopVoiceRecorder: all
+        PopSystemInfo: all
         PopBeautify: all
         PopSpotlight: all
         PopTimer: all

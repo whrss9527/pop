@@ -321,6 +321,9 @@ enum PluginCatalog {
         PluginPackage(id: "voiceRecorder", bundleName: "PopVoiceRecorder", name: String(localized: "录音"),
                       summary: String(localized: "用麦克风录一段声音，存成 .m4a 放进「下载」；录的时候屏幕上方有个小条，看得到时长和音量，可以暂停，录好能接着转成文字。正在录的时候再用一次就停止"),
                       symbol: "mic", category: .recording, functions: [BuiltinPluginID.voiceRecorder]),
+        PluginPackage(id: "systemInfo", bundleName: "PopSystemInfo", name: String(localized: "系统信息"),
+                      summary: String(localized: "看这台 Mac 的型号、芯片和核心数、内存、macOS 版本、开机多久、启动磁盘还剩多少、每台显示器的分辨率和刷新率，可以一键复制，报问题、问人时用"),
+                      symbol: "info.circle", category: .files, functions: [BuiltinPluginID.systemInfo]),
     ]
 
     /// 插件包提供的所有功能
