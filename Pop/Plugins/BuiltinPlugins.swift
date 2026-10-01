@@ -41,7 +41,7 @@ enum BuiltinPlugins {
     static let displayOrder: [String] = [
         BuiltinPluginID.translate, BuiltinPluginID.screenshotTranslate, BuiltinPluginID.search, BuiltinPluginID.dictionary,
         BuiltinPluginID.vocabulary, BuiltinPluginID.speak, BuiltinPluginID.speakToFile, BuiltinPluginID.openURL, BuiltinPluginID.linkInspect,
-        BuiltinPluginID.webCapture, BuiltinPluginID.textImage, BuiltinPluginID.largeType, BuiltinPluginID.calculate,
+        BuiltinPluginID.webCapture, BuiltinPluginID.textImage, BuiltinPluginID.largeType, BuiltinPluginID.fontPreview, BuiltinPluginID.calculate,
         BuiltinPluginID.numberStats, BuiltinPluginID.unitConvert, BuiltinPluginID.copyPlain, BuiltinPluginID.textCleanup,
         BuiltinPluginID.extractInfo, BuiltinPluginID.idNumber, BuiltinPluginID.lineTools, BuiltinPluginID.reminder,
         BuiltinPluginID.spellCheck, BuiltinPluginID.aiAssistant, BuiltinPluginID.aiPolish, BuiltinPluginID.aiSummarize,
@@ -64,10 +64,10 @@ enum BuiltinPlugins {
         BuiltinPluginID.copyPath, BuiltinPluginID.fileInfo, BuiltinPluginID.mediaInfo, BuiltinPluginID.subtitles, BuiltinPluginID.folderTree, BuiltinPluginID.findDuplicates, BuiltinPluginID.similarPhotos,
         BuiltinPluginID.diskUsage, BuiltinPluginID.tidyFolder, BuiltinPluginID.newFile, BuiltinPluginID.fileEncoding, BuiltinPluginID.codeStats,
         BuiltinPluginID.compareFolders, BuiltinPluginID.compareFiles,
-        BuiltinPluginID.batchRename, BuiltinPluginID.revealInFinder, BuiltinPluginID.openWith, BuiltinPluginID.zip,
+        BuiltinPluginID.batchRename, BuiltinPluginID.revealInFinder, BuiltinPluginID.openWith, BuiltinPluginID.zip, BuiltinPluginID.encryptFiles,
         BuiltinPluginID.unzip, BuiltinPluginID.pdf, BuiltinPluginID.videoConvert, BuiltinPluginID.trimMedia,
         BuiltinPluginID.transcribe, BuiltinPluginID.shelf, BuiltinPluginID.openInTerminal, BuiltinPluginID.keepAwake,
-        BuiltinPluginID.systemActions, BuiltinPluginID.quitApps, BuiltinPluginID.uninstallApp, BuiltinPluginID.appInfo, BuiltinPluginID.cleanKeyboard, BuiltinPluginID.timer,
+        BuiltinPluginID.systemActions, BuiltinPluginID.quitApps, BuiltinPluginID.uninstallApp, BuiltinPluginID.appInfo, BuiltinPluginID.batteryInfo, BuiltinPluginID.cleanKeyboard, BuiltinPluginID.timer,
         BuiltinPluginID.clipboardHistory,
         BuiltinPluginID.snippets, BuiltinPluginID.allPlugins, BuiltinPluginID.settings,
     ]
@@ -114,7 +114,7 @@ enum BuiltinCategory: CaseIterable, Identifiable {
     private static let members: [BuiltinCategory: [String]] = [
         .text: [BuiltinPluginID.translate, BuiltinPluginID.screenshotTranslate, BuiltinPluginID.search,
                 BuiltinPluginID.dictionary, BuiltinPluginID.vocabulary, BuiltinPluginID.speak, BuiltinPluginID.speakToFile, BuiltinPluginID.openURL,
-                BuiltinPluginID.webCapture, BuiltinPluginID.textImage, BuiltinPluginID.largeType,
+                BuiltinPluginID.webCapture, BuiltinPluginID.textImage, BuiltinPluginID.largeType, BuiltinPluginID.fontPreview,
                 BuiltinPluginID.copyPlain,
                 BuiltinPluginID.textCleanup, BuiltinPluginID.extractInfo, BuiltinPluginID.idNumber, BuiltinPluginID.lineTools,
                 BuiltinPluginID.reminder,
@@ -148,12 +148,12 @@ enum BuiltinCategory: CaseIterable, Identifiable {
                  BuiltinPluginID.batchRename,
                  BuiltinPluginID.revealInFinder,
                  BuiltinPluginID.openWith,
-                 BuiltinPluginID.openInTerminal, BuiltinPluginID.zip,
+                 BuiltinPluginID.openInTerminal, BuiltinPluginID.zip, BuiltinPluginID.encryptFiles,
                  BuiltinPluginID.unzip, BuiltinPluginID.pdf, BuiltinPluginID.videoConvert, BuiltinPluginID.trimMedia,
                  BuiltinPluginID.transcribe,
                  BuiltinPluginID.shelf, BuiltinPluginID.airDrop, BuiltinPluginID.sendToPhone,
                  BuiltinPluginID.windowLayout, BuiltinPluginID.menuShortcuts,
-                 BuiltinPluginID.keepAwake, BuiltinPluginID.systemActions, BuiltinPluginID.quitApps, BuiltinPluginID.uninstallApp, BuiltinPluginID.appInfo,
+                 BuiltinPluginID.keepAwake, BuiltinPluginID.systemActions, BuiltinPluginID.quitApps, BuiltinPluginID.uninstallApp, BuiltinPluginID.appInfo, BuiltinPluginID.batteryInfo,
                  BuiltinPluginID.cleanKeyboard, BuiltinPluginID.timer],
     ]
 

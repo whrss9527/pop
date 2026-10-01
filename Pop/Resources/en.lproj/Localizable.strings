@@ -163,6 +163,38 @@
 "有的名字不能用" = "Some names can’t be used";
 "改名失败：%@" = "Couldn’t rename: %@";
 
+/* BatteryInfoPlugin.swift */
+"看笔记本电池的电量、最大容量（健康度）、循环次数、状况、温度，正在充电或者耗电的功率、充电器多少瓦，还要多久充满或者用完；也列出连着的蓝牙键盘、鼠标、触控板和耳机的电量" = "See the charge, maximum capacity (health), cycle count, condition and temperature of a MacBook battery, how many watts are going in or out, the charger’s wattage, and how long until it’s full or empty; also lists the battery levels of connected Bluetooth keyboards, mice, trackpads and headphones";
+"这台 Mac 没有电池，也没有连着能看电量的蓝牙设备" = "This Mac doesn’t have a battery, and no connected Bluetooth device reports its battery level";
+"蓝牙设备" = "Bluetooth Devices";
+"左耳 %@" = "Left %@";
+"右耳 %@" = "Right %@";
+"充电盒 %@" = "Case %@";
+"妙控键盘" = "Magic Keyboard";
+"妙控鼠标" = "Magic Mouse";
+
+/* BatteryInfoView.swift */
+"正在充电" = "Charging";
+"已充满" = "Fully charged";
+"接着电源，暂停充电" = "On power, charging paused";
+"用电池" = "On battery";
+"充满还要 %@" = "%@ until full";
+"还能用 %@" = "%@ remaining";
+"（现在 %@ mAh，出厂 %@ mAh）" = " (%@ mAh now, %@ mAh when new)";
+"最大容量" = "Maximum Capacity";
+"%@ 次（设计寿命 %@ 次）" = "%@ (designed for %@)";
+"%@ 次" = "%@";
+"循环次数" = "Cycle Count";
+"状况" = "Condition";
+"建议维修" = "Service Recommended";
+"正常" = "Normal";
+"电压" = "Voltage";
+"电源适配器" = "Power Adapter";
+"已接上" = "Connected";
+"电量 %@，%@" = "Charge %@, %@";
+"电池信息" = "Battery Info";
+"电池设置" = "Battery Settings";
+
 /* BuiltinPlugins.swift */
 "转换" = "Convert";
 "开发" = "Developer";
@@ -458,6 +490,28 @@
 "留" = "Keep";
 "正在比较内容：%lld / %lld" = "Comparing contents: %lld / %lld";
 
+/* EncryptedImage.swift */
+"密码至少 %@ 位" = "The password needs at least %@ characters";
+"密码里不能有空字符" = "The password can’t contain null characters";
+"密码有点简单：8 位以上，字母、数字、符号混着用更安全" = "This password is simple. 8 or more characters mixing letters, numbers and symbols are safer.";
+"%@ 项" = "%@ items";
+"加密" = "Encrypted";
+"加密打包失败：%@" = "Couldn’t create the encrypted image: %@";
+
+/* EncryptFilesPlugin.swift */
+"把选中的文件和文件夹放进一个用密码加密（AES-256）的磁盘映像，在任何一台 Mac 上双击、输入密码就能打开；发给别人、存到 U 盘或者网盘前用" = "Put the selected files and folders into a password-protected (AES-256) disk image that opens on any Mac with a double-click and the password; use it before sending files or saving them to a USB drive or cloud storage";
+
+/* EncryptFilesView.swift */
+"%@，一共 %@" = "%@, %@ in total";
+"加密打包" = "Encrypt Files";
+"做好了「%@」（%@）" = "Created “%@” (%@)";
+"在任何一台 Mac 上双击它、输入密码就能打开。密码忘了就打不开了，记好它" = "Double-click it on any Mac and enter the password to open it. Without the password it can’t be opened, so keep it safe.";
+"名字" = "Name";
+"再输一遍" = "Confirm";
+"做好后把原文件移到废纸篓" = "Move the originals to the Trash afterwards";
+"存在「%@」里" = "Saved in “%@”";
+"加密强度" = "Encryption";
+
 /* FileInfo.swift */
 "类型" = "Type";
 "至少 " = "at least ";
@@ -540,6 +594,37 @@
 "比较文件夹" = "Compare Folders";
 "一样的 %lld 个，内容不同 %lld 个，只在一边有的 %lld 个；隐藏文件和 App 这类包里面的文件不比较" = "%lld identical, %lld different, %lld on one side only; hidden files and files inside packages such as apps aren’t compared";
 "两个文件夹里的 %lld 个文件完全一样" = "The %lld files in both folders are identical";
+
+/* FontCatalog.swift */
+"西文" = "Western";
+"等宽" = "Monospaced";
+"收藏" = "Favorites";
+"永和九年，岁在癸丑 The quick brown fox jumps over the lazy dog 0123456789" = "The quick brown fox jumps over the lazy dog 0123456789";
+
+/* FontPreviewPlugin.swift */
+"用这台 Mac 上的每一种字体显示选中的文字（没选中时用示例），按中文、西文、等宽、收藏筛选，只看能完整显示的；复制字体名、CSS，或者复制成图片；选中字体文件时先预览再安装" = "Show the selected text (or a sample) in every font on your Mac, filter by Chinese, Western, monospaced or favorite fonts and only those that can show all of it; copy the font name or CSS, or copy it as an image; select font files to preview and install them";
+"读不了这个字体文件" = "Can’t read this font file";
+
+/* FontPreviewView.swift */
+"%@ 种字体能完整显示这段文字" = "%@ fonts can show all of this text";
+"%@ 种字体" = "%@ fonts";
+"装不上：%@" = "Couldn’t install: %@";
+"字体预览" = "Font Preview";
+"要预览的文字" = "Text to preview";
+"搜索字体" = "Search fonts";
+"筛选" = "Filter";
+"只看能显示的" = "Only fonts that can show it";
+"%@ 种样式" = "%@ styles";
+"取消收藏" = "Remove from Favorites";
+"加到收藏" = "Add to Favorites";
+"复制字体名" = "Copy Font Name";
+"复制 PostScript 名" = "Copy PostScript Name";
+"复制 CSS" = "Copy CSS";
+"复制成图片" = "Copy as Image";
+"在访达中显示字体文件" = "Show Font File in Finder";
+"装好了，在「字体册」里也能看到" = "Installed. You can also find it in Font Book.";
+"装到「~/资源库/Fonts」，只给你自己用" = "Installs into ~/Library/Fonts, just for you";
+"没有能完整显示这段文字的字体，取消「只看能显示的」再看看" = "No font can show all of this text. Uncheck “Only fonts that can show it” to see more.";
 
 /* FormatPlugins.swift */
 "YAML 和 JSON" = "YAML ↔ JSON";
@@ -1681,6 +1766,9 @@
 
 /* TextDiffView.swift */
 "⋯ %lld 行相同 ⋯" = "⋯ %lld identical lines ⋯";
+
+/* TextEncodingTools.swift */
+"GB18030（GBK）" = "GB18030 (GBK)";
 
 /* TextImage.swift */
 "米黄" = "Cream";

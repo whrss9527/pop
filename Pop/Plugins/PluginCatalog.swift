@@ -307,6 +307,17 @@ enum PluginCatalog {
         PluginPackage(id: "subtitles", bundleName: "PopSubtitles", name: String(localized: "字幕工具"),
                       summary: String(localized: "选中字幕文件（SRT、WebVTT、ASS、LRC），整体提前或推后、换帧率、去掉样式标签和听障说明，转成 SRT、WebVTT、LRC 或纯文字；选两份字幕可以合成一份双语字幕"),
                       symbol: "captions.bubble", category: .files, functions: [BuiltinPluginID.subtitles]),
+        PluginPackage(id: "fontPreview", bundleName: "PopFontPreview", name: String(localized: "字体预览"),
+                      summary: String(localized: "用这台 Mac 上的每一种字体显示选中的文字（没选中时用示例），按中文、西文、等宽、收藏筛选，只看能完整显示的；复制字体名、CSS，或者复制成图片；选中字体文件时先预览再安装"),
+                      symbol: "textformat", category: .text, functions: [BuiltinPluginID.fontPreview],
+                      // 和插件包里 FontPreviewModel 的键一样
+                      defaultsKeys: ["pop.fontPreview.favorites", "pop.fontPreview.size"]),
+        PluginPackage(id: "encryptFiles", bundleName: "PopEncryptFiles", name: String(localized: "加密打包"),
+                      summary: String(localized: "把选中的文件和文件夹放进一个用密码加密（AES-256）的磁盘映像，在任何一台 Mac 上双击、输入密码就能打开；发给别人、存到 U 盘或者网盘前用"),
+                      symbol: "lock.doc", category: .files, functions: [BuiltinPluginID.encryptFiles]),
+        PluginPackage(id: "batteryInfo", bundleName: "PopBatteryInfo", name: String(localized: "电池信息"),
+                      summary: String(localized: "看笔记本电池的电量、最大容量（健康度）、循环次数、状况、温度，正在充电或者耗电的功率、充电器多少瓦，还要多久充满或者用完；也列出连着的蓝牙键盘、鼠标、触控板和耳机的电量"),
+                      symbol: "battery.100", category: .files, functions: [BuiltinPluginID.batteryInfo]),
     ]
 
     /// 插件包提供的所有功能

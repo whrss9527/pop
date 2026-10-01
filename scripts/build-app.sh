@@ -23,6 +23,14 @@ BUILD_ID="${VERSION}+$(git rev-parse --short=12 HEAD 2>/dev/null || echo local)"
 
 xcodegen generate > /dev/null
 
+# CI 的启动测试（版本号 0.0.0-ci）在 macOS 26 上只编这台机器的架构：那台 runner 编得慢，整个启动测试有 30 分钟的上限。
+# macOS 15 上照样编 Apple 芯片和 Intel 的通用版，Intel 那份也要编得过；发布时总是通用版
+ARCH_SETTINGS=()
+if [ "$VERSION" = "0.0.0-ci" ] && [ "$(sw_vers -productVersion | cut -d. -f1)" -ge 26 ]; then
+  ARCH_SETTINGS=("ARCHS=$(uname -m)")
+  echo "只编 $(uname -m)" >&2
+fi
+
 if ! xcodebuild build \
   -project Pop.xcodeproj \
   -scheme Pop \
@@ -38,6 +46,7 @@ if ! xcodebuild build \
   CODE_SIGN_STYLE=Manual \
   CODE_SIGN_IDENTITY=- \
   DEVELOPMENT_TEAM= \
+  ${ARCH_SETTINGS[@]+"${ARCH_SETTINGS[@]}"} \
   > "$OUT/build.log" 2>&1; then
   grep -E "error:" "$OUT/build.log" | sort -u | head -50 >&2 || true
   tail -60 "$OUT/build.log" >&2
