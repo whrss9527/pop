@@ -37,17 +37,17 @@ struct SystemInfoPlugin: PopPlugin {
     static let demoNow = Date(timeIntervalSince1970: 1_790_000_000)
 
     static func demoReport() -> SystemInfo.Report {
-        SystemInfo.Report(modelName: "MacBook Pro (14-inch, 2023)", modelIdentifier: "Mac14,9", chip: "Apple M2 Pro",
-                          cores: 10, performanceCores: 6, efficiencyCores: 4, gpuCores: 16, memory: 16 * 1_073_741_824,
-                          osVersion: "15.6.1", osBuild: "24G90",
-                          bootTime: demoNow.addingTimeInterval(-(3 * 86_400 + 4 * 3_600 + 12 * 60)),
-                          disk: SystemInfo.Disk(name: "Macintosh HD", total: 494_384_795_648, available: 233_876_123_648),
-                          displays: [
-                              SystemInfo.Display(name: "Built-in Liquid Retina XDR Display", builtIn: true, points: CGSize(width: 1512, height: 982),
-                                                 pixels: CGSize(width: 3024, height: 1964), refreshRate: 120),
-                              SystemInfo.Display(name: "Studio Display", builtIn: false, points: CGSize(width: 2560, height: 1440),
-                                                 pixels: CGSize(width: 5120, height: 2880), refreshRate: 60),
-                          ],
-                          serial: "C02XK1ABCD12")
+        // 拆成几个有类型的常量：整个写在一个表达式里，新的编译器类型检查会超时
+        let memory: UInt64 = 16 * 1_073_741_824
+        let uptime: TimeInterval = 3 * 86_400 + 4 * 3_600 + 12 * 60
+        let disk = SystemInfo.Disk(name: "Macintosh HD", total: 494_384_795_648, available: 233_876_123_648)
+        let builtIn = SystemInfo.Display(name: "Built-in Liquid Retina XDR Display", builtIn: true, points: CGSize(width: 1512, height: 982),
+                                         pixels: CGSize(width: 3024, height: 1964), refreshRate: 120)
+        let studio = SystemInfo.Display(name: "Studio Display", builtIn: false, points: CGSize(width: 2560, height: 1440),
+                                        pixels: CGSize(width: 5120, height: 2880), refreshRate: 60)
+        return SystemInfo.Report(modelName: "MacBook Pro (14-inch, 2023)", modelIdentifier: "Mac14,9", chip: "Apple M2 Pro",
+                                 cores: 10, performanceCores: 6, efficiencyCores: 4, gpuCores: 16, memory: memory,
+                                 osVersion: "15.6.1", osBuild: "24G90", bootTime: demoNow.addingTimeInterval(-uptime),
+                                 disk: disk, displays: [builtIn, studio], serial: "C02XK1ABCD12")
     }
 }

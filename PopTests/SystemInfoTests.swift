@@ -24,14 +24,18 @@ final class SystemInfoTests: XCTestCase {
         XCTAssertEqual(SystemInfo.osVersionText(major: 26, minor: 0, patch: 0), "26.0")
         XCTAssertEqual(SystemInfo.cpuText(cores: 10, performance: 6, efficiency: 4), "10 核 CPU（6 性能核 + 4 能效核）")
         XCTAssertEqual(SystemInfo.cpuText(cores: 8, performance: nil, efficiency: nil), "8 核 CPU")
-        XCTAssertEqual(SystemInfo.memoryText(16 * 1_073_741_824), "16 GB")
+        let gigabyte: UInt64 = 1_073_741_824
+        XCTAssertEqual(SystemInfo.memoryText(16 * gigabyte), "16 GB")
         XCTAssertEqual(SystemInfo.memoryText(1_610_612_736), "1.5 GB")
 
         let now = Date(timeIntervalSince1970: 1_790_000_000)
-        XCTAssertEqual(SystemInfo.uptimeText(since: now.addingTimeInterval(-(3 * 86_400 + 4 * 3_600 + 12 * 60)), now: now), "3 天 4 小时")
-        XCTAssertEqual(SystemInfo.uptimeText(since: now.addingTimeInterval(-2 * 86_400), now: now), "2 天")
-        XCTAssertEqual(SystemInfo.uptimeText(since: now.addingTimeInterval(-(5 * 3_600 + 12 * 60)), now: now), "5 小时 12 分钟")
-        XCTAssertEqual(SystemInfo.uptimeText(since: now.addingTimeInterval(-3 * 3_600), now: now), "3 小时")
+        let day: TimeInterval = 86_400
+        let hour: TimeInterval = 3_600
+        let minute: TimeInterval = 60
+        XCTAssertEqual(SystemInfo.uptimeText(since: now.addingTimeInterval(-(3 * day + 4 * hour + 12 * minute)), now: now), "3 天 4 小时")
+        XCTAssertEqual(SystemInfo.uptimeText(since: now.addingTimeInterval(-2 * day), now: now), "2 天")
+        XCTAssertEqual(SystemInfo.uptimeText(since: now.addingTimeInterval(-(5 * hour + 12 * minute)), now: now), "5 小时 12 分钟")
+        XCTAssertEqual(SystemInfo.uptimeText(since: now.addingTimeInterval(-3 * hour), now: now), "3 小时")
         XCTAssertEqual(SystemInfo.uptimeText(since: now.addingTimeInterval(-30), now: now), "1 分钟")
 
         let disk = SystemInfo.diskText(SystemInfo.Disk(name: "Macintosh HD", total: 494_384_795_648, available: 233_876_123_648))
