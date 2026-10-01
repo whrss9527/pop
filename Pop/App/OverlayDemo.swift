@@ -657,7 +657,9 @@ enum OverlayDemo {
     /// 插件包注册的演示步骤：按顺序一个个显示、记下截图区域、停一会儿再收起。最多停到截图拍完（holdTime）
     private static func playPluginScenes(after step: String, in context: PluginHost.DemoContext, unit: Double, holdTime: Double) async {
         for scene in PluginHost.shared.demoScenes(after: step) {
-            await pause(min(scene.delay * unit, holdTime))
+            // 显示前只等上一步收起的动画（Motion.exitDuration，0.17 × unit）走完：插件包的步骤越来越多，
+            // 每步都等满 holdTime 的话，CI 截图会拖过启动测试的时间上限
+            await pause(min(scene.delay * unit, 0.25 * unit))
             if let region = await scene.show(context) {
                 logRegion(region == context.cardRegion ? region : region.insetBy(dx: -24, dy: -24), screen: context.screen)
             }
