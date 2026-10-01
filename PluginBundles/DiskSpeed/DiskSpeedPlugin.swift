@@ -22,13 +22,16 @@ final class DiskSpeedEntry: NSObject, PopPluginBundle {
 struct DiskSpeedPlugin: PopPlugin {
     let info = PluginInfo(id: BuiltinPluginID.diskSpeed, name: String(localized: "磁盘测速"), symbol: "speedometer",
                           summary: String(localized: "测硬盘、U 盘、移动固态硬盘连续写入和读取有多快：选中磁盘里的文件或文件夹就测那块盘，什么都不选时测启动磁盘"),
-                          accepts: [])
+                          accepts: [], optionalContent: true)
 
     @MainActor func run(_ content: ClassifiedContent, context: PluginContext) async -> PluginOutcome {
-        let volumes = DiskSpeed.volumes()
+        // 读各块盘的大小要问一遍每块盘，网络盘可能很慢：放到后台
+        let file = content.files.first
+        let (volumes, selected) = await runInBackground { () -> ([DiskSpeed.Volume], URL?) in
+            // 选中了文件或文件夹：先选它所在的那块盘
+            (DiskSpeed.volumes(), file.flatMap(DiskSpeed.volume(containing:))?.url)
+        }
         guard !volumes.isEmpty else { return .failure(String(localized: "没有找到能测的磁盘")) }
-        // 选中了文件或文件夹：先选它所在的那块盘
-        let selected = content.files.first.flatMap(DiskSpeed.volume(containing:))?.url
         let model = DiskSpeedModel(volumes: volumes, selecting: selected)
         return .present(PluginPresentation { session in
             session.showCard(DiskSpeedView(model: model,

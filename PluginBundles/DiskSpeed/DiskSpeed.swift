@@ -147,13 +147,14 @@ enum DiskSpeed {
     struct Meter {
         let pass: Pass
         let total: Int64
-        private let start = ProcessInfo.processInfo.systemUptime
+        private let start: TimeInterval
         private var done: Int64 = 0
         private var window: [(time: TimeInterval, done: Int64)] = []
 
-        init(pass: Pass, total: Int64) {
+        init(pass: Pass, total: Int64, start: TimeInterval = ProcessInfo.processInfo.systemUptime) {
             self.pass = pass
             self.total = total
+            self.start = start
             window = [(start, 0)]
         }
 

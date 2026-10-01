@@ -105,14 +105,21 @@ final class DiskSpeedModel: ObservableObject {
         let cancelled = cancelled
         task = Task {
             let result = await runInBackground { () -> Result<DiskSpeed.Speeds, Error> in
-                Result {
-                    try DiskSpeed.measure(in: folder, size: bytes, isCancelled: { cancelled.isSet }) { progress in
+                // 快的固态硬盘一秒钟要报几百次进度：最多每 0.1 秒更新一次卡片，换了一轮、到头了总要更新
+                var lastShown: TimeInterval = 0
+                var lastPass: DiskSpeed.Pass?
+                return Result {
+                    try DiskSpeed.measure(in: folder, size: bytes, isCancelled: { cancelled.isSet }, progress: { progress in
+                        let now = ProcessInfo.processInfo.systemUptime
+                        guard now - lastShown >= 0.1 || progress.pass != lastPass || progress.done >= progress.total else { return }
+                        lastShown = now
+                        lastPass = progress.pass
                         DispatchQueue.main.async { [weak self] in
                             MainActor.assumeIsolated {
                                 self?.show(progress)
                             }
                         }
-                    }
+                    })
                 }
             }
             switch result {

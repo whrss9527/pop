@@ -1,5 +1,6 @@
 import AppKit
 import CoreText
+import PDFKit
 import SwiftUI
 import Vision
 @testable import Pop
@@ -38,10 +39,10 @@ enum PDFTextLayer {
         }
     }
 
-    /// 认出一页上的字（在后台线程调用）
-    static func recognize(_ page: CGPDFPage) throws -> [Line] {
+    /// 认出一页上的字（在后台线程调用）；annotated 是同一页用 PDFKit 打开的样子，批注上的字也认
+    static func recognize(_ page: CGPDFPage, annotated: PDFPage? = nil) throws -> [Line] {
         // 长边 2400 像素左右，Vision 认得清楚
-        guard let image = PDFRedraw.render(page, longSide: 2400) else { return [] }
+        guard let image = PDFRedraw.render(page, annotated: annotated, longSide: 2400) else { return [] }
         let request = VNRecognizeTextRequest()
         request.recognitionLevel = .accurate
         request.usesLanguageCorrection = true
@@ -54,9 +55,9 @@ enum PDFTextLayer {
         return lines(found, pageSize: PDFRedraw.displaySize(of: page))
     }
 
-    /// 写成新的 PDF：每页先原样画上原来的页面，再在每行的位置写上看不见的文字
-    static func write(_ document: CGPDFDocument, pages: [[Line]], to url: URL) throws {
-        try PDFRedraw.write(document, to: url) { index, _, context in
+    /// 写成新的 PDF：每页先原样画上原来的页面（批注一起画进去），再在每行的位置写上看不见的文字
+    static func write(_ document: CGPDFDocument, pages: [[Line]], annotations: PDFDocument? = nil, to url: URL) throws {
+        try PDFRedraw.write(document, annotations: annotations, to: url) { index, _, context in
             drawInvisible(index < pages.count ? pages[index] : [], in: context)
         }
     }
@@ -117,10 +118,14 @@ final class PDFTextLayerModel: ObservableObject {
                 return
             }
             total = document.numberOfPages
+            // 同一个文件用 PDFKit 打开：签名、图章这些批注一起认、一起画进新文件
+            let annotations = PDFDocument(url: pdf)
             var pages: [[PDFTextLayer.Line]] = []
             for number in 1...document.numberOfPages {
                 let result = await runInBackground { () -> Result<[PDFTextLayer.Line], Error> in
-                    Result { try document.page(at: number).map(PDFTextLayer.recognize) ?? [] }
+                    Result {
+                        try document.page(at: number).map { try PDFTextLayer.recognize($0, annotated: annotations?.page(at: number - 1)) } ?? []
+                    }
                 }
                 guard !Task.isCancelled else { return }
                 switch result {
@@ -133,7 +138,7 @@ final class PDFTextLayerModel: ObservableObject {
                 done = number
             }
             let written = await runInBackground { () -> Result<Void, Error> in
-                Result { try PDFTextLayer.write(document, pages: pages, to: destination) }
+                Result { try PDFTextLayer.write(document, pages: pages, annotations: annotations, to: destination) }
             }
             guard !Task.isCancelled else {
                 try? FileManager.default.removeItem(at: destination)

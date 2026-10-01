@@ -175,6 +175,45 @@ final class PDFTextLayerTests: XCTestCase {
         XCTAssertGreaterThan(corner.minX, 520)
     }
 
+    func testAnnotationsAreDrawnIntoTheCopy() throws {
+        // 一页 PDF 上有个红色的方块批注（像签名、图章那样）
+        let plain = try blankPDF(name: "签过字.pdf", pages: 1)
+        let document = try XCTUnwrap(PDFDocument(url: plain))
+        let square = PDFAnnotation(bounds: CGRect(x: 250, y: 300, width: 100, height: 100), forType: .square, withProperties: nil)
+        square.color = .red
+        square.interiorColor = .red
+        try XCTUnwrap(document.page(at: 0)).addAnnotation(square)
+        let signed = folder.appending(path: "签过字 批注.pdf")
+        XCTAssertTrue(document.write(to: signed))
+        XCTAssertTrue(PDFRedraw.hasVisibleAnnotations(PDFDocument(url: signed)?.page(at: 0)))
+        XCTAssertFalse(PDFRedraw.hasVisibleAnnotations(PDFDocument(url: plain)?.page(at: 0)))
+
+        // 加了页码的新文件里，方块画进了页面
+        let output = folder.appending(path: "签过字 页码.pdf")
+        XCTAssertEqual(try PDFPageNumbers.write(signed, options: PDFPageNumbers.Options(), to: output), 1)
+        let page = try XCTUnwrap(CGPDFDocument(output as CFURL)?.page(at: 1))
+        let image = try XCTUnwrap(PDFRedraw.render(page, longSide: 792))
+        XCTAssertEqual(image.height, 792)
+        let inside = try pixel(image, x: 300, y: 792 - 350)
+        XCTAssertGreaterThan(inside.red, 200)
+        XCTAssertLessThan(inside.green, 90)
+        // 方块外面还是白的
+        let outside = try pixel(image, x: 450, y: 792 - 350)
+        XCTAssertGreaterThan(outside.green, 240)
+    }
+
+    /// 读一个像素（左上角为原点）
+    private func pixel(_ image: CGImage, x: Int, y: Int) throws -> (red: Int, green: Int, blue: Int) {
+        let width = image.width
+        let height = image.height
+        let context = try XCTUnwrap(CGContext(data: nil, width: width, height: height, bitsPerComponent: 8, bytesPerRow: width * 4,
+                                              space: CGColorSpaceCreateDeviceRGB(), bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue))
+        context.draw(image, in: CGRect(x: 0, y: 0, width: width, height: height))
+        let bytes = try XCTUnwrap(context.data?.assumingMemoryBound(to: UInt8.self))
+        let offset = (y * width + x) * 4
+        return (Int(bytes[offset]), Int(bytes[offset + 1]), Int(bytes[offset + 2]))
+    }
+
     @MainActor
     func testPageNumbersCard() async throws {
         defer {

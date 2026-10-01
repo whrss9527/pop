@@ -20,12 +20,12 @@ final class DiskSpeedTests: XCTestCase {
     func testMeasuresWritingAndReading() throws {
         var passes: [DiskSpeed.Pass] = []
         var last: DiskSpeed.Progress?
-        let speeds = try DiskSpeed.measure(in: folder, size: 24_000_000, chunk: 4 << 20) { progress in
+        let speeds = try DiskSpeed.measure(in: folder, size: 24_000_000, chunk: 4 << 20, progress: { progress in
             if passes.last != progress.pass {
                 passes.append(progress.pass)
             }
             last = progress
-        }
+        })
         XCTAssertGreaterThan(speeds.write, 0)
         XCTAssertGreaterThan(speeds.read, 0)
         // 先写后读，读完正好是写的那么多
@@ -53,8 +53,8 @@ final class DiskSpeedTests: XCTestCase {
     }
 
     func testMeterKeepsAboutHalfASecond() {
-        var meter = DiskSpeed.Meter(pass: .write, total: 100)
         let start = ProcessInfo.processInfo.systemUptime
+        var meter = DiskSpeed.Meter(pass: .write, total: 100, start: start)
         _ = meter.add(10, at: start + 0.1)
         _ = meter.add(10, at: start + 0.2)
         let progress = meter.add(10, at: start + 1.0)
@@ -63,11 +63,12 @@ final class DiskSpeedTests: XCTestCase {
         // 最近半秒里只有一块：从上一块（0.2 秒）算起
         XCTAssertEqual(progress.speed, 10 / 0.8, accuracy: 0.5)
         // 平均速度从开始算
-        XCTAssertEqual(progress.average, 30, accuracy: 1)
+        XCTAssertEqual(progress.average, 30, accuracy: 0.01)
     }
 
     func testDescribesVolumesAndSpeeds() throws {
-        XCTAssertEqual(DiskSpeed.speedText(2_834_400_000), "2,834 MB/s")
+        // 千位分隔符跟着系统的区域设置
+        XCTAssertEqual(DiskSpeed.speedText(2_834_400_000), "\(2834.formatted(.number)) MB/s")
         XCTAssertEqual(DiskSpeed.speedText(86_440_000), "86.4 MB/s")
         let external = DiskSpeedPlugin.demoVolumes()[1]
         XCTAssertTrue(DiskSpeed.describe(external).hasPrefix("ExFAT · 外接 · 可用 "), DiskSpeed.describe(external))
@@ -101,7 +102,8 @@ final class DiskSpeedTests: XCTestCase {
         XCTAssertEqual(model.fraction, 1)
         let text = try XCTUnwrap(model.resultText)
         XCTAssertTrue(text.hasPrefix("T7 Shield（ExFAT · 外接 · "), text)
-        XCTAssertTrue(text.contains("\n写入 ") && text.contains("\n读取 ") && text.hasSuffix("测试文件 16 MB"), text)
+        let size = ByteCountFormatter.string(fromByteCount: 16_000_000, countStyle: .file)
+        XCTAssertTrue(text.contains("\n写入 ") && text.contains("\n读取 ") && text.hasSuffix("测试文件 \(size)"), text)
         XCTAssertEqual(try leftovers(), [])
 
         // 停下：回到没测的样子

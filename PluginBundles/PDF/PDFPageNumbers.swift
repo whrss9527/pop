@@ -1,5 +1,6 @@
 import AppKit
 import CoreText
+import PDFKit
 import SwiftUI
 @testable import Pop
 
@@ -100,7 +101,7 @@ enum PDFPageNumbers {
         let document = try PDFRedraw.open(pdf)
         let count = document.numberOfPages
         var numbered = 0
-        try PDFRedraw.write(document, to: destination) { index, size, context in
+        try PDFRedraw.write(document, annotations: PDFDocument(url: pdf), to: destination) { index, size, context in
             guard let text = Self.label(forPage: index, pageCount: count, options: options) else { return }
             draw(text, position: options.position, pageSize: size, in: context)
             numbered += 1
@@ -109,10 +110,10 @@ enum PDFPageNumbers {
     }
 
     /// 预览：标了页码的第一页，长边 longSide 像素
-    static func preview(_ document: CGPDFDocument, options: Options, longSide: CGFloat = 360) -> CGImage? {
+    static func preview(_ document: CGPDFDocument, options: Options, longSide: CGFloat = 360, annotations: PDFDocument? = nil) -> CGImage? {
         let index = max(options.firstPage, 1) - 1
         guard let page = document.page(at: index + 1) else { return nil }
-        return PDFRedraw.render(page, longSide: longSide) { size, context in
+        return PDFRedraw.render(page, annotated: annotations?.page(at: index), longSide: longSide) { size, context in
             if let text = Self.label(forPage: index, pageCount: document.numberOfPages, options: options) {
                 draw(text, position: options.position, pageSize: size, in: context)
             }
@@ -129,6 +130,8 @@ final class PDFPageNumbersModel: ObservableObject {
     let pdf: URL
     let pageCount: Int
     private let document: CGPDFDocument
+    /// 同一个文件用 PDFKit 打开：预览时把批注画上
+    private let annotations: PDFDocument?
     @Published var options: PDFPageNumbers.Options {
         didSet {
             options.firstPage = min(max(options.firstPage, 1), pageCount)
@@ -146,6 +149,7 @@ final class PDFPageNumbersModel: ObservableObject {
 
     init(pdf: URL) throws {
         document = try PDFRedraw.open(pdf)
+        annotations = PDFDocument(url: pdf)
         self.pdf = pdf
         pageCount = document.numberOfPages
         var options = PDFPageNumbers.Options()
@@ -169,7 +173,7 @@ final class PDFPageNumbersModel: ObservableObject {
     }
 
     private func drawPreview() {
-        preview = PDFPageNumbers.preview(document, options: options)
+        preview = PDFPageNumbers.preview(document, options: options, annotations: annotations)
     }
 
     /// 存一份加了页码的，存好以后返回文件
