@@ -163,7 +163,7 @@ struct BreakReminderView: View {
             }
             Toggle("休息时盖住屏幕", isOn: $model.fullScreen)
                 .toggleStyle(.checkbox)
-            Text("离开电脑 3 分钟以上（休息时长更长时按休息时长）就算休息过了，回来重新计时；有 App 在放视频、开视频会议（不让屏幕变暗）时不提醒。")
+            Text("离开电脑 3 分钟以上（休息时长更长时按休息时长）就算休息过了，合上盖子睡着的时间也算，回来重新计时；有 App 在放视频、开视频会议（不让屏幕变暗）时不提醒，这段时间也不算休息。")
                 .font(.caption)
                 .foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)

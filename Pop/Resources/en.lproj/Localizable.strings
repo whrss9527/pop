@@ -3106,5 +3106,5 @@
 "每隔" = "Every";
 "休息" = "Break";
 "休息时盖住屏幕" = "Cover the screen during breaks";
-"离开电脑 3 分钟以上（休息时长更长时按休息时长）就算休息过了，回来重新计时；有 App 在放视频、开视频会议（不让屏幕变暗）时不提醒。" = "Stepping away for 3 minutes or more (or the break length, if longer) counts as a break, and the clock restarts when you’re back. No reminders while an app keeps the display awake, such as during a video or a video call.";
+"离开电脑 3 分钟以上（休息时长更长时按休息时长）就算休息过了，合上盖子睡着的时间也算，回来重新计时；有 App 在放视频、开视频会议（不让屏幕变暗）时不提醒，这段时间也不算休息。" = "Stepping away for 3 minutes or more (or the break length, if longer) counts as a break, including time the Mac spends asleep, and the clock restarts when you’re back. No reminders while an app keeps the display awake, such as during a video or a video call, and that time doesn’t count as a break.";
 "现在休息" = "Take a Break Now";

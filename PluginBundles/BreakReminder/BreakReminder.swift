@@ -25,6 +25,8 @@ final class BreakReminder: ObservableObject {
     static let tickSeconds: TimeInterval = 10
     /// 休息完了的那句话停多久
     static let finishedSeconds: TimeInterval = 4
+    /// 两次看之间隔了这么久，就是睡过了（醒着的时候十秒看一次）
+    static let sleepGap: TimeInterval = 60
 
     enum Phase: Equatable {
         case hidden
@@ -64,6 +66,8 @@ final class BreakReminder: ObservableObject {
     private var observers: [NSObjectProtocol] = []
     /// 什么时候睡的：睡醒时「多久没碰键盘鼠标」会清零，睡了多久要自己记
     private var sleptAt: Date?
+    /// 睡之前已经离开了多久：走开几分钟再合上盖子，这几分钟也算在休息里
+    private var awayBeforeSleep: TimeInterval = 0
 
     init(defaults: UserDefaults = .standard, clock: @escaping () -> Date = Date.init,
          idle: @escaping () -> TimeInterval = BreakSignals.idleSeconds,
@@ -106,7 +110,10 @@ final class BreakReminder: ObservableObject {
         isEnabled = saved.enabled
         schedule.interval = saved.interval
         schedule.breakLength = saved.length
-        fullScreen = saved.fullScreen
+        // 卸载时删掉的设置不要马上又写回去
+        if fullScreen != saved.fullScreen {
+            fullScreen = saved.fullScreen
+        }
         if isEnabled {
             startTicking()
         }
@@ -148,7 +155,17 @@ final class BreakReminder: ObservableObject {
     // MARK: - 计时
 
     func tick() {
+        let previous = now
         now = clock()
+        if let sleptAt {
+            if now.timeIntervalSince(previous) >= Self.sleepGap {
+                // 睡醒时定时器、屏幕醒来的通知可能比「睡醒了」的通知先到：先把睡的这段算上，免得提醒闪一下
+                wake(at: now)
+            } else if now.timeIntervalSince(sleptAt) >= Self.sleepGap {
+                // 说了要睡又没睡着（被别的 App 拦下了），一直醒着：不算
+                self.sleptAt = nil
+            }
+        }
         guard isEnabled || schedule.isOnBreak else { return }
         let isQuiet = schedule.isOnBreak ? false : quiet()
         self.isQuiet = isQuiet
@@ -210,21 +227,28 @@ final class BreakReminder: ObservableObject {
         hideEverything()
     }
 
-    /// 要睡了：记下时刻
+    /// 要睡了：记下时刻，和这时已经离开了多久
     func willSleep() {
-        sleptAt = clock()
+        let now = clock()
+        sleptAt = now
+        awayBeforeSleep = schedule.away(now: now, idle: idle())
     }
 
-    /// 睡醒了：睡的时间够长就算休息过了，提醒着的话收起来；然后马上看一次
+    /// 睡醒了：马上看一次
     func didWake() {
-        if let sleptAt, !schedule.isOnBreak, clock().timeIntervalSince(sleptAt) >= schedule.restThreshold {
-            schedule.rest()
-            if phase == .reminder {
-                hidePanel()
-            }
-        }
-        sleptAt = nil
+        wake(at: clock())
         tick()
+    }
+
+    /// 睡之前离开的加上睡的够长，就算休息过了，提醒着的话收起来
+    private func wake(at now: Date) {
+        guard let sleptAt else { return }
+        self.sleptAt = nil
+        guard !schedule.isOnBreak, now.timeIntervalSince(sleptAt) + awayBeforeSleep >= schedule.restThreshold else { return }
+        schedule.rest()
+        if phase == .reminder {
+            hidePanel()
+        }
     }
 
     /// 卸载插件包、关掉的时候
@@ -412,7 +436,7 @@ final class BreakReminder: ObservableObject {
         previousApp = NSWorkspace.shared.frontmostApplication
         NSApp.activate()
         let pointer = NSEvent.mouseLocation
-        let main = NSScreen.screens.first { $0.frame.contains(pointer) } ?? NSScreen.main
+        let main = NSScreen.screens.first { NSMouseInRect(pointer, $0.frame, false) } ?? NSScreen.main
         for screen in NSScreen.screens {
             let showsCountdown = screen == main || main == nil
             let window = BreakOverlayWindow(screen: screen, rootView: BreakOverlayView(model: self, showsCountdown: showsCountdown)) { [weak self] in

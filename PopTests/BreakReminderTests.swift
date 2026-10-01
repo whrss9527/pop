@@ -266,6 +266,47 @@ final class BreakReminderTests: XCTestCase {
         XCTAssertEqual(reminder.phase, .finished)
     }
 
+    func testWakeBeforeTheWakeNotificationAndAwayBeforeSleep() {
+        var now = start
+        var idle: TimeInterval = 0
+        let reminder = BreakReminder(defaults: freshDefaults(), clock: { now }, idle: { idle }, quiet: { false }, isLive: false)
+        reminder.setEnabled(true)
+        now = start.addingTimeInterval(40 * 60)
+        reminder.tick()
+        // 睡了一个小时，醒来时定时器比「睡醒了」的通知先到：不弹提醒，从睡醒算起
+        reminder.willSleep()
+        now = now.addingTimeInterval(60 * 60)
+        reminder.tick()
+        XCTAssertEqual(reminder.phase, .hidden)
+        XCTAssertEqual(reminder.schedule.workStart, now)
+        reminder.didWake()
+        XCTAssertEqual(reminder.phase, .hidden)
+        XCTAssertEqual(reminder.schedule.workStart, now)
+        // 提醒着的时候走开 4 分钟，再合上盖子睡 2 分钟：加起来够休息了，提醒收起来
+        now = now.addingTimeInterval(46 * 60)
+        reminder.tick()
+        XCTAssertEqual(reminder.phase, .reminder)
+        now = now.addingTimeInterval(4 * 60)
+        idle = 4 * 60
+        reminder.willSleep()
+        now = now.addingTimeInterval(2 * 60)
+        idle = 0
+        reminder.didWake()
+        XCTAssertEqual(reminder.phase, .hidden)
+        XCTAssertEqual(reminder.schedule.workStart, now)
+        // 说了要睡又没睡着，一直醒着：之后隔了好几分钟才看一次，也不当成睡过
+        now = now.addingTimeInterval(10 * 60)
+        reminder.tick()
+        reminder.willSleep()
+        for _ in 0..<7 {
+            now = now.addingTimeInterval(10)
+            reminder.tick()
+        }
+        now = now.addingTimeInterval(5 * 60)
+        reminder.tick()
+        XCTAssertEqual(reminder.statusText, "已经连续用了 16 分钟，29 分钟后提醒休息")
+    }
+
     func testMeetingHidesTheReminderAndBreaksKeepGoing() {
         let defaults = freshDefaults()
         var now = start

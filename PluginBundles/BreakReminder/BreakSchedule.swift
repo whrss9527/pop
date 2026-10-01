@@ -54,8 +54,7 @@ struct BreakSchedule: Equatable {
         if quiet {
             lastQuiet = now
         }
-        // 刚看完视频、开完会：那段时间没碰键盘鼠标不算休息，从结束的那一刻算起
-        let idle = lastQuiet.map { min(rawIdle, max(0, now.timeIntervalSince($0))) } ?? rawIdle
+        let idle = away(now: now, idle: rawIdle)
         if !quiet, idle >= restThreshold {
             let wasDue = isDue
             rest()
@@ -79,6 +78,11 @@ struct BreakSchedule: Equatable {
         workStart = nil
         snoozedUntil = nil
         isDue = false
+    }
+
+    /// 离开了多久：多久没碰键盘鼠标，但刚看完视频、开完会时那段时间不算休息，从结束的那一刻算起
+    func away(now: Date, idle: TimeInterval) -> TimeInterval {
+        lastQuiet.map { min(idle, max(0, now.timeIntervalSince($0))) } ?? idle
     }
 
     /// 「跳过」：从现在起重新算一段
