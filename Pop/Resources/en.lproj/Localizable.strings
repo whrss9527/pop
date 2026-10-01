@@ -2291,3 +2291,6 @@
 "圆角" = "Rounded corners";
 "阴影" = "Shadow";
 "没能画出这张图" = "Couldn’t create the image";
+"没装的插件 · 点一下装上就能用" = "Not installed · click to install and use";
+"安装 · %@" = "Install · %@";
+"装好了「%@」" = "Installed “%@”";

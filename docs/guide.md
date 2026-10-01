@@ -61,7 +61,7 @@ Which actions are installed, which slot each one takes, and which kind of conten
 
 ### Plugins
 
-Some actions come as separate plugin bundles that aren't part of the Pop download. Install one when you need it under Plugins at the top of Settings → Actions: it downloads from this version's GitHub release in a few seconds and works right away, without a restart. Each plugin shows its download size and how much space it takes once installed. Click Uninstall when you no longer need it: the plugin and its settings are deleted, and the action is removed from the ring and from shortcuts. With iCloud sync on, installing and uninstalling sync to your other Macs.
+Some actions come as separate plugin bundles that aren't part of the Pop download. Install one when you need it under Plugins at the top of Settings → Actions: it downloads from this version's GitHub release in a few seconds and works right away, without a restart. You can also search for it in All Actions on the ring: plugins that aren't installed are listed after the installed actions; click one (or select it and press Return) to install it, and it runs right away if it can handle the current content. Each plugin shows its download size and how much space it takes once installed. Click Uninstall when you no longer need it: the plugin and its settings are deleted, and the action is removed from the ring and from shortcuts. With iCloud sync on, installing and uninstalling sync to your other Macs.
 
 These actions are plugins now (they're also listed in the Built-in actions table below), with more to follow:
 
