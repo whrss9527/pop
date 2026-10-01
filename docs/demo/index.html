@@ -2366,9 +2366,13 @@ function showChooser(content, anchor) {
 
   input.addEventListener('input', () => {
     const query = input.value.trim().toLowerCase();
-    results = query ? all.filter((info) => [info.name.zh, info.name.en.toLowerCase(), info.keys, info.summary.zh, info.summary.en.toLowerCase()].some((key) => key.includes(query))) : all;
-    packages = query ? PACKAGES.filter((pkg) => (!state.installed.has(pkg.id) || installed.has(pkg.id)) && [pkg.name.zh, pkg.name.en.toLowerCase(), pkg.summary.zh, pkg.summary.en.toLowerCase(), pkg.id.toLowerCase(),
-      ...pkg.functions.map((fn) => fn.toLowerCase()), ...pkg.functions.map((fn) => P[fn]?.keys || '')].some((key) => key.includes(query))) : [];
+    // 名字（还有拼音、关键字）对得上的排前面，只有说明里提到的排后面，各自保持原来的顺序
+    const namesFirst = (items, byName) => items.filter(byName).concat(items.filter((item) => !byName(item)));
+    const has = (keys) => keys.some((key) => key.includes(query));
+    const infoName = (info) => has([info.name.zh, info.name.en.toLowerCase(), info.keys]);
+    const pkgName = (pkg) => has([pkg.name.zh, pkg.name.en.toLowerCase(), pkg.id.toLowerCase(), ...pkg.functions.map((fn) => fn.toLowerCase()), ...pkg.functions.map((fn) => P[fn]?.keys || '')]);
+    results = query ? namesFirst(all.filter((info) => infoName(info) || has([info.summary.zh, info.summary.en.toLowerCase()])), infoName) : all;
+    packages = query ? namesFirst(PACKAGES.filter((pkg) => (!state.installed.has(pkg.id) || installed.has(pkg.id)) && (pkgName(pkg) || has([pkg.summary.zh, pkg.summary.en.toLowerCase()]))), pkgName) : [];
     selection = 0;
     draw();
   });

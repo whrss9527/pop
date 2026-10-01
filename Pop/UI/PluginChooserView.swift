@@ -6,13 +6,16 @@ import SwiftUI
 /// 搜索时也列出没装的插件包，点一下装上，装好就用。
 @MainActor
 final class PluginChooserModel: ObservableObject {
+    /// 搜索用的字：名字（原文、拼音、首字母）和说明。名字对得上的排在只有说明对得上的前面
     private struct Entry {
         let info: PluginInfo
+        let nameKeys: [String]
         let keys: [String]
     }
 
     private struct PackageEntry {
         let package: PluginPackage
+        let nameKeys: [String]
         let keys: [String]
     }
 
@@ -35,11 +38,14 @@ final class PluginChooserModel: ObservableObject {
     private var managerChanges: AnyCancellable?
 
     init(plugins: [PluginInfo], recent: Set<String> = [], packages: [PluginPackage] = [], manager: PluginManager? = nil) {
-        entries = plugins.map { Entry(info: $0, keys: SearchText.keys(for: $0.name) + [$0.summary.lowercased()]) }
-        // 插件包的 ID 和功能 ID 也能搜（zip、jwt 这样的）
+        entries = plugins.map { info in
+            let names = SearchText.keys(for: info.name)
+            return Entry(info: info, nameKeys: names, keys: names + [info.summary.lowercased()])
+        }
+        // 插件包的 ID 和功能 ID 也能搜（zip、jwt 这样的），和名字一样排在前面
         packageEntries = packages.map { package in
-            PackageEntry(package: package, keys: SearchText.keys(for: package.name) + [package.summary.lowercased(), package.id.lowercased()]
-                + package.functions.map { $0.lowercased() })
+            let names = SearchText.keys(for: package.name) + [package.id.lowercased()] + package.functions.map { $0.lowercased() }
+            return PackageEntry(package: package, nameKeys: names, keys: names + [package.summary.lowercased()])
         }
         results = plugins
         self.recent = recent
@@ -53,11 +59,19 @@ final class PluginChooserModel: ObservableObject {
     }
 
     private func refilter() {
-        results = entries.filter { SearchText.matches(query, keys: $0.keys) }.map(\.info)
+        // 名字对得上的在前，只有说明里提到的在后（搜「sound」时「声音设备」排在说明里提到声音的「录屏」前面），各自保持原来的顺序
+        let matched = entries.filter { SearchText.matches(query, keys: $0.keys) }
+        results = Self.namesFirst(matched) { SearchText.matches(query, keys: $0.nameKeys) }.map(\.info)
         // 没装的只在搜索时列出来，不然列表太长
         let searching = !query.allSatisfy(\.isWhitespace)
-        packages = searching ? packageEntries.filter { SearchText.matches(query, keys: $0.keys) }.map(\.package) : []
+        let packageMatches = searching ? packageEntries.filter { SearchText.matches(query, keys: $0.keys) } : []
+        packages = Self.namesFirst(packageMatches) { SearchText.matches(query, keys: $0.nameKeys) }.map(\.package)
         selection = 0
+    }
+
+    /// 稳定地把名字对得上的挪到前面
+    private static func namesFirst<T>(_ items: [T], byName: (T) -> Bool) -> [T] {
+        items.filter(byName) + items.filter { !byName($0) }
     }
 
     private var rowCount: Int {

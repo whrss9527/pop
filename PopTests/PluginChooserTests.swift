@@ -23,6 +23,21 @@ final class PluginChooserTests: XCTestCase {
         XCTAssertTrue(model.packages.isEmpty)
     }
 
+    func testNameMatchesComeBeforeSummaryMatches() {
+        let record = PluginInfo(id: "screenRecord", name: "录屏", symbol: "record.circle", summary: "可以录上电脑里的声音", accepts: [])
+        let sound = PluginInfo(id: "soundDevices", name: "声音设备", symbol: "hifispeaker", summary: "换声音从哪出", accepts: [])
+        let model = PluginChooserModel(plugins: [record, info("translate", "翻译"), sound])
+        // 两个都提到「声音」，名字里有的排前面
+        model.query = "声音"
+        XCTAssertEqual(model.results.map(\.id), ["soundDevices", "screenRecord"])
+        // 拼音首字母只对名字
+        model.query = "sysb"
+        XCTAssertEqual(model.results.map(\.id), ["soundDevices"])
+        // 都在名字里对得上时保持原来的顺序
+        model.query = ""
+        XCTAssertEqual(model.results.map(\.id), ["screenRecord", "translate", "soundDevices"])
+    }
+
     func testSelectionRunsActionsAndInstallsPackages() {
         let packages = PluginCatalog.packages.filter { $0.id == "regexTest" }
         let model = PluginChooserModel(plugins: [info("textStats", "字数统计"), info("regexDemo", "正则演示")], packages: packages)
