@@ -122,11 +122,12 @@ final class FileEncodingModel: ObservableObject {
                 var failed: [String] = []
                 for row in rows {
                     if let problem = row.problem {
-                        failed.append("\(row.url.lastPathComponent)（\(problem)）")
+                        failed.append(String(localized: "\(row.url.lastPathComponent)（\(problem)）"))
                         continue
                     }
                     guard let data = Self.converted(row, to: target, lines: lines) else {
-                        failed.append("\(row.url.lastPathComponent)（\(String(localized: "有的字 \(target.title) 存不下"))）")
+                        let problem = String(localized: "有的字 \(target.title) 存不下")
+                        failed.append(String(localized: "\(row.url.lastPathComponent)（\(problem)）"))
                         continue
                     }
                     if data == row.original {
@@ -138,7 +139,7 @@ final class FileEncodingModel: ObservableObject {
                         try data.write(to: row.url)
                         converted.append(row.url)
                     } catch {
-                        failed.append("\(row.url.lastPathComponent)（\(error.localizedDescription)）")
+                        failed.append(String(localized: "\(row.url.lastPathComponent)（\(error.localizedDescription)）"))
                     }
                 }
                 return (converted, unchanged, failed)
@@ -159,7 +160,7 @@ final class FileEncodingModel: ObservableObject {
                         try data.write(to: url)
                         return nil
                     } catch {
-                        return "\(url.lastPathComponent)（\(error.localizedDescription)）"
+                        return String(localized: "\(url.lastPathComponent)（\(error.localizedDescription)）")
                     }
                 }
             }

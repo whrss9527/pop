@@ -111,7 +111,8 @@ final class MediaInfoModel: ObservableObject {
     var text: String {
         var lines = [report.url.lastPathComponent, headline]
         for section in sections {
-            lines.append("\(section.title)：" + section.rows.map { "\($0.label) \($0.value)" }.joined(separator: " · "))
+            let values = section.rows.map { "\($0.label) \($0.value)" }.joined(separator: " · ")
+            lines.append(String(localized: "\(section.title)：\(values)"))
         }
         return lines.joined(separator: "\n")
     }
