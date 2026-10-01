@@ -327,6 +327,9 @@ enum PluginCatalog {
         PluginPackage(id: "soundDevices", bundleName: "PopSoundDevices", name: String(localized: "声音设备"),
                       summary: String(localized: "一下子换声音从哪出、用哪个麦克风：扬声器、耳机、AirPods、显示器、AirPlay，还能调音量、静音"),
                       symbol: "hifispeaker", category: .files, functions: [BuiltinPluginID.soundDevices]),
+        PluginPackage(id: "resolution", bundleName: "PopResolution", name: String(localized: "分辨率"),
+                      summary: String(localized: "换显示器的分辨率（看起来像多大）和刷新率，把哪台设成主显示器；外接显示器换了以后 15 秒内不点「保留」就换回原来的"),
+                      symbol: "display", category: .files, functions: [BuiltinPluginID.resolution]),
     ]
 
     /// 插件包提供的所有功能

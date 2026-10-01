@@ -67,7 +67,7 @@ enum BuiltinPlugins {
         BuiltinPluginID.batchRename, BuiltinPluginID.revealInFinder, BuiltinPluginID.openWith, BuiltinPluginID.zip, BuiltinPluginID.encryptFiles,
         BuiltinPluginID.unzip, BuiltinPluginID.pdf, BuiltinPluginID.videoConvert, BuiltinPluginID.trimMedia,
         BuiltinPluginID.transcribe, BuiltinPluginID.shelf, BuiltinPluginID.openInTerminal, BuiltinPluginID.keepAwake,
-        BuiltinPluginID.systemActions, BuiltinPluginID.quitApps, BuiltinPluginID.uninstallApp, BuiltinPluginID.appInfo, BuiltinPluginID.batteryInfo, BuiltinPluginID.systemInfo, BuiltinPluginID.soundDevices, BuiltinPluginID.cleanKeyboard, BuiltinPluginID.timer,
+        BuiltinPluginID.systemActions, BuiltinPluginID.quitApps, BuiltinPluginID.uninstallApp, BuiltinPluginID.appInfo, BuiltinPluginID.batteryInfo, BuiltinPluginID.systemInfo, BuiltinPluginID.soundDevices, BuiltinPluginID.resolution, BuiltinPluginID.cleanKeyboard, BuiltinPluginID.timer,
         BuiltinPluginID.clipboardHistory,
         BuiltinPluginID.snippets, BuiltinPluginID.allPlugins, BuiltinPluginID.settings,
     ]
@@ -153,7 +153,7 @@ enum BuiltinCategory: CaseIterable, Identifiable {
                  BuiltinPluginID.transcribe,
                  BuiltinPluginID.shelf, BuiltinPluginID.airDrop, BuiltinPluginID.sendToPhone,
                  BuiltinPluginID.windowLayout, BuiltinPluginID.menuShortcuts,
-                 BuiltinPluginID.keepAwake, BuiltinPluginID.systemActions, BuiltinPluginID.quitApps, BuiltinPluginID.uninstallApp, BuiltinPluginID.appInfo, BuiltinPluginID.batteryInfo, BuiltinPluginID.systemInfo, BuiltinPluginID.soundDevices,
+                 BuiltinPluginID.keepAwake, BuiltinPluginID.systemActions, BuiltinPluginID.quitApps, BuiltinPluginID.uninstallApp, BuiltinPluginID.appInfo, BuiltinPluginID.batteryInfo, BuiltinPluginID.systemInfo, BuiltinPluginID.soundDevices, BuiltinPluginID.resolution,
                  BuiltinPluginID.cleanKeyboard, BuiltinPluginID.timer],
     ]
 
