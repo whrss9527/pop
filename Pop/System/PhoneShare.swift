@@ -34,7 +34,7 @@ enum LANAddress {
     }
 
     /// 手机能打开的地址，最可能的排在前面：Wi-Fi 和有线网卡（en…）、互联网共享（bridge…）上的私有地址。
-    /// VPN、虚拟机这类网卡和自动分配的 169.254 地址手机访问不到，不要
+    /// 虚拟网卡、虚拟机网卡和自动分配的 169.254 地址手机访问不到，不要
     static func candidates(_ list: [Interface] = interfaces()) -> [String] {
         var ranked: [(address: String, rank: Int, order: Int)] = []
         for (order, item) in list.enumerated() {
