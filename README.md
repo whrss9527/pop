@@ -28,7 +28,7 @@ Pop's interface is available in English and Simplified Chinese and follows your 
 ## Features
 
 - **Hold right click to open it**: a short click still opens the context menu. Only a long press brings up Pop, so right-dragging in games and 3D apps keeps working.
-- **One flick and it's done**: arrange 80+ actions on the ring any way you like; flick toward a slot and let go to run it.
+- **One flick and it's done**: arrange 120+ actions on the ring any way you like; flick toward a slot and let go to run it.
 - **It knows what you selected**: text in another language is translated, math is calculated, units and colors are converted, and images are read with OCR — right away.
 - **Add your own actions**: turn URLs, shell scripts, JavaScript or Shortcuts into plugins, or install one from the plugin library with a click.
 - **Install only what you use**: many actions are separate plugins. Install one when you need it and uninstall it when you don't; each shows how much space it takes.

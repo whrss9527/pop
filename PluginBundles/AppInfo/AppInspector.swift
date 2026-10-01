@@ -92,7 +92,7 @@ enum AppInspector {
         let info = bundle.infoDictionary ?? [:]
         let short = info["CFBundleShortVersionString"] as? String
         let build = info["CFBundleVersion"] as? String
-        let version = short.map { short in build.map { $0 == short ? short : "\(short)（\($0)）" } ?? short } ?? build
+        let version = versionText(short: short, build: build)
         let signed = signing(of: url)
         return Report(url: url,
                       name: (info["CFBundleDisplayName"] as? String) ?? (info["CFBundleName"] as? String) ?? url.deletingPathExtension().lastPathComponent,
@@ -301,16 +301,28 @@ enum AppInspector {
 
     // MARK: - 写成文字
 
+    /// 「3.2.1（321）」：编译号和版本号一样时只写一个；括号跟着界面语言
+    static func versionText(short: String?, build: String?) -> String? {
+        guard let short else { return build }
+        guard let build, build != short else { return short }
+        return String(localized: "\(short)（\(build)）")
+    }
+
+    /// 「Developer ID：Example Studio（ABCDE12345）」：后面带上团队 ID
+    static func signatureText(_ report: Report) -> String {
+        report.teamID.map { String(localized: "\(report.signature.title)（\($0)）") } ?? report.signature.title
+    }
+
     /// 复制用的一段文字，一行一项
     static func text(_ report: Report, size: UInt64?) -> String {
         var lines = [report.name + (report.version.map { " \($0)" } ?? "")]
         func add(_ label: String, _ value: String?) {
-            if let value, !value.isEmpty { lines.append("\(label)：\(value)") }
+            if let value, !value.isEmpty { lines.append(String(localized: "\(label)：\(value)")) }
         }
         add(String(localized: "标识符"), report.bundleID)
         add(String(localized: "芯片"), report.architecture.title)
         add(String(localized: "最低系统"), report.minimumSystem)
-        add(String(localized: "签名"), report.signature.title + (report.teamID.map { "（\($0)）" } ?? ""))
+        add(String(localized: "签名"), signatureText(report))
         add(String(localized: "公证"), report.notarized.map { $0 ? String(localized: "已公证") : String(localized: "没有公证") })
         add(String(localized: "沙盒"), report.sandboxed ? String(localized: "在沙盒里") : String(localized: "不在沙盒里"))
         add(String(localized: "加固运行时"), report.hardenedRuntime ? String(localized: "开着") : String(localized: "没开"))

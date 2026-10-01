@@ -32,7 +32,7 @@ final class AppInfoModel: ObservableObject {
         }
         add(String(localized: "芯片"), report.architecture.title, warning: report.architecture == .intel)
         add(String(localized: "最低系统"), report.minimumSystem)
-        let signature = report.signature.title + (report.teamID.map { "（\($0)）" } ?? "")
+        let signature = AppInspector.signatureText(report)
         add(String(localized: "签名"), signature, warning: [.unsigned, .adHoc].contains(report.signature))
         add(String(localized: "公证"), report.notarized.map { $0 ? String(localized: "已公证") : String(localized: "没有公证") }, warning: report.notarized == false)
         add(String(localized: "沙盒"), report.sandboxed ? String(localized: "在沙盒里") : String(localized: "不在沙盒里"))

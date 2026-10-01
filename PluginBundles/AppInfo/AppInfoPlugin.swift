@@ -59,7 +59,7 @@ struct AppInfoPlugin: PopPlugin {
     /// 演示用：一个用 Electron 做的、从网上下载的示例 App
     static func demoReport() -> AppInspector.Report {
         AppInspector.Report(url: URL(fileURLWithPath: "/Applications/Sketchpad.app", isDirectory: true), name: "Sketchpad",
-                            bundleID: "com.example.sketchpad", version: "3.2.1（321）", architecture: .universal, minimumSystem: "macOS 12.0",
+                            bundleID: "com.example.sketchpad", version: AppInspector.versionText(short: "3.2.1", build: "321"), architecture: .universal, minimumSystem: "macOS 12.0",
                             signature: .developerID("Example Studio"), teamID: "ABCDE12345", notarized: true, sandboxed: false, hardenedRuntime: true,
                             technologies: ["Electron", String(localized: "Sparkle 自动更新")],
                             permissions: [AppInspector.Permission(name: String(localized: "摄像头"), reason: "Sketchpad uses the camera to scan sketches."),

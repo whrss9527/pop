@@ -785,6 +785,55 @@
 "给选中的文件统一改名：编号、替换文字、加前后缀、按照片的拍摄时间、改大小写，先看预览再改，改完可以撤销" = "Rename the selected files together: numbering, find and replace, prefix and suffix, photo capture date, case. Preview first and undo afterwards.";
 "%lld 张图片按上面的顺序拼接；宽度（横着拼时是高度）不一样时按最小的那张缩放。合成动图时每张停 %lld 秒，画面大小按第一张" = "%lld images are stitched in the order above; if widths (heights when horizontal) differ, they’re scaled to the smallest. Animated images show each frame for %lld s at the size of the first image.";
 
+/* MediaInfoPlugin.swift */
+"看选中的视频或音频用的什么编码、分辨率、帧率、码率，是不是 HDR，有几条音轨和字幕，用什么设备在哪拍的；带着拍摄地点时可以去掉位置另存一份" = "See the codec, resolution, frame rate and bit rate of the selected video or audio, whether it’s HDR, its audio and subtitle tracks, and which device shot it where; save a copy without the location if it has one";
+"没有选中视频或音频" = "No video or audio selected";
+
+/* MediaInfoView.swift */
+"编码格式" = "Codec";
+"帧率" = "Frame Rate";
+"%@ 帧/秒" = "%@ fps";
+"码率" = "Bit Rate";
+"动态范围" = "Dynamic Range";
+"%@ 位" = "%@-bit";
+"色彩" = "Color";
+"视频 %@" = "Video %@";
+"声道" = "Channels";
+"音频 %@" = "Audio %@";
+"标题" = "Title";
+"艺人" = "Artist";
+"专辑" = "Album";
+"设备" = "Device";
+"软件" = "Software";
+"信息" = "Details";
+"媒体信息" = "Media Info";
+"这个文件里记着拍摄地点，发给别人前可以去掉" = "This file records where it was shot. You can remove the location before sharing it.";
+"已另存为「%@」，画面和声音没有重新编码" = "Saved as “%@”. The video and sound weren’t re-encoded.";
+"在地图中查看" = "Show in Maps";
+"显示另存的文件" = "Show the Copy";
+"去掉位置另存一份" = "Save a Copy Without Location";
+
+/* MediaInspector.swift */
+"读不了「%@」：系统不认识这种格式" = "Can’t read “%@”: macOS doesn’t recognize this format";
+"字幕" = "Subtitles";
+"HEVC（H.265）" = "HEVC (H.265)";
+"Dolby Vision（%@）" = "Dolby Vision (%@)";
+"ALAC（无损）" = "ALAC (lossless)";
+"FLAC（无损）" = "FLAC (lossless)";
+"PCM（不压缩）" = "PCM (uncompressed)";
+"Dolby Digital（AC-3）" = "Dolby Digital (AC-3)";
+"Dolby Digital Plus（E-AC-3）" = "Dolby Digital Plus (E-AC-3)";
+"APAC（空间音频）" = "APAC (spatial audio)";
+"单声道" = "Mono";
+"立体声" = "Stereo";
+"5.1 声道" = "5.1 surround";
+"7.1 声道" = "7.1 surround";
+"%@ 声道" = "%@ channels";
+"%@ 竖屏" = "%@ portrait";
+"%@ 无位置" = "%@ without location";
+"这台 Mac 处理不了「%@」" = "This Mac can’t process “%@”";
+"另存「%@」失败：%@" = "Couldn’t save a copy of “%@”: %@";
+
 /* MediaPlugins.swift */
 "文字识别失败：%@" = "Text recognition failed: %@";
 "合并换行后复制" = "Copy with Lines Joined";
@@ -1524,6 +1573,40 @@
 "设置…" = "Settings…";
 "检查更新…" = "Check for Updates…";
 "停止录屏（%@）" = "Stop Recording (%@)";
+
+/* SubtitlesPlugin.swift */
+"选中字幕文件（SRT、WebVTT、ASS、LRC），整体提前或推后、换帧率、去掉样式标签和听障说明，转成 SRT、WebVTT、LRC 或纯文字；选两份字幕可以合成一份双语字幕" = "Shift the selected subtitles (SRT, WebVTT, ASS, LRC) earlier or later, convert between frame rates, remove style tags and hearing-impaired descriptions, and save them as SRT, WebVTT, LRC or plain text; select two to merge them into one bilingual file";
+"没有选中字幕文件" = "No subtitle files selected";
+"读不了「%@」：不是字幕，或者里面没有一句" = "Can’t read “%@”: it isn’t a subtitle file or has no lines";
+
+/* SubtitlesView.swift */
+"%@ 句" = "%@ lines";
+"不调" = "No shift";
+"推后 %@ 秒" = "%@ s later";
+"提前 %@ 秒" = "%@ s earlier";
+"存不了：%@" = "Couldn’t save: %@";
+"存好了%@" = "Saved %@";
+"改好了%@，存成 UTF-8" = "Updated %@ and saved it as UTF-8";
+"字幕工具" = "Subtitles";
+"时间" = "Timing";
+"清理" = "Clean Up";
+"去掉样式标签" = "Remove style tags";
+"去掉听障说明" = "Remove hearing-impaired descriptions";
+"双语" = "Bilingual";
+"合成一份" = "Merge into one";
+"上面一行" = "Top line";
+"存成" = "Save As";
+"%@ 份字幕" = "%@ subtitle files";
+"另存一份双语字幕" = "Saves a new bilingual file";
+"直接改原文件，可以撤销" = "Changes the original file; you can undo";
+"另存一份，原文件不动" = "Saves a copy; the original stays as it is";
+"存好" = "Save";
+"「%@」" = "“%@”";
+
+/* SubtitleTools.swift */
+"纯文字" = "Plain Text";
+"不换帧率" = "No change";
+"%@ 双语" = "%@ bilingual";
 
 /* SystemActions.swift */
 "锁屏" = "Lock Screen";

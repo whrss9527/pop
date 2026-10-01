@@ -73,6 +73,10 @@ final class AppInfoTests: XCTestCase {
         XCTAssertEqual(report.name, "Sketch")
         XCTAssertEqual(report.bundleID, "com.example.sketch")
         XCTAssertEqual(report.version, "3.2.1（321）")
+        XCTAssertEqual(AppInspector.versionText(short: "2.0", build: "2.0"), "2.0")
+        XCTAssertEqual(AppInspector.versionText(short: nil, build: "77"), "77")
+        XCTAssertEqual(AppInspector.versionText(short: "1.4", build: nil), "1.4")
+        XCTAssertNil(AppInspector.versionText(short: nil, build: nil))
         XCTAssertEqual(report.architecture, .universal)
         XCTAssertEqual(report.minimumSystem, "macOS 12.0")
         // 没签名
