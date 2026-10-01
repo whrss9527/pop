@@ -2284,7 +2284,6 @@
 "打开了聚光灯，再用一次就关闭" = "Spotlight on. Use it again to turn it off";
 "截图美化" = "Beautify Screenshot";
 "给截图加上渐变背景、留白、圆角和阴影，可以补成 1:1、4:3、16:9，发文章、做演示更好看；选中图片就用它，没选中就先框选屏幕上的一块" = "Put a screenshot on a gradient background with padding, rounded corners and a shadow, optionally filled out to 1:1, 4:3 or 16:9, so it looks good in posts and slides. Uses the selected image, or lets you select an area of the screen first";
-"天蓝" = "Sky";
 "透明" = "Transparent";
 "自动" = "Auto";
 "留白" = "Padding";

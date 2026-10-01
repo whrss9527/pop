@@ -77,16 +77,10 @@ struct BeautifyView: View {
             .frame(height: 220)
             row(String(localized: "背景")) {
                 HStack(spacing: 8) {
-                    ForEach(ScreenshotBeautifier.Background.allCases) { background in
-                        Button {
-                            model.options.background = background
-                        } label: {
-                            swatch(background)
-                        }
-                        .buttonStyle(.plain)
-                        .help(background.title)
-                        .accessibilityLabel(background.title)
+                    ForEach(AnnotationBackground.allCases) { background in
+                        swatchButton(background)
                     }
+                    swatchButton(nil)
                 }
             }
             row(String(localized: "留白")) {
@@ -137,21 +131,28 @@ struct BeautifyView: View {
         }
     }
 
-    /// 背景色块：渐变的圆点，透明是虚线圈；选中的外面加一圈
-    private func swatch(_ background: ScreenshotBeautifier.Background) -> some View {
-        let colors = background.colors.map { Color(cgColor: $0) }
-        return ZStack {
-            if colors.isEmpty {
-                Circle()
-                    .strokeBorder(Color.primary.opacity(0.35), style: StrokeStyle(lineWidth: 1, dash: [2, 2]))
-            } else {
-                Circle()
-                    .fill(LinearGradient(colors: colors, startPoint: .topLeading, endPoint: .bottomTrailing))
+    /// 背景色块：渐变的圆点，透明（nil）是虚线圈；选中的外面加一圈
+    private func swatchButton(_ background: AnnotationBackground?) -> some View {
+        let title = background?.title ?? String(localized: "透明")
+        return Button {
+            model.options.background = background
+        } label: {
+            ZStack {
+                if let background {
+                    Circle()
+                        .fill(LinearGradient(colors: background.colors, startPoint: .topLeading, endPoint: .bottomTrailing))
+                } else {
+                    Circle()
+                        .strokeBorder(Color.primary.opacity(0.35), style: StrokeStyle(lineWidth: 1, dash: [2, 2]))
+                }
             }
+            .frame(width: 20, height: 20)
+            .padding(3)
+            .overlay(Circle().strokeBorder(model.options.background == background ? Color.accentColor : Color.clear, lineWidth: 2))
+            .contentShape(Circle())
         }
-        .frame(width: 20, height: 20)
-        .padding(3)
-        .overlay(Circle().strokeBorder(model.options.background == background ? Color.accentColor : Color.clear, lineWidth: 2))
-        .contentShape(Circle())
+        .buttonStyle(.plain)
+        .help(title)
+        .accessibilityLabel(title)
     }
 }

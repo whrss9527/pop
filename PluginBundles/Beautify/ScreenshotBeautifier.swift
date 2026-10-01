@@ -3,45 +3,8 @@ import CoreGraphics
 @testable import Pop
 
 /// 截图美化：把截图放在渐变背景上，四周留白，可以加圆角和阴影、按比例补齐，画成一张 PNG。
-/// 发文章、做演示、贴到社交平台时，截图不再是光秃秃的一块。
+/// 发文章、做演示、贴到社交平台时，截图不再是光秃秃的一块。背景和截图标注用的是同一套渐变。
 enum ScreenshotBeautifier {
-    enum Background: String, CaseIterable, Identifiable {
-        case sky
-        case sunset
-        case mint
-        case grape
-        case graphite
-        case clear
-
-        var id: String { rawValue }
-
-        var title: String {
-            switch self {
-            case .sky: return String(localized: "天蓝")
-            case .sunset: return String(localized: "晚霞")
-            case .mint: return String(localized: "薄荷")
-            case .grape: return String(localized: "葡萄")
-            case .graphite: return String(localized: "石墨")
-            case .clear: return String(localized: "透明")
-            }
-        }
-
-        /// 从左上到右下的渐变；透明背景没有
-        var colors: [CGColor] {
-            func rgb(_ red: CGFloat, _ green: CGFloat, _ blue: CGFloat) -> CGColor {
-                CGColor(srgbRed: red, green: green, blue: blue, alpha: 1)
-            }
-            switch self {
-            case .sky: return [rgb(0.36, 0.64, 1), rgb(0.47, 0.36, 0.96)]
-            case .sunset: return [rgb(1, 0.62, 0.38), rgb(0.93, 0.31, 0.55)]
-            case .mint: return [rgb(0.42, 0.88, 0.74), rgb(0.2, 0.62, 0.86)]
-            case .grape: return [rgb(0.75, 0.46, 0.98), rgb(0.33, 0.25, 0.79)]
-            case .graphite: return [rgb(0.3, 0.32, 0.37), rgb(0.12, 0.13, 0.16)]
-            case .clear: return []
-            }
-        }
-    }
-
     enum Padding: String, CaseIterable, Identifiable {
         case small
         case medium
@@ -96,7 +59,8 @@ enum ScreenshotBeautifier {
     }
 
     struct Options: Equatable {
-        var background = Background.sky
+        /// 没有背景时是透明的
+        var background: AnnotationBackground? = .sky
         var padding = Padding.medium
         var ratio = Ratio.auto
         var corners = true
@@ -109,7 +73,7 @@ enum ScreenshotBeautifier {
         static var saved: Options {
             let defaults = UserDefaults.standard
             var options = Options()
-            if let raw = defaults.string(forKey: keys[0]), let value = Background(rawValue: raw) { options.background = value }
+            if let raw = defaults.string(forKey: keys[0]) { options.background = AnnotationBackground(rawValue: raw) }
             if let raw = defaults.string(forKey: keys[1]), let value = Padding(rawValue: raw) { options.padding = value }
             if let raw = defaults.string(forKey: keys[2]), let value = Ratio(rawValue: raw) { options.ratio = value }
             if defaults.object(forKey: keys[3]) != nil { options.corners = defaults.bool(forKey: keys[3]) }
@@ -119,7 +83,7 @@ enum ScreenshotBeautifier {
 
         func save() {
             let defaults = UserDefaults.standard
-            defaults.set(background.rawValue, forKey: Self.keys[0])
+            defaults.set(background?.rawValue ?? "clear", forKey: Self.keys[0])
             defaults.set(padding.rawValue, forKey: Self.keys[1])
             defaults.set(ratio.rawValue, forKey: Self.keys[2])
             defaults.set(corners, forKey: Self.keys[3])
@@ -158,8 +122,9 @@ enum ScreenshotBeautifier {
         guard let context = CGContext(data: nil, width: Int(canvas.width), height: Int(canvas.height), bitsPerComponent: 8, bytesPerRow: 0,
                                       space: CGColorSpace(name: CGColorSpace.sRGB) ?? CGColorSpaceCreateDeviceRGB(),
                                       bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue) else { return nil }
-        let colors = options.background.colors
-        if !colors.isEmpty, let gradient = CGGradient(colorsSpace: CGColorSpace(name: CGColorSpace.sRGB), colors: colors as CFArray, locations: [0, 1]) {
+        if let background = options.background,
+           let gradient = CGGradient(colorsSpace: CGColorSpace(name: CGColorSpace.sRGB), colors: background.nsColors.map(\.cgColor) as CFArray,
+                                     locations: [0, 1]) {
             // 左上到右下（Core Graphics 的原点在左下角）
             context.drawLinearGradient(gradient, start: CGPoint(x: 0, y: canvas.height), end: CGPoint(x: canvas.width, y: 0), options: [])
         }
