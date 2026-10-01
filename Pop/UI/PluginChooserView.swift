@@ -1,4 +1,5 @@
 import AppKit
+import Combine
 import SwiftUI
 
 /// 「全部功能」列表：列出能处理当前内容的所有功能，可以搜索（支持拼音首字母）。
