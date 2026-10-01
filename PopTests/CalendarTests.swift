@@ -194,6 +194,10 @@ final class CalendarTests: XCTestCase {
         // 时间戳用写着的年月日，不按时区换算
         XCTAssertEqual(parse("2026-10-01T00:30:00+08:00"), today)
         XCTAssertEqual(parse("2026-10-01 23:59:59 -0700"), today)
+        XCTAssertEqual(parse("2026/10/01 23:59:59 -0700"), today)
+        XCTAssertEqual(parse("2026.10.1"), today)
+        XCTAssertNil(parse("2026-02-30"))
+        XCTAssertNil(parse("2026-10-01 到 2026-10-07"))
         // 「清明节」「七夕节」去掉「节」也认
         XCTAssertEqual(parse("清明节"), number(2027, 4, 5))
         XCTAssertEqual(parse("七夕节"), number(2027, 8, 8))

@@ -184,9 +184,10 @@ enum CalendarMonth {
         let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty, trimmed.count <= 40, !trimmed.contains(where: \.isNewline) else { return nil }
         let year = LunarTable.civil(fromDayNumber: today).year
-        // 「2026-10-01T00:30:00+08:00」这样的时间戳：直接用写着的年月日，不按时区换算成别的日子
-        if let match = numbers(in: trimmed, pattern: #"^(\d{4})-(\d{1,2})-(\d{1,2})(?:[T ].*)?$"#),
-           (1...12).contains(match[1]), (1...length(year: match[0], month: match[1])).contains(match[2]) {
+        // 「2026-10-01」「2026/10/01 14:30」「2026年10月1日」「2026-10-01T00:30:00+08:00」：直接用写着的年月日，
+        // 带时区的时间戳也不按时区换算成别的日子；不存在的日子（「2026-02-30」）认不出
+        if let match = numbers(in: trimmed, pattern: #"^(\d{4})\s*[-/.年]\s*(\d{1,2})\s*[-/.月]\s*(\d{1,2})\s*日?(?:[\sT]+\d{1,2}:\d{2}.*)?$"#) {
+            guard (1...12).contains(match[1]), (1...length(year: match[0], month: match[1])).contains(match[2]) else { return nil }
             return LunarTable.dayNumber(year: match[0], month: match[1], day: match[2])
         }
         if let date = DateParser.parse(trimmed, timeZone: TimeZone(identifier: "UTC") ?? .current) {
