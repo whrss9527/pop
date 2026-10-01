@@ -89,9 +89,10 @@ final class WorldTimeTests: XCTestCase {
         XCTAssertEqual(city.zone.identifier, "Europe/London")
         XCTAssertEqual(try XCTUnwrap(parse("Tokyo")).zone.identifier, "Asia/Tokyo")
         XCTAssertEqual(try XCTUnwrap(parse("PST")).zone.identifier, "America/Los_Angeles")
-        // 英文的城市、国家名要大写开头
+        // 也是普通英文单词的地名要大写开头，别的小写也认
         XCTAssertEqual(WorldTime.findZone(in: "Turkey 6pm", local: london, now: now)?.zone.identifier, "Europe/Istanbul")
         XCTAssertNil(WorldTime.findZone(in: "turkey dinner at 6pm", local: london, now: now))
+        XCTAssertEqual(WorldTime.findZone(in: "3pm in tokyo", local: london, now: now)?.zone.identifier, "Asia/Tokyo")
         XCTAssertNil(parse("今天天气不错"))
         XCTAssertNil(parse(""))
     }
@@ -123,6 +124,8 @@ final class WorldTimeTests: XCTestCase {
         XCTAssertEqual(WorldTime.findTime(in: "一点钟"), WorldTime.Time(hour: 1, minute: 0))
         XCTAssertEqual(WorldTime.findTime(in: "一点半"), WorldTime.Time(hour: 1, minute: 30))
         XCTAssertEqual(WorldTime.findTime(in: "下午一点"), WorldTime.Time(hour: 13, minute: 0))
+        XCTAssertNil(WorldTime.findTime(in: "一时半会儿说不清"))
+        XCTAssertEqual(WorldTime.findTime(in: "下午一时半"), WorldTime.Time(hour: 13, minute: 30))
         XCTAssertEqual(WorldTime.chineseNumber("二十三"), 23)
         XCTAssertEqual(WorldTime.chineseNumber("十"), 10)
         XCTAssertEqual(WorldTime.chineseNumber("两"), 2)

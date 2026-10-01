@@ -370,6 +370,8 @@ enum WorldTime {
     private static let chinesePhrase = try! NSRegularExpression(pattern: "(" + alternation(phraseTable.chinese) + #")\s*时间"#)
     private static let englishPhrase = try! NSRegularExpression(
         pattern: #"(?i)(?<![A-Za-z])("# + alternation(phraseTable.english) + #")\s+time(?![A-Za-z])"#)
+    /// 也是普通英文单词的地名（turkey 是火鸡，china 是瓷器）：要大写开头才当地名
+    private static let commonWordPlaces: Set<String> = ["turkey", "china", "lima", "phoenix", "zulu"]
     /// 只写了城市名（「伦敦 3pm」）
     private static let chineseCity = try! NSRegularExpression(pattern: "(" + alternation(phraseTable.chinese.filter { !chinesePhrases.keys.contains($0.0) }) + ")")
     private static let englishCity = try! NSRegularExpression(
@@ -444,8 +446,11 @@ enum WorldTime {
         if let result = match(chineseCity), let word = group(result, 1), let zone = phraseTable.chinese.first(where: { $0.0 == word })?.1 {
             return found(TimeZone(identifier: zone), result)
         }
-        // 英文的要大写开头：「turkey dinner」里的 turkey 不是土耳其
-        if let result = englishCity.matches(in: text, range: full).first(where: { group($0, 1)?.first?.isUppercase == true }),
+        // 也是普通英文单词的地名要大写开头：「turkey dinner」里的 turkey 不是土耳其
+        if let result = englishCity.matches(in: text, range: full).first(where: { result in
+            guard let word = group(result, 1) else { return false }
+            return word.first?.isUppercase == true || !commonWordPlaces.contains(word.lowercased())
+        }),
            let word = group(result, 1)?.lowercased(), let zone = phraseTable.english.first(where: { $0.0 == word })?.1 {
             return found(TimeZone(identifier: zone), result)
         }
@@ -621,12 +626,14 @@ enum WorldTime {
            let adjusted = hour24(hour, period: group(result, 2)) {
             return Time(hour: adjusted.hour, minute: 0, nextDay: adjusted.nextDay)
         }
-        // 晚上 9 点、下午三点半、10 点 15 分。光写「一点」不算：「晚一点再说」「差一点」
+        // 晚上 9 点、下午三点半、10 点 15 分。光写「一点」「一时」不算：「晚一点再说」「差一点」「一时半会儿」
         for result in chineseTime.matches(in: text, range: full) {
             guard let hourText = group(result, 2), let hour = Int(hourText) ?? chineseNumber(hourText) else { continue }
             let end = result.range.location + result.range.length
             let clockWord = end < string.length && string.substring(with: NSRange(location: end, length: 1)) == "钟"
-            if hourText == "一", group(result, 1) == nil, group(result, 3) == nil, !clockWord {
+            let matched = string.substring(with: result.range)
+            if hourText == "一", group(result, 1) == nil, !clockWord,
+               group(result, 3) == nil || matched.contains("时") || matched.contains("時") {
                 continue
             }
             var minute = 0
