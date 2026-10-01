@@ -1,14 +1,17 @@
 import AppKit
 import Carbon.HIToolbox
+import CoreAudio
 
-/// 系统操作：锁屏、熄屏、睡眠、屏幕保护程序、切换深色和浅色模式、隐藏或显示桌面图标、推出所有磁盘
+/// 系统操作：锁屏、熄屏、睡眠、屏幕保护程序、切换深色和浅色模式、静音、隐藏或显示桌面图标、显示隐藏文件、推出所有磁盘
 enum SystemAction: String, CaseIterable, Equatable {
     case lockScreen
     case displaySleep
     case sleep
     case screenSaver
     case toggleDarkMode
+    case toggleMute
     case toggleDesktopIcons
+    case toggleHiddenFiles
     case ejectAll
 }
 
@@ -25,6 +28,8 @@ enum SystemActions {
 
     static let finderDomain = "com.apple.finder"
     static let desktopIconsKey = "CreateDesktop"
+    /// 访达里显示以点开头的隐藏文件（⇧⌘. 切换的也是它）
+    static let hiddenFilesKey = "AppleShowAllFiles"
     /// 系统外观：深色模式时是 Dark，浅色模式时没有
     static let appearanceKey = "AppleInterfaceStyle"
 
@@ -37,6 +42,28 @@ enum SystemActions {
     static func desktopIconsVisible(in defaults: UserDefaults? = UserDefaults(suiteName: finderDomain)) -> Bool {
         guard let defaults, defaults.object(forKey: desktopIconsKey) != nil else { return true }
         return defaults.bool(forKey: desktopIconsKey)
+    }
+
+    /// 访达现在显示隐藏文件（没设置过是不显示）
+    static func hiddenFilesShown(in defaults: UserDefaults? = UserDefaults(suiteName: finderDomain)) -> Bool {
+        defaults?.bool(forKey: hiddenFilesKey) ?? false
+    }
+
+    /// 现在的声音输出静音了没有；输出设备不支持静音时是 nil
+    static func isMuted() -> Bool? {
+        var device = AudioObjectID(kAudioObjectUnknown)
+        var size = UInt32(MemoryLayout<AudioObjectID>.size)
+        var address = AudioObjectPropertyAddress(mSelector: kAudioHardwarePropertyDefaultOutputDevice,
+                                                 mScope: kAudioObjectPropertyScopeGlobal, mElement: kAudioObjectPropertyElementMain)
+        guard AudioObjectGetPropertyData(AudioObjectID(kAudioObjectSystemObject), &address, 0, nil, &size, &device) == noErr,
+              device != kAudioObjectUnknown else { return nil }
+        var muted: UInt32 = 0
+        size = UInt32(MemoryLayout<UInt32>.size)
+        address = AudioObjectPropertyAddress(mSelector: kAudioDevicePropertyMute, mScope: kAudioDevicePropertyScopeOutput,
+                                             mElement: kAudioObjectPropertyElementMain)
+        guard AudioObjectHasProperty(device, &address),
+              AudioObjectGetPropertyData(device, &address, 0, nil, &size, &muted) == noErr else { return nil }
+        return muted != 0
     }
 
     /// 能推出的：外接的、可移除的、磁盘映像、网络上的；启动磁盘和内置的不算
@@ -58,25 +85,29 @@ enum SystemActions {
         }
     }
 
-    static func title(_ action: SystemAction, desktopIconsVisible: Bool, darkMode: Bool, ejectable: Int) -> String {
+    static func title(_ action: SystemAction, desktopIconsVisible: Bool, darkMode: Bool, ejectable: Int,
+                      muted: Bool = false, hiddenFilesShown: Bool = false) -> String {
         switch action {
         case .lockScreen: return String(localized: "锁屏")
         case .displaySleep: return String(localized: "熄屏")
         case .sleep: return String(localized: "睡眠")
         case .screenSaver: return String(localized: "屏幕保护程序")
         case .toggleDarkMode: return darkMode ? String(localized: "换成浅色模式") : String(localized: "换成深色模式")
+        case .toggleMute: return muted ? String(localized: "取消静音") : String(localized: "静音")
         case .toggleDesktopIcons: return desktopIconsVisible ? String(localized: "隐藏桌面图标") : String(localized: "显示桌面图标")
+        case .toggleHiddenFiles: return hiddenFilesShown ? String(localized: "不显示隐藏文件") : String(localized: "显示隐藏文件")
         case .ejectAll: return ejectable > 1 ? String(localized: "推出 \(ejectable) 个磁盘") : String(localized: "推出磁盘")
         }
     }
 
-    /// 「系统操作」卡片：没有能推出的磁盘时不显示推出
-    static func card(desktopIconsVisible: Bool, darkMode: Bool, ejectable: Int) -> ResultCard {
+    /// 「系统操作」卡片：按钮的说法跟着现在的状态变；没有能推出的磁盘时不显示推出
+    static func card(desktopIconsVisible: Bool, darkMode: Bool, ejectable: Int, muted: Bool = false, hiddenFilesShown: Bool = false) -> ResultCard {
         let actions = SystemAction.allCases.filter { $0 != .ejectAll || ejectable > 0 }
         return ResultCard(title: String(localized: "系统操作"), body: "",
-                          detail: String(localized: "隐藏桌面图标会重新打开访达；推出前请先关掉磁盘上打开的文件"),
+                          detail: String(localized: "隐藏桌面图标、显示隐藏文件时会重新打开访达；推出前请先关掉磁盘上打开的文件"),
                           buttons: actions.map { action in
-                              CardButton(title: title(action, desktopIconsVisible: desktopIconsVisible, darkMode: darkMode, ejectable: ejectable),
+                              CardButton(title: title(action, desktopIconsVisible: desktopIconsVisible, darkMode: darkMode, ejectable: ejectable,
+                                                      muted: muted, hiddenFilesShown: hiddenFilesShown),
                                          action: .system(action))
                           })
     }
@@ -112,6 +143,21 @@ enum SystemActions {
                 return String(localized: "要先在「系统设置 → 隐私与安全性 → 自动化」里允许 Pop 控制「System Events」")
             }
             return reason.isEmpty ? String(localized: "没能切换深浅色") : String(localized: "没能切换深浅色：\(reason)")
+        case .toggleMute:
+            // 「set volume」是 AppleScript 自带的命令，不用授权控制别的 App
+            let mute = !(isMuted() ?? false)
+            guard let reason = await command("/usr/bin/osascript", ["-e", "set volume output muted \(mute)"]) else {
+                return mute ? String(localized: "已静音") : String(localized: "已取消静音")
+            }
+            return reason.isEmpty ? String(localized: "没能切换静音") : String(localized: "没能切换静音：\(reason)")
+        case .toggleHiddenFiles:
+            let show = !hiddenFilesShown()
+            if let reason = await command("/usr/bin/defaults", ["write", finderDomain, hiddenFilesKey, "-bool", show ? "true" : "false"]) {
+                return reason.isEmpty ? String(localized: "改不了访达的设置") : String(localized: "改不了访达的设置：\(reason)")
+            }
+            // 访达重新打开才会按新的设置显示
+            _ = await command("/usr/bin/killall", ["Finder"])
+            return show ? String(localized: "访达里显示隐藏文件了，再用一次就不显示") : String(localized: "访达里不再显示隐藏文件")
         case .toggleDesktopIcons:
             let show = !desktopIconsVisible()
             if let reason = await command("/usr/bin/defaults", ["write", finderDomain, desktopIconsKey, "-bool", show ? "true" : "false"]) {
