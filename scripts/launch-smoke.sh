@@ -79,16 +79,36 @@ if ! grep -qw 0 <<< "$LAYERS"; then
   exit 1
 fi
 
+# 查 Pop 的系统日志里有没有某一行。先整个读出来再查：直接用管道接 grep -q 的话，grep 找到就退出，
+# 日志多的时候 log show 会被断管信号结束，在 pipefail 下整条管道算失败，找到了也当成没找到
+pop_log_has() {
+  local predicate="$1" pattern="$2" logs
+  logs="$(log show --start "$START" --style compact --predicate "$predicate" 2>/dev/null || true)"
+  grep -qE "$pattern" <<< "$logs"
+}
+
 # 菜单栏图标：macOS 15 及以前是 Pop 自己的窗口（层级 25）；
-# macOS 26 起由控制中心托管，只能从 Pop 的日志里看到它请求了 NSStatusItemView 场景。
-if ! grep -qw 25 <<< "$LAYERS" && \
-   ! log show --start "$START" --style compact --predicate 'process == "Pop"' 2>/dev/null | grep -q "NSStatusItemView"; then
+# macOS 26 起由控制中心托管，只能从 Pop 的日志里看到它请求了 NSStatusItemView 场景，或者和控制中心的场景
+# （com.apple.controlcenter）来往。系统日志偶尔会晚到，多等一会儿
+has_status_item() {
+  grep -qw 25 <<< "$LAYERS" && return 0
+  pop_log_has 'process == "Pop"' 'NSStatusItemView|\[com\.apple\.controlcenter:'
+}
+found_status_item=""
+for _ in $(seq 1 15); do
+  if has_status_item; then
+    found_status_item=1
+    break
+  fi
+  sleep 1
+done
+if [ -z "$found_status_item" ]; then
   echo "❌ 没有找到菜单栏图标"
   dump_logs
   exit 1
 fi
 
-if log show --start "$START" --style compact --predicate 'process == "Pop"' 2>/dev/null | grep -q "may order beneath the active application"; then
+if pop_log_has 'process == "Pop"' 'may order beneath the active application'; then
   echo "❌ 设置窗口是以非前台方式弹出的，会被其他 App 的窗口挡住"
   dump_logs
   exit 1
@@ -150,7 +170,7 @@ echo "从 ${SOURCE} 装插件包 ${INSTALL_ID}"
 open --env "POP_PLUGIN_SOURCE=${SOURCE}" "$APP"
 installed=""
 for _ in $(seq 1 40); do
-  if log show --start "$START" --style compact --predicate 'process == "Pop" AND category == "plugins"' 2>/dev/null | grep -q "installed plugin ${INSTALL_ID}"; then
+  if pop_log_has 'process == "Pop" AND category == "plugins"' "installed plugin ${INSTALL_ID}"; then
     installed=1
     break
   fi
