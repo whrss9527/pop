@@ -1,6 +1,7 @@
 import AppKit
 import Combine
 import SwiftUI
+@testable import Pop
 
 /// 屏幕画笔：演示、录教程时直接在屏幕上画。盖住指针所在的那块屏幕，上方一条工具栏；
 /// 可以让鼠标穿过去操作下面的窗口（画好的留着），也可以让笔迹几秒后自动消失。Esc 或者再用一次结束。

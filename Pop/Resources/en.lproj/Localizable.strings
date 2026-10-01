@@ -2248,3 +2248,23 @@
 "每分钟约 %lld 行" = "About %lld lines a minute";
 "字小一点（⌘-）" = "Smaller text (⌘-)";
 "字大一点（⌘+）" = "Larger text (⌘+)";
+
+/* 0.44.0：插件包 */
+"这个 Pop 是自己构建的，发布页上没有对应的插件包" = "This Pop was built from source, so the releases page has no plugins for it";
+"读不懂发布页上的插件包列表" = "Couldn’t read the list of plugins on the releases page";
+"这个版本没有发布这个插件包" = "This plugin isn’t published for this version";
+"发布页上的插件包和这个 Pop 对不上，请先更新 Pop" = "The plugins on the releases page don’t match this Pop. Update Pop first";
+"下载的插件包校验和不对，可能没下载完整或者被篡改了" = "The downloaded plugin’s checksum doesn’t match. The download may be incomplete or tampered with";
+"装载失败：%@" = "Couldn’t load: %@";
+"压缩包里没有这个插件包" = "The archive doesn’t contain this plugin";
+"这些功能是单独的插件包，要用时再装：从 GitHub 发布页下载，几秒就好；不用了可以卸载，连同它的设置一起删掉，不占地方。" = "These features are separate plugins: install one when you need it and it downloads from the GitHub releases page in a few seconds. Uninstall it when you’re done and it’s removed along with its settings, so it takes up no space.";
+"读不到插件包列表：%@" = "Couldn’t get the list of plugins: %@";
+"已安装 · 占用 %@" = "Installed · %@ on disk";
+"未安装" = "Not installed";
+"未安装 · 下载 %@，装好后占用 %@" = "Not installed · %@ download, %@ installed";
+"卸载" = "Uninstall";
+"卸载「%@」？" = "Uninstall “%@”?";
+"会删掉插件包和它的设置，腾出 %@。圆盘上和快捷键里的这个功能也会拿掉，要用时可以再装。" = "This deletes the plugin and its settings and frees up %@. It’s also removed from the ring and shortcuts. You can install it again any time.";
+"会删掉插件包和它的设置。圆盘上和快捷键里的这个功能也会拿掉，要用时可以再装。" = "This deletes the plugin and its settings. It’s also removed from the ring and shortcuts. You can install it again any time.";
+"搜索插件和内置功能" = "Search plugins and built-in actions";
+"搜索插件和内置功能，支持拼音首字母" = "Search plugins and built-in actions";

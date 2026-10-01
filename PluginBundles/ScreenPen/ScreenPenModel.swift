@@ -1,5 +1,6 @@
 import AppKit
 import SwiftUI
+@testable import Pop
 
 /// 屏幕画笔的工具：画笔、荧光笔、箭头、方框、椭圆
 enum ScreenPenTool: String, CaseIterable, Identifiable {

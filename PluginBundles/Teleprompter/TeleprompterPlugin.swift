@@ -14,12 +14,16 @@ final class TeleprompterEntry: NSObject, PopPluginBundle {
             Teleprompter.shared.windowNumber.map { [$0] } ?? []
         }
         // CI 截图：屏幕上方一段示例稿子，停在开头
-        host.addDemoScene(PluginHost.DemoScene(name: "teleprompter", after: "presenting", show: { screen in
+        host.addDemoScene(PluginHost.DemoScene(name: "teleprompter", after: "scrollCapture", order: 4, show: { screen in
             let script = "大家好，今天花三分钟介绍一下 Pop 的录屏。\n长按右键弹出圆盘，选「录屏」，拖出要录的区域。\n勾上「显示按下的键」，按的快捷键会出现在画面下方。\n录完可以直接转成 GIF，发给同事看。"
             return Teleprompter.shared.showForDemo(script, on: screen)
         }, hide: {
             Teleprompter.shared.close()
         }))
+    }
+
+    @MainActor static func willUninstall() {
+        Teleprompter.shared.close()
     }
 }
 

@@ -501,47 +501,10 @@ enum OverlayDemo {
             }
             step("scrollCapture")
 
-            // 屏幕画笔：贴一张示例截图当作屏幕上的内容，荧光笔划出邮箱、画笔在手机号下面画波浪线、椭圆圈出按钮、箭头指过去；
-            // 截图区域包括屏幕上方的工具栏
+            // 装载的插件包加的步骤：屏幕画笔、摄像头小窗、突出显示指针、提词器……
             await pause(1.4 * unit)
             overlay.hide()
-            let pinCenter = CGPoint(x: visible.midX.rounded(), y: (visible.maxY - 260).rounded())
-            if let capture = sampleScreenshot() {
-                PinBoard.shared.pin(image: NSImage(cgImage: capture.image, size: CGSize(width: 480, height: 300)), around: pinCenter)
-                let pinFrame = CGRect(x: pinCenter.x - 240, y: pinCenter.y - 150, width: 480, height: 300)
-                // 示例图上的点（左上角为原点）换成画布上的点
-                func onScreen(_ x: CGFloat, _ y: CGFloat) -> CGPoint {
-                    CGPoint(x: pinFrame.minX - screen.frame.minX + x, y: screen.frame.maxY - pinFrame.maxY + y)
-                }
-                let toolbar = ScreenPen.shared.showForDemo(on: screen, strokes: [
-                    (.highlighter, .yellow, [onScreen(62, 111), onScreen(224, 111)]),
-                    (.pen, .blue, [onScreen(64, 148), onScreen(88, 152), onScreen(112, 146), onScreen(136, 152),
-                                   onScreen(160, 146), onScreen(184, 151)]),
-                    (.ellipse, .red, [onScreen(286, 192), onScreen(430, 252)]),
-                    (.arrow, .red, [onScreen(150, 262), onScreen(280, 232)]),
-                ])
-                logRegion(pinFrame.union(toolbar ?? pinFrame).insetBy(dx: -24, dy: -20), screen: screen)
-            }
-            step("screenPen")
-            await pause(1.4 * unit)
-            ScreenPen.shared.stop()
-            PinBoard.shared.closeAll()
-
-            // 摄像头小窗和指针光圈：示例人像当作摄像头的画面，小窗在屏幕右下角；光圈停在小窗左边，泛起一圈波纹
-            await pause(0.4 * unit)
-            if let camera = sampleCameraFrame() {
-                let bubble = CameraBubble.shared.showForDemo(image: camera, on: screen)
-                let pointer = CGPoint(x: bubble.minX - 150, y: bubble.midY + 30)
-                PointerHighlight.shared.showForDemo(at: pointer)
-                logRegion(bubble.union(PointerHighlight.frame(around: pointer)).insetBy(dx: -40, dy: -40), screen: screen)
-            }
-            step("presenting")
-            await pause(1.4 * unit)
-            CameraBubble.shared.stop()
-            PointerHighlight.shared.stop()
-
-            // 装载的插件包加的步骤（比如提词器）
-            await playPluginScenes(after: "presenting", on: screen, unit: unit)
+            await playPluginScenes(after: "scrollCapture", on: screen, unit: unit)
 
             // 截图标注窗口：拿一张画好的示例图，标上方框、箭头、文字、马赛克和序号；截图区域换成标注窗口
             await pause(1.4 * unit)
@@ -621,8 +584,8 @@ enum OverlayDemo {
         return model
     }
 
-    /// 标注演示用的「截图」：一张账户设置卡片，480×300 点，像素按屏幕倍率（和真的截图一样）
-    private static func sampleScreenshot() -> ScreenCapture.Capture? {
+    /// 标注演示用的「截图」：一张账户设置卡片，480×300 点，像素按屏幕倍率（和真的截图一样）；插件包的演示步骤也用
+    static func sampleScreenshot() -> ScreenCapture.Capture? {
         let scale = max(NSScreen.main?.backingScaleFactor ?? 2, 1)
         let width = Int(480 * scale)
         let height = Int(300 * scale)
@@ -678,8 +641,8 @@ enum OverlayDemo {
         return IDPhoto.Cutout(image: image, face: CGRect(x: 215, y: 330, width: 170, height: 190))
     }
 
-    /// 摄像头小窗演示用的画面：浅色渐变的背景上的示例人像
-    private static func sampleCameraFrame() -> CGImage? {
+    /// 摄像头小窗演示用的画面：浅色渐变的背景上的示例人像；插件包的演示步骤也用
+    static func sampleCameraFrame() -> CGImage? {
         let space = CGColorSpace(name: CGColorSpace.sRGB) ?? CGColorSpaceCreateDeviceRGB()
         guard let portrait = samplePortrait(),
               let context = CGContext(data: nil, width: 600, height: 600, bitsPerComponent: 8, bytesPerRow: 0, space: space,
@@ -757,7 +720,7 @@ enum OverlayDemo {
         model.background = .sky
     }
 
-    /// 插件包注册的演示步骤：显示、记下截图区域、停一会儿再收起
+    /// 插件包注册的演示步骤：按顺序一个个显示、记下截图区域、停一会儿再收起
     private static func playPluginScenes(after step: String, on screen: NSScreen, unit: Double) async {
         for scene in PluginHost.shared.demoScenes(after: step) {
             await pause(0.4 * unit)

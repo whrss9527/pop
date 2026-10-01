@@ -59,6 +59,12 @@ Which actions are installed, which slot each one takes, and which kind of conten
 | iCloud sync | Ring layouts (including per-app rings), installed actions, custom plugins, rules, triggers and action shortcuts, translation, clipboard and AI API settings (except the API key), stored in your own iCloud key-value storage. You can also export them to a file in Settings → Sync and import it on another Mac (works in builds without iCloud sync too) |
 | Updates | Reads GitHub Releases directly (beta versions optional). After downloading, Pop verifies the SHA-256 checksum and code signature before replacing Pop.app and restarting. New versions are announced with a notification and a download arrow on the menu bar icon, without interrupting you; after updating, the first launch sends a notification about what’s new |
 
+### Plugins
+
+Some actions come as separate plugin bundles that aren't part of the Pop download. Install one when you need it under Plugins at the top of Settings → Actions: it downloads from this version's GitHub release in a few seconds and works right away, without a restart. Each plugin shows its download size and how much space it takes once installed. Click Uninstall when you no longer need it: the plugin and its settings are deleted, and the action is removed from the ring and from shortcuts. With iCloud sync on, installing and uninstalling sync to your other Macs.
+
+These actions are plugins now: Draw on Screen, Camera Bubble, Highlight Pointer and Teleprompter, with more to follow. When you upgrade from an older version, the ones you use (on the ring, with a shortcut, or used recently) are installed automatically; install the others when you need them. After Pop updates, installed plugins are replaced with the matching new versions automatically.
+
 ### Built-in actions
 
 | Category | Actions |
@@ -155,6 +161,7 @@ Re-posted events are marked and pass straight through when they come back to the
 | --- | --- | --- |
 | Settings (ring, rules, triggers…) | `UserDefaults` (`io.github.whrss9527.pop`) | iCloud key-value storage |
 | Custom plugins | `~/Library/Application Support/Pop/Plugins/*.json`, one file per plugin | iCloud key-value storage |
+| Installed plugin bundles | `~/Library/Application Support/Pop/PluginBundles/*.bundle` | Which ones are installed syncs with your settings; each Mac downloads the plugins from the release |
 | Clipboard history | `~/Library/Application Support/Pop/Clipboard/history.sqlite` (WAL mode); images are stored as PNG files in the `Images` folder next to it. Text recognized in images is also stored in the database for searching | Not synced; stays on this Mac |
 | Inbox | `~/Documents/Pop 收集箱.md` | Follows your Documents folder |
 | Vocabulary | `~/Library/Application Support/Pop/Vocabulary.json` | Not synced; can be exported |

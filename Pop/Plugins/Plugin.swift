@@ -318,12 +318,25 @@ protocol PopPlugin {
 /// 内置功能 + 用户插件。用户插件变化时（新建、编辑、iCloud 同步）会发布更新，设置界面跟着刷新。
 @MainActor
 final class PluginRegistry: ObservableObject {
-    let builtins: [any PopPlugin]
+    /// Pop 自带的功能，加上已经装载的插件包提供的功能。插件包装上、卸载后跟着变（见 reloadBuiltins）
+    @Published private(set) var builtins: [any PopPlugin]
     @Published private(set) var userPlugins: [ManifestPlugin] = []
+    /// 测试时直接给定的功能，不跟着插件包变
+    private let fixedBuiltins: Bool
 
-    /// 没给 builtins 时用 Pop 自带的功能，加上已经装载的插件包提供的功能
     init(builtins: [any PopPlugin]? = nil) {
-        self.builtins = builtins ?? BuiltinPlugins.sorted(BuiltinPlugins.make() + PluginBundles.shared.plugins)
+        self.builtins = builtins ?? Self.currentBuiltins()
+        fixedBuiltins = builtins != nil
+    }
+
+    private static func currentBuiltins() -> [any PopPlugin] {
+        BuiltinPlugins.sorted(BuiltinPlugins.make() + PluginBundles.shared.plugins)
+    }
+
+    /// 插件包装上或卸载以后重新列一遍
+    func reloadBuiltins() {
+        guard !fixedBuiltins else { return }
+        builtins = Self.currentBuiltins()
     }
 
     var plugins: [any PopPlugin] {

@@ -195,9 +195,9 @@ enum BuiltinPluginID {
     /// 默认不装的内置功能（需要的话在「设置 → 功能」里打开）
     static let optIn: Set<String> = [aiPolish, aiSummarize, aiExplain]
 
-    /// 全新安装时默认装上的内置功能
+    /// 全新安装时默认装上的功能：Pop 自带的。插件包提供的功能要用时到「设置 → 插件」里装
     static var installedByDefault: [String] {
-        all.filter { !optIn.contains($0) }
+        all.filter { !optIn.contains($0) && !PluginCatalog.functionIDs.contains($0) }
     }
 }
 
@@ -699,6 +699,8 @@ struct AppSettings: Codable, Equatable {
     var snippets: [Snippet] = Snippet.examples
     /// 已经「见过」的内置功能。新版本新增的内置功能不在这里面，读取旧设置时会自动装上。
     var knownBuiltinPlugins: [String] = BuiltinPluginID.all
+    /// 已经搬进插件包、迁移过的功能（见 adoptPluginBundles）。新装的 Pop 不用迁移，默认就是全部
+    var movedToPlugins: [String] = PluginCatalog.functionIDs.sorted()
     /// 用户最后一次修改的时间，iCloud 同步时用它判断哪边更新。
     /// 全新安装是 distantPast，这样新设备第一次同步会直接采用云端的配置。
     var modifiedAt: Date = .distantPast
@@ -721,6 +723,8 @@ struct AppSettings: Codable, Equatable {
         pluginHotKeys = c.lossyArray(.pluginHotKeys) ?? []
         snippets = c.lossyArray(.snippets) ?? d.snippets
         knownBuiltinPlugins = c.lenient(.knownBuiltinPlugins, default: BuiltinPluginID.legacy)
+        // 旧版本的设置里没有这一项：搬进插件包的功能都还没迁移过
+        movedToPlugins = c.lenient(.movedToPlugins, default: [])
         modifiedAt = c.lenient(.modifiedAt, default: d.modifiedAt)
         if !knownBuiltinPlugins.contains(BuiltinPluginID.allPlugins), ring == .legacyDefault {
             ring = .default
@@ -729,13 +733,48 @@ struct AppSettings: Codable, Equatable {
     }
 
     /// 新版本新增的内置功能默认装上（用户之后卸载了就不会再自动装回来；默认不装的功能除外）。
+    /// 插件包提供的功能不自动装，要用时到「设置 → 插件」里装。
     mutating func adoptNewBuiltinPlugins() {
         for id in BuiltinPluginID.all where !knownBuiltinPlugins.contains(id) {
-            if !installedPlugins.contains(id), !BuiltinPluginID.optIn.contains(id) {
+            if !installedPlugins.contains(id), !BuiltinPluginID.optIn.contains(id), !PluginCatalog.functionIDs.contains(id) {
                 installedPlugins.append(id)
             }
             knownBuiltinPlugins.append(id)
         }
+    }
+
+    /// 老用户升级到功能搬进插件包的版本：在用的功能留着（Pop 会自动把它的插件包装上），
+    /// 没在用的去掉，要用时到「设置 → 插件」里装。一个插件包里有一个功能在用，整个插件包都留着。
+    /// onDisk 是这台 Mac 上已经装着的插件包（ID）。返回有没有改动。
+    mutating func adoptPluginBundles(recentlyUsed: Set<String>, onDisk: Set<String> = []) -> Bool {
+        let pending = PluginCatalog.packages.filter { package in package.functions.contains { !movedToPlugins.contains($0) } }
+        guard !pending.isEmpty else { return false }
+        for package in pending {
+            let keep = onDisk.contains(package.id)
+                || package.functions.contains { installedPlugins.contains($0) && isInUse($0, recentlyUsed: recentlyUsed) }
+            for id in package.functions {
+                if keep {
+                    if !installedPlugins.contains(id) {
+                        installedPlugins.append(id)
+                    }
+                } else {
+                    installedPlugins.removeAll { $0 == id }
+                }
+                if !movedToPlugins.contains(id) {
+                    movedToPlugins.append(id)
+                }
+            }
+        }
+        return true
+    }
+
+    /// 这个功能有没有在用：放在圆盘上、设了快捷键、直达规则在用，或者最近用过
+    func isInUse(_ id: String, recentlyUsed: Set<String>) -> Bool {
+        ring.slots.contains(id)
+            || appRings.contains { $0.layout.slots.contains(id) }
+            || pluginHotKeys.contains { $0.pluginID == id }
+            || rules.contains { $0.enabled && $0.pluginID == id }
+            || recentlyUsed.contains(id)
     }
 
     /// 忽略 modifiedAt，只比较内容。

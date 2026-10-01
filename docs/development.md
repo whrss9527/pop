@@ -70,6 +70,7 @@ Pop/
 ├── Sync/       iCloud sync
 ├── Update/     update checks (GitHub Releases), download verification, replace and restart
 └── Resources/  Info.plist, entitlements, translations (zh-Hans.lproj, en.lproj)
+PluginBundles/  plugin bundles: each folder builds into its own .bundle (PopXxx.bundle), downloaded from the release when installed
 PopTests/       unit tests
 plugins/        plugin library: index (index.json) and plugins that install with a click
 Config/         xcconfig (signing, bundle ID)
@@ -96,6 +97,18 @@ struct UppercasePlugin: PopPlugin {
 A `PluginOutcome` can be a result card (`ResultCard` supports multi-row results, images, color swatches and custom buttons), a hand-off to the translation card, a direct replacement of the selection, a brief message, or opening the clipboard history or the All Actions list.
 
 Planned: web-based plugins with their own interface.
+
+### Plugin bundles
+
+Pop's features are moving into plugin bundles one by one. Each plugin bundle builds into its own `.bundle` that isn't part of the Pop download: it's fetched from this version's release when the user installs it in Settings → Actions → Plugins, and uninstalling deletes it along with its preferences. Pop itself keeps only the most common actions (translation, search, dictionary, clipboard…).
+
+- **Code**: `PluginBundles/<folder>/`, starting with `@testable import Pop` so it can use Pop's types directly. The entry point is a class that implements `PopPluginBundle` (`Pop/Plugins/PluginBundles.swift`) with a fixed name given by `@objc(PopXxxEntry)`: `makePlugins()` returns the actions it provides, `didLoad(_:)` registers hooks into Pop (windows to leave out of screen recordings, demo scenes for the CI screenshots) and `willUninstall()` closes anything it has open. Pop's own code never refers to types inside a plugin bundle.
+- **Project**: add a target with `templates: [PopPlugin]` to `project.yml`, named Pop plus the folder name, set `POP_PLUGIN_ID` (the plugin ID) and `POP_PLUGIN_ENTRY` (the entry class name) and add it to the scheme. Also add the folder to the `PopTests` sources so the unit tests can test the plugin code directly, and add the entry class to `bundles` in `PopTests/TestCatalog.swift`.
+- **Catalog**: add an entry to `Pop/Plugins/PluginCatalog.swift` with the plugin ID, file name, name and summary, the actions it provides and the preferences to delete when it's uninstalled. The settings page lists plugins that aren't installed from it, and when existing users upgrade, the moved actions they use are installed automatically (`AppSettings.adoptPluginBundles`).
+- **Build**: a plugin bundle only works with the Pop it was built with, because Swift has no stable module interface here. `scripts/build-app.sh` writes "version+commit" into `PopBuildID` of both Pop and its plugins, puts the plugins next to Pop.app and signs them with the same certificate. So that plugins can find Pop's symbols, Pop keeps testability on in Release and strips only local symbols.
+- **Release**: `scripts/package-plugins.sh` zips each plugin bundle as `plugin-<ID>.zip` and writes the plugin list `plugins-<version>.json` (file names, SHA-256, sizes, build ID). The release workflow uploads them to the release together with Pop and notarizes them when signing with Developer ID.
+- **Install**: Pop downloads the plugin list and the archive, checks the SHA-256, the build ID and the signature (if Pop is signed with a certificate, the plugin must be signed with the same one), unzips it into `~/Library/Application Support/Pop/PluginBundles` and loads it right away without a restart. After Pop updates, installed plugins are replaced with the matching versions automatically.
+- **Try it locally**: when running from Xcode the plugins sit next to Pop.app; set `POP_PLUGIN_DIR` to that folder to load them too. Point `POP_PLUGIN_SOURCE` at a folder with the output of `package-plugins.sh` to use it as the release and go through download and installation. The CI launch test does both.
 
 ### Releasing a new version
 

@@ -3,7 +3,7 @@ import os
 
 /// 插件包的入口。
 ///
-/// 插件包是 Plugins/ 下面单独编译的 .bundle，装在「~/Library/Application Support/Pop/Plugins」里，由 Pop 在启动时
+/// 插件包是 PluginBundles/ 下面单独编译的 .bundle，装在「~/Library/Application Support/Pop/PluginBundles」里，由 Pop 在启动时
 /// （或者刚装上时）装载。插件包的 Info.plist 里 NSPrincipalClass 指向一个实现了这个协议的类；PopPluginID 是插件包的 ID；
 /// PopBuildID 必须和 Pop 自己的一样：插件包直接用 Pop 里的类型，只能和同一次构建出来的 Pop 一起用。
 protocol PopPluginBundle: AnyObject {
@@ -11,10 +11,13 @@ protocol PopPluginBundle: AnyObject {
     static func makePlugins() -> [any PopPlugin]
     /// 装载以后调用一次：在这里注册录屏时不录的窗口、演示模式的步骤这些
     @MainActor static func didLoad(_ host: PluginHost.Registrar)
+    /// 卸载之前调用：关掉插件包开着的窗口、停掉它在后台做的事。代码要等 Pop 下次启动才真正卸掉
+    @MainActor static func willUninstall()
 }
 
 extension PopPluginBundle {
     @MainActor static func didLoad(_ host: PluginHost.Registrar) {}
+    @MainActor static func willUninstall() {}
 }
 
 /// 插件包挂进 Pop 的地方。按插件包记下谁注册了什么，卸载时一起拿掉。
@@ -28,6 +31,8 @@ final class PluginHost {
         let name: String
         /// 排在演示的哪一步后面
         let after: String
+        /// 排在同一步后面的几个插件包步骤按它从小到大排
+        var order = 0
         /// 显示出来，返回要截的区域（AppKit 屏幕坐标）
         let show: @MainActor (NSScreen) -> CGRect?
         let hide: @MainActor () -> Void
@@ -44,12 +49,12 @@ final class PluginHost {
         }
 
         func addDemoScene(_ scene: DemoScene) {
-            PluginHost.shared.demoScenes.append((owner, scene))
+            PluginHost.shared.scenes.append((owner, scene))
         }
     }
 
     private var recordingExclusions: [(owner: String, windows: @MainActor () -> [Int])] = []
-    private var demoScenes: [(owner: String, scene: DemoScene)] = []
+    private var scenes: [(owner: String, scene: DemoScene)] = []
 
     /// 录屏时不录进去的窗口编号
     var windowsExcludedFromRecording: [Int] {
@@ -58,13 +63,13 @@ final class PluginHost {
 
     /// 排在演示的这一步后面的插件包步骤
     func demoScenes(after step: String) -> [DemoScene] {
-        demoScenes.map(\.scene).filter { $0.after == step }
+        scenes.map(\.scene).filter { $0.after == step }.sorted { ($0.order, $0.name) < ($1.order, $1.name) }
     }
 
     /// 插件包卸载时拿掉它注册的东西
     func removeAll(owner: String) {
         recordingExclusions.removeAll { $0.owner == owner }
-        demoScenes.removeAll { $0.owner == owner }
+        scenes.removeAll { $0.owner == owner }
     }
 }
 
@@ -80,7 +85,10 @@ final class PluginBundles {
         /// 插件包的 ID（Info.plist 里的 PopPluginID）
         let id: String
         let url: URL
+        let entry: PopPluginBundle.Type
         let plugins: [any PopPlugin]
+        /// 从 POP_PLUGIN_DIR 装载的（测试、截图用），不归「设置 → 插件」管
+        let external: Bool
     }
 
     enum LoadError: Error, Equatable {
@@ -106,15 +114,15 @@ final class PluginBundles {
     }
 
     /// 这个 Pop 是哪一次构建的（Info.plist 里的 PopBuildID）：插件包的 PopBuildID 要和它一样
-    nonisolated static var buildID: String {
+    nonisolated static var appBuildID: String {
         Bundle.main.object(forInfoDictionaryKey: "PopBuildID") as? String ?? ""
     }
 
-    /// 装好的插件包放在这里
+    /// 装好的插件包放在这里（自定义插件的 JSON 在旁边的 Plugins 文件夹里，分开放）
     nonisolated static var directory: URL {
         FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
             .appendingPathComponent("Pop", isDirectory: true)
-            .appendingPathComponent("Plugins", isDirectory: true)
+            .appendingPathComponent("PluginBundles", isDirectory: true)
     }
 
     /// 测试和截图用：POP_PLUGIN_DIR 指向一个放着插件包的文件夹（比如构建出来的那个），启动时一起装载
@@ -127,11 +135,36 @@ final class PluginBundles {
     func loadInstalled() {
         guard !didLoadInstalled else { return }
         didLoadInstalled = true
-        for directory in [Self.extraDirectory, Self.directory].compactMap({ $0 }) {
-            for url in Self.bundles(in: directory) {
-                _ = load(url)
+        if let extra = Self.extraDirectory {
+            for url in Self.bundles(in: extra) {
+                _ = load(url, external: true)
             }
         }
+        for url in Self.bundles(in: Self.directory) {
+            _ = load(url)
+        }
+    }
+
+    func isLoaded(_ id: String) -> Bool {
+        loaded.contains { $0.id == id }
+    }
+
+    func loadedBundle(_ id: String) -> Loaded? {
+        loaded.first { $0.id == id }
+    }
+
+    /// 卸载：拿掉它提供的功能和注册的东西。已经装载的代码要等 Pop 下次启动才真正卸掉
+    func unload(_ id: String) {
+        guard let item = loadedBundle(id) else { return }
+        item.entry.willUninstall()
+        PluginHost.shared.removeAll(owner: id)
+        loaded.removeAll { $0.id == id }
+        Self.log.notice("unloaded plugin \(id, privacy: .public)")
+    }
+
+    /// 装在这个文件夹里的插件包（装上、卸载都在这里）
+    nonisolated static func installedURL(bundleName: String) -> URL {
+        directory.appendingPathComponent("\(bundleName).bundle", isDirectory: true)
     }
 
     /// 文件夹里的插件包（.bundle，Info.plist 里有 PopPluginID）
@@ -144,14 +177,23 @@ final class PluginBundles {
 
     /// 插件包的 ID；不是插件包时是 nil
     nonisolated static func pluginID(of url: URL) -> String? {
-        let info = NSDictionary(contentsOf: url.appendingPathComponent("Contents/Info.plist")) as? [String: Any]
-        guard let id = info?["PopPluginID"] as? String, !id.isEmpty else { return nil }
+        guard let id = info(of: url)["PopPluginID"] as? String, !id.isEmpty else { return nil }
         return id
     }
 
+    /// 插件包是哪一次构建的
+    nonisolated static func buildID(of url: URL) -> String {
+        info(of: url)["PopBuildID"] as? String ?? ""
+    }
+
+    /// 直接读 Info.plist，不经过 Bundle：Bundle 会按路径一直缓存着，同一个位置换成新的插件包后读到的还是旧的
+    private nonisolated static func info(of url: URL) -> [String: Any] {
+        NSDictionary(contentsOf: url.appendingPathComponent("Contents/Info.plist")) as? [String: Any] ?? [:]
+    }
+
     /// 检查并装载一个插件包。同一个 ID 已经装载过时直接返回那一个。
-    func load(_ url: URL) -> Result<Loaded, LoadError> {
-        let result = loadChecked(url)
+    func load(_ url: URL, external: Bool = false) -> Result<Loaded, LoadError> {
+        let result = loadChecked(url, external: external)
         switch result {
         case .success(let item):
             failures[url] = nil
@@ -163,21 +205,22 @@ final class PluginBundles {
         return result
     }
 
-    private func loadChecked(_ url: URL) -> Result<Loaded, LoadError> {
-        guard let id = Self.pluginID(of: url), let bundle = Bundle(url: url) else { return .failure(.notAPlugin) }
-        if let existing = loaded.first(where: { $0.id == id }) {
+    private func loadChecked(_ url: URL, external: Bool) -> Result<Loaded, LoadError> {
+        guard let id = Self.pluginID(of: url) else { return .failure(.notAPlugin) }
+        if let existing = loadedBundle(id) {
             return .success(existing)
         }
-        let build = bundle.object(forInfoDictionaryKey: "PopBuildID") as? String ?? ""
-        guard build == Self.buildID else { return .failure(.wrongBuild(build)) }
+        let build = Self.buildID(of: url)
+        guard build == Self.appBuildID else { return .failure(.wrongBuild(build)) }
         guard CodeSignature.isTrustedPlugin(url) else { return .failure(.untrusted) }
+        guard let bundle = Bundle(url: url) else { return .failure(.notAPlugin) }
         do {
             try bundle.loadAndReturnError()
         } catch {
             return .failure(.failed(error.localizedDescription))
         }
         guard let entry = bundle.principalClass as? PopPluginBundle.Type else { return .failure(.noEntry) }
-        let item = Loaded(id: id, url: url, plugins: entry.makePlugins())
+        let item = Loaded(id: id, url: url, entry: entry, plugins: entry.makePlugins(), external: external)
         entry.didLoad(PluginHost.Registrar(owner: id))
         loaded.append(item)
         return .success(item)

@@ -8,6 +8,8 @@ final class AppController {
     let settingsStore: SettingsStore
     let pluginStore: PluginStore
     let registry: PluginRegistry
+    /// 插件包的安装、卸载和更新
+    let pluginManager: PluginManager
     let permissions: PermissionMonitor
     let overlay: OverlayController
     let downloads: TranslationDownloadRequest
@@ -34,6 +36,7 @@ final class AppController {
         // 先装载装好的插件包，功能列表里才有它们提供的功能
         PluginBundles.shared.loadInstalled()
         registry = PluginRegistry()
+        pluginManager = PluginManager(settingsStore: settingsStore, registry: registry)
         permissions = PermissionMonitor()
         overlay = OverlayController()
         downloads = TranslationDownloadRequest()
@@ -49,6 +52,7 @@ final class AppController {
         let store = settingsStore
         let plugins = pluginStore
         let pluginRegistry = registry
+        let packages = pluginManager
         let permissionMonitor = permissions
         let sync = cloudSync
         let appUpdater = updater
@@ -60,6 +64,7 @@ final class AppController {
                     .environmentObject(store)
                     .environmentObject(plugins)
                     .environmentObject(pluginRegistry)
+                    .environmentObject(packages)
                     .environmentObject(permissionMonitor)
                     .environmentObject(sync)
                     .environmentObject(appUpdater)
@@ -119,6 +124,8 @@ final class AppController {
         UpdateLog.launched(version: UpdateChecker.currentVersion)
         AlertVolume.restorePendingIfNeeded()
         MainMenu.install()
+        // 老用户迁移到插件包，装上设置里要的、缺着的插件包（Pop 更新后换成对应的版本）
+        pluginManager.start()
 
         coordinator.openSettings = { [weak self] tab in
             self?.settingsWindow.show(tab: tab)
