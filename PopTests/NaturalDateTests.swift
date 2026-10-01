@@ -109,7 +109,7 @@ final class NaturalDateTests: XCTestCase {
     func testPlugin() async {
         let context = PluginContext(settings: AppSettings(), openSettings: {})
         let outcome = await ReminderPlugin().run(ContentClassifier.classify(.text("明天开会")), context: context)
-        XCTAssertEqual(outcome, .reminder(text: "明天开会"))
+        guard case .present = outcome else { return XCTFail("应该弹出加到提醒事项的卡片") }
         XCTAssertTrue(ReminderPlugin().info.canHandle(ContentClassifier.classify(.text("周五交周报"))))
         XCTAssertFalse(ReminderPlugin().info.canHandle(ContentClassifier.classify(.text("买牛奶"))))
     }

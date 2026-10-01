@@ -73,6 +73,6 @@ final class DuplicatesTests: XCTestCase {
         XCTAssertTrue(DuplicatesPlugin().info.canHandle(content))
         XCTAssertFalse(DuplicatesPlugin().info.canHandle(ContentClassifier.classify(.files([folder.original]))))
         let outcome = await DuplicatesPlugin().run(content, context: context)
-        XCTAssertEqual(outcome, .findDuplicates([folder.root]))
+        guard case .present = outcome else { return XCTFail("应该弹出查找重复文件的卡片") }
     }
 }

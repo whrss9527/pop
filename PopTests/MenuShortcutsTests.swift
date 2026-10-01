@@ -86,7 +86,7 @@ final class MenuShortcutsTests: XCTestCase {
     @MainActor
     func testPluginOpensTheList() async {
         let outcome = await MenuShortcutsPlugin().run(.empty, context: PluginContext(settings: AppSettings(), openSettings: {}))
-        XCTAssertEqual(outcome, .showMenuShortcuts)
+        guard case .present = outcome else { return XCTFail("应该弹出快捷键一览") }
     }
 
     // MARK: - 示例菜单

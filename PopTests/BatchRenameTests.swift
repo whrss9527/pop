@@ -166,7 +166,7 @@ final class BatchRenameTests: XCTestCase {
         let selected = files(["b.txt", "a.txt"])
         let outcome = await BatchRenamePlugin().run(ContentClassifier.classify(.files(selected)),
                                                     context: PluginContext(settings: AppSettings(), openSettings: {}))
-        XCTAssertEqual(outcome, .rename(selected))
+        guard case .present = outcome else { return XCTFail("应该弹出批量重命名卡片") }
         let model = RenameModel(files: selected)
         XCTAssertEqual(model.files.map(\.lastPathComponent), ["a.txt", "b.txt"])
         model.rule.name = "素材"

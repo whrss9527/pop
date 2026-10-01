@@ -29,6 +29,8 @@ enum OverlayDemo {
         // 宽一些，放得下文本对比那样的宽卡片
         let cardRegion = CGRect(x: center.x - 190, y: center.y - 480, width: 760, height: 680)
         logRegion(cardRegion, screen: screen)
+        // 插件包的演示步骤用
+        let demo = PluginHost.DemoContext(screen: screen, center: center, overlay: overlay, cardRegion: cardRegion)
 
         let installed = Set(settings.installedPlugins)
         let text = ContentClassifier.classify(.text("Liquid glass"))
@@ -132,10 +134,8 @@ enum OverlayDemo {
                                         onOpenSettings: {}, onClose: {}),
                              anchor: center)
 
-            // 窗口布局卡片
-            await pause(1.4 * unit)
-            step("layout")
-            overlay.showCard(WindowLayoutCardView(hasMultipleDisplays: false, onChoose: { _ in }, onClose: {}), anchor: center)
+            // 插件包的步骤：窗口布局卡片
+            await playPluginScenes(after: "ai", in: demo, unit: unit)
 
             // 翻译卡片（CI 上没有离线语言包，显示的是引导下载的样子），左上角可以换目标语言
             await pause(1.4 * unit)
@@ -175,16 +175,8 @@ enum OverlayDemo {
                                             onAction: { _ in }, onMore: {}, onClose: {}),
                              anchor: center)
 
-            // 图片配色卡片（用标注演示的那张示例图）
-            await pause(1.4 * unit)
-            step("palette")
-            if let sample = sampleScreenshot() {
-                let swatches = ColorPalette.extract(from: sample.image)
-                let card = ResultCard(title: String(localized: "图片配色"), detail: String(localized: "按面积从大到小；点色块复制色值"),
-                                      rows: swatches.map { ResultCard.Row(label: String(localized: "占 \(Int((($0.share) * 100).rounded()))%"), value: $0.hex) },
-                                      palette: swatches.map(\.hex))
-                overlay.showCard(ResultCardView(card: card, onAction: { _ in }, onMore: {}, onClose: {}), anchor: center)
-            }
+            // 插件包的步骤：图片配色
+            await playPluginScenes(after: "diff", in: demo, unit: unit)
 
             // 暂存架：放上几个示例文件
             await pause(1.4 * unit)
@@ -221,18 +213,8 @@ enum OverlayDemo {
                              anchor: center)
             step("extract")
 
-            // JSON 转代码卡片（分段切换语言）
-            await pause(1.4 * unit)
-            let json = #"{"id": 42, "name": "Pop", "tags": ["效率"], "owner": {"login": "pop", "site_url": null}, "#
-                + #""releases": [{"version": "0.10.0", "draft": false}, {"version": "0.11.0", "draft": true, "notes": "新功能"}]}"#
-            if let output = JSONTypes.generate(json) {
-                let tabs = output.code.map { ResultCard.Tab(title: $0.language.rawValue, text: $0.text) }
-                overlay.showCard(ResultCardView(card: ResultCard(title: String(localized: "JSON 转代码"), detail: String(localized: "\(output.typeCount) 个类型；字段是否可选、能否为空按示例推断"),
-                                                                 tabs: tabs),
-                                                onAction: { _ in }, onMore: {}, onClose: {}),
-                                 anchor: center)
-            }
-            step("jsonTypes")
+            // 插件包的步骤：JSON 转代码
+            await playPluginScenes(after: "extract", in: demo, unit: unit)
 
             // 网页内容转成 Markdown
             await pause(1.4 * unit)
@@ -245,13 +227,8 @@ enum OverlayDemo {
             }
             step("toMarkdown")
 
-            // 正则测试卡片：用「日期」表达式找出日期，替换成日/月/年
-            await pause(1.4 * unit)
-            let notes = "0.10.0 发布于 2026-09-29，0.9.0 发布于 2026-09-28。\n下一版计划在 2026-10-08 之前发布。"
-            let regex = RegexTesterModel(text: notes, pattern: RegexTester.presets.first { $0.title == String(localized: "日期") }?.pattern ?? "")
-            regex.replacement = "$3/$2/$1"
-            overlay.showCard(RegexTesterView(model: regex, canReplace: true, onAction: { _ in }, onClose: {}), anchor: center)
-            step("regex")
+            // 插件包的步骤：正则测试
+            await playPluginScenes(after: "toMarkdown", in: demo, unit: unit)
 
             // 剪贴板历史：几条示例记录，⌘ 点选两条准备合在一起粘贴
             await pause(1.4 * unit)
@@ -272,18 +249,8 @@ enum OverlayDemo {
             }
             step("history-search")
 
-            // 加到提醒事项：从一句话里认出时间和事情
-            await pause(1.4 * unit)
-            let draft = ReminderDraft(text: "明天下午3点和设计组过一遍新版本的截图")
-            overlay.showCard(ReminderCardView(draft: draft, onAdd: { _ in }, onClose: {}), anchor: center)
-            step("reminder")
-
-            // 识别表格：macOS 26 上按行列认出格子，更早的系统按普通文字识别
-            await pause(1.4 * unit)
-            if let table = sampleTableImage(), case .card(let tableCard) = await TableOCRPlugin.recognize(table) {
-                overlay.showCard(ResultCardView(card: tableCard, onAction: { _ in }, onMore: {}, onClose: {}), anchor: center)
-            }
-            step("table")
+            // 插件包的步骤：加到提醒事项、识别表格
+            await playPluginScenes(after: "history-search", in: demo, unit: unit)
 
             // 文件信息：一张带拍摄信息和位置的示例照片，可以在地图里看、另存去掉位置的一份
             await pause(1.4 * unit)
@@ -294,22 +261,8 @@ enum OverlayDemo {
             }
             step("photo")
 
-            // 批量重命名：几个示例文件按编号改名的预览
-            await pause(1.4 * unit)
-            let renaming = RenameModel(files: sampleFiles())
-            renaming.rule.name = "发布素材"
-            overlay.showCard(RenameCardView(model: renaming, onReveal: { _ in }, onClose: {}), anchor: center)
-            step("rename")
-
-            // SQL 格式化：写在一行里的查询按子句分行
-            await pause(1.4 * unit)
-            let query = "select u.id, u.name, count(o.id) as orders from users u left join orders o on o.user_id = u.id "
-                + "where u.created_at >= '2026-01-01' and u.vip = true group by u.id, u.name order by orders desc limit 20"
-            if case .card(let sqlCard) = await FormatSQLPlugin().run(ContentClassifier.classify(.text(query)),
-                                                                      context: PluginContext(settings: AppSettings(), openSettings: {})) {
-                overlay.showCard(ResultCardView(card: sqlCard, onAction: { _ in }, onMore: {}, onClose: {}), anchor: center)
-            }
-            step("sql")
+            // 插件包的步骤：批量重命名、SQL 格式化
+            await playPluginScenes(after: "photo", in: demo, unit: unit)
 
             // 生词本：几个示例单词（放在临时文件里，不动真的生词本）
             await pause(1.4 * unit)
@@ -327,14 +280,8 @@ enum OverlayDemo {
                              anchor: center)
             step("vocabulary")
 
-            // 查找重复文件：示例文件夹里有两组内容一样的文件
-            await pause(1.4 * unit)
-            if let folder = sampleDuplicates() {
-                let duplicates = DuplicatesModel(roots: [folder])
-                duplicates.start()
-                overlay.showCard(DuplicatesView(model: duplicates, onReveal: { _ in }, onClose: {}), anchor: center)
-            }
-            step("duplicates")
+            // 插件包的步骤：查找重复文件
+            await playPluginScenes(after: "vocabulary", in: demo, unit: unit)
 
             // PDF 页面：一份 12 页的 PDF，写好了要取出的页码（卡片只用到文件名和页数）
             await pause(1.4 * unit)
@@ -343,14 +290,8 @@ enum OverlayDemo {
             overlay.showCard(PDFPagesView(model: pdfPages, onExtract: { _ in }, onSplit: {}, onClose: {}), anchor: center)
             step("pdfPages")
 
-            // 占用空间：查找重复文件用的示例文件夹，看每一项占了多少
-            await pause(1.4 * unit)
-            if let folder = sampleDuplicates() {
-                let usage = DiskUsageModel(root: folder)
-                usage.start()
-                overlay.showCard(DiskUsageView(model: usage, onReveal: { _ in }, onClose: {}), anchor: center)
-            }
-            step("diskUsage")
+            // 插件包的步骤：占用空间
+            await playPluginScenes(after: "pdfPages", in: demo, unit: unit)
 
             // 给 PDF 加密码：两次输入的密码一样
             await pause(1.4 * unit)
@@ -368,17 +309,8 @@ enum OverlayDemo {
             await pause(1.4 * unit)
             coordinator.hideToolbar()
 
-            // 加水印：示例截图上铺一层「仅供办理业务使用」
-            await pause(0.6 * unit)
-            if let capture = sampleScreenshot() {
-                let image = FileManager.default.temporaryDirectory.appending(path: "pop-demo/证件照片.png")
-                try? FileManager.default.createDirectory(at: image.deletingLastPathComponent(), withIntermediateDirectories: true)
-                if (try? capture.png.write(to: image)) != nil {
-                    let watermark = WatermarkModel(files: [image], text: ImageWatermark.defaultText, opacity: 0.35)
-                    overlay.showCard(WatermarkView(model: watermark, onApply: {}, onClose: {}), anchor: center)
-                }
-            }
-            step("watermark")
+            // 插件包的步骤：加水印
+            await playPluginScenes(after: "toolbar", in: demo, unit: unit)
 
             // 传到手机：二维码和能下载的文件（演示时不开网页服务，网址是示例）
             await pause(1.4 * unit)
@@ -421,7 +353,7 @@ enum OverlayDemo {
             // 网页存档：选中一个网址
             await pause(1.4 * unit)
             if let page = URL(string: "https://github.com/whrss9527/pop/releases") {
-                overlay.showCard(ResultCardView(card: WebCapturePlugin.card(page), onAction: { _ in }, onMore: {}, onClose: {}),
+                overlay.showCard(ResultCardView(card: WebCapture.card(page), onAction: { _ in }, onMore: {}, onClose: {}),
                                  anchor: center)
             }
             step("webCapture")
@@ -429,7 +361,7 @@ enum OverlayDemo {
             // 裁剪图片：五种比例
             await pause(1.4 * unit)
             let beach = FileManager.default.temporaryDirectory.appending(path: "pop-demo/海边.jpg")
-            overlay.showCard(ResultCardView(card: CropImagePlugin.card([beach]), onAction: { _ in }, onMore: {}, onClose: {}),
+            overlay.showCard(ResultCardView(card: SmartCrop.card([beach]), onAction: { _ in }, onMore: {}, onClose: {}),
                              anchor: center)
             step("cropImage")
 
@@ -472,17 +404,13 @@ enum OverlayDemo {
             // 文字转图片：一段示例文字排成的长图
             await pause(1.4 * unit)
             let passage = "周五的发布会改到下午三点，地点不变。\n\n会前请把演示用的 Mac 更新到最新系统，提前半小时到场调试投屏。"
-            if case .card(let textCard) = TextImagePlugin.outcome(passage, style: .warm) {
+            if case .card(let textCard) = TextImage.outcome(passage, style: .warm) {
                 overlay.showCard(ResultCardView(card: textCard, onAction: { _ in }, onMore: {}, onClose: {}), anchor: center)
             }
             step("textImage")
 
-            // 快捷键一览：一份写好的示例菜单，不去读真的 App
-            await pause(1.4 * unit)
-            let shortcuts = MenuShortcutsModel(appName: "备忘录")
-            shortcuts.load(sampleMenus)
-            overlay.showCard(MenuShortcutsView(model: shortcuts, onClose: {}), anchor: center)
-            step("menuShortcuts")
+            // 插件包的步骤：快捷键一览
+            await playPluginScenes(after: "textImage", in: demo, unit: unit)
 
             // 滚动截图：截的时候的边框和面板，然后是拼好的长图卡片（示例长图用文字转图片画一篇长文）
             await pause(1.4 * unit)
@@ -501,53 +429,10 @@ enum OverlayDemo {
             }
             step("scrollCapture")
 
-            // 屏幕画笔：贴一张示例截图当作屏幕上的内容，荧光笔划出邮箱、画笔在手机号下面画波浪线、椭圆圈出按钮、箭头指过去；
-            // 截图区域包括屏幕上方的工具栏
+            // 装载的插件包加的步骤：屏幕画笔、摄像头小窗、突出显示指针、提词器……
             await pause(1.4 * unit)
             overlay.hide()
-            let pinCenter = CGPoint(x: visible.midX.rounded(), y: (visible.maxY - 260).rounded())
-            if let capture = sampleScreenshot() {
-                PinBoard.shared.pin(image: NSImage(cgImage: capture.image, size: CGSize(width: 480, height: 300)), around: pinCenter)
-                let pinFrame = CGRect(x: pinCenter.x - 240, y: pinCenter.y - 150, width: 480, height: 300)
-                // 示例图上的点（左上角为原点）换成画布上的点
-                func onScreen(_ x: CGFloat, _ y: CGFloat) -> CGPoint {
-                    CGPoint(x: pinFrame.minX - screen.frame.minX + x, y: screen.frame.maxY - pinFrame.maxY + y)
-                }
-                let toolbar = ScreenPen.shared.showForDemo(on: screen, strokes: [
-                    (.highlighter, .yellow, [onScreen(62, 111), onScreen(224, 111)]),
-                    (.pen, .blue, [onScreen(64, 148), onScreen(88, 152), onScreen(112, 146), onScreen(136, 152),
-                                   onScreen(160, 146), onScreen(184, 151)]),
-                    (.ellipse, .red, [onScreen(286, 192), onScreen(430, 252)]),
-                    (.arrow, .red, [onScreen(150, 262), onScreen(280, 232)]),
-                ])
-                logRegion(pinFrame.union(toolbar ?? pinFrame).insetBy(dx: -24, dy: -20), screen: screen)
-            }
-            step("screenPen")
-            await pause(1.4 * unit)
-            ScreenPen.shared.stop()
-            PinBoard.shared.closeAll()
-
-            // 摄像头小窗和指针光圈：示例人像当作摄像头的画面，小窗在屏幕右下角；光圈停在小窗左边，泛起一圈波纹
-            await pause(0.4 * unit)
-            if let camera = sampleCameraFrame() {
-                let bubble = CameraBubble.shared.showForDemo(image: camera, on: screen)
-                let pointer = CGPoint(x: bubble.minX - 150, y: bubble.midY + 30)
-                PointerHighlight.shared.showForDemo(at: pointer)
-                logRegion(bubble.union(PointerHighlight.frame(around: pointer)).insetBy(dx: -40, dy: -40), screen: screen)
-            }
-            step("presenting")
-            await pause(1.4 * unit)
-            CameraBubble.shared.stop()
-            PointerHighlight.shared.stop()
-
-            // 提词器：屏幕上方一段示例稿子，停在开头
-            await pause(0.4 * unit)
-            let script = "大家好，今天花三分钟介绍一下 Pop 的录屏。\n长按右键弹出圆盘，选「录屏」，拖出要录的区域。\n勾上「显示按下的键」，按的快捷键会出现在画面下方。\n录完可以直接转成 GIF，发给同事看。"
-            let prompter = Teleprompter.shared.showForDemo(script, on: screen)
-            logRegion(prompter.insetBy(dx: -24, dy: -24), screen: screen)
-            step("teleprompter")
-            await pause(1.4 * unit)
-            Teleprompter.shared.close()
+            await playPluginScenes(after: "scrollCapture", in: demo, unit: unit)
 
             // 截图标注窗口：拿一张画好的示例图，标上方框、箭头、文字、马赛克和序号；截图区域换成标注窗口
             await pause(1.4 * unit)
@@ -627,8 +512,8 @@ enum OverlayDemo {
         return model
     }
 
-    /// 标注演示用的「截图」：一张账户设置卡片，480×300 点，像素按屏幕倍率（和真的截图一样）
-    private static func sampleScreenshot() -> ScreenCapture.Capture? {
+    /// 标注演示用的「截图」：一张账户设置卡片，480×300 点，像素按屏幕倍率（和真的截图一样）；插件包的演示步骤也用
+    static func sampleScreenshot() -> ScreenCapture.Capture? {
         let scale = max(NSScreen.main?.backingScaleFactor ?? 2, 1)
         let width = Int(480 * scale)
         let height = Int(300 * scale)
@@ -684,8 +569,8 @@ enum OverlayDemo {
         return IDPhoto.Cutout(image: image, face: CGRect(x: 215, y: 330, width: 170, height: 190))
     }
 
-    /// 摄像头小窗演示用的画面：浅色渐变的背景上的示例人像
-    private static func sampleCameraFrame() -> CGImage? {
+    /// 摄像头小窗演示用的画面：浅色渐变的背景上的示例人像；插件包的演示步骤也用
+    static func sampleCameraFrame() -> CGImage? {
         let space = CGColorSpace(name: CGColorSpace.sRGB) ?? CGColorSpaceCreateDeviceRGB()
         guard let portrait = samplePortrait(),
               let context = CGContext(data: nil, width: 600, height: 600, bitsPerComponent: 8, bytesPerRow: 0, space: space,
@@ -699,7 +584,7 @@ enum OverlayDemo {
         return context.makeImage()
     }
 
-    private static func sampleFiles() -> [URL] {
+    static func sampleFiles() -> [URL] {
         let folder = FileManager.default.temporaryDirectory.appending(path: "pop-demo")
         try? FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
         var files: [URL] = []
@@ -721,7 +606,7 @@ enum OverlayDemo {
     }
 
     /// 查找重复文件演示：临时文件夹里三份一样的照片、两份一样的报告，再加两个不重复的
-    private static func sampleDuplicates() -> URL? {
+    static func sampleDuplicates() -> URL? {
         let root = FileManager.default.temporaryDirectory.appending(path: "pop-demo-duplicates/资料", directoryHint: .isDirectory)
         try? FileManager.default.removeItem(at: root)
         let photo = Data(repeating: 7, count: 2_400_000)
@@ -761,6 +646,19 @@ enum OverlayDemo {
         model.commitText()
         model.tool = .arrow
         model.background = .sky
+    }
+
+    /// 插件包注册的演示步骤：按顺序一个个显示、记下截图区域、停一会儿再收起
+    private static func playPluginScenes(after step: String, in context: PluginHost.DemoContext, unit: Double) async {
+        for scene in PluginHost.shared.demoScenes(after: step) {
+            await pause(scene.delay * unit)
+            if let region = await scene.show(context) {
+                logRegion(region == context.cardRegion ? region : region.insetBy(dx: -24, dy: -24), screen: context.screen)
+            }
+            Self.step(scene.name)
+            await pause(scene.hold * unit)
+            scene.hide()
+        }
     }
 
     /// 截图区域（点，AppKit 坐标）和屏幕大小，截图脚本按它裁图

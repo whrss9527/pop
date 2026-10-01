@@ -3,7 +3,7 @@ import XCTest
 @testable import Pop
 
 final class RouterTests: XCTestCase {
-    private let catalog = BuiltinPlugins.make().map(\.info)
+    private let catalog = TestCatalog.infos()
 
     private func decide(_ text: String, settings: AppSettings = AppSettings(), catalog: [PluginInfo]? = nil) -> Router.Decision {
         Router.decide(ContentClassifier.classify(.text(text)), settings: settings, catalog: catalog ?? self.catalog)

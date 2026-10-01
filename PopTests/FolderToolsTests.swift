@@ -117,7 +117,7 @@ final class FolderPluginTests: XCTestCase {
         XCTAssertFalse(CodeStatsPlugin().info.canHandle(file))
 
         let usage = await DiskUsagePlugin().run(folder, context: context)
-        XCTAssertEqual(usage, .diskUsage(root))
+        guard case .present = usage else { return XCTFail("应该弹出占用空间卡片") }
         let stats = await CodeStatsPlugin().run(folder, context: context)
         guard case .card(let card) = stats else { return XCTFail("应该返回结果卡片") }
         XCTAssertEqual(card.rows.map(\.label), ["Swift"])

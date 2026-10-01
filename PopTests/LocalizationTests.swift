@@ -44,7 +44,7 @@ final class LocalizationTests: XCTestCase {
 
     func testBuiltinActionsHaveEnglishNames() throws {
         let bundle = try englishBundle()
-        let infos = BuiltinPlugins.make().map(\.info)
+        let infos = TestCatalog.infos()
         XCTAssertGreaterThan(infos.count, 50)
         assertTranslated(infos.flatMap { [$0.name, $0.summary] }, in: bundle)
         assertTranslated(BuiltinCategory.allCases.map(\.title), in: bundle)

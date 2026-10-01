@@ -69,8 +69,9 @@ final class ScreenRecorder: NSObject {
             guard let display = content.displays.first(where: { $0.displayID == screen.screenNumber }) else {
                 throw ScreenRecording.Failure(message: String(localized: "找不到要录的屏幕"))
             }
-            // 提词器也不录：对着摄像头读稿时它在屏幕上方
-            let ours = Set([frame?.windowNumber, panel.windowNumber, Teleprompter.shared.windowNumber].compactMap { $0 }.map { CGWindowID($0) })
+            // 插件包的浮窗也不录（比如提词器：对着摄像头读稿时它在屏幕上方）
+            let windows = [frame?.windowNumber, panel.windowNumber].compactMap { $0 } + PluginHost.shared.windowsExcludedFromRecording
+            let ours = Set(windows.map { CGWindowID($0) })
             let filter = SCContentFilter(display: display, excludingWindows: content.windows.filter { ours.contains($0.windowID) })
             let source = ScreenRecording.sourceRect(selection.rect, in: screen.frame)
             let size = ScreenRecording.outputSize(points: source.size, scale: CGFloat(filter.pointPixelScale))

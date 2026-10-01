@@ -18,6 +18,16 @@ struct PluginsSettingsView: View {
     var body: some View {
         Form {
             Section {
+                // 不显示标签：表单里的标签会占掉左半边，框里反而是空的
+                TextField("搜索插件和内置功能", text: $query, prompt: Text("搜索插件和内置功能，支持拼音首字母"))
+                    .textFieldStyle(.roundedBorder)
+                    .labelsHidden()
+            }
+
+            // 插件包：要用时装上，不用了卸载
+            PluginPackagesSection(query: query)
+
+            Section {
                 if pluginStore.manifests.isEmpty {
                     Text("还没有自己的插件。可以到「插件库」里挑现成的装上，也可以从模板新建：用网址模板接入任何网站的搜索，用 Shell 或 JavaScript 脚本处理选中的文字，或者交给快捷指令。")
                         .font(.callout)
@@ -63,14 +73,8 @@ struct PluginsSettingsView: View {
                     .foregroundStyle(.secondary)
             }
 
-            Section {
-                // 不显示标签：表单里的标签会占掉左半边，框里反而是空的
-                TextField("搜索内置功能", text: $query, prompt: Text("搜索内置功能，支持拼音首字母"))
-                    .textFieldStyle(.roundedBorder)
-                    .labelsHidden()
-            }
-
-            let builtins = catalog.filter { $0.source == .builtin && matchesQuery($0) }
+            // 插件包提供的功能在上面的「插件」里装上、卸载，这里只列 Pop 自带的
+            let builtins = catalog.filter { $0.source == .builtin && !PluginCatalog.functionIDs.contains($0.id) && matchesQuery($0) }
             if builtins.isEmpty {
                 Section {
                     Text("没有匹配的内置功能")

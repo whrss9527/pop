@@ -1,7 +1,8 @@
 name: Release
 
 # 构建 Pop.app（Apple 芯片 / Intel 通用），发布到 GitHub Releases，附带 SHA256SUMS.txt，
-# 发布说明取 CHANGELOG.md 里这个版本的那一节。
+# 发布说明取 CHANGELOG.md 里这个版本的那一节。插件包（plugin-<ID>.zip）和插件包列表（plugins-<版本号>.json）
+# 也传到这个版本的发布页上：插件包只能和同一次构建的 Pop 一起用，装插件时从这里下载。
 # 已安装的 Pop 从这里检查更新：下载 zip、比对 SHA256SUMS.txt 里的校验和、检查代码签名，再替换并重新启动。
 #
 # 两种触发方式：
@@ -125,6 +126,9 @@ jobs:
         run: |
           mkdir -p dist
           ditto -c -k --keepParent "$APP" "dist/Pop-${VERSION}.zip"
+          # 插件包（Pop.app 旁边的 PopXxx.bundle）：每个打成 plugin-<ID>.zip，加上插件包列表 plugins-<版本号>.json，
+          # Pop 装插件时从这个版本的发布页下载
+          scripts/package-plugins.sh "$(dirname "$APP")" dist/plugins "$VERSION"
 
       - name: Notarize (Developer ID only)
         if: startsWith(env.CODESIGN_NAME, 'Developer ID Application:')
@@ -140,7 +144,10 @@ jobs:
             echo "::warning::证书是 Developer ID，但没有配置公证凭据（NOTARY_*），这次不公证"
             exit 0
           fi
-          scripts/notarize.sh "dist/Pop-${VERSION}.zip"
+          # 插件包放在一起公证（只公证，不钉票据）
+          plugins=()
+          [ -f dist/plugins/plugins-notary.zip ] && plugins=(dist/plugins/plugins-notary.zip)
+          scripts/notarize.sh "dist/Pop-${VERSION}.zip" "${plugins[@]}"
           echo "NOTARIZED=1" >> "$GITHUB_ENV"
 
       - name: Checksums
@@ -218,8 +225,13 @@ jobs:
             TITLE="Pop ${VERSION}"
             FLAG="--latest"
           fi
+          # 插件包和插件包列表也传上去（列表里有每个插件包的校验和）
+          assets=("dist/Pop-${VERSION}.zip" dist/SHA256SUMS.txt)
+          for file in dist/plugins/plugin-*.zip "dist/plugins/plugins-${VERSION}.json"; do
+            [ -f "$file" ] && assets+=("$file")
+          done
           if [ "${{ steps.check.outputs.exists }}" = "true" ]; then
-            gh release upload "v${VERSION}" "dist/Pop-${VERSION}.zip" dist/SHA256SUMS.txt --repo "$GITHUB_REPOSITORY" --clobber
+            gh release upload "v${VERSION}" "${assets[@]}" --repo "$GITHUB_REPOSITORY" --clobber
             gh release edit "v${VERSION}" --repo "$GITHUB_REPOSITORY" --title "$TITLE" --notes-file notes.md --prerelease="$PRERELEASE"
           else
             # 先建草稿、传附件，都好了再公开：已安装的 Pop 不会看到一个没有安装包的新版本
@@ -228,7 +240,7 @@ jobs:
               --target "$(git rev-parse HEAD)" \
               --title "$TITLE" \
               --notes-file notes.md
-            gh release upload "v${VERSION}" "dist/Pop-${VERSION}.zip" dist/SHA256SUMS.txt --repo "$GITHUB_REPOSITORY"
+            gh release upload "v${VERSION}" "${assets[@]}" --repo "$GITHUB_REPOSITORY"
             gh release edit "v${VERSION}" --repo "$GITHUB_REPOSITORY" --draft=false "$FLAG"
           fi
           echo "已发布到 https://github.com/${GITHUB_REPOSITORY}/releases/tag/v${VERSION}"

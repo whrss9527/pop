@@ -49,6 +49,14 @@ enum SmartCrop {
         }
     }
 
+    /// 选比例的卡片：每种比例一个按钮
+    static func card(_ images: [URL]) -> ResultCard {
+        let question = images.count == 1 ? String(localized: "把「\(images[0].lastPathComponent)」裁成哪种比例？") : String(localized: "把 \(images.count) 张图片裁成哪种比例？")
+        return ResultCard(title: String(localized: "裁剪图片"), body: question,
+                          detail: String(localized: "在这个比例下裁出最大的一块，自动对准画面里的主体；另存一份放在原图旁边，原图不动"),
+                          buttons: Ratio.allCases.map { CardButton(title: $0.title, action: .cropImages(images, $0)) })
+    }
+
     struct Failure: Error, Equatable {
         let message: String
     }

@@ -1,0 +1,72 @@
+@testable import Pop
+
+/// 测试用的完整功能列表：Pop 自带的功能，加上插件包提供的功能（PluginBundles/ 下的代码也编进了单元测试）
+enum TestCatalog {
+    /// 编进测试的插件包的入口
+    static let bundles: [PopPluginBundle.Type] = [
+        ScreenPenEntry.self, CameraBubbleEntry.self, PointerHighlightEntry.self, TeleprompterEntry.self,
+        KeyboardCleanerEntry.self, ScreenRulerEntry.self, LargeTypeEntry.self, SpellCheckEntry.self, CodeImageEntry.self,
+        CronEntry.self, JSONTypesEntry.self, RegexTesterEntry.self, WatermarkEntry.self,
+        PaletteEntry.self, TableOCREntry.self, NumberStatsEntry.self, ReminderEntry.self, CodeStatsEntry.self,
+        FileCompareEntry.self, FolderToolsEntry.self, BatchRenameEntry.self, MenuShortcutsEntry.self, WindowLayoutEntry.self,
+        SpeakEntry.self,
+        TextImageEntry.self,
+        WebCaptureEntry.self,
+        ExtractInfoEntry.self,
+        IDNumberEntry.self,
+        LineToolsEntry.self,
+        TextCleanupEntry.self,
+        QuickNoteEntry.self,
+        ChangeCaseEntry.self,
+        EncodeDecodeEntry.self,
+        YAMLJSONEntry.self,
+        FormatXMLEntry.self,
+        FormatSQLEntry.self,
+        TableConvertEntry.self,
+        MarkdownEntry.self,
+        ToMarkdownEntry.self,
+        MarkdownTOCEntry.self,
+        DateSpanEntry.self,
+        NumberConvertEntry.self,
+        ContrastEntry.self,
+        HashEntry.self,
+        QRCodeEntry.self,
+        Base64ImageEntry.self,
+        RandomEntry.self,
+        LinkInspectEntry.self,
+        JWTEntry.self,
+        CharInfoEntry.self,
+        ScreenshotTranslateEntry.self,
+        TextDiffEntry.self,
+        ImageConvertEntry.self,
+        StitchImagesEntry.self,
+        IDPhotoEntry.self,
+        CropImageEntry.self,
+        RedactEntry.self,
+        RemoveBackgroundEntry.self,
+        ScanCodeEntry.self,
+        ScreenRecordEntry.self,
+        ScrollCaptureEntry.self,
+        ShowKeystrokesEntry.self,
+        FolderTreeEntry.self,
+        ZipEntry.self,
+        PDFEntry.self,
+        VideoConvertEntry.self,
+        TrimMediaEntry.self,
+        TranscribeEntry.self,
+        AirDropEntry.self,
+        SendToPhoneEntry.self,
+        OpenInTerminalEntry.self,
+        KeepAwakeEntry.self,
+        SystemActionsEntry.self,
+        TimerEntry.self,
+    ]
+
+    static func plugins() -> [any PopPlugin] {
+        BuiltinPlugins.sorted(BuiltinPlugins.make() + bundles.flatMap { $0.makePlugins() })
+    }
+
+    static func infos() -> [PluginInfo] {
+        plugins().map(\.info)
+    }
+}

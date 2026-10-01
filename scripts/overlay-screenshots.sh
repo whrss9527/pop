@@ -41,8 +41,10 @@ run_demo() {
     pgrep -x Pop > /dev/null || break
     sleep 0.5
   done
+  # Pop.app 旁边的插件包一起装载，演示里也有插件包的步骤
   open -n --env POP_DEMO=1 --env "POP_ANIMATION_SCALE=${scale}" --env "POP_DEMO_LOG=${log}" \
-    --env "POP_APPEARANCE=${appearance}" --env "POP_PLUGIN_INDEX_URL=${PLUGIN_INDEX}" "$APP"
+    --env "POP_APPEARANCE=${appearance}" --env "POP_PLUGIN_INDEX_URL=${PLUGIN_INDEX}" \
+    --env "POP_PLUGIN_DIR=$(cd "$(dirname "$APP")" && pwd)" "$APP"
   python3 - "$log" "$WORK" "$OUT" "$scale" "$appearance" "$prefix" <<'PY'
 import os, subprocess, sys, time
 
@@ -110,7 +112,8 @@ plan = [
     ("scrollCapture-capturing", [0.6]),
     ("scrollCapture", [3.0]),
     ("screenPen", [3.0]),
-    ("presenting", [0.3, 3.0]),
+    ("cameraBubble", [3.0]),
+    ("pointerHighlight", [0.3, 1.5]),
     ("teleprompter", [1.0]),
     ("annotate", [1.5]),
     ("settings-plugins", [0.5]),
@@ -130,7 +133,7 @@ if appearance == "dark":
             ("toolbar", [1.2]), ("watermark", [3.0]), ("sendToPhone", [3.0]), ("idNumber", [3.0]), ("transcribe", [3.0]),
             ("idPhoto", [3.0]), ("webCapture", [3.0]), ("cropImage", [3.0]),
             ("screenRecord-picker", [1.0]), ("screenRecord-countdown", [0.5]), ("screenRecord-recording", [0.6]), ("screenRecord", [3.0]), ("systemActions", [3.0]), ("textImage", [3.0]),
-            ("menuShortcuts", [3.0]), ("scrollCapture", [3.0]), ("screenPen", [3.0]), ("presenting", [3.0]), ("teleprompter", [1.0]), ("annotate", [1.5]),
+            ("menuShortcuts", [3.0]), ("scrollCapture", [3.0]), ("screenPen", [3.0]), ("cameraBubble", [3.0]), ("pointerHighlight", [1.5]), ("teleprompter", [1.0]), ("annotate", [1.5]),
             ("settings-plugins", [0.5]), ("settings-ai", [0.5]), ("settings-hotKeys", [0.5]),
             ("settings-pluginLibrary", [0.8])]
 factor = scale / 6.0

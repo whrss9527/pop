@@ -70,6 +70,7 @@ Pop/
 ├── Sync/       iCloud 同步
 ├── Update/     检查更新（GitHub Releases）、下载校验、替换并重新启动
 └── Resources/  Info.plist、entitlements、界面翻译（zh-Hans.lproj、en.lproj）
+PluginBundles/  插件包：每个文件夹单独编译成一个 .bundle（PopXxx.bundle），要用时从发布页下载装上
 PopTests/       单元测试
 plugins/        插件库：索引（index.json）和可以一键安装的插件
 Config/         xcconfig（签名、Bundle ID）
@@ -96,6 +97,18 @@ struct UppercasePlugin: PopPlugin {
 `PluginOutcome` 可以是结果卡片（`ResultCard` 支持多行结果、图片、颜色色块和自定义按钮）、交给翻译卡片、直接替换原文、轻提示，或者打开剪贴板历史、「全部功能」列表。
 
 之后计划支持的方向：带界面的网页插件。
+
+### 插件包
+
+Pop 的功能正在一步步搬进插件包：每个插件包单独编译成一个 `.bundle`，不随 Pop 一起下载，用户在「设置 → 功能 → 插件」里装上时才从这个版本的发布页下载，卸载时连同它的偏好一起删掉。Pop 自带的只留最常用的几样（翻译、搜索、词典、剪贴板……）。
+
+- **代码**：`PluginBundles/<文件夹>/`，开头 `@testable import Pop`，直接用 Pop 里的类型。入口是一个实现了 `PopPluginBundle`（`Pop/Plugins/PluginBundles.swift`）的类，用 `@objc(PopXxxEntry)` 起一个固定的名字：`makePlugins()` 返回它提供的功能；`didLoad(_:)` 里注册要挂进 Pop 的东西（录屏时不录的窗口、CI 截图的演示步骤）；`willUninstall()` 里关掉开着的窗口。Pop 的代码不直接引用插件包里的类型。
+- **工程**：`project.yml` 里加一个 `templates: [PopPlugin]` 的 target，名字是 Pop + 文件夹名，设好 `POP_PLUGIN_ID`（插件包 ID）和 `POP_PLUGIN_ENTRY`（入口类的名字），加进 scheme；`PopTests` 的 sources 里也加上这个文件夹，单元测试直接测插件包的代码，`PopTests/TestCatalog.swift` 的 `bundles` 里加上入口类。
+- **目录**：`Pop/Plugins/PluginCatalog.swift` 里加一项：插件包 ID、文件名、名称和说明、提供哪些功能、卸载时要删的偏好。设置页按它列出没装的插件包；老用户升级时，搬进插件包的功能里在用的会自动装上（`AppSettings.adoptPluginBundles`）。
+- **构建**：插件包和 Pop 必须是同一次构建出来的（Swift 没有稳定的模块接口）：`scripts/build-app.sh` 把「版本号+提交」写进 Pop 和插件包的 `PopBuildID`，插件包放在 Pop.app 旁边，用同一张证书签名。为了让插件包找得到 Pop 里的符号，Pop 在 Release 下也打开 testability，只去掉局部符号。
+- **发布**：`scripts/package-plugins.sh` 把每个插件包打成 `plugin-<ID>.zip`，写出插件包列表 `plugins-<版本号>.json`（文件名、SHA-256、大小、构建标识），发布流程把它们和 Pop 一起传到这个版本的发布页，Developer ID 签名时一起公证。
+- **装上**：Pop 下载插件包列表和压缩包，核对 SHA-256、构建标识和签名（Pop 是用证书签的话，插件包必须是同一张证书签的），解压到 `~/Library/Application Support/Pop/PluginBundles`，当场装载，不用重启。Pop 更新后，装着的插件包会自动换成新版本对应的。
+- **本机试**：在 Xcode 里运行时插件包在 Pop.app 旁边，设置环境变量 `POP_PLUGIN_DIR` 指向那个文件夹就会一起装载；`POP_PLUGIN_SOURCE` 指向放着 `package-plugins.sh` 输出的文件夹，可以把它当作发布页，走一遍下载安装。CI 的启动测试两样都测。
 
 ### 发布新版本
 

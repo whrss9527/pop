@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
-# 把用 Developer ID 签好名的 zip 提交苹果公证，通过后把公证票据钉（staple）到 Pop.app 上，再重新打成同名的 zip。
+# 把用 Developer ID 签好名的 zip 提交苹果公证，通过后把公证票据钉（staple）到 Pop.app 上，再重新打成同名的 zip；
+# 装着插件包（不是 App）的 zip 只公证，不钉票据。
 # 公证过的包，用户下载后双击就能打开，不用再手动解除隔离。
 #   scripts/notarize.sh dist/Pop-0.3.0.zip
 # 凭据二选一（发布流程从 GitHub Secrets 传进来，见 docs/development.zh-CN.md「签名与公证」）：
@@ -76,6 +77,11 @@ for zip in "$@"; do
   rm -rf "$dir" && mkdir -p "$dir"
   ditto -x -k "$zip" "$dir"
   app="$dir/Pop.app"
+  if [ ! -d "$app" ]; then
+    # 插件包：Pop 自己下载、校验签名后装载，公证通过就行，不用钉票据
+    echo "${name}：里面不是 App，不用钉票据"
+    continue
+  fi
   xcrun stapler staple "$app"
   xcrun stapler validate "$app"
   spctl --assess --type execute --verbose=2 "$app"

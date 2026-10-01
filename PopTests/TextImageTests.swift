@@ -50,7 +50,7 @@ final class TextImageTests: XCTestCase {
         XCTAssertNotNil(card.image)
         XCTAssertEqual(card.buttons.map(\.title), ["复制图片", "存储", "贴到屏幕", "米黄", "深色"])
         XCTAssertEqual(card.buttons.suffix(2).map(\.action), [.textImage(text, .warm), .textImage(text, .night)])
-        guard case .card(let night) = TextImagePlugin.outcome(text, style: .night) else { return XCTFail("应该返回结果卡片") }
+        guard case .card(let night) = TextImage.outcome(text, style: .night) else { return XCTFail("应该返回结果卡片") }
         XCTAssertEqual(night.buttons.suffix(2).map(\.title), ["白底", "米黄"])
     }
 

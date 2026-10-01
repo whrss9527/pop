@@ -53,7 +53,8 @@ final class ClipboardHistoryModel: ObservableObject {
     var onPin: (ClipboardItem) -> Void = { _ in }
     var onRecognize: (ClipboardItem) -> Void = { _ in }
     var onAnnotate: (ClipboardItem) -> Void = { _ in }
-    var onRecognizeTable: (ClipboardItem) -> Void = { _ in }
+    /// 装了「识别表格」插件才有
+    var onRecognizeTable: ((ClipboardItem) -> Void)?
     var onSaveSnippet: (ClipboardItem) -> Void = { _ in }
 
     private var cancellable: AnyCancellable?
@@ -264,7 +265,9 @@ struct ClipboardHistoryView: View {
                                 }
                                 if item.kind == .image {
                                     Button("识别文字") { model.onRecognize(item) }
-                                    Button("识别表格") { model.onRecognizeTable(item) }
+                                    if let recognizeTable = model.onRecognizeTable {
+                                        Button("识别表格") { recognizeTable(item) }
+                                    }
                                     Button("标注…") { model.onAnnotate(item) }
                                 }
                                 if item.kind != .files {

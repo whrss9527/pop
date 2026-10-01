@@ -13,6 +13,14 @@ ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 ENTITLEMENTS="$ROOT/Pop/Resources/Pop-NoCloud.entitlements"
 
 if [ -n "${CODESIGN_IDENTITY:-}" ]; then
+  # 插件包：Developer ID 证书带团队 ID，开着库校验也能装载同一个团队签名的插件包；
+  # 自己生成的证书没有团队 ID，库校验会拦下所有插件包，这时关掉库校验，由 Pop 自己检查插件包是不是同一张证书签的
+  if [[ "${CODESIGN_NAME:-$CODESIGN_IDENTITY}" != "Developer ID Application:"* ]]; then
+    custom="$(mktemp -d)/Pop.entitlements"
+    cp "$ENTITLEMENTS" "$custom"
+    /usr/libexec/PlistBuddy -c "Add :com.apple.security.cs.disable-library-validation bool true" "$custom"
+    ENTITLEMENTS="$custom"
+  fi
   args=(--force --options runtime --timestamp --sign "$CODESIGN_IDENTITY" --entitlements "$ENTITLEMENTS")
   if [ -n "${CODESIGN_KEYCHAIN:-}" ]; then
     args+=(--keychain "$CODESIGN_KEYCHAIN")
