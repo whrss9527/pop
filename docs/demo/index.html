@@ -434,6 +434,25 @@ button { font: inherit; color: inherit; }
 .bt-swatch.clear i { box-shadow: none; border: 1px dashed var(--label-3); }
 .bt-checks { display: flex; gap: 14px; font-size: 12px; }
 .bt-checks label { display: inline-flex; align-items: center; gap: 5px; cursor: pointer; }
+/* 对比图片：上面一行是看法和设置，中间是图，下面一行说明 */
+.ci-top { display: flex; align-items: center; gap: 8px; min-height: 24px; flex-wrap: wrap; }
+.ci-top .space { flex: 1; }
+.ci-opts { display: flex; align-items: center; font-size: 11.5px; color: var(--label-2); }
+.ci-hint { font-size: 11px; color: var(--label-2); }
+.ci-range { display: inline-flex; align-items: center; gap: 6px; font-size: 11px; }
+.ci-range input { width: 120px; accent-color: var(--accent); }
+.ci-check { display: inline-flex; align-items: center; gap: 5px; cursor: pointer; font-size: 12px; color: var(--label); }
+.ci-stage { height: 280px; border-radius: 8px; background: var(--fill-2); display: grid; place-items: center; overflow: hidden; }
+.ci-pair { display: flex; gap: 8px; align-items: center; justify-content: center; width: 100%; }
+.ci-frame { position: relative; flex: none; }
+.ci-frame.swipe { cursor: ew-resize; touch-action: none; }
+.ci-frame.swipe:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.ci-img { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+.ci-tag { position: absolute; top: 6px; left: 6px; font-size: 10px; font-weight: 600; line-height: 1; color: #fff; background: rgba(0, 0, 0, .55); border-radius: 99px; padding: 3px 7px; transition: opacity .15s; pointer-events: none; }
+.ci-tag.r { left: auto; right: 6px; }
+.ci-line { position: absolute; top: 0; bottom: 0; width: 2px; margin-left: -1px; background: #fff; box-shadow: 0 0 2px rgba(0, 0, 0, .45); pointer-events: none; }
+.ci-knob { position: absolute; top: 50%; width: 22px; height: 22px; margin: -11px 0 0 -11px; border-radius: 50%; background: #fff; color: rgba(0, 0, 0, .65); box-shadow: 0 1px 4px rgba(0, 0, 0, .35); display: grid; place-items: center; pointer-events: none; }
+.ci-knob svg { width: 13px; height: 13px; }
 .bt-checks input { margin: 0; accent-color: var(--accent); }
 /* 屏幕放大：盖住桌面，在聚光灯、卡片、显示按键、摄像头小窗和指针光圈下面 */
 .zoomer { position: absolute; inset: 0; z-index: 14; overflow: hidden; background: #000; touch-action: none; }
@@ -617,6 +636,7 @@ const ICONS = {
   spotlight: '<path d="M7.5 7.5h9l-2.2 4H9.7z"/><path d="M9.7 11.5h4.6v8.7a.8.8 0 0 1-.8.8h-3a.8.8 0 0 1-.8-.8z"/><path d="M12 14.4v1.8M12 2.5v2.2M6.9 3.9l1.3 1.7M17.1 3.9l-1.3 1.7"/>',
   zoom: '<circle cx="10.5" cy="10.5" r="6.2"/><path d="M15.2 15.2 20.5 20.5M10.5 7.9v5.2M7.9 10.5h5.2"/>',
   beautify: '<path d="M4.5 19.5 15 9"/><path d="m13.3 7.3 3.4 3.4"/><path d="M18 3v3.6M16.2 4.8h3.6M8.5 3.5v2.4M7.3 4.7h2.4M19.5 12.5v2.4M18.3 13.7h2.4"/>',
+  compareImages: '<rect x="3.5" y="5" width="17" height="14" rx="2.4"/><path d="M12 3v18"/><path d="M5.6 15.6 8.3 12.4l2.2 2.4"/><path d="M14.5 9.5h3.5M14.5 12.5h3.5M14.5 15.5h2"/>',
   check: '<path d="M5.5 12.5l4.2 4.2 8.8-9.4"/>',
   penScribble: '<path d="M4 15.5c1.8-3.8 3.8-8.4 5.8-7.6 2 .8-2.2 7.4-.2 8.3 2 .9 4.7-7.6 7-6.6 2.1.9-1.4 5.9.6 6.4 1.2.3 2.3-.9 2.8-1.6"/>',
   highlighter: '<path d="M15.2 4.2l4.6 4.6-7.6 7.6H7.6v-4.6z"/><path d="M7.6 16.4L5 19h5.2"/>',
@@ -769,6 +789,7 @@ const T = {
   needLink: { zh: '要先选中链接', en: 'Select a link first' },
   needFiles: { zh: '要先选中文件', en: 'Select files first' },
   needImage: { zh: '要先选中图片文件', en: 'Select image files first' },
+  needTwoImages: { zh: '选中两张图片才能对比', en: 'Select two images to compare' },
   close: { zh: '关闭（Esc）', en: 'Close (Esc)' },
   copy: { zh: '复制', en: 'Copy' },
   copied: { zh: '已复制', en: 'Copied' },
@@ -802,6 +823,7 @@ const P = {
   imageConvert: { icon: 'imageConvert', accepts: ['imageFile'], keys: 'tupianzhuanhuan tpzh', name: { zh: '图片转换', en: 'Convert Images' }, summary: { zh: '把选中的图片文件转成 PNG、JPEG、HEIC，缩小一半、压缩体积或者压到指定大小以内，旋转、左右翻转，或者去掉照片里的位置和拍摄信息；结果存在原图旁边', en: 'Convert the selected images to PNG, JPEG or HEIC, halve their size, compress them (or under a given size), rotate, flip, or remove location and capture info; results are saved next to the originals' } },
   cropImage: { icon: 'cropImage', accepts: ['imageFile'], keys: 'caijiantupian cjtp', name: { zh: '裁剪图片', en: 'Crop Image' }, summary: { zh: '把选中的图片裁成 1:1、4:3、3:4、16:9、9:16，自动对准画面里的主体；另存一份放在原图旁边', en: 'Crop the selected images to 1:1, 4:3, 3:4, 16:9 or 9:16, centered on the subject; a copy is saved next to the original' } },
   beautify: { icon: 'beautify', accepts: [], keys: 'jietumeihua jtmh', name: { zh: '截图美化', en: 'Beautify Screenshot' }, summary: { zh: '给截图加上渐变背景、留白、圆角和阴影，可以补成 1:1、4:3、16:9，发文章、做演示更好看；选中图片就用它，没选中就先框选屏幕上的一块', en: 'Put a screenshot on a gradient background with padding, rounded corners and a shadow, optionally filled out to 1:1, 4:3 or 16:9, so it looks good in posts and slides. Uses the selected image, or lets you select an area of the screen first' } },
+  compareImages: { icon: 'compareImages', accepts: ['twoImageFiles'], keys: 'duibitupian dbtp diff', name: { zh: '对比图片', en: 'Compare Images' }, summary: { zh: '对比选中的两张图片：并排、滑动分界线、半透明叠加，或者把不一样的像素标红、框出几处不同；改版前后的截图、设计稿和实现对照都用得上', en: 'Compare two selected images side by side, with a swipe divider or a translucent overlay, or mark the pixels that differ in red and box each area that changed. Handy for before-and-after screenshots and for checking a build against its design' } },
   redact: { icon: 'redact', accepts: ['imageFile'], keys: 'yinsidama ysdm dama masaike mosaic', name: { zh: '隐私打码', en: 'Redact' }, summary: { zh: '找出选中图片里的人脸、电话号码、邮箱、身份证号、银行卡号和车牌，打上马赛克另存一份；在本机识别，另存的那份不带拍摄信息和位置', en: 'Find faces, phone numbers, email addresses, ID and bank card numbers and license plates in the selected images, pixelate them and save a copy; recognized on this Mac, and the copy carries no capture info or location' } },
   ocr: { icon: 'ocr', accepts: ['imageFile'], keys: 'shibiewenzi sbwz ocr', name: { zh: '识别文字', en: 'Recognize Text' }, summary: { zh: '识别选中图片里的文字（离线）', en: 'Recognize text in the selected images (offline)' } },
   removeBackground: { icon: 'removeBackground', accepts: ['imageFile'], keys: 'koutu kt', name: { zh: '抠图', en: 'Remove Background' }, summary: { zh: '去掉选中图片的背景，只留下人、动物或物品（离线）', en: 'Remove the background of the selected image, keeping only people, animals or objects (offline)' } },
@@ -835,7 +857,7 @@ for (const [id, info] of Object.entries(P)) info.id = id;
 
 // ---------- 插件包（设置 → 功能 → 插件）----------
 // 和 App 里的 PluginCatalog 一样；大小是发布页上 plugins-<版本>.json 里的（下载的压缩包、装好后的插件包）
-const PACKAGES = [{"id":"screenPen","icon":"screenPen","category":"recording","functions":["screenPen"],"download":163606,"size":682334,"name":{"zh":"屏幕画笔","en":"Draw on Screen"},"summary":{"zh":"演示、录教程时直接在屏幕上画：画笔、荧光笔、箭头、方框、椭圆，笔迹可以几秒后自动消失，也可以留着去操作下面的窗口，录屏时一起录进去；Esc 或再用一次结束","en":"Draw right on the screen for demos and tutorials: pen, highlighter, arrow, rectangle and ellipse. Strokes can fade after a few seconds or stay while you use the windows underneath, and screen recordings include them. Press Esc or use it again to finish"}},{"id":"cameraBubble","icon":"cameraBubble","category":"recording","functions":["cameraBubble"],"download":90505,"size":363565,"name":{"zh":"摄像头小窗","en":"Camera Bubble"},"summary":{"zh":"在屏幕角落用一个圆形小窗显示摄像头画面，录教程、演示时把自己也放进画面；拖动换位置，滚动或双击换大小，右键换形状和摄像头。再用一次关闭","en":"Show the camera in a small round window in a corner of the screen, so you appear in tutorials and demos. Drag to move it, scroll or double-click to resize, right-click to change the shape or camera. Use it again to close"}},{"id":"pointerHighlight","icon":"pointerHighlight","category":"recording","functions":["pointerHighlight"],"download":58222,"size":270897,"name":{"zh":"突出显示指针","en":"Highlight Pointer"},"summary":{"zh":"演示、录教程时在指针周围加一圈黄色光圈，按下鼠标时泛起波纹，让人一眼看到指针在哪；再用一次关闭","en":"Put a yellow halo around the pointer that ripples when you click, so people can always find it in demos and tutorials. Use it again to turn it off"}},{"id":"teleprompter","icon":"teleprompter","category":"recording","functions":["teleprompter"],"download":119622,"size":539725,"name":{"zh":"提词器","en":"Teleprompter"},"summary":{"zh":"把选中的稿子放进屏幕上方的提词器，按设好的速度慢慢往上滚，对着摄像头读；空格暂停，↑↓ 调速度，录屏时不会录进去","en":"Put the selected script in a teleprompter at the top of the screen that scrolls up at the speed you set, so you can read it to the camera. Space pauses, ↑ and ↓ change the speed, and screen recordings leave it out"}},{"id":"cleanKeyboard","icon":"cleanKeyboard","category":"files","functions":["cleanKeyboard"],"download":73523,"size":335176,"name":{"zh":"清洁键盘","en":"Clean Keyboard"},"summary":{"zh":"锁住键盘一分钟，擦键盘时不会误触；亮度、音量键也不起作用，用鼠标点「结束清洁」随时恢复","en":"Lock the keyboard for a minute so you can wipe it without typing anything; brightness and volume keys are blocked too. Click End Cleaning with the mouse to stop any time"}},{"id":"ruler","icon":"ruler","category":"screen","functions":["ruler"],"download":76779,"size":337036,"name":{"zh":"屏幕标尺","en":"Screen Ruler"},"summary":{"zh":"定格屏幕，量出指针处到上下左右边缘的距离，拖动量一块区域的宽高；单击复制尺寸","en":"Freeze the screen and measure distances from the pointer to the edges around it; drag to measure an area; click to copy the size"}},{"id":"largeType","icon":"largeType","category":"text","functions":["largeType"],"download":73572,"size":324062,"name":{"zh":"大字显示","en":"Large Type"},"summary":{"zh":"把选中的文字铺满整个屏幕，给别人看电话号码、Wi-Fi 密码、取件码都方便；点一下或按任意键关闭","en":"Show the selected text across the whole screen, handy for showing someone a phone number, Wi-Fi password or pickup code; click or press any key to close"}},{"id":"spellCheck","icon":"spellCheck","category":"text","functions":["spellCheck"],"download":51426,"size":244659,"name":{"zh":"拼写检查","en":"Spell Check"},"summary":{"zh":"找出外文里拼错的词，给出改法，可以直接换成改好的文字（系统自带的拼写检查，离线）","en":"Find misspelled words and suggest corrections you can apply directly (built-in macOS spell checking, offline)"}},{"id":"codeImage","icon":"codeImage","category":"developer","functions":["codeImage"],"download":85359,"size":342286,"name":{"zh":"代码截图","en":"Code Screenshot"},"summary":{"zh":"把选中的代码画成一张图片（深色编辑器、语法着色、渐变背景），可以复制、存储或贴到屏幕上","en":"Render the selected code as an image (dark editor, syntax highlighting, gradient background) to copy, save or pin"}},{"id":"cron","icon":"cron","category":"developer","functions":["cron"],"download":100192,"size":368581,"name":{"zh":"Cron 表达式","en":"Cron Expression"},"summary":{"zh":"把 cron 表达式（比如 */15 9-17 * * 1-5）说成中文，列出接下来几次运行的时间","en":"Explain a cron expression (e.g. */15 9-17 * * 1-5) in words and list the next run times"}},{"id":"jsonTypes","icon":"jsonTypes","category":"developer","functions":["jsonTypes"],"download":129016,"size":456126,"name":{"zh":"JSON 转代码","en":"JSON to Code"},"summary":{"zh":"根据选中的 JSON 生成 TypeScript、Swift、Go、Kotlin 的类型定义","en":"Generate TypeScript, Swift, Go and Kotlin type definitions from the selected JSON"}},{"id":"regexTest","icon":"regexTest","category":"developer","functions":["regexTest"],"download":154066,"size":655572,"name":{"zh":"正则测试","en":"Regex Tester"},"summary":{"zh":"在选中的文字里试正则表达式：实时标出每处匹配、列出分组，也可以试替换","en":"Try regular expressions on the selected text: live highlighting of matches, groups and replacements"}},{"id":"watermark","icon":"watermark","category":"screen","functions":["watermark"],"download":126401,"size":492542,"name":{"zh":"加水印","en":"Watermark"},"summary":{"zh":"给选中的图片或 PDF 斜着铺满一层半透明的文字（比如「仅供办理业务使用」），另存一份放在原文件旁边","en":"Tile semi-transparent text diagonally across the selected images or PDFs and save copies next to the originals"}},{"id":"palette","icon":"palette","category":"screen","functions":["palette"],"download":67749,"size":291044,"name":{"zh":"图片配色","en":"Image Colors"},"summary":{"zh":"找出图片里的主要颜色，按面积从大到小列出色值，点一下复制","en":"Find the main colors in an image, listed by area; click to copy a value"}},{"id":"tableOCR","icon":"tableOCR","category":"screen","functions":["tableOCR"],"download":78871,"size":338409,"name":{"zh":"识别表格","en":"Recognize Table"},"summary":{"zh":"识别截图或图片里的表格，转成 Markdown 表格、CSV 或者制表符分隔（macOS 26；更早的系统按普通文字识别）","en":"Recognize a table in a screenshot or image as a Markdown table, CSV or tab-separated text (macOS 26; earlier versions recognize plain text)"}},{"id":"numberStats","icon":"numberStats","category":"convert","functions":["numberStats"],"download":63863,"size":269560,"name":{"zh":"数字统计","en":"Number Statistics"},"summary":{"zh":"选中一列或一串数字，算出合计、平均、中位数、最大、最小","en":"Get the sum, average, median, max and min of a list of numbers"}},{"id":"reminder","icon":"reminder","category":"text","functions":["reminder"],"download":160871,"size":568409,"name":{"zh":"加到提醒事项","en":"Add to Reminders"},"summary":{"zh":"从选中的文字里认出时间（明天下午 3 点、周五、10 月 8 日、半小时后……），加到「提醒事项」或者「日历」","en":"Find a time in the selected Chinese text (明天下午 3 点, 周五, 10 月 8 日, 半小时后…) and add it to Reminders or Calendar"}},{"id":"codeStats","icon":"codeStats","category":"files","functions":["codeStats"],"download":87481,"size":335806,"name":{"zh":"代码行数","en":"Lines of Code"},"summary":{"zh":"按语言统计选中的文件夹里有多少个代码文件、多少行，可以复制成 Markdown 表格","en":"Count code files and lines per language in the selected folders; copy as a Markdown table"}},{"id":"compareFiles","icon":"compareFiles","category":"files","functions":["compareFiles"],"download":63991,"size":296250,"name":{"zh":"对比文件","en":"Compare Files"},"summary":{"zh":"对比选中的两个文本文件（代码、Markdown、配置、CSV……），标出删去和新增的行，改动的地方逐词标出；按修改时间，旧的当原文","en":"Compare the two selected text files (code, Markdown, config, CSV…), marking removed and added lines and the changed words in them; the older file by modification date is the original"}},{"id":"folderTools","icon":"folderTools","category":"files","functions":["diskUsage","findDuplicates","compareFolders"],"download":402792,"size":1477208,"name":{"zh":"文件夹工具","en":"Folder Tools"},"summary":{"zh":"看文件夹里哪些东西最占地方、找出内容一样的重复文件、比较两个文件夹有哪些不同，不要的可以移到废纸篓","en":"See what takes up the most space in a folder, find files with identical contents and compare two folders, then move what you don’t need to the Trash"}},{"id":"batchRename","icon":"batchRename","category":"files","functions":["batchRename"],"download":233794,"size":882440,"name":{"zh":"批量重命名","en":"Batch Rename"},"summary":{"zh":"给选中的文件统一改名：编号、替换文字、加前后缀、按照片的拍摄时间、改大小写，先看预览再改，改完可以撤销","en":"Rename the selected files together: numbering, find and replace, prefix and suffix, photo capture date, case. Preview first and undo afterwards."}},{"id":"menuShortcuts","icon":"menuShortcuts","category":"files","functions":["menuShortcuts"],"download":181489,"size":728882,"name":{"zh":"快捷键一览","en":"Keyboard Shortcuts"},"summary":{"zh":"列出当前 App 菜单里的所有快捷键，可以搜索，点一项直接执行","en":"List every keyboard shortcut in the current app’s menus; search them and click one to run it"}},{"id":"windowLayout","icon":"windowLayout","category":"files","functions":["windowLayout"],"download":90478,"size":400525,"name":{"zh":"窗口布局","en":"Window Layout"},"summary":{"zh":"把当前窗口放到屏幕的左半边、右半边、三分之一、最大化、居中，或者移到另一个显示器","en":"Move the current window to the left or right half, a third, maximize, center it, or move it to another display"}},{"id":"speak","icon":"speak","category":"text","functions":["speak"],"download":32897,"size":197338,"name":{"zh":"朗读","en":"Speak"},"summary":{"zh":"用系统语音朗读选中的文字，朗读中再用一次就停止","en":"Read the selected text aloud with the system voice; use it again to stop"}},{"id":"textImage","icon":"textImage","category":"text","functions":["textImage"],"download":32432,"size":197326,"name":{"zh":"文字转图片","en":"Text to Image"},"summary":{"zh":"把选中的文字排成一张手机上看着舒服的长图（宽 1080 像素），白底、米黄、深色三种底色，可以复制、存储或贴到屏幕上","en":"Lay out the selected text as a long image that reads well on a phone (1080 pixels wide) on a white, cream or dark background; copy it, save it or pin it to the screen"}},{"id":"webCapture","icon":"webCapture","category":"text","functions":["webCapture"],"download":34440,"size":198739,"name":{"zh":"网页存档","en":"Save Web Page"},"summary":{"zh":"把选中的网址整页存成一页长 PDF（文字能选、能搜）、一张长图，或者只把正文存成 Markdown，放在「下载」里","en":"Save the whole page at the selected URL to Downloads as one long PDF (with selectable, searchable text) or a long image, or save just the article text as Markdown"}},{"id":"extractInfo","icon":"extractInfo","category":"text","functions":["extractInfo"],"download":33777,"size":198760,"name":{"zh":"提取信息","en":"Extract Info"},"summary":{"zh":"从一段文字里找出链接、邮箱、电话号码和 IP 地址，逐个复制或者一起复制","en":"Find links, email addresses, phone numbers and IP addresses in text and copy them one by one or together"}},{"id":"idNumber","icon":"idNumber","category":"text","functions":["idNumber"],"download":33196,"size":197865,"name":{"zh":"证件号码","en":"ID Numbers"},"summary":{"zh":"身份证号、统一社会信用代码、银行卡号：检查校验位，读出出生日期、年龄、性别、地区和登记管理部门，不联网","en":"Chinese ID numbers, unified social credit codes and bank card numbers: check the check digit and read out birth date, age, sex, region and registration authority, offline"}},{"id":"lineTools","icon":"lineTools","category":"text","functions":["lineTools"],"download":35383,"size":201502,"name":{"zh":"按行处理","en":"Lines"},"summary":{"zh":"一列文字加引号和逗号（SQL 的 IN 列表）、转 JSON 数组、加减序号、倒序、打乱；一行用逗号隔开的拆成多行","en":"Quote and comma-separate a list (for SQL IN), convert to a JSON array, add or remove numbering, reverse, shuffle; split a comma-separated line into lines"}},{"id":"textCleanup","icon":"textCleanup","category":"text","functions":["textCleanup"],"download":34657,"size":200536,"name":{"zh":"文字整理","en":"Clean Up Text"},"summary":{"zh":"合并换行、去掉空行和多余空格、中英文之间加空格、全角转半角、简繁转换、拼音、按行排序去重","en":"Join lines, remove blank lines and extra spaces, space Chinese and Latin text, full-width to half-width, Simplified ↔ Traditional Chinese, Pinyin, sort and deduplicate lines"}},{"id":"quickNote","icon":"quickNote","category":"text","functions":["quickNote"],"download":49791,"size":244046,"name":{"zh":"收集箱","en":"Inbox"},"summary":{"zh":"把选中的文字追加到「文稿/Pop 收集箱.md」","en":"Append the selected text to “Documents/Pop 收集箱.md”"}},{"id":"changeCase","icon":"changeCase","category":"convert","functions":["changeCase"],"download":33365,"size":199235,"name":{"zh":"大小写","en":"Case"},"summary":{"zh":"大写、小写、驼峰、下划线等写法互相转换","en":"Convert between uppercase, lowercase, camelCase, snake_case and more"}},{"id":"encodeDecode","icon":"encodeDecode","category":"convert","functions":["encodeDecode"],"download":34193,"size":200493,"name":{"zh":"编码转换","en":"Encode & Decode"},"summary":{"zh":"Base64、URL、Unicode、HTML 实体的编码和解码","en":"Encode and decode Base64, URL, Unicode and HTML entities"}},{"id":"yamlJSON","icon":"yamlJSON","category":"convert","functions":["yamlJSON"],"download":36392,"size":203081,"name":{"zh":"YAML 和 JSON","en":"YAML ↔ JSON"},"summary":{"zh":"选中 JSON 转成 YAML，选中 YAML 转成 JSON，键的顺序不变","en":"Convert selected JSON to YAML or YAML to JSON, keeping key order"}},{"id":"formatXML","icon":"formatXML","category":"convert","functions":["formatXML"],"download":35185,"size":200622,"name":{"zh":"XML 格式化","en":"Format XML"},"summary":{"zh":"格式化或压缩选中的 XML（也认 SVG、plist、XHTML）","en":"Format or minify the selected XML (SVG, plist and XHTML too)"}},{"id":"formatSQL","icon":"formatSQL","category":"convert","functions":["formatSQL"],"download":38707,"size":204222,"name":{"zh":"SQL 格式化","en":"Format SQL"},"summary":{"zh":"把选中的 SQL 按子句分行、关键字大写、子查询缩进，也可以压成一行","en":"Put each clause of the selected SQL on its own line, uppercase keywords and indent subqueries, or squeeze it onto one line"}},{"id":"tableConvert","icon":"tableConvert","category":"convert","functions":["tableConvert"],"download":36382,"size":202733,"name":{"zh":"表格转换","en":"Convert Table"},"summary":{"zh":"从表格软件复制的文字、CSV、Markdown 表格互相转换，也能转成 JSON","en":"Convert between text copied from spreadsheets, CSV and Markdown tables, or to JSON"}},{"id":"markdown","icon":"markdown","category":"convert","functions":["markdownPreview","markdownCopy"],"download":37467,"size":203897,"name":{"zh":"Markdown 富文本","en":"Markdown Rich Text"},"summary":{"zh":"把选中的 Markdown 显示成排好版的样子，或者转成带格式的文字复制下来，粘贴到文稿、邮件、备忘录里保留格式","en":"Preview the selected Markdown formatted, or copy it as formatted text that keeps its formatting when pasted into documents, mail or notes"}},{"id":"toMarkdown","icon":"toMarkdown","category":"convert","functions":["toMarkdown"],"download":36345,"size":201779,"name":{"zh":"转成 Markdown","en":"Convert to Markdown"},"summary":{"zh":"把网页、文档里选中的带格式文字转成 Markdown：标题、列表、链接、粗体、代码、表格","en":"Convert formatted text selected in web pages and documents to Markdown: headings, lists, links, bold, code, tables"}},{"id":"markdownTOC","icon":"markdownTOC","category":"convert","functions":["markdownTOC"],"download":34401,"size":201304,"name":{"zh":"Markdown 目录","en":"Markdown Table of Contents"},"summary":{"zh":"按选中的 Markdown 里的标题生成目录，点链接能跳到对应的标题（锚点和 GitHub 的写法一样）","en":"Create a table of contents from the headings in the selected Markdown, with links to each heading (GitHub-style anchors)"}},{"id":"dateSpan","icon":"dateSpan","category":"convert","functions":["dateSpan"],"download":36085,"size":202313,"name":{"zh":"日期计算","en":"Date Difference"},"summary":{"zh":"选中两个日期（比如「2026-09-29 到 2026-12-25」），算出相差多少天、几周、几个月，其中有多少个工作日","en":"Select two dates (e.g. “2026-09-29 to 2026-12-25”) to get the days, weeks and months between them and how many are workdays"}},{"id":"numberConvert","icon":"numberConvert","category":"convert","functions":["numberConvert"],"download":33414,"size":199634,"name":{"zh":"数字转换","en":"Numbers"},"summary":{"zh":"进制转换、千分位、人民币大写","en":"Bases, thousands separators, RMB in words"}},{"id":"contrast","icon":"contrast","category":"convert","functions":["contrast"],"download":34020,"size":198905,"name":{"zh":"对比度","en":"Contrast"},"summary":{"zh":"选中两个颜色（比如「#333333 #FFFFFF」），算出文字和背景的对比度，看是否达到 WCAG 的 AA、AAA","en":"Select two colors (e.g. “#333333 #FFFFFF”) to get the text/background contrast ratio and whether it meets WCAG AA and AAA"}},{"id":"hash","icon":"hash","category":"developer","functions":["hash"],"download":51093,"size":245957,"name":{"zh":"哈希","en":"Hash"},"summary":{"zh":"计算文字或文件的 MD5、SHA-1、SHA-256、SHA-512","en":"Compute MD5, SHA-1, SHA-256 and SHA-512 of text or files"}},{"id":"qrCode","icon":"qrCode","category":"developer","functions":["qrCode"],"download":40547,"size":204607,"name":{"zh":"二维码","en":"QR Code"},"summary":{"zh":"把文字或链接生成二维码（英文字母和数字还能生成条形码）；选中图片时识别里面的二维码和条形码","en":"Generate a QR code from text or a link (letters and digits can also become a barcode); with an image selected, read the QR codes and barcodes in it"}},{"id":"base64Image","icon":"base64Image","category":"developer","functions":["base64Image"],"download":39362,"size":203672,"name":{"zh":"Base64 图片","en":"Base64 Image"},"summary":{"zh":"把 Base64 或 data: 开头的图片数据显示成图片，可以复制、保存、贴到屏幕","en":"Show Base64 or data: image data as an image to copy, save or pin"}},{"id":"random","icon":"random","category":"developer","functions":["random"],"download":31114,"size":197343,"name":{"zh":"随机生成","en":"Random"},"summary":{"zh":"生成 UUID、密码和随机数字，可以直接粘贴到当前输入框","en":"Generate UUIDs, passwords and random numbers to paste into the current field"}},{"id":"linkInspect","icon":"linkInspect","category":"developer","functions":["linkInspect"],"download":38804,"size":202056,"name":{"zh":"链接解析","en":"Parse Link"},"summary":{"zh":"拆开链接的协议、主机、路径和每个参数（解码后），去掉 utm_source 这类跟踪参数","en":"Split a link into scheme, host, path and decoded parameters, and remove tracking parameters such as utm_source"}},{"id":"jwtDecode","icon":"jwtDecode","category":"developer","functions":["jwtDecode"],"download":34774,"size":199708,"name":{"zh":"JWT 解码","en":"Decode JWT"},"summary":{"zh":"解码选中的 JWT，列出签发者、过期时间等声明（只解码，不验证签名）","en":"Decode the selected JWT and list claims such as issuer and expiry (decoding only; the signature isn’t verified)"}},{"id":"charInfo","icon":"charInfo","category":"developer","functions":["charInfo"],"download":33231,"size":198105,"name":{"zh":"字符信息","en":"Character Info"},"summary":{"zh":"查看每个字符的 Unicode 码点、名称和编码；找出并去掉零宽空格这类看不见的字符","en":"See each character’s Unicode code point, name and encoding; find and remove invisible characters such as zero-width spaces"}},{"id":"screenshotTranslate","icon":"translate","category":"text","functions":["screenshotTranslate"],"download":31246,"size":197440,"name":{"zh":"截图翻译","en":"Translate Screenshot"},"summary":{"zh":"框选屏幕上的一块区域，识别里面的文字并翻译（离线）","en":"Select an area of the screen, recognize its text and translate it (offline)"}},{"id":"textDiff","icon":"compareFiles","category":"text","functions":["textDiff"],"download":37886,"size":203625,"name":{"zh":"文本对比","en":"Compare Text"},"summary":{"zh":"把选中的文字和剪贴板里的文字对比，标出删去和新增的地方","en":"Compare the selected text with the text on the clipboard and mark deletions and additions"}},{"id":"imageConvert","icon":"imageConvert","category":"screen","functions":["imageConvert"],"download":41697,"size":205069,"name":{"zh":"图片转换","en":"Convert Images"},"summary":{"zh":"把选中的图片文件转成 PNG、JPEG、HEIC，缩小一半、压缩体积或者压到指定大小以内，旋转、左右翻转，或者去掉照片里的位置和拍摄信息；结果存在原图旁边","en":"Convert the selected images to PNG, JPEG or HEIC, halve their size, compress them (or under a given size), rotate, flip, or remove location and capture info; results are saved next to the originals"}},{"id":"stitchImages","icon":"stitchImages","category":"screen","functions":["stitchImages"],"download":41353,"size":205213,"name":{"zh":"拼接图片","en":"Stitch Images"},"summary":{"zh":"把选中的几张图片按文件名的顺序竖着或者横着拼成一张，或者合成一张动图，存在第一张旁边","en":"Stitch the selected images vertically or horizontally in file name order, or make an animated image, saved next to the first one"}},{"id":"idPhoto","icon":"idPhoto","category":"screen","functions":["idPhoto"],"download":32849,"size":197252,"name":{"zh":"证件照","en":"ID Photo"},"summary":{"zh":"把人像照片换成白底、蓝底或红底，按人脸位置裁成一寸、二寸（300 dpi）；在本机处理，另存一份放在原图旁边","en":"Give a portrait a white, blue or red background and crop it around the face to 1-inch or 2-inch ID sizes (300 dpi); processed on this Mac and saved as a copy next to the original"}},{"id":"cropImage","icon":"cropImage","category":"screen","functions":["cropImage"],"download":34621,"size":198958,"name":{"zh":"裁剪图片","en":"Crop Image"},"summary":{"zh":"把选中的图片裁成 1:1、4:3、3:4、16:9、9:16，自动对准画面里的主体；另存一份放在原图旁边","en":"Crop the selected images to 1:1, 4:3, 3:4, 16:9 or 9:16, centered on the subject; a copy is saved next to the original"}},{"id":"redact","icon":"redact","category":"screen","functions":["redact"],"download":42448,"size":206111,"name":{"zh":"隐私打码","en":"Redact"},"summary":{"zh":"找出选中图片里的人脸、电话号码、邮箱、身份证号、银行卡号和车牌，打上马赛克另存一份；在本机识别，另存的那份不带拍摄信息和位置","en":"Find faces, phone numbers, email addresses, ID and bank card numbers and license plates in the selected images, pixelate them and save a copy; recognized on this Mac, and the copy carries no capture info or location"}},{"id":"removeBackground","icon":"removeBackground","category":"screen","functions":["removeBackground"],"download":37303,"size":202641,"name":{"zh":"抠图","en":"Remove Background"},"summary":{"zh":"去掉选中图片的背景，只留下人、动物或物品（离线）","en":"Remove the background of the selected image, keeping only people, animals or objects (offline)"}},{"id":"scanCode","icon":"scanCode","category":"screen","functions":["scanCode"],"download":33380,"size":198041,"name":{"zh":"扫码","en":"Scan Code"},"summary":{"zh":"框选屏幕上的二维码或条形码，识别里面的内容；链接可以直接打开，Wi-Fi 二维码列出密码","en":"Select a QR code or barcode on screen to read it; links can be opened and Wi-Fi codes show the password"}},{"id":"screenRecord","icon":"screenRecord","category":"recording","functions":["screenRecord"],"download":34894,"size":200109,"name":{"zh":"录屏","en":"Record Screen"},"summary":{"zh":"拖出一块区域、单击选一个窗口或者按回车录整个屏幕，存成 MP4；可以录上电脑里的声音或者麦克风、显示鼠标点击和按下的键，录好能接着转成 GIF。正在录的时候再用一次就停止","en":"Drag out an area, click a window or press Return to record the whole screen as MP4; can include the Mac’s sound or the microphone and show clicks and keystrokes, and the recording can then be turned into a GIF. Use it again while recording to stop"}},{"id":"scrollCapture","icon":"scrollCapture","category":"recording","functions":["scrollCapture"],"download":34062,"size":199618,"name":{"zh":"滚动截图","en":"Scrolling Screenshot"},"summary":{"zh":"框选一块区域，一边往下滚动一边截，拼成一张长图；网页、聊天记录、长文档都能截全，还能接着识别文字。正在截的时候再用一次就是完成","en":"Select an area, then scroll down while Pop captures it into one long image: whole web pages, chat histories and long documents, with text recognition afterwards if you like. Use it again while capturing to finish"}},{"id":"showKeystrokes","icon":"showKeystrokes","category":"recording","functions":["showKeystrokes"],"download":31349,"size":196647,"name":{"zh":"显示按键","en":"Show Keystrokes"},"summary":{"zh":"演示、录教程时在屏幕下方显示按下的组合键（⌘C、⇧⌘4、方向键这些），普通打字不显示；再用一次关闭。录屏时也可以勾选一起录进去","en":"Show the shortcuts you press (⌘C, ⇧⌘4, arrow keys and so on) at the bottom of the screen for demos and tutorials; ordinary typing isn’t shown. Use it again to turn it off. Screen recordings can include them too"}},{"id":"folderTree","icon":"folderTree","category":"files","functions":["folderTree"],"download":37039,"size":202243,"name":{"zh":"目录结构","en":"Folder Tree"},"summary":{"zh":"把选中文件夹里的目录结构写成树形或者 Markdown 列表，贴进文档、README 或者发给别人","en":"Write the structure of the selected folder as a tree or Markdown list for docs, READMEs or sharing"}},{"id":"zip","icon":"zip","category":"files","functions":["zip","unzip"],"download":53497,"size":244544,"name":{"zh":"压缩和解压","en":"Zip and Unzip"},"summary":{"zh":"把选中的文件或文件夹压缩成 zip，存在原来的文件夹里；把选中的 zip 解压到旁边的同名文件夹里","en":"Compress the selected files or folders into a zip in the same folder, or extract the selected zip files into folders next to them"}},{"id":"pdf","icon":"pdf","category":"files","functions":["pdf"],"download":49817,"size":242960,"name":{"zh":"PDF","en":"PDF"},"summary":{"zh":"把选中的图片和 PDF 按文件名顺序合成一个 PDF；只选了一个 PDF 时可以把每页存成图片、复制里面的文字、取出其中几页或者拆开、加密码或者去掉密码，或者压缩","en":"Combine the selected images and PDFs into one PDF in file name order. With a single PDF, save each page as an image, copy its text, extract or split pages, add or remove a password, or compress it"}},{"id":"videoConvert","icon":"videoConvert","category":"files","functions":["videoConvert"],"download":42915,"size":237773,"name":{"zh":"视频转换","en":"Convert Video"},"summary":{"zh":"把选中的视频转成 GIF、转成 MP4、压缩到 720p、提取音频，或者均匀取 16 帧拼成一张缩略图；结果存在原视频旁边","en":"Convert the selected videos to GIF or MP4, compress to 720p, extract audio, or make a contact sheet of 16 evenly spaced frames; results are saved next to the originals"}},{"id":"trimMedia","icon":"trimMedia","category":"files","functions":["trimMedia"],"download":32889,"size":197454,"name":{"zh":"截取片段","en":"Trim"},"summary":{"zh":"截取选中的音频或视频的一段（写上开始和结束的时间），存在原文件旁边","en":"Cut a range from the selected audio or video (by start and end time), saved next to the original"}},{"id":"transcribe","icon":"transcribe","category":"files","functions":["transcribe"],"download":39696,"size":202963,"name":{"zh":"语音转文字","en":"Transcribe"},"summary":{"zh":"把录音、视频里说的话转成文字和 SRT 字幕，存在原文件旁边；普通话、英语、粤语、日语，这台 Mac 支持时在本机识别","en":"Turn speech in recordings and videos into text and SRT subtitles saved next to the original; Mandarin, English, Cantonese and Japanese, recognized on this Mac when it supports it"}},{"id":"airDrop","icon":"airDrop","category":"files","functions":["airDrop"],"download":37434,"size":200580,"name":{"zh":"隔空投送","en":"AirDrop"},"summary":{"zh":"用隔空投送把选中的文件、图片、链接或文字发到附近的 iPhone、iPad 或 Mac","en":"Send the selected files, images, links or text to a nearby iPhone, iPad or Mac with AirDrop"}},{"id":"sendToPhone","icon":"sendToPhone","category":"files","functions":["sendToPhone"],"download":35918,"size":200712,"name":{"zh":"传到手机","en":"Send to Phone"},"summary":{"zh":"手机扫码下载选中的文件、图片（文件夹先打包成 zip）或者拿到选中的文字，也能从手机传文件到「下载」文件夹；手机和 Mac 连同一个 Wi-Fi 就行，安卓手机也能用","en":"Scan a QR code with your phone to download the selected files or images (folders are zipped first) or get the selected text, and upload files from the phone to Downloads. The phone and Mac just need to be on the same Wi-Fi; Android works too."}},{"id":"openInTerminal","icon":"openInTerminal","category":"files","functions":["openInTerminal"],"download":35259,"size":199671,"name":{"zh":"在终端打开","en":"Open in Terminal"},"summary":{"zh":"在「终端」里打开选中的文件夹（选中文件时打开它所在的文件夹）","en":"Open the selected folder in Terminal (for files, the folder they’re in)"}},{"id":"keepAwake","icon":"keepAwake","category":"files","functions":["keepAwake"],"download":35584,"size":200190,"name":{"zh":"保持唤醒","en":"Keep Awake"},"summary":{"zh":"一段时间内不让屏幕变暗、电脑睡眠，适合看文档、演示、等下载","en":"Keep the display on and the Mac awake for a while: for reading, presenting or waiting for downloads"}},{"id":"systemActions","icon":"systemActions","category":"files","functions":["systemActions"],"download":30465,"size":196434,"name":{"zh":"系统操作","en":"System Actions"},"summary":{"zh":"锁屏、熄屏、睡眠、打开屏幕保护程序、切换深色和浅色模式、静音、隐藏或显示桌面图标、显示隐藏文件、推出所有磁盘","en":"Lock the screen, turn off the display, sleep, start the screen saver, switch between Dark and Light Mode, mute, hide or show desktop icons, show hidden files, or eject all disks"}},{"id":"timer","icon":"timer","category":"files","functions":["timer"],"download":36635,"size":201194,"name":{"zh":"计时器","en":"Timer"},"summary":{"zh":"倒计时：选一个时长，或者选中「25 分钟」「1:30」这样的文字直接开始；到点时响一声、发通知。也有番茄钟：专注 25 分钟、休息 5 分钟，一直循环","en":"Countdown: choose a duration, or select text such as “25 min” or “1:30” to start right away. Plays a sound and sends a notification when time’s up. There’s also a Pomodoro timer: 25 minutes of focus, then a 5-minute break, over and over"}},{"id":"spotlight","icon":"spotlight","category":"recording","functions":["spotlight"],"download":58178,"size":265006,"name":{"zh":"聚光灯","en":"Spotlight"},"summary":{"zh":"演示、录教程时把屏幕压暗，只亮着指针周围一圈，跟着指针走，让大家看你指的地方；录屏时一起录进去，再用一次关闭","en":"Dim the screen except for a circle around the pointer that follows it, so people look where you point in demos and tutorials. Screen recordings include it; use it again to turn it off"}},{"id":"zoom","icon":"zoom","category":"recording","functions":["zoom"],"download":61236,"size":146380,"name":{"zh":"屏幕放大","en":"Screen Zoom"},"summary":{"zh":"演示、录教程时把指针附近放大，看清小字：放大的是那一刻的屏幕画面，挪动指针换地方看，滚轮或 ↑↓ 调倍数，点一下或按 Esc 回去","en":"Magnify the area around the pointer in demos and tutorials so small text is easy to read. It zooms into a snapshot of the screen: move the pointer to look around, scroll or press ↑↓ to change the magnification, and click or press Esc to go back"}},{"id":"beautify","icon":"beautify","category":"screen","functions":["beautify"],"download":164170,"size":698937,"name":{"zh":"截图美化","en":"Beautify Screenshot"},"summary":{"zh":"给截图加上渐变背景、留白、圆角和阴影，可以补成 1:1、4:3、16:9，发文章、做演示更好看；选中图片就用它，没选中就先框选屏幕上的一块","en":"Put a screenshot on a gradient background with padding, rounded corners and a shadow, optionally filled out to 1:1, 4:3 or 16:9, so it looks good in posts and slides. Uses the selected image, or lets you select an area of the screen first"}}];
+const PACKAGES = [{"id":"screenPen","icon":"screenPen","category":"recording","functions":["screenPen"],"download":163606,"size":682334,"name":{"zh":"屏幕画笔","en":"Draw on Screen"},"summary":{"zh":"演示、录教程时直接在屏幕上画：画笔、荧光笔、箭头、方框、椭圆，笔迹可以几秒后自动消失，也可以留着去操作下面的窗口，录屏时一起录进去；Esc 或再用一次结束","en":"Draw right on the screen for demos and tutorials: pen, highlighter, arrow, rectangle and ellipse. Strokes can fade after a few seconds or stay while you use the windows underneath, and screen recordings include them. Press Esc or use it again to finish"}},{"id":"cameraBubble","icon":"cameraBubble","category":"recording","functions":["cameraBubble"],"download":90505,"size":363565,"name":{"zh":"摄像头小窗","en":"Camera Bubble"},"summary":{"zh":"在屏幕角落用一个圆形小窗显示摄像头画面，录教程、演示时把自己也放进画面；拖动换位置，滚动或双击换大小，右键换形状和摄像头。再用一次关闭","en":"Show the camera in a small round window in a corner of the screen, so you appear in tutorials and demos. Drag to move it, scroll or double-click to resize, right-click to change the shape or camera. Use it again to close"}},{"id":"pointerHighlight","icon":"pointerHighlight","category":"recording","functions":["pointerHighlight"],"download":58222,"size":270897,"name":{"zh":"突出显示指针","en":"Highlight Pointer"},"summary":{"zh":"演示、录教程时在指针周围加一圈黄色光圈，按下鼠标时泛起波纹，让人一眼看到指针在哪；再用一次关闭","en":"Put a yellow halo around the pointer that ripples when you click, so people can always find it in demos and tutorials. Use it again to turn it off"}},{"id":"teleprompter","icon":"teleprompter","category":"recording","functions":["teleprompter"],"download":119622,"size":539725,"name":{"zh":"提词器","en":"Teleprompter"},"summary":{"zh":"把选中的稿子放进屏幕上方的提词器，按设好的速度慢慢往上滚，对着摄像头读；空格暂停，↑↓ 调速度，录屏时不会录进去","en":"Put the selected script in a teleprompter at the top of the screen that scrolls up at the speed you set, so you can read it to the camera. Space pauses, ↑ and ↓ change the speed, and screen recordings leave it out"}},{"id":"cleanKeyboard","icon":"cleanKeyboard","category":"files","functions":["cleanKeyboard"],"download":73523,"size":335176,"name":{"zh":"清洁键盘","en":"Clean Keyboard"},"summary":{"zh":"锁住键盘一分钟，擦键盘时不会误触；亮度、音量键也不起作用，用鼠标点「结束清洁」随时恢复","en":"Lock the keyboard for a minute so you can wipe it without typing anything; brightness and volume keys are blocked too. Click End Cleaning with the mouse to stop any time"}},{"id":"ruler","icon":"ruler","category":"screen","functions":["ruler"],"download":76779,"size":337036,"name":{"zh":"屏幕标尺","en":"Screen Ruler"},"summary":{"zh":"定格屏幕，量出指针处到上下左右边缘的距离，拖动量一块区域的宽高；单击复制尺寸","en":"Freeze the screen and measure distances from the pointer to the edges around it; drag to measure an area; click to copy the size"}},{"id":"largeType","icon":"largeType","category":"text","functions":["largeType"],"download":73572,"size":324062,"name":{"zh":"大字显示","en":"Large Type"},"summary":{"zh":"把选中的文字铺满整个屏幕，给别人看电话号码、Wi-Fi 密码、取件码都方便；点一下或按任意键关闭","en":"Show the selected text across the whole screen, handy for showing someone a phone number, Wi-Fi password or pickup code; click or press any key to close"}},{"id":"spellCheck","icon":"spellCheck","category":"text","functions":["spellCheck"],"download":51426,"size":244659,"name":{"zh":"拼写检查","en":"Spell Check"},"summary":{"zh":"找出外文里拼错的词，给出改法，可以直接换成改好的文字（系统自带的拼写检查，离线）","en":"Find misspelled words and suggest corrections you can apply directly (built-in macOS spell checking, offline)"}},{"id":"codeImage","icon":"codeImage","category":"developer","functions":["codeImage"],"download":85359,"size":342286,"name":{"zh":"代码截图","en":"Code Screenshot"},"summary":{"zh":"把选中的代码画成一张图片（深色编辑器、语法着色、渐变背景），可以复制、存储或贴到屏幕上","en":"Render the selected code as an image (dark editor, syntax highlighting, gradient background) to copy, save or pin"}},{"id":"cron","icon":"cron","category":"developer","functions":["cron"],"download":100192,"size":368581,"name":{"zh":"Cron 表达式","en":"Cron Expression"},"summary":{"zh":"把 cron 表达式（比如 */15 9-17 * * 1-5）说成中文，列出接下来几次运行的时间","en":"Explain a cron expression (e.g. */15 9-17 * * 1-5) in words and list the next run times"}},{"id":"jsonTypes","icon":"jsonTypes","category":"developer","functions":["jsonTypes"],"download":129016,"size":456126,"name":{"zh":"JSON 转代码","en":"JSON to Code"},"summary":{"zh":"根据选中的 JSON 生成 TypeScript、Swift、Go、Kotlin 的类型定义","en":"Generate TypeScript, Swift, Go and Kotlin type definitions from the selected JSON"}},{"id":"regexTest","icon":"regexTest","category":"developer","functions":["regexTest"],"download":154066,"size":655572,"name":{"zh":"正则测试","en":"Regex Tester"},"summary":{"zh":"在选中的文字里试正则表达式：实时标出每处匹配、列出分组，也可以试替换","en":"Try regular expressions on the selected text: live highlighting of matches, groups and replacements"}},{"id":"watermark","icon":"watermark","category":"screen","functions":["watermark"],"download":126401,"size":492542,"name":{"zh":"加水印","en":"Watermark"},"summary":{"zh":"给选中的图片或 PDF 斜着铺满一层半透明的文字（比如「仅供办理业务使用」），另存一份放在原文件旁边","en":"Tile semi-transparent text diagonally across the selected images or PDFs and save copies next to the originals"}},{"id":"palette","icon":"palette","category":"screen","functions":["palette"],"download":67749,"size":291044,"name":{"zh":"图片配色","en":"Image Colors"},"summary":{"zh":"找出图片里的主要颜色，按面积从大到小列出色值，点一下复制","en":"Find the main colors in an image, listed by area; click to copy a value"}},{"id":"tableOCR","icon":"tableOCR","category":"screen","functions":["tableOCR"],"download":78871,"size":338409,"name":{"zh":"识别表格","en":"Recognize Table"},"summary":{"zh":"识别截图或图片里的表格，转成 Markdown 表格、CSV 或者制表符分隔（macOS 26；更早的系统按普通文字识别）","en":"Recognize a table in a screenshot or image as a Markdown table, CSV or tab-separated text (macOS 26; earlier versions recognize plain text)"}},{"id":"numberStats","icon":"numberStats","category":"convert","functions":["numberStats"],"download":63863,"size":269560,"name":{"zh":"数字统计","en":"Number Statistics"},"summary":{"zh":"选中一列或一串数字，算出合计、平均、中位数、最大、最小","en":"Get the sum, average, median, max and min of a list of numbers"}},{"id":"reminder","icon":"reminder","category":"text","functions":["reminder"],"download":160871,"size":568409,"name":{"zh":"加到提醒事项","en":"Add to Reminders"},"summary":{"zh":"从选中的文字里认出时间（明天下午 3 点、周五、10 月 8 日、半小时后……），加到「提醒事项」或者「日历」","en":"Find a time in the selected Chinese text (明天下午 3 点, 周五, 10 月 8 日, 半小时后…) and add it to Reminders or Calendar"}},{"id":"codeStats","icon":"codeStats","category":"files","functions":["codeStats"],"download":87481,"size":335806,"name":{"zh":"代码行数","en":"Lines of Code"},"summary":{"zh":"按语言统计选中的文件夹里有多少个代码文件、多少行，可以复制成 Markdown 表格","en":"Count code files and lines per language in the selected folders; copy as a Markdown table"}},{"id":"compareFiles","icon":"compareFiles","category":"files","functions":["compareFiles"],"download":63991,"size":296250,"name":{"zh":"对比文件","en":"Compare Files"},"summary":{"zh":"对比选中的两个文本文件（代码、Markdown、配置、CSV……），标出删去和新增的行，改动的地方逐词标出；按修改时间，旧的当原文","en":"Compare the two selected text files (code, Markdown, config, CSV…), marking removed and added lines and the changed words in them; the older file by modification date is the original"}},{"id":"folderTools","icon":"folderTools","category":"files","functions":["diskUsage","findDuplicates","compareFolders"],"download":402792,"size":1477208,"name":{"zh":"文件夹工具","en":"Folder Tools"},"summary":{"zh":"看文件夹里哪些东西最占地方、找出内容一样的重复文件、比较两个文件夹有哪些不同，不要的可以移到废纸篓","en":"See what takes up the most space in a folder, find files with identical contents and compare two folders, then move what you don’t need to the Trash"}},{"id":"batchRename","icon":"batchRename","category":"files","functions":["batchRename"],"download":233794,"size":882440,"name":{"zh":"批量重命名","en":"Batch Rename"},"summary":{"zh":"给选中的文件统一改名：编号、替换文字、加前后缀、按照片的拍摄时间、改大小写，先看预览再改，改完可以撤销","en":"Rename the selected files together: numbering, find and replace, prefix and suffix, photo capture date, case. Preview first and undo afterwards."}},{"id":"menuShortcuts","icon":"menuShortcuts","category":"files","functions":["menuShortcuts"],"download":181489,"size":728882,"name":{"zh":"快捷键一览","en":"Keyboard Shortcuts"},"summary":{"zh":"列出当前 App 菜单里的所有快捷键，可以搜索，点一项直接执行","en":"List every keyboard shortcut in the current app’s menus; search them and click one to run it"}},{"id":"windowLayout","icon":"windowLayout","category":"files","functions":["windowLayout"],"download":90478,"size":400525,"name":{"zh":"窗口布局","en":"Window Layout"},"summary":{"zh":"把当前窗口放到屏幕的左半边、右半边、三分之一、最大化、居中，或者移到另一个显示器","en":"Move the current window to the left or right half, a third, maximize, center it, or move it to another display"}},{"id":"speak","icon":"speak","category":"text","functions":["speak"],"download":32897,"size":197338,"name":{"zh":"朗读","en":"Speak"},"summary":{"zh":"用系统语音朗读选中的文字，朗读中再用一次就停止","en":"Read the selected text aloud with the system voice; use it again to stop"}},{"id":"textImage","icon":"textImage","category":"text","functions":["textImage"],"download":32432,"size":197326,"name":{"zh":"文字转图片","en":"Text to Image"},"summary":{"zh":"把选中的文字排成一张手机上看着舒服的长图（宽 1080 像素），白底、米黄、深色三种底色，可以复制、存储或贴到屏幕上","en":"Lay out the selected text as a long image that reads well on a phone (1080 pixels wide) on a white, cream or dark background; copy it, save it or pin it to the screen"}},{"id":"webCapture","icon":"webCapture","category":"text","functions":["webCapture"],"download":34440,"size":198739,"name":{"zh":"网页存档","en":"Save Web Page"},"summary":{"zh":"把选中的网址整页存成一页长 PDF（文字能选、能搜）、一张长图，或者只把正文存成 Markdown，放在「下载」里","en":"Save the whole page at the selected URL to Downloads as one long PDF (with selectable, searchable text) or a long image, or save just the article text as Markdown"}},{"id":"extractInfo","icon":"extractInfo","category":"text","functions":["extractInfo"],"download":33777,"size":198760,"name":{"zh":"提取信息","en":"Extract Info"},"summary":{"zh":"从一段文字里找出链接、邮箱、电话号码和 IP 地址，逐个复制或者一起复制","en":"Find links, email addresses, phone numbers and IP addresses in text and copy them one by one or together"}},{"id":"idNumber","icon":"idNumber","category":"text","functions":["idNumber"],"download":33196,"size":197865,"name":{"zh":"证件号码","en":"ID Numbers"},"summary":{"zh":"身份证号、统一社会信用代码、银行卡号：检查校验位，读出出生日期、年龄、性别、地区和登记管理部门，不联网","en":"Chinese ID numbers, unified social credit codes and bank card numbers: check the check digit and read out birth date, age, sex, region and registration authority, offline"}},{"id":"lineTools","icon":"lineTools","category":"text","functions":["lineTools"],"download":35383,"size":201502,"name":{"zh":"按行处理","en":"Lines"},"summary":{"zh":"一列文字加引号和逗号（SQL 的 IN 列表）、转 JSON 数组、加减序号、倒序、打乱；一行用逗号隔开的拆成多行","en":"Quote and comma-separate a list (for SQL IN), convert to a JSON array, add or remove numbering, reverse, shuffle; split a comma-separated line into lines"}},{"id":"textCleanup","icon":"textCleanup","category":"text","functions":["textCleanup"],"download":34657,"size":200536,"name":{"zh":"文字整理","en":"Clean Up Text"},"summary":{"zh":"合并换行、去掉空行和多余空格、中英文之间加空格、全角转半角、简繁转换、拼音、按行排序去重","en":"Join lines, remove blank lines and extra spaces, space Chinese and Latin text, full-width to half-width, Simplified ↔ Traditional Chinese, Pinyin, sort and deduplicate lines"}},{"id":"quickNote","icon":"quickNote","category":"text","functions":["quickNote"],"download":49791,"size":244046,"name":{"zh":"收集箱","en":"Inbox"},"summary":{"zh":"把选中的文字追加到「文稿/Pop 收集箱.md」","en":"Append the selected text to “Documents/Pop 收集箱.md”"}},{"id":"changeCase","icon":"changeCase","category":"convert","functions":["changeCase"],"download":33365,"size":199235,"name":{"zh":"大小写","en":"Case"},"summary":{"zh":"大写、小写、驼峰、下划线等写法互相转换","en":"Convert between uppercase, lowercase, camelCase, snake_case and more"}},{"id":"encodeDecode","icon":"encodeDecode","category":"convert","functions":["encodeDecode"],"download":34193,"size":200493,"name":{"zh":"编码转换","en":"Encode & Decode"},"summary":{"zh":"Base64、URL、Unicode、HTML 实体的编码和解码","en":"Encode and decode Base64, URL, Unicode and HTML entities"}},{"id":"yamlJSON","icon":"yamlJSON","category":"convert","functions":["yamlJSON"],"download":36392,"size":203081,"name":{"zh":"YAML 和 JSON","en":"YAML ↔ JSON"},"summary":{"zh":"选中 JSON 转成 YAML，选中 YAML 转成 JSON，键的顺序不变","en":"Convert selected JSON to YAML or YAML to JSON, keeping key order"}},{"id":"formatXML","icon":"formatXML","category":"convert","functions":["formatXML"],"download":35185,"size":200622,"name":{"zh":"XML 格式化","en":"Format XML"},"summary":{"zh":"格式化或压缩选中的 XML（也认 SVG、plist、XHTML）","en":"Format or minify the selected XML (SVG, plist and XHTML too)"}},{"id":"formatSQL","icon":"formatSQL","category":"convert","functions":["formatSQL"],"download":38707,"size":204222,"name":{"zh":"SQL 格式化","en":"Format SQL"},"summary":{"zh":"把选中的 SQL 按子句分行、关键字大写、子查询缩进，也可以压成一行","en":"Put each clause of the selected SQL on its own line, uppercase keywords and indent subqueries, or squeeze it onto one line"}},{"id":"tableConvert","icon":"tableConvert","category":"convert","functions":["tableConvert"],"download":36382,"size":202733,"name":{"zh":"表格转换","en":"Convert Table"},"summary":{"zh":"从表格软件复制的文字、CSV、Markdown 表格互相转换，也能转成 JSON","en":"Convert between text copied from spreadsheets, CSV and Markdown tables, or to JSON"}},{"id":"markdown","icon":"markdown","category":"convert","functions":["markdownPreview","markdownCopy"],"download":37467,"size":203897,"name":{"zh":"Markdown 富文本","en":"Markdown Rich Text"},"summary":{"zh":"把选中的 Markdown 显示成排好版的样子，或者转成带格式的文字复制下来，粘贴到文稿、邮件、备忘录里保留格式","en":"Preview the selected Markdown formatted, or copy it as formatted text that keeps its formatting when pasted into documents, mail or notes"}},{"id":"toMarkdown","icon":"toMarkdown","category":"convert","functions":["toMarkdown"],"download":36345,"size":201779,"name":{"zh":"转成 Markdown","en":"Convert to Markdown"},"summary":{"zh":"把网页、文档里选中的带格式文字转成 Markdown：标题、列表、链接、粗体、代码、表格","en":"Convert formatted text selected in web pages and documents to Markdown: headings, lists, links, bold, code, tables"}},{"id":"markdownTOC","icon":"markdownTOC","category":"convert","functions":["markdownTOC"],"download":34401,"size":201304,"name":{"zh":"Markdown 目录","en":"Markdown Table of Contents"},"summary":{"zh":"按选中的 Markdown 里的标题生成目录，点链接能跳到对应的标题（锚点和 GitHub 的写法一样）","en":"Create a table of contents from the headings in the selected Markdown, with links to each heading (GitHub-style anchors)"}},{"id":"dateSpan","icon":"dateSpan","category":"convert","functions":["dateSpan"],"download":36085,"size":202313,"name":{"zh":"日期计算","en":"Date Difference"},"summary":{"zh":"选中两个日期（比如「2026-09-29 到 2026-12-25」），算出相差多少天、几周、几个月，其中有多少个工作日","en":"Select two dates (e.g. “2026-09-29 to 2026-12-25”) to get the days, weeks and months between them and how many are workdays"}},{"id":"numberConvert","icon":"numberConvert","category":"convert","functions":["numberConvert"],"download":33414,"size":199634,"name":{"zh":"数字转换","en":"Numbers"},"summary":{"zh":"进制转换、千分位、人民币大写","en":"Bases, thousands separators, RMB in words"}},{"id":"contrast","icon":"contrast","category":"convert","functions":["contrast"],"download":34020,"size":198905,"name":{"zh":"对比度","en":"Contrast"},"summary":{"zh":"选中两个颜色（比如「#333333 #FFFFFF」），算出文字和背景的对比度，看是否达到 WCAG 的 AA、AAA","en":"Select two colors (e.g. “#333333 #FFFFFF”) to get the text/background contrast ratio and whether it meets WCAG AA and AAA"}},{"id":"hash","icon":"hash","category":"developer","functions":["hash"],"download":51093,"size":245957,"name":{"zh":"哈希","en":"Hash"},"summary":{"zh":"计算文字或文件的 MD5、SHA-1、SHA-256、SHA-512","en":"Compute MD5, SHA-1, SHA-256 and SHA-512 of text or files"}},{"id":"qrCode","icon":"qrCode","category":"developer","functions":["qrCode"],"download":40547,"size":204607,"name":{"zh":"二维码","en":"QR Code"},"summary":{"zh":"把文字或链接生成二维码（英文字母和数字还能生成条形码）；选中图片时识别里面的二维码和条形码","en":"Generate a QR code from text or a link (letters and digits can also become a barcode); with an image selected, read the QR codes and barcodes in it"}},{"id":"base64Image","icon":"base64Image","category":"developer","functions":["base64Image"],"download":39362,"size":203672,"name":{"zh":"Base64 图片","en":"Base64 Image"},"summary":{"zh":"把 Base64 或 data: 开头的图片数据显示成图片，可以复制、保存、贴到屏幕","en":"Show Base64 or data: image data as an image to copy, save or pin"}},{"id":"random","icon":"random","category":"developer","functions":["random"],"download":31114,"size":197343,"name":{"zh":"随机生成","en":"Random"},"summary":{"zh":"生成 UUID、密码和随机数字，可以直接粘贴到当前输入框","en":"Generate UUIDs, passwords and random numbers to paste into the current field"}},{"id":"linkInspect","icon":"linkInspect","category":"developer","functions":["linkInspect"],"download":38804,"size":202056,"name":{"zh":"链接解析","en":"Parse Link"},"summary":{"zh":"拆开链接的协议、主机、路径和每个参数（解码后），去掉 utm_source 这类跟踪参数","en":"Split a link into scheme, host, path and decoded parameters, and remove tracking parameters such as utm_source"}},{"id":"jwtDecode","icon":"jwtDecode","category":"developer","functions":["jwtDecode"],"download":34774,"size":199708,"name":{"zh":"JWT 解码","en":"Decode JWT"},"summary":{"zh":"解码选中的 JWT，列出签发者、过期时间等声明（只解码，不验证签名）","en":"Decode the selected JWT and list claims such as issuer and expiry (decoding only; the signature isn’t verified)"}},{"id":"charInfo","icon":"charInfo","category":"developer","functions":["charInfo"],"download":33231,"size":198105,"name":{"zh":"字符信息","en":"Character Info"},"summary":{"zh":"查看每个字符的 Unicode 码点、名称和编码；找出并去掉零宽空格这类看不见的字符","en":"See each character’s Unicode code point, name and encoding; find and remove invisible characters such as zero-width spaces"}},{"id":"screenshotTranslate","icon":"translate","category":"text","functions":["screenshotTranslate"],"download":31246,"size":197440,"name":{"zh":"截图翻译","en":"Translate Screenshot"},"summary":{"zh":"框选屏幕上的一块区域，识别里面的文字并翻译（离线）","en":"Select an area of the screen, recognize its text and translate it (offline)"}},{"id":"textDiff","icon":"compareFiles","category":"text","functions":["textDiff"],"download":37886,"size":203625,"name":{"zh":"文本对比","en":"Compare Text"},"summary":{"zh":"把选中的文字和剪贴板里的文字对比，标出删去和新增的地方","en":"Compare the selected text with the text on the clipboard and mark deletions and additions"}},{"id":"imageConvert","icon":"imageConvert","category":"screen","functions":["imageConvert"],"download":41697,"size":205069,"name":{"zh":"图片转换","en":"Convert Images"},"summary":{"zh":"把选中的图片文件转成 PNG、JPEG、HEIC，缩小一半、压缩体积或者压到指定大小以内，旋转、左右翻转，或者去掉照片里的位置和拍摄信息；结果存在原图旁边","en":"Convert the selected images to PNG, JPEG or HEIC, halve their size, compress them (or under a given size), rotate, flip, or remove location and capture info; results are saved next to the originals"}},{"id":"stitchImages","icon":"stitchImages","category":"screen","functions":["stitchImages"],"download":41353,"size":205213,"name":{"zh":"拼接图片","en":"Stitch Images"},"summary":{"zh":"把选中的几张图片按文件名的顺序竖着或者横着拼成一张，或者合成一张动图，存在第一张旁边","en":"Stitch the selected images vertically or horizontally in file name order, or make an animated image, saved next to the first one"}},{"id":"idPhoto","icon":"idPhoto","category":"screen","functions":["idPhoto"],"download":32849,"size":197252,"name":{"zh":"证件照","en":"ID Photo"},"summary":{"zh":"把人像照片换成白底、蓝底或红底，按人脸位置裁成一寸、二寸（300 dpi）；在本机处理，另存一份放在原图旁边","en":"Give a portrait a white, blue or red background and crop it around the face to 1-inch or 2-inch ID sizes (300 dpi); processed on this Mac and saved as a copy next to the original"}},{"id":"cropImage","icon":"cropImage","category":"screen","functions":["cropImage"],"download":34621,"size":198958,"name":{"zh":"裁剪图片","en":"Crop Image"},"summary":{"zh":"把选中的图片裁成 1:1、4:3、3:4、16:9、9:16，自动对准画面里的主体；另存一份放在原图旁边","en":"Crop the selected images to 1:1, 4:3, 3:4, 16:9 or 9:16, centered on the subject; a copy is saved next to the original"}},{"id":"redact","icon":"redact","category":"screen","functions":["redact"],"download":42448,"size":206111,"name":{"zh":"隐私打码","en":"Redact"},"summary":{"zh":"找出选中图片里的人脸、电话号码、邮箱、身份证号、银行卡号和车牌，打上马赛克另存一份；在本机识别，另存的那份不带拍摄信息和位置","en":"Find faces, phone numbers, email addresses, ID and bank card numbers and license plates in the selected images, pixelate them and save a copy; recognized on this Mac, and the copy carries no capture info or location"}},{"id":"removeBackground","icon":"removeBackground","category":"screen","functions":["removeBackground"],"download":37303,"size":202641,"name":{"zh":"抠图","en":"Remove Background"},"summary":{"zh":"去掉选中图片的背景，只留下人、动物或物品（离线）","en":"Remove the background of the selected image, keeping only people, animals or objects (offline)"}},{"id":"scanCode","icon":"scanCode","category":"screen","functions":["scanCode"],"download":33380,"size":198041,"name":{"zh":"扫码","en":"Scan Code"},"summary":{"zh":"框选屏幕上的二维码或条形码，识别里面的内容；链接可以直接打开，Wi-Fi 二维码列出密码","en":"Select a QR code or barcode on screen to read it; links can be opened and Wi-Fi codes show the password"}},{"id":"screenRecord","icon":"screenRecord","category":"recording","functions":["screenRecord"],"download":34894,"size":200109,"name":{"zh":"录屏","en":"Record Screen"},"summary":{"zh":"拖出一块区域、单击选一个窗口或者按回车录整个屏幕，存成 MP4；可以录上电脑里的声音或者麦克风、显示鼠标点击和按下的键，录好能接着转成 GIF。正在录的时候再用一次就停止","en":"Drag out an area, click a window or press Return to record the whole screen as MP4; can include the Mac’s sound or the microphone and show clicks and keystrokes, and the recording can then be turned into a GIF. Use it again while recording to stop"}},{"id":"scrollCapture","icon":"scrollCapture","category":"recording","functions":["scrollCapture"],"download":34062,"size":199618,"name":{"zh":"滚动截图","en":"Scrolling Screenshot"},"summary":{"zh":"框选一块区域，一边往下滚动一边截，拼成一张长图；网页、聊天记录、长文档都能截全，还能接着识别文字。正在截的时候再用一次就是完成","en":"Select an area, then scroll down while Pop captures it into one long image: whole web pages, chat histories and long documents, with text recognition afterwards if you like. Use it again while capturing to finish"}},{"id":"showKeystrokes","icon":"showKeystrokes","category":"recording","functions":["showKeystrokes"],"download":31349,"size":196647,"name":{"zh":"显示按键","en":"Show Keystrokes"},"summary":{"zh":"演示、录教程时在屏幕下方显示按下的组合键（⌘C、⇧⌘4、方向键这些），普通打字不显示；再用一次关闭。录屏时也可以勾选一起录进去","en":"Show the shortcuts you press (⌘C, ⇧⌘4, arrow keys and so on) at the bottom of the screen for demos and tutorials; ordinary typing isn’t shown. Use it again to turn it off. Screen recordings can include them too"}},{"id":"folderTree","icon":"folderTree","category":"files","functions":["folderTree"],"download":37039,"size":202243,"name":{"zh":"目录结构","en":"Folder Tree"},"summary":{"zh":"把选中文件夹里的目录结构写成树形或者 Markdown 列表，贴进文档、README 或者发给别人","en":"Write the structure of the selected folder as a tree or Markdown list for docs, READMEs or sharing"}},{"id":"zip","icon":"zip","category":"files","functions":["zip","unzip"],"download":53497,"size":244544,"name":{"zh":"压缩和解压","en":"Zip and Unzip"},"summary":{"zh":"把选中的文件或文件夹压缩成 zip，存在原来的文件夹里；把选中的 zip 解压到旁边的同名文件夹里","en":"Compress the selected files or folders into a zip in the same folder, or extract the selected zip files into folders next to them"}},{"id":"pdf","icon":"pdf","category":"files","functions":["pdf"],"download":49817,"size":242960,"name":{"zh":"PDF","en":"PDF"},"summary":{"zh":"把选中的图片和 PDF 按文件名顺序合成一个 PDF；只选了一个 PDF 时可以把每页存成图片、复制里面的文字、取出其中几页或者拆开、加密码或者去掉密码，或者压缩","en":"Combine the selected images and PDFs into one PDF in file name order. With a single PDF, save each page as an image, copy its text, extract or split pages, add or remove a password, or compress it"}},{"id":"videoConvert","icon":"videoConvert","category":"files","functions":["videoConvert"],"download":42915,"size":237773,"name":{"zh":"视频转换","en":"Convert Video"},"summary":{"zh":"把选中的视频转成 GIF、转成 MP4、压缩到 720p、提取音频，或者均匀取 16 帧拼成一张缩略图；结果存在原视频旁边","en":"Convert the selected videos to GIF or MP4, compress to 720p, extract audio, or make a contact sheet of 16 evenly spaced frames; results are saved next to the originals"}},{"id":"trimMedia","icon":"trimMedia","category":"files","functions":["trimMedia"],"download":32889,"size":197454,"name":{"zh":"截取片段","en":"Trim"},"summary":{"zh":"截取选中的音频或视频的一段（写上开始和结束的时间），存在原文件旁边","en":"Cut a range from the selected audio or video (by start and end time), saved next to the original"}},{"id":"transcribe","icon":"transcribe","category":"files","functions":["transcribe"],"download":39696,"size":202963,"name":{"zh":"语音转文字","en":"Transcribe"},"summary":{"zh":"把录音、视频里说的话转成文字和 SRT 字幕，存在原文件旁边；普通话、英语、粤语、日语，这台 Mac 支持时在本机识别","en":"Turn speech in recordings and videos into text and SRT subtitles saved next to the original; Mandarin, English, Cantonese and Japanese, recognized on this Mac when it supports it"}},{"id":"airDrop","icon":"airDrop","category":"files","functions":["airDrop"],"download":37434,"size":200580,"name":{"zh":"隔空投送","en":"AirDrop"},"summary":{"zh":"用隔空投送把选中的文件、图片、链接或文字发到附近的 iPhone、iPad 或 Mac","en":"Send the selected files, images, links or text to a nearby iPhone, iPad or Mac with AirDrop"}},{"id":"sendToPhone","icon":"sendToPhone","category":"files","functions":["sendToPhone"],"download":35918,"size":200712,"name":{"zh":"传到手机","en":"Send to Phone"},"summary":{"zh":"手机扫码下载选中的文件、图片（文件夹先打包成 zip）或者拿到选中的文字，也能从手机传文件到「下载」文件夹；手机和 Mac 连同一个 Wi-Fi 就行，安卓手机也能用","en":"Scan a QR code with your phone to download the selected files or images (folders are zipped first) or get the selected text, and upload files from the phone to Downloads. The phone and Mac just need to be on the same Wi-Fi; Android works too."}},{"id":"openInTerminal","icon":"openInTerminal","category":"files","functions":["openInTerminal"],"download":35259,"size":199671,"name":{"zh":"在终端打开","en":"Open in Terminal"},"summary":{"zh":"在「终端」里打开选中的文件夹（选中文件时打开它所在的文件夹）","en":"Open the selected folder in Terminal (for files, the folder they’re in)"}},{"id":"keepAwake","icon":"keepAwake","category":"files","functions":["keepAwake"],"download":35584,"size":200190,"name":{"zh":"保持唤醒","en":"Keep Awake"},"summary":{"zh":"一段时间内不让屏幕变暗、电脑睡眠，适合看文档、演示、等下载","en":"Keep the display on and the Mac awake for a while: for reading, presenting or waiting for downloads"}},{"id":"systemActions","icon":"systemActions","category":"files","functions":["systemActions"],"download":30465,"size":196434,"name":{"zh":"系统操作","en":"System Actions"},"summary":{"zh":"锁屏、熄屏、睡眠、打开屏幕保护程序、切换深色和浅色模式、静音、隐藏或显示桌面图标、显示隐藏文件、推出所有磁盘","en":"Lock the screen, turn off the display, sleep, start the screen saver, switch between Dark and Light Mode, mute, hide or show desktop icons, show hidden files, or eject all disks"}},{"id":"timer","icon":"timer","category":"files","functions":["timer"],"download":36635,"size":201194,"name":{"zh":"计时器","en":"Timer"},"summary":{"zh":"倒计时：选一个时长，或者选中「25 分钟」「1:30」这样的文字直接开始；到点时响一声、发通知。也有番茄钟：专注 25 分钟、休息 5 分钟，一直循环","en":"Countdown: choose a duration, or select text such as “25 min” or “1:30” to start right away. Plays a sound and sends a notification when time’s up. There’s also a Pomodoro timer: 25 minutes of focus, then a 5-minute break, over and over"}},{"id":"spotlight","icon":"spotlight","category":"recording","functions":["spotlight"],"download":58178,"size":265006,"name":{"zh":"聚光灯","en":"Spotlight"},"summary":{"zh":"演示、录教程时把屏幕压暗，只亮着指针周围一圈，跟着指针走，让大家看你指的地方；录屏时一起录进去，再用一次关闭","en":"Dim the screen except for a circle around the pointer that follows it, so people look where you point in demos and tutorials. Screen recordings include it; use it again to turn it off"}},{"id":"zoom","icon":"zoom","category":"recording","functions":["zoom"],"download":61236,"size":146380,"name":{"zh":"屏幕放大","en":"Screen Zoom"},"summary":{"zh":"演示、录教程时把指针附近放大，看清小字：放大的是那一刻的屏幕画面，挪动指针换地方看，滚轮或 ↑↓ 调倍数，点一下或按 Esc 回去","en":"Magnify the area around the pointer in demos and tutorials so small text is easy to read. It zooms into a snapshot of the screen: move the pointer to look around, scroll or press ↑↓ to change the magnification, and click or press Esc to go back"}},{"id":"beautify","icon":"beautify","category":"screen","functions":["beautify"],"download":164170,"size":698937,"name":{"zh":"截图美化","en":"Beautify Screenshot"},"summary":{"zh":"给截图加上渐变背景、留白、圆角和阴影，可以补成 1:1、4:3、16:9，发文章、做演示更好看；选中图片就用它，没选中就先框选屏幕上的一块","en":"Put a screenshot on a gradient background with padding, rounded corners and a shadow, optionally filled out to 1:1, 4:3 or 16:9, so it looks good in posts and slides. Uses the selected image, or lets you select an area of the screen first"}},{"id":"compareImages","icon":"compareImages","category":"screen","functions":["compareImages"],"download":150000,"size":640000,"name":{"zh":"对比图片","en":"Compare Images"},"summary":{"zh":"对比选中的两张图片：并排、滑动分界线、半透明叠加，或者把不一样的像素标红、框出几处不同；改版前后的截图、设计稿和实现对照都用得上","en":"Compare two selected images side by side, with a swipe divider or a translucent overlay, or mark the pixels that differ in red and box each area that changed. Handy for before-and-after screenshots and for checking a build against its design"}}];
 const CATEGORY_TITLES = {
   text: { zh: '文字', en: 'Text' }, convert: { zh: '转换', en: 'Convert' }, developer: { zh: '开发', en: 'Developer' },
   screen: { zh: '屏幕与图片', en: 'Screen & Images' }, recording: { zh: '录屏和演示', en: 'Recording & Presenting' }, files: { zh: '文件和系统', en: 'Files & System' },
@@ -850,7 +872,7 @@ const DEFAULT_INSTALLED = PACKAGES.filter((pkg) => pkg.functions.some((fn) => P[
 const LAYOUT = ['translate', 'search', 'dictionary', 'openURL', 'allPlugins', 'clipboard', 'screenshotOCR', 'colorPicker'];
 // 「全部功能」里的顺序
 const ORDER = ['translate', 'textImage', 'largeType', 'search', 'dictionary', 'speak', 'textStats', 'changeCase', 'openURL', 'webCapture', 'linkInspect', 'qrCode',
-  'fileInfo', 'imageConvert', 'cropImage', 'beautify', 'redact', 'ocr', 'removeBackground', 'videoConvert', 'transcribe', 'trimMedia', 'pdf', 'compareFiles', 'zip',
+  'fileInfo', 'imageConvert', 'cropImage', 'beautify', 'compareImages', 'redact', 'ocr', 'removeBackground', 'videoConvert', 'transcribe', 'trimMedia', 'pdf', 'compareFiles', 'zip',
   'airDrop', 'sendToPhone', 'screenRecord', 'scrollCapture', 'showKeystrokes', 'screenPen', 'cameraBubble', 'pointerHighlight', 'spotlight', 'zoom', 'teleprompter', 'screenshotOCR', 'annotate', 'pin', 'colorPicker', 'clipboard', 'shelf', 'menuShortcuts', 'systemActions', 'timer', 'cleanKeyboard'];
 
 function canHandle(info, content) {
@@ -862,7 +884,7 @@ function canHandle(info, content) {
 function unavailableHint(info, content) {
   const kinds = content.kinds;
   if (info.accepts.length === 0 || info.accepts.some((kind) => kinds.includes(kind))) return L(T.notHere);
-  const order = [['text', T.needText], ['latin', T.needText], ['url', T.needLink], ['files', T.needFiles], ['imageFile', T.needImage], ['video', T.needFiles], ['audio', T.needFiles], ['pdf', T.needFiles]];
+  const order = [['text', T.needText], ['latin', T.needText], ['url', T.needLink], ['files', T.needFiles], ['twoImageFiles', T.needTwoImages], ['imageFile', T.needImage], ['video', T.needFiles], ['audio', T.needFiles], ['pdf', T.needFiles]];
   const found = order.find(([kind]) => info.accepts.includes(kind));
   return L(found ? found[1] : T.notHere);
 }
@@ -958,6 +980,10 @@ const FILES = [
     info: [[{ zh: '种类', en: 'Kind' }, { zh: 'HEIF 图像', en: 'HEIF Image' }], [{ zh: '大小', en: 'Size' }, '3.2 MB'], [{ zh: '尺寸', en: 'Dimensions' }, '4032 × 3024'], [{ zh: '相机', en: 'Camera' }, 'iPhone 16 Pro'], [{ zh: '参数', en: 'Exposure' }, 'ƒ/1.78 · 1/1250 s · ISO 64'], [{ zh: '拍摄时间', en: 'Taken' }, '2026-09-21 17:42'], [{ zh: '拍摄地点', en: 'Location' }, { zh: '山东省青岛市 · 第一海水浴场', en: 'Qingdao, Shandong · No. 1 Bathing Beach' }]] },
   { key: 'chat', kind: 'imageFile', icon: 'shot', name: { zh: '聊天截图.png', en: 'Chat.png' },
     info: [[{ zh: '种类', en: 'Kind' }, { zh: 'PNG 图像', en: 'PNG Image' }], [{ zh: '大小', en: 'Size' }, '412 KB'], [{ zh: '尺寸', en: 'Dimensions' }, '1170 × 720']] },
+  { key: 'design-old', kind: 'imageFile', icon: 'shot', name: { zh: '设置页 旧.png', en: 'Settings old.png' },
+    info: [[{ zh: '种类', en: 'Kind' }, { zh: 'PNG 图像', en: 'PNG Image' }], [{ zh: '大小', en: 'Size' }, '86 KB'], [{ zh: '尺寸', en: 'Dimensions' }, '960 × 600'], [{ zh: '修改时间', en: 'Modified' }, '2026-09-28 10:12']] },
+  { key: 'design-new', kind: 'imageFile', icon: 'shot', name: { zh: '设置页 新.png', en: 'Settings new.png' },
+    info: [[{ zh: '种类', en: 'Kind' }, { zh: 'PNG 图像', en: 'PNG Image' }], [{ zh: '大小', en: 'Size' }, '88 KB'], [{ zh: '尺寸', en: 'Dimensions' }, '960 × 600'], [{ zh: '修改时间', en: 'Modified' }, '2026-09-30 17:40']] },
   { key: 'video', kind: 'video', icon: 'video', name: { zh: '发布会.mp4', en: 'Keynote.mp4' },
     info: [[{ zh: '种类', en: 'Kind' }, { zh: 'MPEG-4 影片', en: 'MPEG-4 Movie' }], [{ zh: '大小', en: 'Size' }, '248 MB'], [{ zh: '尺寸', en: 'Dimensions' }, '1920 × 1080'], [{ zh: '时长', en: 'Duration' }, '12:48'], [{ zh: '修改时间', en: 'Modified' }, '2026-09-28 10:05']] },
   { key: 'audio', kind: 'audio', icon: 'audio', name: { zh: '会议录音.m4a', en: 'Meeting.m4a' },
@@ -1336,6 +1362,7 @@ function currentContent() {
       if (files.length === 1) return { kinds: ['files', file.kind], file, files, summary: L(file.name) };
       const kinds = ['files'];
       if (files.length === 2 && files.every((f) => f.kind === 'textFile')) kinds.push('twoTextFiles');
+      if (files.length === 2 && files.every((f) => f.kind === 'imageFile')) kinds.push('twoImageFiles');
       if (files.every((f) => f.kind === 'imageFile')) kinds.push('imageFile');
       return { kinds, file, files, summary: L({ zh: `${files.length} 个文件`, en: `${files.length} files` }) };
     }
@@ -1873,6 +1900,7 @@ const RUN = {
   pointerHighlight: (content, anchor) => togglePointerHighlight(anchor),
   spotlight: (content, anchor) => toggleSpotlight(anchor),
   zoom: (content, anchor) => toggleZoom(anchor),
+  compareImages: (content, anchor) => showCompareImages(content.files, anchor),
   beautify: (content, anchor) => {
     const image = (content.files || []).find((file) => file.kind === 'imageFile');
     if (!image) return startRegionPicker('beautify', anchor);
@@ -3679,6 +3707,12 @@ function downscaledCanvas(source, maxSide) {
 }
 
 function beautifySource(file) {
+  return imageSourceFor(file);
+}
+
+// 图片文件在试玩里画成什么样：设置页的两版、聊天截图、海边的照片
+function imageSourceFor(file) {
+  if (file.key === 'design-old' || file.key === 'design-new') return renderSettingsShot(file.key === 'design-new');
   return file.icon === 'shot' ? renderChat(false, true).canvas : renderBeach(true);
 }
 
@@ -3724,6 +3758,346 @@ function showBeautify(source, subtitle, anchor) {
     button(lang === 'zh' ? '复制图片' : 'Copy Image', copy),
   ] });
   presentCard(el, anchor);
+}
+
+// 设置页的截图（480×300 点，按 2 倍画）；新的一版改了三处：标题旁多一个「新」、登录设备数、按钮颜色
+function renderSettingsShot(changed) {
+  const scale = 2, width = 480, height = 300;
+  const canvas = document.createElement('canvas');
+  canvas.width = width * scale; canvas.height = height * scale;
+  const ctx = canvas.getContext('2d', { willReadFrequently: true });
+  ctx.scale(scale, scale);
+  const zh = lang === 'zh';
+  const font = (size, weight = 400) => `${weight} ${size}px -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", "Noto Sans SC", sans-serif`;
+  ctx.fillStyle = '#eef0f5'; ctx.fillRect(0, 0, width, height);
+  ctx.fillStyle = '#ffffff'; ctx.beginPath(); ctx.roundRect(40, 36, 400, 228, 14); ctx.fill();
+  ctx.textBaseline = 'top';
+  const title = zh ? '账户设置' : 'Account';
+  ctx.fillStyle = '#1c1c1e'; ctx.font = font(20, 600);
+  ctx.fillText(title, 64, 58);
+  if (changed) {
+    const x = 64 + ctx.measureText(title).width + 10;
+    ctx.fillStyle = '#ff3b30'; ctx.beginPath(); ctx.roundRect(x, 61, 36, 20, 10); ctx.fill();
+    ctx.fillStyle = '#ffffff'; ctx.font = font(11, 600); ctx.textAlign = 'center';
+    ctx.fillText(zh ? '新' : 'NEW', x + 18, 65);
+    ctx.textAlign = 'left';
+  }
+  ctx.fillStyle = '#48484a'; ctx.font = font(13);
+  ctx.fillText(zh ? '邮箱：pop@example.com' : 'Email: pop@example.com', 64, 102);
+  ctx.fillText(zh ? '手机：138 0000 0000' : 'Phone: 138 0000 0000', 64, 128);
+  ctx.fillText(zh ? `登录设备：${changed ? 4 : 3} 台` : `Signed-in devices: ${changed ? 4 : 3}`, 64, 154);
+  ctx.fillStyle = changed ? '#34c759' : '#0a84ff';
+  ctx.beginPath(); ctx.roundRect(300, 204, 116, 36, 8); ctx.fill();
+  ctx.fillStyle = '#ffffff'; ctx.font = font(14, 500); ctx.textAlign = 'center';
+  ctx.fillText(zh ? '保存更改' : 'Save Changes', 358, 214);
+  return canvas;
+}
+
+// 对比图片：和 App 里一样，先把两张图摆到同一块画布上，逐像素比，挨在一起的归成一处
+const IMAGE_DIFF = {
+  modes: [['sideBySide', { zh: '并排', en: 'Side by Side' }], ['swipe', { zh: '滑动', en: 'Swipe' }], ['overlay', { zh: '叠加', en: 'Overlay' }], ['difference', { zh: '差异', en: 'Difference' }]],
+  // 按这么大的格子（像素）归成一处；「忽略细微差别」时一格里少于 speckle 个算杂点
+  tile: 16, speckle: 4, highlight: [255, 45, 85],
+  // 上次用的看法和设置
+  mode: 'difference', subtle: false,
+};
+
+// 一样大直接比；宽高比一样、大小差得多的缩到小的那张；其他的按原大小左上角对齐
+function prepareComparison(a, b) {
+  const ra = a.width / a.height, rb = b.width / b.height;
+  const sizeRatio = Math.max(a.width, b.width) / Math.min(a.width, b.width);
+  let width, height, alignment, frameA, frameB;
+  if (a.width === b.width && a.height === b.height) {
+    alignment = 'same'; width = a.width; height = a.height;
+    frameA = frameB = [0, 0, width, height];
+  } else if (Math.abs(ra - rb) <= 0.01 * ra && sizeRatio >= 1.2) {
+    const small = a.width * a.height <= b.width * b.height ? a : b;
+    alignment = 'scaled'; width = small.width; height = small.height;
+    frameA = frameB = [0, 0, width, height];
+  } else {
+    alignment = 'topLeft'; width = Math.max(a.width, b.width); height = Math.max(a.height, b.height);
+    frameA = [0, 0, a.width, a.height]; frameB = [0, 0, b.width, b.height];
+  }
+  const place = (source, [x, y, w, hh]) => {
+    const canvas = document.createElement('canvas');
+    canvas.width = width; canvas.height = height;
+    const ctx = canvas.getContext('2d', { willReadFrequently: true });
+    ctx.imageSmoothingQuality = 'high';
+    ctx.drawImage(source, x, y, w, hh);
+    return canvas;
+  };
+  return { width, height, alignment, first: place(a, frameA), second: place(b, frameB) };
+}
+
+function compareImagePixels(prepared, ignoringSubtle) {
+  const { width, height } = prepared;
+  const read = (canvas) => canvas.getContext('2d', { willReadFrequently: true }).getImageData(0, 0, width, height).data;
+  const a = read(prepared.first), b = read(prepared.second);
+  const tolerance = ignoringSubtle ? 40 : 2;
+  const tile = IMAGE_DIFF.tile;
+  const columns = Math.ceil(width / tile), rows = Math.ceil(height / tile), cells = columns * rows;
+  const mask = new Uint8Array(width * height);
+  const counts = new Int32Array(cells);
+  const minX = new Int32Array(cells).fill(2147483647), minY = new Int32Array(cells).fill(2147483647);
+  const maxX = new Int32Array(cells).fill(-1), maxY = new Int32Array(cells).fill(-1);
+  let changed = 0;
+  for (let y = 0; y < height; y++) {
+    const tileRow = Math.floor(y / tile) * columns;
+    for (let x = 0; x < width; x++) {
+      const p = y * width + x, i = p * 4;
+      const d = Math.max(Math.abs(a[i] - b[i]), Math.abs(a[i + 1] - b[i + 1]), Math.abs(a[i + 2] - b[i + 2]), Math.abs(a[i + 3] - b[i + 3]));
+      if (d <= tolerance) continue;
+      mask[p] = 1;
+      changed++;
+      const c = tileRow + Math.floor(x / tile);
+      counts[c]++;
+      if (x < minX[c]) minX[c] = x;
+      if (x > maxX[c]) maxX[c] = x;
+      if (y < minY[c]) minY[c] = y;
+      if (y > maxY[c]) maxY[c] = y;
+    }
+  }
+  if (ignoringSubtle) {
+    // 零星几个像素不一样的格子当作压缩带来的杂点
+    for (let c = 0; c < cells; c++) {
+      if (counts[c] === 0 || counts[c] >= IMAGE_DIFF.speckle) continue;
+      for (let y = minY[c]; y <= maxY[c]; y++) for (let x = minX[c]; x <= maxX[c]; x++) mask[y * width + x] = 0;
+      changed -= counts[c];
+      counts[c] = 0;
+    }
+  }
+  // 相邻（含斜着挨着）的格子归成一处
+  let regions = [];
+  const visited = new Uint8Array(cells);
+  for (let start = 0; start < cells; start++) {
+    if (!counts[start] || visited[start]) continue;
+    visited[start] = 1;
+    const stack = [start];
+    let x0 = Infinity, y0 = Infinity, x1 = -1, y1 = -1;
+    while (stack.length) {
+      const c = stack.pop();
+      x0 = Math.min(x0, minX[c]); y0 = Math.min(y0, minY[c]); x1 = Math.max(x1, maxX[c]); y1 = Math.max(y1, maxY[c]);
+      const cx = c % columns, cy = Math.floor(c / columns);
+      for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) {
+        const nx = cx + dx, ny = cy + dy;
+        if (nx < 0 || ny < 0 || nx >= columns || ny >= rows) continue;
+        const n = ny * columns + nx;
+        if (counts[n] && !visited[n]) { visited[n] = 1; stack.push(n); }
+      }
+    }
+    regions.push([x0, y0, x1 - x0 + 1, y1 - y0 + 1]);
+  }
+  // 框重叠的合成一个
+  const meets = (r, q) => r[0] < q[0] + q[2] && q[0] < r[0] + r[2] && r[1] < q[1] + q[3] && q[1] < r[1] + r[3];
+  for (let merged = regions.length > 1 && regions.length <= 400; merged;) {
+    merged = false;
+    outer: for (let i = 0; i < regions.length; i++) for (let j = i + 1; j < regions.length; j++) {
+      if (!meets(regions[i], regions[j])) continue;
+      const [r, q] = [regions[i], regions[j]];
+      const x = Math.min(r[0], q[0]), y = Math.min(r[1], q[1]);
+      regions[i] = [x, y, Math.max(r[0] + r[2], q[0] + q[2]) - x, Math.max(r[1] + r[3], q[1] + q[3]) - y];
+      regions.splice(j, 1);
+      merged = true;
+      break outer;
+    }
+  }
+  regions = regions.sort((r, q) => r[1] - q[1] || r[0] - q[0]);
+  return { width, height, changed, regions, mask };
+}
+
+// 差异图：第一张褪成浅灰当底，不一样的像素涂红，每处外面画个框
+function differenceCanvas(prepared, result) {
+  const { width, height } = prepared;
+  const base = prepared.first.getContext('2d', { willReadFrequently: true }).getImageData(0, 0, width, height).data;
+  const canvas = document.createElement('canvas');
+  canvas.width = width; canvas.height = height;
+  const ctx = canvas.getContext('2d');
+  const out = ctx.createImageData(width, height);
+  const [hr, hg, hb] = IMAGE_DIFF.highlight;
+  for (let p = 0; p < width * height; p++) {
+    const i = p * 4;
+    if (result.mask[p]) {
+      out.data[i] = hr; out.data[i + 1] = hg; out.data[i + 2] = hb; out.data[i + 3] = 255;
+      continue;
+    }
+    // 叠在白底上再算灰度，褪浅了红色才显眼
+    const alpha = base[i + 3];
+    const over = (c) => c * alpha / 255 + 255 - alpha;
+    const gray = (over(base[i]) * 299 + over(base[i + 1]) * 587 + over(base[i + 2]) * 114) / 1000;
+    const faded = Math.round(255 - (255 - Math.min(gray, 255)) * 0.35);
+    out.data[i] = out.data[i + 1] = out.data[i + 2] = faded;
+    out.data[i + 3] = 255;
+  }
+  ctx.putImageData(out, 0, 0);
+  const line = Math.max(2, Math.round(Math.min(width, height) / 300));
+  ctx.strokeStyle = `rgba(${hr}, ${hg}, ${hb}, .9)`;
+  ctx.lineWidth = line;
+  for (const [x, y, w, hh] of result.regions) ctx.strokeRect(x - line * 2, y - line * 2, w + line * 4, hh + line * 4);
+  return canvas;
+}
+
+// 按当前的看法画一张（复制、存储、贴到屏幕用），和原图一样大
+function composeComparison(prepared, mode, split, opacity, difference) {
+  if (mode === 'difference') return difference;
+  const { width, height } = prepared;
+  const canvas = document.createElement('canvas');
+  const ctx = canvas.getContext('2d');
+  if (mode === 'sideBySide') {
+    const gap = Math.max(8, Math.floor(width / 40));
+    canvas.width = width * 2 + gap; canvas.height = height;
+    ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, canvas.width, height);
+    ctx.drawImage(prepared.first, 0, 0);
+    ctx.drawImage(prepared.second, width + gap, 0);
+    return canvas;
+  }
+  canvas.width = width; canvas.height = height;
+  if (mode === 'swipe') {
+    const edge = Math.round(width * split);
+    ctx.drawImage(prepared.second, 0, 0);
+    ctx.save(); ctx.beginPath(); ctx.rect(0, 0, edge, height); ctx.clip(); ctx.drawImage(prepared.first, 0, 0); ctx.restore();
+    const line = Math.max(2, Math.round(width / 400));
+    ctx.fillStyle = 'rgba(0, 0, 0, .35)'; ctx.fillRect(edge - line / 2 - 1, 0, line + 2, height);
+    ctx.fillStyle = '#ffffff'; ctx.fillRect(edge - line / 2, 0, line, height);
+  } else {
+    ctx.drawImage(prepared.first, 0, 0);
+    ctx.globalAlpha = opacity;
+    ctx.drawImage(prepared.second, 0, 0);
+    ctx.globalAlpha = 1;
+  }
+  return canvas;
+}
+
+function diffPercent(fraction) {
+  if (fraction > 0 && fraction < 0.0001) return '<0.01%';
+  const value = fraction * 100;
+  return value.toFixed(value >= 10 ? 0 : value >= 1 ? 1 : 2) + '%';
+}
+
+function diffDetails(prepared, result) {
+  const zh = lang === 'zh';
+  const parts = [];
+  if (!result.changed) parts.push(zh ? '没有找到不一样的地方' : 'No differences found');
+  else {
+    const n = result.regions.length, pct = diffPercent(result.changed / (result.width * result.height));
+    parts.push(zh ? `${n} 处不一样，占 ${pct} 的像素` : `Areas that differ: ${n} · ${pct} of the pixels`);
+  }
+  if (prepared.alignment === 'scaled') parts.push(zh ? '两张图比例相同、大小不同：按小的那张的大小对比' : 'Same proportions, different sizes: compared at the size of the smaller image');
+  if (prepared.alignment === 'topLeft') parts.push(zh ? '两张图大小不同：按左上角对齐' : 'Different sizes: aligned at the top-left corner');
+  return parts.join(zh ? '；' : '; ');
+}
+
+function showCompareImages(files, anchor) {
+  const zh = lang === 'zh';
+  // 修改时间早的算旧的
+  const modified = (file) => L(file.info?.find(([key]) => L(key) === L({ zh: '修改时间', en: 'Modified' }))?.[1] || '');
+  const [older, newer] = modified(files[1]) < modified(files[0]) ? [files[1], files[0]] : [files[0], files[1]];
+  const prepared = prepareComparison(imageSourceFor(older), imageSourceFor(newer));
+  const o = IMAGE_DIFF;
+  let split = 0.5, opacity = 0.5;
+  let result = compareImagePixels(prepared, o.subtle);
+  let difference = differenceCanvas(prepared, result);
+  // 显示用的几张图（同一张 canvas 在不同看法之间挪来挪去）
+  const firstView = prepared.first, secondView = prepared.second;
+  for (const view of [firstView, secondView]) view.setAttribute('aria-hidden', 'true');
+  const seg = h('div', { class: 'seg', role: 'group', 'aria-label': zh ? '看法' : 'View' },
+    o.modes.map(([id, label]) => h('button', { type: 'button', 'data-id': id, onclick: () => { o.mode = id; draw(); } }, L(label))));
+  const options = h('div', { class: 'ci-opts' });
+  const stageBox = h('div', { class: 'ci-stage' });
+  const details = h('div', { class: 'detail' });
+  const tag = (text, right) => h('span', { class: 'ci-tag' + (right ? ' r' : '') }, text);
+  const oldTag = zh ? '旧' : 'Old', newTag = zh ? '新' : 'New';
+
+  // 按比例放进 w×hh 的一块
+  function frame(w, hh, children, extra) {
+    const scale = Math.min(w / prepared.width, hh / prepared.height);
+    return h('div', Object.assign({ class: 'ci-frame', style: `width:${Math.round(prepared.width * scale)}px;height:${Math.round(prepared.height * scale)}px` }, extra || {}), children);
+  }
+
+  function place(view, className) {
+    view.className = 'ci-img' + (className ? ' ' + className : '');
+    view.style.clipPath = '';
+    view.style.opacity = '';
+    return view;
+  }
+
+  function draw() {
+    for (const b of seg.children) b.setAttribute('aria-pressed', String(b.dataset.id === o.mode));
+    const W = Math.max(120, (stageBox.clientWidth || 488) - 12), H = 268;
+    let content;
+    if (o.mode === 'sideBySide') {
+      const half = (W - 8) / 2;
+      content = h('div', { class: 'ci-pair' }, frame(half, H, [place(firstView), tag(oldTag)]), frame(half, H, [place(secondView), tag(newTag)]));
+      options.replaceChildren();
+    } else if (o.mode === 'swipe') {
+      const line = h('i', { class: 'ci-line' }), knob = h('i', { class: 'ci-knob', html: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 7l-5 5 5 5M15 7l5 5-5 5"/></svg>' });
+      const left = tag(oldTag), right = tag(newTag, true);
+      const top = place(firstView, 'top');
+      const paint = () => {
+        top.style.clipPath = `inset(0 ${(1 - split) * 100}% 0 0)`;
+        line.style.left = knob.style.left = `${split * 100}%`;
+        left.style.opacity = split > 0.12 ? '1' : '0';
+        right.style.opacity = split < 0.88 ? '1' : '0';
+      };
+      const box = frame(W, H, [place(secondView), top, line, knob, left, right], { role: 'slider', tabindex: '0', 'aria-label': zh ? '分界线' : 'Divider', 'aria-valuemin': '0', 'aria-valuemax': '100' });
+      const move = (event) => { const r = box.getBoundingClientRect(); split = clamp((event.clientX - r.left) / r.width, 0, 1); paint(); box.setAttribute('aria-valuenow', String(Math.round(split * 100))); };
+      box.addEventListener('pointerdown', (event) => { event.preventDefault(); box.setPointerCapture?.(event.pointerId); move(event); });
+      box.addEventListener('pointermove', (event) => { if (box.hasPointerCapture?.(event.pointerId)) move(event); });
+      box.addEventListener('keydown', (event) => {
+        if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight') return;
+        event.preventDefault(); event.stopPropagation();
+        split = clamp(split + (event.key === 'ArrowLeft' ? -0.05 : 0.05), 0, 1);
+        paint();
+      });
+      box.classList.add('swipe');
+      paint();
+      content = box;
+      options.replaceChildren(h('span', { class: 'ci-hint' }, zh ? '拖动中间的分界线' : 'Drag the divider'));
+    } else if (o.mode === 'overlay') {
+      const top = place(secondView);
+      top.style.opacity = String(opacity);
+      content = frame(W, H, [place(firstView), top]);
+      const range = h('input', { type: 'range', min: '0', max: '100', value: String(Math.round(opacity * 100)), 'aria-label': zh ? '新图的深浅' : 'New image opacity',
+        oninput: (event) => { opacity = Number(event.target.value) / 100; top.style.opacity = String(opacity); } });
+      options.replaceChildren(h('label', { class: 'ci-range' }, h('span', null, oldTag), range, h('span', null, newTag)));
+    } else {
+      difference.className = 'ci-img';
+      difference.setAttribute('role', 'img');
+      difference.setAttribute('aria-label', diffDetails(prepared, result));
+      content = frame(W, H, [difference]);
+      const box = h('input', { type: 'checkbox', checked: o.subtle, onchange: (event) => {
+        o.subtle = event.target.checked;
+        result = compareImagePixels(prepared, o.subtle);
+        difference = differenceCanvas(prepared, result);
+        draw();
+      } });
+      options.replaceChildren(h('label', { class: 'ci-check', title: zh ? '压缩过的照片、导出过的截图会有肉眼看不出的杂色，打开后不算' : 'Compressed photos and exported screenshots contain noise you can’t see. Turn this on to ignore it' }, box, zh ? '忽略细微差别' : 'Ignore subtle differences'));
+    }
+    stageBox.replaceChildren(content);
+    details.textContent = diffDetails(prepared, result);
+  }
+
+  // 复制、存储、贴到屏幕的是当前看到的样子，按原图大小画
+  const full = () => composeComparison(prepared, o.mode, split, opacity, difference);
+  const copy = () => {
+    try {
+      const canvas = full();
+      navigator.clipboard?.write?.([new ClipboardItem({ 'image/png': new Promise((resolve) => canvas.toBlob(resolve, 'image/png')) })]).catch(() => {});
+    } catch (error) { /* 不让写剪贴板也照样提示 */ }
+    showToast(zh ? '已复制图片' : 'Image copied', anchor);
+  };
+  const el = cardShell({ title: L(P.compareImages.name), subtitle: `${L(older.name)} → ${L(newer.name)}`, width: 520, children: [
+    h('div', { class: 'ci-top' }, seg, h('span', { class: 'space' }), options),
+    stageBox,
+    details,
+  ], buttons: [
+    button(zh ? '贴到屏幕' : 'Pin to Screen', () => pinToScreen({ image: full().toDataURL('image/png') }, anchor)),
+    button(zh ? '存到「下载」' : 'Save to Downloads', () => showToast(zh ? '已存到「下载」' : 'Saved to Downloads', anchor)),
+    button(zh ? '复制图片' : 'Copy Image', copy),
+  ] });
+  draw();
+  presentCard(el, anchor);
+  // 放进桌面以后才量得出宽度，按实际宽度再排一次
+  requestAnimationFrame(() => { if (el.isConnected) draw(); });
 }
 
 // 框选的那块画成一张截图：网页里拍不了屏幕，就照着页面把壁纸、底色、边框、图标、图片和文字按原来的位置画一遍
