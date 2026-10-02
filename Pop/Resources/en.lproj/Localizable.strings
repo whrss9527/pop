@@ -321,7 +321,7 @@
 "固定" = "Pin";
 "剪贴板历史" = "Clipboard History";
 "搜索" = "Search";
-"⏎ 粘贴 · ⌘1–9 快速粘贴 · ⌘ 点选多条 · ⌘P 固定 · ⌘⌫ 删除 · 右键更多" = "⏎ Paste · ⌘1–9 Quick paste · ⌘-click to select several · ⌘P Pin · ⌘⌫ Delete · Right-click for more";
+"⏎ 粘贴 · ⌘1–9 快速粘贴 · ⌘ 点选多条 · ⌘P 固定 · ⌘⌫ 删除 · 右键更多" = "⏎ Paste · ⌘1–9 Quick paste · ⌘-click to select several · ⌘P Pin · ⌘⌫ Delete · Right‑click for more";
 "已选 %lld 条 · ⏎ 按顺序合在一起粘贴 · ⌘C 合在一起复制 · Esc 取消" = "%lld selected · ⏎ Paste together in order · ⌘C Copy together · Esc Cancel";
 "剪贴板历史已关闭，打开后 Pop 会在本机记录你复制过的内容。" = "Clipboard history is off. Turn it on and Pop keeps what you copy on this Mac.";
 "去设置里打开" = "Turn On in Settings";
@@ -2832,7 +2832,7 @@
 "隐藏" = "Hide";
 "%@ 核 CPU" = "%@-core CPU";
 "%@ 核 CPU（%@ 性能核 + %@ 能效核）" = "%@-core CPU (%@ performance + %@ efficiency)";
-"%@ 核 GPU" = "%@-core GPU";
+"%@ 核 GPU" = "%@‑core GPU";
 "%lld 天 %lld 小时" = "%lld days %lld hr";
 "%@ · 可用 %@，共 %@" = "%@ · %@ available of %@";
 "（像素 %@）" = " (%@ pixels)";
