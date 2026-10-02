@@ -1,0 +1,23 @@
+Pop is a free, open-source right-click toolbox for the Mac. It has no Dock icon and no main window; it lives in the menu bar (the ◎ icon). There is no account or login, no in-app purchase and no user-generated content shared with others.
+
+HOW TO TRY IT
+1) Launch Pop. The Settings window opens on General with a short guide.
+2) Grant Accessibility: click Grant Access. Because Pop is sandboxed, macOS cannot show its usual prompt, so Pop opens System Settings → Privacy & Security → Accessibility and selects Pop in Finder. Click + (or drag Pop into the list) and turn it on. It takes effect within seconds.
+3) Select some text in any app (for example a paragraph in Safari or TextEdit) and press and hold the right mouse button for about a quarter of a second. A ring of actions appears next to the pointer. Keep holding, move toward an action and release to run it. A short right click still opens the normal context menu.
+4) Select text in another language and hold the right button: Pop shows a translation (Apple's Translation framework; the first time it may ask to download a language).
+5) Select "12*(3+4)" and hold the right button: Pop shows the result.
+6) Hold the right button over an empty area: the ring shows tools such as screenshot and recognize text, color picker and clipboard history (Command-Shift-V also opens clipboard history).
+7) To use Pop on files selected in Finder (for example an image to read its text or convert it), Pop asks once for access to a folder; choosing the home folder is enough.
+
+PERMISSIONS
+- Accessibility: to detect the long press of the right mouse button and read the selected text. Pop does not log keystrokes or read anything when the ring is not used.
+- Folder access (user-selected folder, security-scoped bookmark): only to read and write files the user selects in Finder.
+- Screen Recording: only for screenshots, text recognition on the screen and the color picker, requested the first time they are used.
+- Camera and microphone: only for the optional camera bubble, voice recorder and screen recording plugins, requested when used.
+- Calendars and reminders: only for the optional reminder plugin, requested when used.
+
+NETWORK AND DATA
+Pop has no servers, analytics or ads. Network requests happen only when the user chooses an action that needs them: opening a website search in the browser, or AI actions when the user has entered their own OpenAI-compatible endpoint and API key (macOS 26 can use Apple's on-device model instead). The API key is stored in the keychain. Clipboard history stays on the Mac.
+
+PLUGINS
+All plugins are built into the app bundle (Contents/PlugIns) and are only turned on or off; nothing is downloaded. Users can write their own actions as URL templates or small JavaScript snippets run in JavaScriptCore inside the app; no code is downloaded from the internet. This App Store build has no self-updater; updates come only through the App Store.

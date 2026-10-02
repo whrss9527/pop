@@ -129,3 +129,24 @@ jobs:
             build/sandbox/plugins.txt
             build/sandbox/entitlements.plist
           if-no-files-found: warn
+
+  # 上传用的 App Store 安装包（scripts/build-app-store.sh）：没有证书时用 ADHOC=1 走一遍构建、签名、打包，确认流程是通的
+  appstore-package:
+    runs-on: macos-15
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - name: Select newest stable Xcode
+        run: |
+          XCODE=$(ls -d /Applications/Xcode_*.app | grep -iv -e beta -e release_candidate | sort -V | tail -1)
+          sudo xcode-select -s "$XCODE"
+          xcodebuild -version
+
+      - name: Install XcodeGen
+        run: brew install xcodegen
+
+      - name: Build the App Store package (ad-hoc)
+        run: ADHOC=1 scripts/build-app-store.sh 99.0.0

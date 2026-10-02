@@ -1,0 +1,37 @@
+Hold down the right mouse button and a bubble pops up next to the pointer. Flick toward what you want, let go, and it's done.
+
+A short click still opens the normal context menu. Only a long press brings up Pop, so right-dragging in games and 3D apps keeps working.
+
+IT KNOWS WHAT YOU SELECTED
+• Text in another language is translated right away, offline, with Apple's translation.
+• Math is calculated, and units and colors are converted.
+• Text in images is read with OCR, and you can take a screenshot and read the text in it.
+
+ONE FLICK AND IT'S DONE
+• Arrange more than a hundred actions on the ring the way you like and flick toward a slot to run it.
+• Press 1–9 or 0 to pick a slot, Esc to close.
+• Give your favorite actions their own keyboard shortcuts, or use a different ring in each app.
+
+HANDY TOOLS
+• Clipboard history you can search.
+• Pin text or images to the screen, annotate screenshots, pick colors and measure the screen.
+• Case conversion, JSON and code formatting, Base64 and URL encoding, timestamps, QR codes and much more.
+• Image tools: convert, resize, crop and stitch images you select in Finder.
+• AI polish, summaries and explanations with Apple's on-device model on macOS 26, or with your own OpenAI-compatible service and key.
+
+ADD YOUR OWN ACTIONS
+• Turn any website search into an action with a URL template.
+• Process the selected text with a few lines of JavaScript.
+
+INSTALL ONLY WHAT YOU USE
+Many actions are separate plugins built into the app. Turn one on when you need it and off when you don't.
+
+YOUR DATA STAYS WITH YOU
+Pop has no account, no servers, no analytics and no ads. Clipboard history stays on your Mac and API keys stay in your keychain.
+
+PERMISSIONS
+• Accessibility: to notice the long press of the right button and read the text you selected. Add Pop with + in System Settings → Privacy & Security → Accessibility; Pop shows you how.
+• Folder access: to work on files you select in Finder, allow Pop once to access a folder, usually your home folder.
+• Screen Recording: only for screenshots and the color picker, asked the first time you use them.
+
+Pop is free and open source.
