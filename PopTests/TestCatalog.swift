@@ -89,6 +89,7 @@ enum TestCatalog {
         EmojiSymbolsEntry.self,
         BluetoothEntry.self,
         CalendarEntry.self,
+        BreakReminderEntry.self,
     ]
 
     static func plugins() -> [any PopPlugin] {

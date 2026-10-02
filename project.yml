@@ -14,7 +14,7 @@ configFiles:
 settings:
   base:
     SWIFT_VERSION: "5.0"
-    MARKETING_VERSION: "0.61.0"
+    MARKETING_VERSION: "0.62.0"
     CURRENT_PROJECT_VERSION: "1"
     CODE_SIGN_STYLE: Automatic
     DEAD_CODE_STRIPPING: YES
@@ -995,6 +995,15 @@ targets:
         POP_PLUGIN_ID: calendar
         POP_PLUGIN_ENTRY: PopCalendarEntry
 
+  PopBreakReminder:
+    templates: [PopPlugin]
+    sources: [PluginBundles/BreakReminder]
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: io.github.whrss9527.pop.plugin.breakReminder
+        POP_PLUGIN_ID: breakReminder
+        POP_PLUGIN_ENTRY: PopBreakReminderEntry
+
   PopTests:
     type: bundle.unit-test
     platform: macOS
@@ -1005,6 +1014,7 @@ targets:
       - path: PluginBundles/CameraBubble
       - path: PluginBundles/PointerHighlight
       - path: PluginBundles/Teleprompter
+      - path: PluginBundles/BreakReminder
       - path: PluginBundles/Calendar
       - path: PluginBundles/Bluetooth
       - path: PluginBundles/EmojiSymbols
@@ -1120,6 +1130,7 @@ schemes:
         PopCameraBubble: all
         PopPointerHighlight: all
         PopTeleprompter: all
+        PopBreakReminder: all
         PopCalendar: all
         PopBluetooth: all
         PopEmojiSymbols: all
