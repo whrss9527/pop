@@ -61,6 +61,11 @@ final class BreakReminder: ObservableObject {
     private var finishedTimer: Timer?
     private var panel: BreakReminderPanel?
     private var overlays: [NSWindow] = []
+
+    /// 屏幕上方的小条、休息时盖住屏幕的那几层：Pop 录屏时按这些编号把它们排除掉
+    var windowNumbers: [Int] {
+        ([panel].compactMap { $0 } + overlays).filter(\.isVisible).map(\.windowNumber)
+    }
     /// 盖住屏幕之前在前台的 App，休息完还给它
     private var previousApp: NSRunningApplication?
     private var observers: [NSObjectProtocol] = []
@@ -400,7 +405,7 @@ final class BreakReminder: ObservableObject {
         let panel = self.panel ?? BreakReminderPanel(rootView: BreakReminderBanner(model: self))
         self.panel = panel
         panel.place()
-        // 录屏、截图时不录进去
+        // Pop 自己录屏时按编号排除；别的录屏、截图尽量不录进去（新系统上别的 App 不一定管这个）
         panel.sharingType = .none
         panel.orderFrontRegardless()
         // 内容变了：等 SwiftUI 排好版再按新的大小放一次

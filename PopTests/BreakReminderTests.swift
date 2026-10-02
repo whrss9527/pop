@@ -389,6 +389,8 @@ final class BreakReminderTests: XCTestCase {
         XCTAssertTrue(demo.isEnabled)
         XCTAssertEqual(demo.statusText, "已经连续用了 32 分钟，13 分钟后提醒休息")
         XCTAssertEqual(BreakReminder.demo(phase: .reminder).phase, .reminder)
+        // 测试、演示时不开窗口：Pop 录屏时没有要排除的
+        XCTAssertTrue(demo.windowNumbers.isEmpty)
         XCTAssertEqual(Set(BreakReminder.defaultsKeys), Set(PluginCatalog.packages.first { $0.id == "breakReminder" }?.defaultsKeys ?? []))
     }
 }

@@ -13,6 +13,10 @@ final class BreakReminderEntry: NSObject, PopPluginBundle {
         if !OverlayDemo.isEnabled {
             BreakReminder.shared.startIfEnabled()
         }
+        // 上方的提醒、休息时盖住屏幕的那层：Pop 录屏时不录进去
+        host.excludeFromRecording {
+            BreakReminder.shared.windowNumbers
+        }
         // CI 截图：开着，已经连续用了 32 分钟
         host.addDemoScene(PluginHost.DemoScene(name: "breakReminder", after: "pdfPages", order: 23, delay: 1.4, hold: 0, show: { demo in
             demo.overlay.showCard(BreakReminderView(model: BreakReminder.demo(), onClose: {}), anchor: demo.center)
