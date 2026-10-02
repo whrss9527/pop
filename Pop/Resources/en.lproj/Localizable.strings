@@ -1630,6 +1630,10 @@
 "0 号格在正上方\n顺时针排列" = "Slot 0 is at the top,\nthen clockwise";
 "空" = "Empty";
 "清空这一格" = "Clear This Slot";
+"搜索功能" = "Search actions";
+"搜索功能，支持拼音首字母" = "Search actions";
+"全部分类" = "All Categories";
+"已放置" = "Placed";
 "空格子" = "Empty slot";
 "选中的内容满足条件时，不弹圆盘，直接执行对应功能" = "When the selection matches a condition, run the action directly instead of showing the ring";
 "从上到下依次匹配。没有命中任何规则、或者什么都没选中时，弹出圆盘。" = "Rules are checked from top to bottom. If none matches, or nothing is selected, the ring appears.";
