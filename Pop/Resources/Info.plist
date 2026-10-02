@@ -50,7 +50,7 @@
 		<true/>
 	</dict>
 	<key>NSAppleEventsUsageDescription</key>
-	<string>在「系统操作」里切换深色、浅色模式时，要请「System Events」改系统的外观设置。</string>
+	<string>读取访达里选中的文件和打开的文件夹、在「系统操作」或者「定时深色模式」里切换深色和浅色、「定时睡眠」到点关机时，Pop 要请访达或者「System Events」帮忙。</string>
 	<key>NSBluetoothAlwaysUsageDescription</key>
 	<string>用「蓝牙设备」连接、断开配对过的耳机、键盘、鼠标时需要蓝牙权限。Pop 不会搜索或者配对新设备。</string>
 	<key>NSCameraUsageDescription</key>
@@ -65,8 +65,10 @@
 	<string>把选中的事情加到「提醒事项」时需要这个权限。Pop 只在你点「加到提醒事项」时添加一条提醒。</string>
 	<key>NSCalendarsWriteOnlyAccessUsageDescription</key>
 	<string>把选中的事情加到「日历」时需要这个权限。Pop 只添加日程，不会读取你的日历。</string>
+	<key>NSCalendarsFullAccessUsageDescription</key>
+	<string>用「会议提醒」列出接下来的日程、开会前提醒你时需要读取日历。日程只在这台 Mac 上用，不会上传。</string>
 	<key>NSCalendarsUsageDescription</key>
-	<string>把选中的事情加到「日历」时需要这个权限。Pop 只添加日程，不会读取你的日历。</string>
+	<string>把选中的事情加到「日历」、用「会议提醒」列出接下来的日程时需要这个权限。日程只在这台 Mac 上用，不会上传。</string>
 	<key>NSHumanReadableCopyright</key>
 	<string>© 2026 whrss9527</string>
 	<key>NSPrincipalClass</key>

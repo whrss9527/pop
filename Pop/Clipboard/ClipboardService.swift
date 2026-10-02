@@ -120,6 +120,8 @@ final class ClipboardMonitor {
         }
         if let string = pasteboard.string(forType: .string),
            !string.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            // 两步验证的链接里有密钥，不记
+            guard !containsSecretLink(string) else { return nil }
             return string.utf8.count <= maxTextBytes ? .text(string) : nil
         }
         guard recordImages else { return nil }
@@ -130,6 +132,11 @@ final class ClipboardMonitor {
             return tiff.count <= maxImageBytes * 4 ? .image(tiff, isPNG: false) : nil
         }
         return nil
+    }
+
+    /// 有没有两步验证的链接（otpauth://、otpauth-migration://）：里面写着密钥
+    nonisolated static func containsSecretLink(_ text: String) -> Bool {
+        text.range(of: "otpauth(-migration)?://", options: [.regularExpression, .caseInsensitive]) != nil
     }
 
     nonisolated static func capture(_ clip: Clip, sourceApp: String?) -> ClipboardCapture? {
