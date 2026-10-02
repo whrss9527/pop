@@ -1010,7 +1010,7 @@
 "无法读取图片" = "Can’t read the image";
 "没有识别到文字。如果截到的只有桌面背景，请在「系统设置 → 隐私与安全性 → 录屏与系统录音」里允许 Pop。" = "No text found. If the capture shows only the desktop background, allow Pop in System Settings → Privacy & Security → Screen & System Audio Recording.";
 "无法读取截图" = "Can’t read the screenshot";
-"截图识字" = "Screenshot OCR";
+"截图识字" = "Screen OCR";
 "框选屏幕上的一块区域，识别里面的文字" = "Select an area of the screen and recognize its text";
 "截图翻译" = "Translate Screenshot";
 "框选屏幕上的一块区域，识别里面的文字并翻译（离线）" = "Select an area of the screen, recognize its text and translate it (offline)";
