@@ -34,4 +34,4 @@ Pop 的 App Store 版和 GitHub 版用同一份代码，编译时带 `APP_STORE`
 
 ## 资料
 
-`docs/app-store/listing`：`config.json`（类别、价格、销售范围、年龄分级），每种语言一个文件夹（名称、副标题、描述、关键词、推广文本、网址），`review_notes.txt`（给审核员的说明），`screenshots/en-US/`（截图，文件名决定顺序）。`python3 scripts/app-store-connect.py check` 检查字数和格式，`python3 -m unittest scripts/test_app_store_connect.py` 跑测试。
+`docs/app-store/listing`：`config.json`（类别、价格、销售范围、年龄分级），每种语言一个文件夹（名称、副标题、描述、关键词、推广文本、网址），`review_notes.txt`（给审核员的说明），`screenshots/en-US/`（截图，文件名决定顺序，多大都行：工作流用 `scripts/fit-screenshots.py` 做成 2880×1800，比例不是 16:10 的放在中间、四周用模糊的背景填满）。`python3 scripts/app-store-connect.py check` 检查字数和格式，`python3 -m unittest scripts/test_app_store_connect.py` 跑测试。
