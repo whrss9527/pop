@@ -20,6 +20,8 @@ final class HoldToQuitEntry: NSObject, PopPluginBundle {
         }))
         // 屏幕中间的提示：按住 ⌘Q 按到一多半
         host.addDemoScene(PluginHost.DemoScene(name: "holdToQuit-prompt", after: "pdfPages", order: 29, delay: 1.4, show: { demo in
+            // 提示在屏幕正中：先收起上一步的卡片，不然截出来提示压在卡片上
+            demo.overlay.hide(animated: false)
             let model = HoldToQuit.demo()
             HoldToQuitEntry.demoModel = model
             let app = model.exceptionApp("com.apple.Safari")
