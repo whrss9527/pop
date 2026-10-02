@@ -84,21 +84,41 @@ enum UpdateChecker {
 
     /// 最新的可用版本；includePrereleases 为 false 时跳过测试版。一个发布都没有时返回 nil。
     static func latest(includePrereleases: Bool) async throws -> ReleaseInfo? {
+        let data = try await fetch(apiURL, accept: "application/vnd.github+json")
+        guard let releases = parseReleases(data) else { throw UpdateError.badResponse }
+        return newest(releases, includePrereleases: includePrereleases)
+    }
+
+    /// 新版本标签上的 CHANGELOG.md。走 API 而不是 raw.githubusercontent.com：有些网络连不上后者
+    static func changelogURL(tag: String) -> URL? {
+        var components = URLComponents(string: "https://api.github.com/repos/\(repository)/contents/CHANGELOG.md")
+        components?.queryItems = [URLQueryItem(name: "ref", value: tag)]
+        return components?.url
+    }
+
+    /// 比 current 新、不比 release 新的每一版的更新记录，新的在前。发布间隔很短，中间常常隔了好几版，只看最新那一版的发布说明会漏掉前面的。
+    /// 测试时（POP_UPDATE_URL）不联网，返回空，界面上显示发布说明
+    static func changes(since current: String, upTo release: ReleaseInfo) async throws -> [Changelog.Release] {
+        guard overrideURL == nil, let url = changelogURL(tag: release.tag) else { return [] }
+        let data = try await fetch(url, accept: "application/vnd.github.raw")
+        return Changelog.releases(Changelog.parse(String(decoding: data, as: UTF8.self)), after: current, upTo: release.version)
+    }
+
+    private static func fetch(_ url: URL, accept: String) async throws -> Data {
         let configuration = URLSessionConfiguration.ephemeral
         configuration.timeoutIntervalForRequest = 15
         configuration.timeoutIntervalForResource = 30
         let session = URLSession(configuration: configuration)
         defer { session.finishTasksAndInvalidate() }
-        var request = URLRequest(url: apiURL)
-        request.setValue("application/vnd.github+json", forHTTPHeaderField: "Accept")
+        var request = URLRequest(url: url)
+        request.setValue(accept, forHTTPHeaderField: "Accept")
         request.setValue(userAgent, forHTTPHeaderField: "User-Agent")
         request.cachePolicy = .reloadIgnoringLocalCacheData
         let (data, response) = try await session.data(for: request)
         if let http = response as? HTTPURLResponse, !(200..<300).contains(http.statusCode) {
             throw UpdateError.server(http.statusCode)
         }
-        guard let releases = parseReleases(data) else { throw UpdateError.badResponse }
-        return newest(releases, includePrereleases: includePrereleases)
+        return data
     }
 
     /// 解析 GitHub releases 接口的 JSON：发布列表（数组）或单个发布（对象）都可以。草稿会被跳过。

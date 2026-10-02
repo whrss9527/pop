@@ -30,7 +30,7 @@ struct UpdateSettingsView: View {
 
             if let release = updater.release {
                 Section(release.isPrerelease ? String(localized: "新版本（测试版）") : String(localized: "新版本")) {
-                    ReleaseDetails(release: release)
+                    ReleaseDetails(release: release, changes: updater.changes)
                     actions(for: release)
                     if let note = updater.relocationNote {
                         Text(note)
@@ -178,6 +178,8 @@ struct UpdateSettingsView: View {
 /// 新版本的标题、发布时间和更新说明（GitHub 上的 Markdown 简单转成富文本）。
 struct ReleaseDetails: View {
     let release: ReleaseInfo
+    /// 从当前版本到这一版之间每一版的更新记录；空的时候显示这一版的发布说明
+    var changes: [Changelog.Release] = []
 
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
@@ -195,7 +197,14 @@ struct ReleaseDetails: View {
                         .foregroundStyle(.secondary)
                 }
             }
-            if !release.notes.isEmpty {
+            if !changes.isEmpty {
+                if changes.count > 1 {
+                    Text("这次更新包含 \(changes.count) 个版本的改动")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+                ChangelogNotes(releases: changes)
+            } else if !release.notes.isEmpty {
                 ScrollView {
                     Text(Self.render(release.notes))
                         .font(.callout)

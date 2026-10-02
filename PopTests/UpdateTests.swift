@@ -72,6 +72,11 @@ final class UpdateCheckerTests: XCTestCase {
         XCTAssertNil(UpdateChecker.newest([], includePrereleases: true))
     }
 
+    func testChangelogURL() {
+        XCTAssertEqual(UpdateChecker.changelogURL(tag: "v0.59.1")?.absoluteString,
+                       "https://api.github.com/repos/whrss9527/pop/contents/CHANGELOG.md?ref=v0.59.1")
+    }
+
     func testVersionComparison() {
         XCTAssertTrue(UpdateChecker.isNewer("0.3.0", than: "0.2.9"))
         XCTAssertTrue(UpdateChecker.isNewer("0.10.0", than: "0.9.0"))

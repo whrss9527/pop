@@ -2155,6 +2155,7 @@
 "微信赞赏码：请我喝杯咖啡" = "WeChat tip code: buy me a coffee";
 "这几版更新了什么" = "What changed in these versions";
 "这一版更新了什么" = "What changed in this version";
+"这次更新包含 %lld 个版本的改动" = "This update includes changes from %lld versions";
 
 /* Updater.swift */
 "现在是从临时位置运行的，这次会装进%@" = "Pop is running from a temporary location; this update installs it in %@";

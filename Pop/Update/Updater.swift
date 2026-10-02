@@ -32,6 +32,8 @@ final class Updater: ObservableObject {
     @Published var includePrereleases: Bool {
         didSet { defaults.set(includePrereleases, forKey: Self.includePrereleasesKey) }
     }
+    /// 从当前版本到发现的新版本之间每一版的更新记录，新的在前；取不到时是空的，界面上显示新版本的发布说明
+    @Published private(set) var changes: [Changelog.Release] = []
 
     /// 自动检查发现新版本时调用（每个版本只提醒一次）
     var notify: ((ReleaseInfo) -> Void)?
@@ -51,6 +53,8 @@ final class Updater: ObservableObject {
     private let defaults: UserDefaults
     private var timer: Timer?
     private var installTask: Task<Void, Never>?
+    /// changes 是哪个标签的（每个新版本只取一次）
+    private var changesTag: String?
 
     init(defaults: UserDefaults = .standard) {
         self.defaults = defaults
@@ -162,6 +166,8 @@ final class Updater: ObservableObject {
                 phase = .upToDate
                 return nil
             }
+            // 跳过的版本也取：之后点「查看」还要看
+            await loadChanges(since: current, upTo: latest)
             if !manual, latest.version == skippedVersion {
                 UpdateLog.info("有新版本 \(latest.version)，之前选择过跳过")
                 phase = .skipped(latest)
@@ -181,6 +187,17 @@ final class Updater: ObservableObject {
                 checkError = String(localized: "检查更新失败：\(error.localizedDescription)")
             }
             return nil
+        }
+    }
+
+    private func loadChanges(since current: String, upTo release: ReleaseInfo) async {
+        guard changesTag != release.tag else { return }
+        do {
+            changes = try await UpdateChecker.changes(since: current, upTo: release)
+            changesTag = release.tag
+        } catch {
+            UpdateLog.info("取 \(release.tag) 的更新记录失败：\(error.localizedDescription)")
+            changes = []
         }
     }
 
