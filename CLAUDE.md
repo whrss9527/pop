@@ -7,6 +7,12 @@
 - 版本号：新功能升次版本号（0.3.1 升到 0.4.0），只修问题升修订号（0.4.0 升到 0.4.1）。先看 main 上最新的版本和标签，别和别的分支撞号；`project.yml` 里的 `MARKETING_VERSION` 跟着改。
 - 想先给少数人试用：在 Actions 页面手动运行 Release 工作流，勾选「作为测试版」，或者 `make release VERSION=0.4.0 BETA=1`。
 
+## 插件包单独发布
+
+- 插件包可以不跟着 Pop 发版：插件包文件夹里放 `plugin.json`（`id`、`version`，名字和介绍的 `zh-Hans`、`en`，`symbol`、`category`、`functions`，卸载时要删的 `defaultsKeys`、`keychainAccounts`、`dataFolders`），界面文字放在它自己的 `en.lproj/Localizable.strings` 里（代码里用 `bundle:` 查，跑 `scripts/check-localization.py --sync-zh-hans` 生成 `zh-Hans` 那份），功能 ID 用它自己的常量，不往 Pop 的 `BuiltinPluginID`、`PluginCatalog` 里加。
+- 合并进 main 以后，Plugins 工作流（`scripts/publish-plugins.sh`）在最新正式版的标签上构建这些插件包，用发布出去的 Pop 装载检查，再传到那个版本的发布页、合进插件包列表；PR 里只检查不上传。改了已经发布的插件包，要把 `plugin.json` 的 `version` 往上加才会再发布。
+- 单独发布的插件包只能用最新正式版里已经有的 Pop 代码；要改 Pop 本身的，先发 Pop 新版本。只改单独发布的插件包时不加 CHANGELOG.md 的版本（加了就会发 Pop 新版本），改了什么写在 PR 里。
+
 ## 写法
 
 - 代码注释、界面文字、README 和更新日志用中文；提交信息用英文，风格照 git log。

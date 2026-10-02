@@ -109,6 +109,7 @@ Pop 的功能正在一步步搬进插件包：每个插件包单独编译成一�
 - **发布**：`scripts/package-plugins.sh` 把每个插件包打成 `plugin-<ID>.zip`，写出插件包列表 `plugins-<版本号>.json`（文件名、SHA-256、大小、构建标识），发布流程把它们和 Pop 一起传到这个版本的发布页，Developer ID 签名时一起公证。
 - **装上**：Pop 下载插件包列表和压缩包，核对 SHA-256、构建标识和签名（Pop 是用证书签的话，插件包必须是同一张证书签的），解压到 `~/Library/Application Support/Pop/PluginBundles`，当场装载，不用重启。Pop 更新后，装着的插件包会自动换成新版本对应的。
 - **本机试**：在 Xcode 里运行时插件包在 Pop.app 旁边，设置环境变量 `POP_PLUGIN_DIR` 指向那个文件夹就会一起装载；`POP_PLUGIN_SOURCE` 指向放着 `package-plugins.sh` 输出的文件夹，可以把它当作发布页，走一遍下载安装。CI 的启动测试两样都测。
+- **单独发布**：插件包也可以不跟着 Pop 发版。插件包文件夹里放一个 `plugin.json`（`id`、`version`，名字和介绍的 `zh-Hans`、`en`，`symbol`、`category`、`functions`，卸载时要删的 `defaultsKeys`、`keychainAccounts`、`dataFolders`），打包时写进插件包列表，Pop 里没写的插件包照它列出来；界面文字放在它自己的 `en.lproj/Localizable.strings` 里（代码里用 `bundle:` 查自己的翻译，`check-localization.py` 也按它检查），功能 ID 用自己的常量，不往 `PluginCatalog` 里加。合并进 main 以后 Plugins 工作流（`scripts/publish-plugins.sh`）在最新正式版的标签上放进这些插件包的代码重新构建（构建标识和正式版一样），用发布出去的那个 Pop 装载、自己装一次，再传到那个版本的发布页、合进插件包列表；PR 里只检查不上传。改了已经发布的插件包，把 `version` 往上加才会再发布：装着旧版本的 Pop 在后台下载新的，下次打开时生效。Pop 打开设置时会重新读插件包列表，启动时超过 6 小时也会读，读到的存一份在本机。单独发布的插件包只能用最新正式版里已经有的 Pop 代码；下一个 Pop 版本发布时，它们跟着一起重新构建。
 
 ### 发布新版本
 
