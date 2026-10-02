@@ -14,7 +14,7 @@ configFiles:
 settings:
   base:
     SWIFT_VERSION: "5.0"
-    MARKETING_VERSION: "0.62.0"
+    MARKETING_VERSION: "0.63.0"
     CURRENT_PROJECT_VERSION: "1"
     CODE_SIGN_STYLE: Automatic
     DEAD_CODE_STRIPPING: YES
@@ -1004,6 +1004,15 @@ targets:
         POP_PLUGIN_ID: breakReminder
         POP_PLUGIN_ENTRY: PopBreakReminderEntry
 
+  PopWindowPiP:
+    templates: [PopPlugin]
+    sources: [PluginBundles/WindowPiP]
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: io.github.whrss9527.pop.plugin.windowPiP
+        POP_PLUGIN_ID: windowPiP
+        POP_PLUGIN_ENTRY: PopWindowPiPEntry
+
   PopTests:
     type: bundle.unit-test
     platform: macOS
@@ -1014,6 +1023,7 @@ targets:
       - path: PluginBundles/CameraBubble
       - path: PluginBundles/PointerHighlight
       - path: PluginBundles/Teleprompter
+      - path: PluginBundles/WindowPiP
       - path: PluginBundles/BreakReminder
       - path: PluginBundles/Calendar
       - path: PluginBundles/Bluetooth
@@ -1130,6 +1140,7 @@ schemes:
         PopCameraBubble: all
         PopPointerHighlight: all
         PopTeleprompter: all
+        PopWindowPiP: all
         PopBreakReminder: all
         PopCalendar: all
         PopBluetooth: all

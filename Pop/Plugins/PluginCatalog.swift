@@ -358,6 +358,11 @@ enum PluginCatalog {
                       summary: String(localized: "连续用电脑一段时间提醒你起来活动、看看远处；离开一会儿就算休息过了，看视频、开会时不打扰"),
                       symbol: "figure.walk", category: .files, functions: [BuiltinPluginID.breakReminder],
                       defaultsKeys: ["pop.breakReminder.enabled", "pop.breakReminder.interval", "pop.breakReminder.length", "pop.breakReminder.fullScreen"]),
+        PluginPackage(id: "windowPiP", bundleName: "PopWindowPiP", name: String(localized: "窗口画中画"),
+                      summary: String(localized: "把一个窗口的画面实时放进屏幕角落的小窗，一直浮在别的窗口上面：边干活边看着视频、会议、下载进度；拖动换位置，滚动换大小，双击回到原来的窗口"),
+                      symbol: "pip", category: .screen, functions: [BuiltinPluginID.windowPiP],
+                      // 和插件包里 PictureInPicture 的键一样
+                      defaultsKeys: ["pop.windowPiP.size"]),
     ]
 
     /// 插件包提供的所有功能

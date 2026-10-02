@@ -88,7 +88,7 @@ final class RouterTests: XCTestCase {
             BuiltinPluginID.cleanKeyboard, BuiltinPluginID.showKeystrokes, BuiltinPluginID.screenPen,
             BuiltinPluginID.cameraBubble, BuiltinPluginID.pointerHighlight, BuiltinPluginID.spotlight, BuiltinPluginID.beautify,
             BuiltinPluginID.zoom, BuiltinPluginID.quitApps, BuiltinPluginID.tidyFolder, BuiltinPluginID.newFile, BuiltinPluginID.fontPreview, BuiltinPluginID.batteryInfo, BuiltinPluginID.voiceRecorder, BuiltinPluginID.systemInfo, BuiltinPluginID.soundDevices, BuiltinPluginID.resolution, BuiltinPluginID.diskSpeed,
-            BuiltinPluginID.worldTime, BuiltinPluginID.focusSounds, BuiltinPluginID.emojiSymbols, BuiltinPluginID.bluetooth, BuiltinPluginID.calendar, BuiltinPluginID.breakReminder,
+            BuiltinPluginID.worldTime, BuiltinPluginID.focusSounds, BuiltinPluginID.emojiSymbols, BuiltinPluginID.bluetooth, BuiltinPluginID.calendar, BuiltinPluginID.breakReminder, BuiltinPluginID.windowPiP,
         ])
     }
 

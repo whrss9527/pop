@@ -3108,3 +3108,24 @@
 "休息时盖住屏幕" = "Cover the screen during breaks";
 "离开电脑 3 分钟以上（休息时长更长时按休息时长）就算休息过了，合上盖子睡着的时间也算，回来重新计时；有 App 在放视频、开视频会议（不让屏幕变暗）时不提醒，这段时间也不算休息。" = "Stepping away for 3 minutes or more (or the break length, if longer) counts as a break, including time the Mac spends asleep, and the clock restarts when you’re back. No reminders while an app keeps the display awake, such as during a video or a video call, and that time doesn’t count as a break.";
 "现在休息" = "Take a Break Now";
+
+/* 窗口画中画 */
+"窗口画中画" = "Picture in Picture";
+"把一个窗口的画面实时放进屏幕角落的小窗，一直浮在别的窗口上面：边干活边看着视频、会议、下载进度；拖动换位置，滚动换大小，双击回到原来的窗口" = "Float a live view of any window in a corner of the screen, above all other windows, to keep an eye on a video, a call or a download while you work; drag to move it, scroll to resize it and double-click to go back to the window";
+"选一个窗口，它的画面会一直浮在屏幕角落；双击小窗回到原来的窗口" = "Choose a window to float a live view of it in a corner of the screen. Double-click the view to go back to the window";
+"已经开着 %lld 个小窗" = "Floating windows open: %lld";
+"全部关掉" = "Close All";
+"放进小窗" = "Float Window";
+"已在小窗里" = "Already floating";
+"最多同时开 %lld 个小窗，先关掉一个" = "Up to %lld windows can float at once. Close one first";
+"抓不到这个窗口的画面：%@" = "Can’t capture this window: %@";
+"读不到屏幕上的窗口：%@" = "Can’t read the windows on screen: %@";
+"屏幕上没有能放进小窗的窗口" = "There’s no window on screen that can float";
+"原来的窗口关掉了" = "The window was closed";
+"从菜单栏停止了抓取画面" = "Capture was stopped from the menu bar";
+"回到窗口" = "Go to Window";
+"关闭小窗" = "Close";
+"关闭全部小窗" = "Close All";
+"不透明" = "Opaque";
+"透明一点" = "Slightly Transparent";
+"半透明" = "Half Transparent";
