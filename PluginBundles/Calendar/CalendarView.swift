@@ -347,18 +347,44 @@ struct CalendarView: View {
         .frame(maxWidth: .infinity, alignment: .leading)
     }
 
+    /// 中文排一行；英文的开关和按键说明都长，按键说明换到下一行（开关不折行）
+    @ViewBuilder
     private var footer: some View {
-        HStack(spacing: 8) {
-            Toggle("农历和节气", isOn: $model.showsLunar)
-                .toggleStyle(.checkbox)
-            Spacer(minLength: 8)
-            Text("方向键换一天 · PageUp/Down 换月 · T 今天")
-                .font(.caption2)
-                .foregroundStyle(.tertiary)
-                .lineLimit(1)
-                .minimumScaleFactor(0.8)
-            Button("复制") { model.onCopy(model.copyText) }
+        if Localization.isChinese {
+            HStack(spacing: 8) {
+                lunarToggle
+                Spacer(minLength: 8)
+                keyHint
+                copyButton
+            }
+        } else {
+            VStack(alignment: .leading, spacing: 4) {
+                HStack(spacing: 8) {
+                    lunarToggle
+                    Spacer(minLength: 8)
+                    copyButton
+                }
+                keyHint
+            }
         }
+    }
+
+    private var lunarToggle: some View {
+        Toggle("农历和节气", isOn: $model.showsLunar)
+            .toggleStyle(.checkbox)
+            .fixedSize()
+    }
+
+    private var keyHint: some View {
+        Text("方向键换一天 · PageUp/Down 换月 · T 今天")
+            .font(.caption2)
+            .foregroundStyle(.tertiary)
+            .lineLimit(1)
+            .minimumScaleFactor(0.8)
+    }
+
+    private var copyButton: some View {
+        Button("复制") { model.onCopy(model.copyText) }
     }
 }
 
