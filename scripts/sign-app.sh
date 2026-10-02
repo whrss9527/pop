@@ -11,6 +11,10 @@ set -euo pipefail
 APP="${1:?用法: scripts/sign-app.sh <Pop.app>}"
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 ENTITLEMENTS="$ROOT/Pop/Resources/Pop-NoCloud.entitlements"
+# 沙盒验证包（POP_SANDBOX=1，见 scripts/build-app.sh）重新签名时也要带上沙盒
+if [ "${POP_SANDBOX:-}" = "1" ]; then
+  ENTITLEMENTS="$ROOT/Pop/Resources/Pop-Sandbox.entitlements"
+fi
 
 if [ -n "${CODESIGN_IDENTITY:-}" ]; then
   # 插件包：Developer ID 证书带团队 ID，开着库校验也能装载同一个团队签名的插件包；

@@ -1,0 +1,92 @@
+name: Sandbox check
+
+# 上 Mac App Store 必须开 App Sandbox。这里构建开了沙盒的 Pop（scripts/build-app.sh 的 POP_SANDBOX=1，
+# Bundle ID io.github.whrss9527.pop.sandbox），确认它真的跑在沙盒里、启动后没有闪退，列出启动时被沙盒拦下的操作，
+# 再把 Pop.app 打成压缩包上传（Pop-sandbox），拿到自己的 Mac 上试长按右键、读取选中内容这些要辅助功能权限的功能。
+# runner 上没法授予辅助功能，所以这里只能看到没有权限时的样子。
+on:
+  workflow_dispatch:
+  push:
+    branches: ["claude/app-store-sandbox*"]
+
+jobs:
+  sandbox:
+    runs-on: macos-15
+    timeout-minutes: 40
+    env:
+      BUNDLE_ID: io.github.whrss9527.pop.sandbox
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - name: Select newest stable Xcode
+        run: |
+          XCODE=$(ls -d /Applications/Xcode_*.app | grep -iv -e beta -e release_candidate | sort -V | tail -1)
+          sudo xcode-select -s "$XCODE"
+          xcodebuild -version
+
+      - name: Install XcodeGen
+        run: brew install xcodegen
+
+      - name: Build sandboxed app
+        run: |
+          APP=$(POP_SANDBOX=1 scripts/build-app.sh 0.0.0-sandbox build/sandbox | tail -n 1)
+          echo "APP=$APP" >> "$GITHUB_ENV"
+
+      - name: Check entitlements
+        run: |
+          /usr/libexec/PlistBuddy -c 'Print CFBundleIdentifier' "$APP/Contents/Info.plist"
+          codesign -d --entitlements - --xml "$APP" > build/sandbox/entitlements.plist
+          plutil -p build/sandbox/entitlements.plist
+          if ! /usr/libexec/PlistBuddy -c 'Print :com.apple.security.app-sandbox' build/sandbox/entitlements.plist | grep -q true; then
+            echo "::error::Pop.app 没有开 App Sandbox"
+            exit 1
+          fi
+
+      - name: Launch in the sandbox
+        run: |
+          START="$(date '+%Y-%m-%d %H:%M:%S')"
+          open "$APP"
+          sleep 15
+          screencapture -x build/sandbox/launch.png || true
+          status=0
+          if ! pgrep -x Pop > /dev/null; then
+            echo "::error::Pop 启动以后退出了"
+            status=1
+          fi
+          # 沙盒 App 的偏好设置和数据都在自己的容器里，有容器说明真的跑在沙盒里
+          if [ -d "$HOME/Library/Containers/${BUNDLE_ID}" ]; then
+            echo "沙盒容器：$HOME/Library/Containers/${BUNDLE_ID}"
+          else
+            echo "::error::没有沙盒容器 ~/Library/Containers/${BUNDLE_ID}"
+            status=1
+          fi
+          echo "---- Pop 的系统日志 ----"
+          log show --start "$START" --style compact --predicate 'process == "Pop"' 2>/dev/null | tail -80 || true
+          echo "---- 被沙盒拦下的操作 ----"
+          log show --start "$START" --style compact --predicate 'eventMessage CONTAINS "Sandbox: Pop("' 2>/dev/null \
+            | tee build/sandbox/denials.txt | tail -80 || true
+          denials=$(grep -c 'deny' build/sandbox/denials.txt || true)
+          echo "::notice title=沙盒拦下的操作::启动 15 秒内 ${denials:-0} 条，见日志的“被沙盒拦下的操作”"
+          for report in ~/Library/Logs/DiagnosticReports/Pop*; do
+            [ -f "$report" ] && { echo "---- $report ----"; head -80 "$report"; }
+          done
+          pkill -x Pop || true
+          exit $status
+
+      - name: Package
+        run: |
+          (cd "$(dirname "$APP")" && ditto -c -k --keepParent Pop.app "$GITHUB_WORKSPACE/build/sandbox/Pop-sandbox.zip")
+          ls -la build/sandbox/Pop-sandbox.zip
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: Pop-sandbox
+          path: |
+            build/sandbox/Pop-sandbox.zip
+            build/sandbox/launch.png
+            build/sandbox/denials.txt
+            build/sandbox/entitlements.plist
+          if-no-files-found: warn

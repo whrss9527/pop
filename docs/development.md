@@ -38,6 +38,8 @@ make clean
 
 On every push, GitHub Actions generates the project on macOS, builds it and runs the tests (`.github/workflows/ci.yml`), checks the translations, then actually launches a Release build and walks through a complete one-click update against a fake local release (a wrong checksum must be rejected, a different signing certificate must be rejected, a valid version must be installed and restarted; tested with both ad-hoc and certificate signing).
 
+**Sandbox build** (in preparation for the Mac App Store, which requires App Sandbox): `POP_SANDBOX=1 scripts/build-app.sh 0.0.0-sandbox build/sandbox` builds Pop with App Sandbox on (`Pop/Resources/Pop-Sandbox.entitlements`) and the bundle ID `io.github.whrss9527.pop.sandbox`, so its Accessibility permission is separate from the installed Pop. Pushing to a `claude/app-store-sandbox*` branch or running `.github/workflows/sandbox-check.yml` by hand checks on a runner that it runs in the sandbox, lists what the sandbox blocks at launch, and uploads a `Pop-sandbox` zip to try the Accessibility features on your own Mac.
+
 ### Localization
 
 Pop's development language is Simplified Chinese, and interface text uses the Chinese source text as its key. English translations live in `Pop/Resources/en.lproj/Localizable.strings` (and `InfoPlist.strings` for permission prompts):

@@ -5,6 +5,9 @@
 # 签名见 scripts/sign-app.sh：默认本地签名（ad-hoc）；设置了 CODESIGN_IDENTITY 时用证书重新签名。
 # 本地签名时不开 Hardened Runtime：本地签名 + Hardened Runtime 会触发库校验，较新的 macOS 上可能直接启动失败。
 #
+# POP_SANDBOX=1 时构建开了 App Sandbox 的验证包（上 Mac App Store 必须开沙盒）：用 Pop/Resources/Pop-Sandbox.entitlements，
+# Bundle ID 换成 io.github.whrss9527.pop.sandbox，和装着的 Pop 分开（辅助功能授权、偏好设置互不影响）。
+#
 # 用法：scripts/build-app.sh <版本号> [输出目录]
 # 成功后最后一行输出 Pop.app 的路径（其他信息都打到标准错误）；插件包（PopXxx.bundle）在 Pop.app 旁边。
 set -euo pipefail
@@ -22,6 +25,14 @@ BUILD_NUMBER="$(git rev-list --count HEAD 2>/dev/null || echo 1)"
 BUILD_ID="${VERSION}+$(git rev-parse --short=12 HEAD 2>/dev/null || echo local)"
 
 xcodegen generate > /dev/null
+
+ENTITLEMENTS=Pop/Resources/Pop-NoCloud.entitlements
+FLAVOR_SETTINGS=()
+if [ "${POP_SANDBOX:-}" = "1" ]; then
+  ENTITLEMENTS=Pop/Resources/Pop-Sandbox.entitlements
+  FLAVOR_SETTINGS=("POP_BUNDLE_ID=io.github.whrss9527.pop.sandbox")
+  echo "沙盒验证包：${ENTITLEMENTS}，Bundle ID io.github.whrss9527.pop.sandbox" >&2
+fi
 
 # CI 的启动测试（版本号 0.0.0-ci）在 macOS 26 上只编这台机器的架构：那台 runner 编得慢，整个启动测试有 30 分钟的上限。
 # macOS 15 上照样编 Apple 芯片和 Intel 的通用版，Intel 那份也要编得过；发布时总是通用版
@@ -41,12 +52,13 @@ if ! xcodebuild build \
   MARKETING_VERSION="$VERSION" \
   CURRENT_PROJECT_VERSION="$BUILD_NUMBER" \
   POP_BUILD_ID="$BUILD_ID" \
-  POP_ENTITLEMENTS=Pop/Resources/Pop-NoCloud.entitlements \
+  POP_ENTITLEMENTS="$ENTITLEMENTS" \
   ENABLE_HARDENED_RUNTIME=NO \
   CODE_SIGN_STYLE=Manual \
   CODE_SIGN_IDENTITY=- \
   DEVELOPMENT_TEAM= \
   ${ARCH_SETTINGS[@]+"${ARCH_SETTINGS[@]}"} \
+  ${FLAVOR_SETTINGS[@]+"${FLAVOR_SETTINGS[@]}"} \
   > "$OUT/build.log" 2>&1; then
   grep -E "error:" "$OUT/build.log" | sort -u | head -50 >&2 || true
   tail -60 "$OUT/build.log" >&2
