@@ -3129,3 +3129,23 @@
 "不透明" = "Opaque";
 "透明一点" = "Slightly Transparent";
 "半透明" = "Half Transparent";
+
+/* 鼠标滚轮 */
+"鼠标滚轮" = "Mouse Wheel";
+"把鼠标滚轮的方向反过来（触控板还是自然滚动），也可以让它滚得快一点；只改滚轮鼠标，触控板、妙控鼠标照旧" = "Reverse the scroll direction of a mouse wheel while the trackpad keeps natural scrolling, or make it scroll faster; only wheel mice change, trackpads and Magic Mouse stay as they are";
+"滚轮方向反过来" = "Reverse Wheel Direction";
+"系统开着「自然滚动」：滚轮往下滚，页面往上翻。反过来以后，鼠标滚轮往下滚时页面往下翻，触控板还是自然滚动" = "Natural scrolling is on: rolling the wheel down moves the page up. Reversed, rolling the mouse wheel down moves the page down, and the trackpad keeps natural scrolling";
+"系统关着「自然滚动」：滚轮往下滚，页面往下翻。反过来以后，鼠标滚轮往下滚时页面往上翻，和触控板相反" = "Natural scrolling is off: rolling the wheel down moves the page down. Reversed, rolling the wheel down moves the page back up, the opposite of the trackpad";
+"左右滚动也反过来" = "Reverse Horizontal Scrolling Too";
+"滚动速度" = "Scroll Speed";
+"系统的速度" = "System Speed";
+"%lld 倍速" = "%lld×";
+"要先在「系统设置 → 隐私与安全性 → 辅助功能」里允许 Pop，才能调整鼠标滚轮" = "To adjust the mouse wheel, allow Pop in System Settings → Privacy & Security → Accessibility";
+"没开：鼠标滚轮按系统设置滚动" = "Off: the mouse wheel scrolls as set in System Settings";
+"上下、左右都反过来" = "reversed both ways";
+"上下反过来" = "reversed";
+"左右反过来" = "horizontal scrolling reversed";
+"正在调整鼠标滚轮：%@" = "Adjusting the mouse wheel: %@";
+"只改一格一格的滚轮鼠标；触控板、妙控鼠标，还有开着平滑滚动的鼠标照旧。设置会记住，Pop 启动时接着生效。" = "Only mice with a notched scroll wheel change; trackpads, Magic Mouse and mice with smooth scrolling turned on stay as they are. Settings are remembered and apply again when Pop starts.";
+"系统暂时没让 Pop 拦下滚动事件，过几秒会再试一次" = "macOS didn’t let Pop catch scroll events yet; it tries again in a few seconds";
+"打开辅助功能设置" = "Open Accessibility Settings";
