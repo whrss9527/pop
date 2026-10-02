@@ -13,6 +13,17 @@ enum SystemAction: String, CaseIterable, Equatable {
     case toggleDesktopIcons
     case toggleHiddenFiles
     case ejectAll
+
+    /// App Store 版开了沙盒：改不了访达和系统外观的设置，也让不了 Mac 睡眠、熄屏，这几样不提供
+    var isAvailable: Bool {
+        guard Distribution.isAppStore else { return true }
+        switch self {
+        case .displaySleep, .sleep, .toggleDarkMode, .toggleDesktopIcons, .toggleHiddenFiles:
+            return false
+        case .lockScreen, .screenSaver, .toggleMute, .ejectAll:
+            return true
+        }
+    }
 }
 
 enum SystemActions {
@@ -51,19 +62,40 @@ enum SystemActions {
 
     /// 现在的声音输出静音了没有；输出设备不支持静音时是 nil
     static func isMuted() -> Bool? {
+        guard let device = defaultOutputDevice() else { return nil }
+        var muted: UInt32 = 0
+        var size = UInt32(MemoryLayout<UInt32>.size)
+        var address = muteAddress
+        guard AudioObjectHasProperty(device, &address),
+              AudioObjectGetPropertyData(device, &address, 0, nil, &size, &muted) == noErr else { return nil }
+        return muted != 0
+    }
+
+    /// 直接用 CoreAudio 设置声音输出静音，成功返回 true。App Store 版用它：沙盒里跑不了 osascript
+    static func setMuted(_ muted: Bool) -> Bool {
+        guard let device = defaultOutputDevice() else { return false }
+        var address = muteAddress
+        var settable: DarwinBoolean = false
+        guard AudioObjectHasProperty(device, &address),
+              AudioObjectIsPropertySettable(device, &address, &settable) == noErr, settable.boolValue else { return false }
+        var value: UInt32 = muted ? 1 : 0
+        return AudioObjectSetPropertyData(device, &address, 0, nil, UInt32(MemoryLayout<UInt32>.size), &value) == noErr
+    }
+
+    private static var muteAddress: AudioObjectPropertyAddress {
+        AudioObjectPropertyAddress(mSelector: kAudioDevicePropertyMute, mScope: kAudioDevicePropertyScopeOutput,
+                                   mElement: kAudioObjectPropertyElementMain)
+    }
+
+    /// 现在的声音输出设备；没有时是 nil
+    private static func defaultOutputDevice() -> AudioObjectID? {
         var device = AudioObjectID(kAudioObjectUnknown)
         var size = UInt32(MemoryLayout<AudioObjectID>.size)
         var address = AudioObjectPropertyAddress(mSelector: kAudioHardwarePropertyDefaultOutputDevice,
                                                  mScope: kAudioObjectPropertyScopeGlobal, mElement: kAudioObjectPropertyElementMain)
         guard AudioObjectGetPropertyData(AudioObjectID(kAudioObjectSystemObject), &address, 0, nil, &size, &device) == noErr,
               device != kAudioObjectUnknown else { return nil }
-        var muted: UInt32 = 0
-        size = UInt32(MemoryLayout<UInt32>.size)
-        address = AudioObjectPropertyAddress(mSelector: kAudioDevicePropertyMute, mScope: kAudioDevicePropertyScopeOutput,
-                                             mElement: kAudioObjectPropertyElementMain)
-        guard AudioObjectHasProperty(device, &address),
-              AudioObjectGetPropertyData(device, &address, 0, nil, &size, &muted) == noErr else { return nil }
-        return muted != 0
+        return device
     }
 
     /// 能推出的：外接的、可移除的、磁盘映像、网络上的；启动磁盘和内置的不算
@@ -102,9 +134,11 @@ enum SystemActions {
 
     /// 「系统操作」卡片：按钮的说法跟着现在的状态变；没有能推出的磁盘时不显示推出
     static func card(desktopIconsVisible: Bool, darkMode: Bool, ejectable: Int, muted: Bool = false, hiddenFilesShown: Bool = false) -> ResultCard {
-        let actions = SystemAction.allCases.filter { $0 != .ejectAll || ejectable > 0 }
+        let actions = SystemAction.allCases.filter { $0.isAvailable && ($0 != .ejectAll || ejectable > 0) }
         return ResultCard(title: String(localized: "系统操作"), body: "",
-                          detail: String(localized: "隐藏桌面图标、显示隐藏文件时会重新打开访达；推出前请先关掉磁盘上打开的文件"),
+                          detail: Distribution.isAppStore
+                              ? String(localized: "推出前请先关掉磁盘上打开的文件")
+                              : String(localized: "隐藏桌面图标、显示隐藏文件时会重新打开访达；推出前请先关掉磁盘上打开的文件"),
                           buttons: actions.map { action in
                               CardButton(title: title(action, desktopIconsVisible: desktopIconsVisible, darkMode: darkMode, ejectable: ejectable,
                                                       muted: muted, hiddenFilesShown: hiddenFilesShown),
@@ -146,6 +180,10 @@ enum SystemActions {
         case .toggleMute:
             // 「set volume」是 AppleScript 自带的命令，不用授权控制别的 App
             let mute = !(isMuted() ?? false)
+            if Distribution.isAppStore {
+                guard setMuted(mute) else { return String(localized: "没能切换静音") }
+                return mute ? String(localized: "已静音") : String(localized: "已取消静音")
+            }
             guard let reason = await command("/usr/bin/osascript", ["-e", "set volume output muted \(mute)"]) else {
                 return mute ? String(localized: "已静音") : String(localized: "已取消静音")
             }
