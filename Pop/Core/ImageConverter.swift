@@ -38,6 +38,20 @@ enum ImageConverter {
         let message: String
     }
 
+    /// 存结果的文件建不出来（CGImageDestinationCreateWithURL 返回 nil）时告诉用户为什么：系统确实不支持这种格式时说不支持，
+    /// 否则多半是没有权限在那个文件夹里存文件（App Store 版只能写允许过的文件夹，见 FolderAccess）
+    static func cannotCreateMessage(_ output: URL, type: UTType) -> String {
+        let supported = (CGImageDestinationCopyTypeIdentifiers() as? [String] ?? []).contains(type.identifier)
+        guard supported else {
+            return String(localized: "这台 Mac 不支持存成 \(type.preferredFilenameExtension?.uppercased() ?? String(localized: "这种格式"))")
+        }
+        let folder = output.deletingLastPathComponent().lastPathComponent
+        if Distribution.isAppStore {
+            return String(localized: "没有权限在「\(folder)」里存文件：在「设置 → 通用 → 文件夹访问」里允许 Pop 访问这个文件夹")
+        }
+        return String(localized: "没有权限在「\(folder)」里存文件")
+    }
+
     /// 转换一张图片，返回新文件的位置
     static func convert(_ url: URL, _ operation: Operation) throws -> URL {
         guard let source = CGImageSourceCreateWithURL(url as CFURL, nil), CGImageSourceGetCount(source) > 0 else {
@@ -79,7 +93,7 @@ enum ImageConverter {
         guard let image else { throw Failure(message: String(localized: "读不了「\(url.lastPathComponent)」")) }
         let output = outputURL(for: url, operation: operation, type: type)
         guard let destination = CGImageDestinationCreateWithURL(output as CFURL, type.identifier as CFString, 1, nil) else {
-            throw Failure(message: String(localized: "这台 Mac 不支持存成 \(type.preferredFilenameExtension?.uppercased() ?? String(localized: "这种格式"))"))
+            throw Failure(message: cannotCreateMessage(output, type: type))
         }
         CGImageDestinationAddImage(destination, image, properties as CFDictionary)
         guard CGImageDestinationFinalize(destination) else {
@@ -165,7 +179,7 @@ enum ImageConverter {
 
         // 这种格式不能原样拷贝：重新存一份
         guard let destination = CGImageDestinationCreateWithURL(output as CFURL, type.identifier as CFString, 1, nil) else {
-            throw Failure(message: String(localized: "这台 Mac 不支持存成 \(type.preferredFilenameExtension?.uppercased() ?? String(localized: "这种格式"))"))
+            throw Failure(message: cannotCreateMessage(output, type: type))
         }
         if removeAll {
             // 画面按方向摆正后重新画一份，不带任何拍摄信息

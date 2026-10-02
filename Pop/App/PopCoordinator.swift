@@ -455,10 +455,10 @@ final class PopCoordinator: MouseTriggerDelegate {
         }
     }
 
-    /// App Store 版：选中的文件 Pop 没有权限读时（见 FolderAccess），不往下走，弹一张卡片请用户允许访问文件夹
+    /// App Store 版：选中的文件不在允许过的文件夹里时（见 FolderAccess），不往下走，弹一张卡片请用户允许访问文件夹
     private func askForFolderAccessIfNeeded(_ raw: SelectionContent) -> Bool {
-        guard case .files(let urls) = raw, !FolderAccess.unreadable(urls).isEmpty else { return false }
-        let card = ResultCard(title: String(localized: "Pop 还不能读这些文件"),
+        guard case .files(let urls) = raw, !FolderAccess.shared.needingAccess(urls).isEmpty else { return false }
+        let card = ResultCard(title: String(localized: "先允许 Pop 访问文件所在的文件夹"),
                               body: String(localized: "App Store 版的 Pop 只能读写你允许过的文件夹。允许一次（一般选个人文件夹），之后在访达里选中文件再唤起 Pop 就能用了。"),
                               buttons: [CardButton(title: String(localized: "允许访问文件夹…"),
                                                    action: .custom(PluginCardAction { [weak self] _ in

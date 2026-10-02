@@ -58,23 +58,32 @@ final class FolderAccess: ObservableObject {
         save()
     }
 
-    /// 这些文件里 Pop 读不了的（只有 App Store 版会有）
-    nonisolated static func unreadable(_ urls: [URL]) -> [URL] {
+    /// 这些文件里不在允许过的文件夹里的（只有 App Store 版会有）。
+    /// 光看读不读得了不够：Pop 从剪贴板拿到访达里选中的文件时，系统会顺带给一份只能读这个文件的权限，
+    /// 识别文字这类只读的功能能用，可转换格式、压缩这些要在原文件旁边存结果，得有文件夹的权限
+    func needingAccess(_ urls: [URL]) -> [URL] {
         guard Distribution.isAppStore else { return [] }
-        return urls.filter { !canRead($0) }
+        return urls.filter { FileManager.default.fileExists(atPath: $0.path(percentEncoded: false)) && !Self.isCovered($0, by: folders) }
     }
 
-    /// 真去打开一下：沙盒拦不拦只有打开时才知道
-    nonisolated static func canRead(_ url: URL) -> Bool {
-        var isDirectory: ObjCBool = false
-        let path = url.path(percentEncoded: false)
-        guard FileManager.default.fileExists(atPath: path, isDirectory: &isDirectory) else { return true }
-        if isDirectory.boolValue {
-            return (try? FileManager.default.contentsOfDirectory(atPath: path)) != nil
+    /// url 是不是这些文件夹本身，或者在它们里面
+    nonisolated static func isCovered(_ url: URL, by folders: [URL]) -> Bool {
+        let path = normalizedPath(url)
+        return folders.contains { folder in
+            let base = normalizedPath(folder)
+            return path == base || path.hasPrefix(base == "/" ? base : base + "/")
         }
-        guard let handle = try? FileHandle(forReadingFrom: url) else { return false }
-        try? handle.close()
-        return true
+    }
+
+    /// 比较用的路径：去掉「..」和结尾的斜杠，存在的路径再展开符号链接（/tmp 和 /private/tmp 这种）。
+    /// 不用 resolvingSymlinksInPath：它会把存在的 /private/... 又改回 /tmp/...，两边就对不上了
+    private nonisolated static func normalizedPath(_ url: URL) -> String {
+        var path = url.standardizedFileURL.path(percentEncoded: false)
+        if let resolved = realpath(path, nil) {
+            path = String(cString: resolved)
+            free(resolved)
+        }
+        return path.count > 1 && path.hasSuffix("/") ? String(path.dropLast()) : path
     }
 
     /// 真正的个人文件夹：沙盒里 homeDirectoryForCurrentUser 是 App 自己的容器
