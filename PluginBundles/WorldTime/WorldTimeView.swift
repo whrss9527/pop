@@ -408,11 +408,6 @@ private struct ZoneRow: View {
                     Text(verbatim: row.city.name)
                         .font(.callout.weight(.semibold))
                         .lineLimit(1)
-                    if row.isSource {
-                        tag(String(localized: "选中的"), color: .accentColor)
-                    } else if row.isLocal {
-                        tag(String(localized: "本地"), color: .secondary)
-                    }
                     if let onAdd {
                         Button(action: onAdd) {
                             Image(systemName: "plus.circle.fill")
@@ -429,10 +424,18 @@ private struct ZoneRow: View {
                         .help("从列表里拿掉")
                     }
                 }
-                Text(verbatim: row.detail)
-                    .font(.caption2)
-                    .foregroundStyle(.secondary)
-                    .lineLimit(1)
+                // 「选中的」「本地」放在第二行：放在名字后面时，长一点的城市名（Los Angeles）会被截短
+                HStack(spacing: 4) {
+                    Text(verbatim: row.detail)
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+                        .lineLimit(1)
+                    if row.isSource {
+                        tag(String(localized: "选中的"), color: .accentColor)
+                    } else if row.isLocal {
+                        tag(String(localized: "本地"), color: .secondary)
+                    }
+                }
             }
             .frame(width: 124, alignment: .leading)
             DayBar(minute: row.minuteOfDay)
@@ -484,6 +487,7 @@ private struct ZoneRow: View {
             .padding(.horizontal, 4)
             .padding(.vertical, 1)
             .background(Capsule().strokeBorder(color.opacity(0.6), lineWidth: 0.8))
+            .fixedSize()
     }
 }
 

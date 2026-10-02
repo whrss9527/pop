@@ -398,6 +398,10 @@ final class OverlayController {
         keyMonitor = NSEvent.addLocalMonitorForEvents(matching: [.keyDown]) { [weak self] event in
             let handled = MainActor.assumeIsolated { () -> Bool in
                 guard let self, self.mode == .card, event.window === self.panel else { return false }
+                // 正在用输入法打字（还有没确认的拼音）：方向键、回车、Esc 都留给输入法选字、取消
+                if Self.isComposing(in: self.panel) {
+                    return false
+                }
                 if event.keyCode == 53 { // Esc：卡片自己没处理（比如取消多选）就关闭
                     if self.cardKeyHandler?(event) != true {
                         self.dismissByUser()
@@ -423,6 +427,11 @@ final class OverlayController {
         globalClickMonitor = nil
         localClickMonitor = nil
         keyMonitor = nil
+    }
+
+    /// 输入框里有输入法还没确认的文字（打了拼音还没选字）
+    static func isComposing(in window: NSWindow) -> Bool {
+        (window.firstResponder as? NSTextView)?.hasMarkedText() ?? false
     }
 
     static func visibleFrame(containing point: CGPoint) -> CGRect {
