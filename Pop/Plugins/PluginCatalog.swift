@@ -368,6 +368,11 @@ enum PluginCatalog {
                       symbol: "computermouse", category: .files, functions: [BuiltinPluginID.mouseWheel],
                       // 和插件包里 MouseWheel 的键一样
                       defaultsKeys: ["pop.mouseWheel.reverse", "pop.mouseWheel.reverseHorizontal", "pop.mouseWheel.speed"]),
+        PluginPackage(id: "holdToQuit", bundleName: "PopHoldToQuit", name: String(localized: "长按 ⌘Q 退出"),
+                      summary: String(localized: "按住 ⌘Q 一会儿（或者连按两下）才退出 App，误按一下不会关掉整个 App；可以让有的 App 照旧一按就退出"),
+                      symbol: "command", category: .files, functions: [BuiltinPluginID.holdToQuit],
+                      // 和插件包里 HoldToQuit 的键一样
+                      defaultsKeys: ["pop.holdToQuit.enabled", "pop.holdToQuit.mode", "pop.holdToQuit.duration", "pop.holdToQuit.exceptions"]),
     ]
 
     /// 插件包提供的所有功能
