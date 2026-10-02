@@ -51,6 +51,8 @@
 	</dict>
 	<key>NSAppleEventsUsageDescription</key>
 	<string>在「系统操作」里切换深色、浅色模式时，要请「System Events」改系统的外观设置。</string>
+	<key>NSBluetoothAlwaysUsageDescription</key>
+	<string>用「蓝牙设备」连接、断开配对过的耳机、键盘、鼠标时需要蓝牙权限。Pop 不会搜索或者配对新设备。</string>
 	<key>NSCameraUsageDescription</key>
 	<string>打开「摄像头小窗」时才会用到摄像头，在屏幕角落显示你自己；Pop 不会单独保存或上传摄像头的画面。</string>
 	<key>NSMicrophoneUsageDescription</key>

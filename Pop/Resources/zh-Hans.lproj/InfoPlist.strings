@@ -7,3 +7,4 @@
 "NSMicrophoneUsageDescription" = "用「录音」或者录屏时选了「麦克风」才会用到麦克风，录下你说的话。";
 "NSAppleEventsUsageDescription" = "在「系统操作」里切换深色、浅色模式时，要请「System Events」改系统的外观设置。";
 "NSCameraUsageDescription" = "打开「摄像头小窗」时才会用到摄像头，在屏幕角落显示你自己；Pop 不会单独保存或上传摄像头的画面。";
+"NSBluetoothAlwaysUsageDescription" = "用「蓝牙设备」连接、断开配对过的耳机、键盘、鼠标时需要蓝牙权限。Pop 不会搜索或者配对新设备。";

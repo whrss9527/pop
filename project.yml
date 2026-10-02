@@ -14,7 +14,7 @@ configFiles:
 settings:
   base:
     SWIFT_VERSION: "5.0"
-    MARKETING_VERSION: "0.59.0"
+    MARKETING_VERSION: "0.60.0"
     CURRENT_PROJECT_VERSION: "1"
     CODE_SIGN_STYLE: Automatic
     DEAD_CODE_STRIPPING: YES
@@ -977,6 +977,15 @@ targets:
         POP_PLUGIN_ID: emojiSymbols
         POP_PLUGIN_ENTRY: PopEmojiSymbolsEntry
 
+  PopBluetooth:
+    templates: [PopPlugin]
+    sources: [PluginBundles/Bluetooth]
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: io.github.whrss9527.pop.plugin.bluetooth
+        POP_PLUGIN_ID: bluetooth
+        POP_PLUGIN_ENTRY: PopBluetoothEntry
+
   PopTests:
     type: bundle.unit-test
     platform: macOS
@@ -987,6 +996,7 @@ targets:
       - path: PluginBundles/CameraBubble
       - path: PluginBundles/PointerHighlight
       - path: PluginBundles/Teleprompter
+      - path: PluginBundles/Bluetooth
       - path: PluginBundles/EmojiSymbols
       - path: PluginBundles/FocusSounds
       - path: PluginBundles/Zoom
@@ -1100,6 +1110,7 @@ schemes:
         PopCameraBubble: all
         PopPointerHighlight: all
         PopTeleprompter: all
+        PopBluetooth: all
         PopEmojiSymbols: all
         PopFocusSounds: all
         PopZoom: all

@@ -195,6 +195,23 @@
 "电池信息" = "Battery Info";
 "电池设置" = "Battery Settings";
 
+/* BluetoothPlugin.swift */
+"一下子连接、断开配对过的蓝牙设备：AirPods 和别的耳机、键盘、鼠标、触控板、手柄，连着的键盘鼠标写着电量" = "Connect or disconnect paired Bluetooth devices in one go: AirPods and other headphones, keyboards, mice, trackpads and game controllers, with the battery level of connected keyboards and mice";
+
+/* BluetoothView.swift */
+"断不开「%@」" = "Couldn’t disconnect “%@”";
+"连不上「%@」：确认它开着、在附近，没有连着别的设备" = "Couldn’t connect “%@”. Make sure it’s on, nearby and not connected to another device";
+"正在连接…" = "Connecting…";
+"未连接" = "Not Connected";
+"已连接" = "Connected";
+"已连接 · 电量 %@" = "Connected · Battery %@";
+"Pop 还没有蓝牙权限。到「系统设置 → 隐私与安全性 → 蓝牙」里打开 Pop，就能在这里连接、断开配对过的设备。" = "Pop doesn’t have Bluetooth access yet. Turn on Pop in System Settings → Privacy & Security → Bluetooth to connect and disconnect paired devices here.";
+"打开隐私设置" = "Open Privacy Settings";
+"没有配对过的蓝牙设备。新设备先在「蓝牙设置」里配对。" = "No paired Bluetooth devices. Pair new devices in Bluetooth Settings first.";
+"蓝牙设置" = "Bluetooth Settings";
+"断开" = "Disconnect";
+"连接" = "Connect";
+
 /* BuiltinPlugins.swift */
 "转换" = "Convert";
 "开发" = "Developer";
