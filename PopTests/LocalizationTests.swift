@@ -44,10 +44,20 @@ final class LocalizationTests: XCTestCase {
 
     func testBuiltinActionsHaveEnglishNames() throws {
         let bundle = try englishBundle()
-        let infos = TestCatalog.infos()
+        // 单独发布的插件包查它自己带的翻译（下面那个测试）
+        let infos = TestCatalog.infos().filter { !TestCatalog.publishedFunctionIDs.contains($0.id) }
         XCTAssertGreaterThan(infos.count, 50)
         assertTranslated(infos.flatMap { [$0.name, $0.summary] }, in: bundle)
         assertTranslated(BuiltinCategory.allCases.map(\.title), in: bundle)
+    }
+
+    /// 单独发布的插件包：功能的名字、介绍在它自己的 en.lproj 里（PluginBundles/<文件夹>/en.lproj，直接读源码里的）
+    func testPublishedActionsHaveEnglishNames() throws {
+        XCTAssertFalse(TestCatalog.published.isEmpty)
+        for (folder, entry) in TestCatalog.published {
+            let bundle = try XCTUnwrap(TestCatalog.publishedEnglishBundle(folder), "PluginBundles/\(folder)/en.lproj")
+            assertTranslated(entry.makePlugins().flatMap { [$0.info.name, $0.info.summary] }, in: bundle)
+        }
     }
 
     func testSettingsAndUnitsHaveEnglishNames() throws {

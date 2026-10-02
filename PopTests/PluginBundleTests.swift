@@ -6,7 +6,9 @@ final class PluginBundleTests: XCTestCase {
     /// 插件包目录里的功能和插件包自己提供的功能对得上；Pop 自带的功能里不再有它们
     func testCatalogMatchesTheBundles() {
         let provided = Set(TestCatalog.bundles.flatMap { $0.makePlugins() }.map(\.info.id))
-        XCTAssertEqual(provided, PluginCatalog.functionIDs)
+        // 单独发布的插件包不在 PluginCatalog 里（见 testPublishedPluginsDescribeThemselves）
+        XCTAssertEqual(provided, PluginCatalog.functionIDs.union(TestCatalog.publishedFunctionIDs))
+        XCTAssertTrue(PluginCatalog.functionIDs.isDisjoint(with: TestCatalog.publishedFunctionIDs))
         let core = Set(BuiltinPlugins.make().map(\.info.id))
         XCTAssertTrue(core.isDisjoint(with: PluginCatalog.functionIDs))
         // 每个功能不是 Pop 自带的，就是某个插件包提供的
@@ -21,6 +23,24 @@ final class PluginBundleTests: XCTestCase {
             }
         }
         XCTAssertNil(PluginCatalog.package(providing: BuiltinPluginID.translate))
+    }
+
+    /// 单独发布的插件包：文件夹里的 plugin.json 写全了目录信息，和插件包提供的功能对得上；不写进 Pop 的目录
+    func testPublishedPluginsDescribeThemselves() throws {
+        XCTAssertFalse(TestCatalog.published.isEmpty)
+        for (folder, entry) in TestCatalog.published {
+            let meta = try XCTUnwrap(TestCatalog.publishedMeta(folder), "PluginBundles/\(folder)/plugin.json")
+            let id = try XCTUnwrap(meta.id, folder)
+            XCTAssertNil(PluginCatalog.package(id: id), "\(id) 不写进 PluginCatalog")
+            XCTAssertEqual(Set(entry.makePlugins().map(\.info.id)), Set(meta.functions), folder)
+            XCTAssertTrue(Set(meta.functions).isDisjoint(with: BuiltinPluginID.all), "\(folder) 的功能 ID 不写进 BuiltinPluginID")
+            XCTAssertFalse(meta.version?.isEmpty ?? true, folder)
+            XCTAssertEqual(Set(meta.name.keys), ["zh-Hans", "en"], folder)
+            XCTAssertEqual(Set(meta.summary.keys), ["zh-Hans", "en"], folder)
+            XCTAssertNotNil(BuiltinCategory(key: meta.category), folder)
+            XCTAssertNotNil(NSImage(systemSymbolName: meta.symbol, accessibilityDescription: nil), meta.symbol)
+            XCTAssertTrue((meta.defaultsKeys ?? []).allSatisfy { $0.hasPrefix("pop.") }, folder)
+        }
     }
 
     /// 新装的 Pop 只带自带的功能，插件包要用时再装；也不用迁移
