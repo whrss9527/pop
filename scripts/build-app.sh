@@ -6,7 +6,8 @@
 # 本地签名时不开 Hardened Runtime：本地签名 + Hardened Runtime 会触发库校验，较新的 macOS 上可能直接启动失败。
 #
 # POP_SANDBOX=1 时构建开了 App Sandbox 的验证包（上 Mac App Store 必须开沙盒）：用 Pop/Resources/Pop-Sandbox.entitlements，
-# Bundle ID 换成 io.github.whrss9527.pop.sandbox，和装着的 Pop 分开（辅助功能授权、偏好设置互不影响）。
+# 改名成 Pop2（App 名、进程名、Bundle ID io.github.whrss9527.pop2 都和 Pop 分开），可以和装着的 Pop 放在一起，
+# 辅助功能列表里也分得清；最后一行输出的是 Pop2.app 的路径。
 #
 # 用法：scripts/build-app.sh <版本号> [输出目录]
 # 成功后最后一行输出 Pop.app 的路径（其他信息都打到标准错误）；插件包（PopXxx.bundle）在 Pop.app 旁边。
@@ -30,8 +31,8 @@ ENTITLEMENTS=Pop/Resources/Pop-NoCloud.entitlements
 FLAVOR_SETTINGS=()
 if [ "${POP_SANDBOX:-}" = "1" ]; then
   ENTITLEMENTS=Pop/Resources/Pop-Sandbox.entitlements
-  FLAVOR_SETTINGS=("POP_BUNDLE_ID=io.github.whrss9527.pop.sandbox")
-  echo "沙盒验证包：${ENTITLEMENTS}，Bundle ID io.github.whrss9527.pop.sandbox" >&2
+  FLAVOR_SETTINGS=("POP_BUNDLE_ID=io.github.whrss9527.pop2")
+  echo "沙盒验证包 Pop2：${ENTITLEMENTS}，Bundle ID io.github.whrss9527.pop2" >&2
 fi
 
 # CI 的启动测试（版本号 0.0.0-ci）在 macOS 26 上只编这台机器的架构：那台 runner 编得慢，整个启动测试有 30 分钟的上限。
@@ -66,6 +67,20 @@ if ! xcodebuild build \
 fi
 
 APP="$OUT/DerivedData/Build/Products/Release/Pop.app"
+if [ "${POP_SANDBOX:-}" = "1" ]; then
+  # 复制一份改名成 Pop2：文件名、可执行文件名（也就是进程名）和显示的名字都换掉，改完重新签名
+  POP2="$(dirname "$APP")/Pop2.app"
+  rm -rf "$POP2"
+  ditto "$APP" "$POP2"
+  mv "$POP2/Contents/MacOS/Pop" "$POP2/Contents/MacOS/Pop2"
+  for key in CFBundleExecutable CFBundleName CFBundleDisplayName; do
+    /usr/libexec/PlistBuddy -c "Set :$key Pop2" "$POP2/Contents/Info.plist"
+  done
+  APP="$POP2"
+  if [ -z "${CODESIGN_IDENTITY:-}" ]; then
+    codesign --force --sign - --entitlements "$ROOT/$ENTITLEMENTS" "$APP"
+  fi
+fi
 if [ -n "${CODESIGN_IDENTITY:-}" ]; then
   "$ROOT/scripts/sign-app.sh" "$APP" >&2
   echo "签名：$(codesign -dvv "$APP" 2>&1 | awk -F= '/^Authority=/{print $2; exit}')" >&2
