@@ -39,6 +39,9 @@ struct GeneralSettingsView: View {
                         Button("去授权") {
                             Permissions.requestAccessibility()
                             Permissions.openAccessibilitySettings()
+                            if Distribution.isAppStore {
+                                Permissions.revealApp()
+                            }
                         }
                     } else if !permissions.isTriggerRunning {
                         Button("重启 Pop") {
@@ -46,7 +49,8 @@ struct GeneralSettingsView: View {
                         }
                     }
                 }
-                if !permissions.isTrusted {
+                // App Store 版的签名不会变，也不能在沙盒里清除授权记录
+                if !permissions.isTrusted && !Distribution.isAppStore {
                     HStack(alignment: .firstTextBaseline, spacing: 10) {
                         Text("列表里已经有 Pop、开关也打开了，但还是不生效？多半是更新后签名变了：先清除旧的授权记录，再授权一次。")
                             .font(.caption)
@@ -89,7 +93,7 @@ struct GeneralSettingsView: View {
                     }
                 }
                 Picker("键盘快捷键", selection: store.binding(\.trigger.hotKey)) {
-                    ForEach(HotKeyPreset.allCases) { preset in
+                    ForEach(HotKeyPreset.available(keeping: store.settings.trigger.hotKey)) { preset in
                         Text(preset.title).tag(preset)
                     }
                 }
@@ -201,6 +205,9 @@ extension GeneralSettingsView {
 
     private var permissionDetail: String {
         if !permissions.isTrusted {
+            if Distribution.isAppStore {
+                return String(localized: "点「去授权」，在打开的「辅助功能」列表下面点「+」选中 Pop（访达里已经选好了，也可以直接把它拖进列表），再打开开关。授权后不用重启，几秒内自动生效。")
+            }
             return String(localized: "点「去授权」，在「系统设置 → 隐私与安全性 → 辅助功能」里打开 Pop。授权后不用重启，几秒内自动生效。")
         }
         if !permissions.isTriggerRunning {

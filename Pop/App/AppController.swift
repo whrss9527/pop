@@ -300,7 +300,9 @@ final class AppController {
                             settings: settingsStore.settings)
             return
         }
-        updater.startAutomaticChecks()
+        if !Distribution.isAppStore {
+            updater.startAutomaticChecks()
+        }
 
         // 第一次启动、或者还没授权时，主动打开设置窗口：Pop 没有程序坞图标，
         // 菜单栏图标也可能被刘海或其他图标挤掉，不弹窗的话用户会以为什么都没发生。

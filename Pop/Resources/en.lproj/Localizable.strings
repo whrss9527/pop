@@ -3149,3 +3149,7 @@
 "只改一格一格的滚轮鼠标；触控板、妙控鼠标，还有开着平滑滚动的鼠标照旧。设置会记住，Pop 启动时接着生效。" = "Only mice with a notched scroll wheel change; trackpads, Magic Mouse and mice with smooth scrolling turned on stay as they are. Settings are remembered and apply again when Pop starts.";
 "系统暂时没让 Pop 拦下滚动事件，过几秒会再试一次" = "macOS didn’t let Pop catch scroll events yet; it tries again in a few seconds";
 "打开辅助功能设置" = "Open Accessibility Settings";
+"通过 Mac App Store 更新" = "Updated through the Mac App Store";
+"点「去授权」，在打开的「辅助功能」列表下面点「+」选中 Pop（访达里已经选好了，也可以直接把它拖进列表），再打开开关。授权后不用重启，几秒内自动生效。" = "Click Grant Access, then click + below the Accessibility list that opens and choose Pop (it’s already selected in Finder, so you can also drag it into the list), and turn it on. No restart is needed; it takes effect within seconds.";
+"App Store 版的 Pop 不能运行 Shell 脚本" = "Pop from the App Store can’t run shell scripts";
+"还没有自己的插件。可以从模板新建：用网址模板接入任何网站的搜索，用 JavaScript 脚本处理选中的文字，或者交给快捷指令。" = "No plugins yet. Start from a template: search any website with a URL template, process the selected text with a JavaScript script, or hand it to a shortcut.";

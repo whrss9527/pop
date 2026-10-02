@@ -10,7 +10,7 @@ struct ClipboardSettingsView: View {
             Section {
                 Toggle("记录剪贴板历史", isOn: store.binding(\.clipboard.enabled))
                 Picker("打开历史的快捷键", selection: store.binding(\.clipboard.hotKey)) {
-                    ForEach(HotKeyPreset.allCases) { preset in
+                    ForEach(HotKeyPreset.available(keeping: store.settings.clipboard.hotKey)) { preset in
                         Text(preset.title).tag(preset)
                     }
                 }

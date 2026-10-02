@@ -119,6 +119,8 @@ extension HotKeyPreset {
     }
 
     var carbonKey: (code: UInt32, modifiers: UInt32)? {
+        // App Store 版注册不了只带 ⌥ 的全局快捷键（见 HotKeyPreset.isOptionOnly），当作没设
+        if Distribution.isAppStore && isOptionOnly { return nil }
         switch self {
         case .none: return nil
         case .optionSpace: return (UInt32(kVK_Space), UInt32(optionKey))

@@ -7,7 +7,7 @@ name: Sandbox check
 on:
   workflow_dispatch:
   push:
-    branches: ["claude/app-store-sandbox*"]
+    branches: ["claude/app-store*"]
 
 jobs:
   sandbox:

@@ -114,7 +114,10 @@ final class StatusItemController: NSObject, NSMenuDelegate {
         addItem(to: menu, title: state.isPaused ? String(localized: "恢复 Pop") : String(localized: "暂停 Pop"), action: #selector(togglePause))
         menu.addItem(.separator())
         addItem(to: menu, title: String(localized: "设置…"), action: #selector(openSettings), key: ",")
-        addItem(to: menu, title: String(localized: "检查更新…"), action: #selector(checkForUpdates))
+        // App Store 版只能由 App Store 更新
+        if !Distribution.isAppStore {
+            addItem(to: menu, title: String(localized: "检查更新…"), action: #selector(checkForUpdates))
+        }
         menu.addItem(.separator())
         menu.addItem(NSMenuItem(title: String(localized: "退出 Pop"), action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q"))
     }

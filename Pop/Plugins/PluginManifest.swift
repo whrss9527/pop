@@ -121,6 +121,11 @@ struct PluginManifest: Codable, Equatable, Identifiable {
                 case .ai: return String(localized: "AI 指令")
                 }
             }
+
+            /// 新建、编辑插件时能选的类型。App Store 版开了沙盒，不运行 Shell 脚本；正在编辑的插件已经是这种类型的话也留着
+            static func available(keeping current: Kind) -> [Kind] {
+                allCases.filter { !Distribution.isAppStore || $0 != .shell || $0 == current }
+            }
         }
 
         var type: Kind = .url
@@ -351,7 +356,12 @@ extension PluginManifest {
     }
 
     /// 「新建插件」菜单里的示例，照着改就能用。
+    /// 新建插件的模板。App Store 版不运行 Shell 脚本，没有 Shell 的模板
     static var templates: [Template] {
+        allTemplates.filter { !Distribution.isAppStore || $0.manifest.action.type != .shell }
+    }
+
+    private static var allTemplates: [Template] {
         [
             Template(id: "blank-url", title: String(localized: "网址（空白）"),
                      manifest: PluginManifest(name: String(localized: "新的网页插件"), symbol: "globe",

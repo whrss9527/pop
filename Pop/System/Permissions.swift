@@ -9,9 +9,16 @@ enum Permissions {
     }
 
     /// 弹出系统的辅助功能授权提示（只在未授权时出现）。
+    /// App Store 版开了沙盒，弹不出这个提示，Pop 也不会自己出现在列表里，只能请用户在列表下面点「+」加进去（见 revealApp）。
     static func requestAccessibility() {
+        guard !Distribution.isAppStore else { return }
         let options = ["AXTrustedCheckOptionPrompt": true] as CFDictionary
         _ = AXIsProcessTrustedWithOptions(options)
+    }
+
+    /// 在访达里选中 Pop.app：App Store 版授权时可以直接把它拖进辅助功能列表
+    static func revealApp() {
+        NSWorkspace.shared.activateFileViewerSelecting([Bundle.main.bundleURL])
     }
 
     static func openAccessibilitySettings() {
