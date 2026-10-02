@@ -33,6 +33,8 @@ final class AppController {
     init() {
         settingsStore = SettingsStore()
         pluginStore = PluginStore()
+        // App Store 版：先打开允许访问的文件夹，选中的文件才读得了
+        FolderAccess.shared.start()
         // 先装载装好的插件包，功能列表里才有它们提供的功能
         PluginBundles.shared.loadInstalled()
         registry = PluginRegistry()

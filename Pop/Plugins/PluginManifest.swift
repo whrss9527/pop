@@ -122,9 +122,15 @@ struct PluginManifest: Codable, Equatable, Identifiable {
                 }
             }
 
-            /// 新建、编辑插件时能选的类型。App Store 版开了沙盒，不运行 Shell 脚本；正在编辑的插件已经是这种类型的话也留着
+            /// 新建、编辑插件时能选的类型。App Store 版开了沙盒，跑不了 Shell 脚本和 shortcuts 命令行；
+            /// 正在编辑的插件已经是这种类型的话也留着
             static func available(keeping current: Kind) -> [Kind] {
-                allCases.filter { !Distribution.isAppStore || $0 != .shell || $0 == current }
+                allCases.filter { !Distribution.isAppStore || !$0.needsCommandLine || $0 == current }
+            }
+
+            /// 要调用命令行工具（zsh、shortcuts）
+            var needsCommandLine: Bool {
+                self == .shell || self == .shortcut
             }
         }
 
@@ -356,9 +362,9 @@ extension PluginManifest {
     }
 
     /// 「新建插件」菜单里的示例，照着改就能用。
-    /// 新建插件的模板。App Store 版不运行 Shell 脚本，没有 Shell 的模板
+    /// 新建插件的模板。App Store 版不运行 Shell 脚本和快捷指令，没有这两种模板
     static var templates: [Template] {
-        allTemplates.filter { !Distribution.isAppStore || $0.manifest.action.type != .shell }
+        allTemplates.filter { !Distribution.isAppStore || !$0.manifest.action.type.needsCommandLine }
     }
 
     private static var allTemplates: [Template] {

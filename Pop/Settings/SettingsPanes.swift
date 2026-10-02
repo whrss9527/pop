@@ -49,6 +49,10 @@ struct GeneralSettingsView: View {
                         }
                     }
                 }
+                // App Store 版：在访达里选中的文件，要先允许 Pop 访问所在的文件夹才读得了（见 FolderAccess）
+                if Distribution.isAppStore {
+                    FolderAccessRow()
+                }
                 // App Store 版的签名不会变，也不能在沙盒里清除授权记录
                 if !permissions.isTrusted && !Distribution.isAppStore {
                     HStack(alignment: .firstTextBaseline, spacing: 10) {
@@ -231,6 +235,46 @@ extension GeneralSettingsView {
             return String(localized: "点击鼠标中键唤起 Pop。")
         case .disabled:
             return trigger.hotKey == .none ? String(localized: "鼠标唤起已关闭，可以在下面设置一个键盘快捷键。") : String(localized: "用键盘快捷键 \(trigger.hotKey.title) 唤起 Pop。")
+        }
+    }
+}
+
+/// App Store 版：允许 Pop 读写的文件夹
+private struct FolderAccessRow: View {
+    @ObservedObject private var access = FolderAccess.shared
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            HStack(spacing: 10) {
+                Image(systemName: access.folders.isEmpty ? "folder.badge.questionmark" : "folder")
+                    .foregroundStyle(access.folders.isEmpty ? Color.orange : Color.green)
+                    .font(.title3)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("文件夹访问")
+                    Text(access.folders.isEmpty
+                         ? String(localized: "在访达里选中文件再唤起 Pop，要先允许 Pop 访问文件所在的文件夹（一般选个人文件夹）。")
+                         : String(localized: "Pop 能读写这些文件夹里的文件："))
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                Spacer()
+                Button("允许访问文件夹…") {
+                    access.requestAccess()
+                }
+            }
+            ForEach(access.folders, id: \.self) { folder in
+                HStack {
+                    Text(folder.path(percentEncoded: false))
+                        .font(.caption)
+                        .textSelection(.enabled)
+                    Spacer()
+                    Button("移除") {
+                        access.remove(folder)
+                    }
+                    .controlSize(.small)
+                }
+            }
         }
     }
 }

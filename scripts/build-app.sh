@@ -78,10 +78,13 @@ if [ "${POP_SANDBOX:-}" = "1" ]; then
   done
   # App Store 版不带赞赏码（审核指南 3.1.1）
   rm -f "$POP2/Contents/Resources/donate-wechat.png"
-  # App Store 版不从网上下载插件包（审核指南 2.5.2）：都打进 App 里（Contents/PlugIns），装上时从这里装载
+  # App Store 版不从网上下载插件包（审核指南 2.5.2）：都打进 App 里（Contents/PlugIns），装上时从这里装载。
+  # 沙盒里跑不了的不打进去，和 PluginCatalog.unavailableInAppStore 对应
+  APP_STORE_EXCLUDED_PLUGINS=" PopZip PopSystemActions PopEncryptFiles PopBluetooth "
   mkdir -p "$POP2/Contents/PlugIns"
   for bundle in "$(dirname "$APP")"/Pop*.bundle; do
     [ -f "$bundle/Contents/Info.plist" ] || continue
+    case "$APP_STORE_EXCLUDED_PLUGINS" in *" $(basename "$bundle" .bundle) "*) continue ;; esac
     target="$POP2/Contents/PlugIns/$(basename "$bundle")"
     ditto "$bundle" "$target"
     codesign --force --sign "${CODESIGN_IDENTITY:--}" ${CODESIGN_KEYCHAIN:+--keychain "$CODESIGN_KEYCHAIN"} "$target"

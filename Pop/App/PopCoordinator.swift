@@ -264,6 +264,7 @@ final class PopCoordinator: MouseTriggerDelegate {
             guard let self else { return }
             let raw = await self.reader.read(pid: pid)
             guard self.session?.id == sessionID else { return }
+            if self.askForFolderAccessIfNeeded(raw) { return }
             let content = ContentClassifier.classify(raw)
             self.session?.content = content
             if plugin.info.canHandle(content) {
@@ -447,10 +448,25 @@ final class PopCoordinator: MouseTriggerDelegate {
             guard let self else { return }
             let raw = await self.reader.read(pid: pid)
             guard self.session?.id == sessionID else { return }
+            if self.askForFolderAccessIfNeeded(raw) { return }
             let content = ContentClassifier.classify(raw)
             self.session?.content = content
             self.route(content)
         }
+    }
+
+    /// App Store 版：选中的文件 Pop 没有权限读时（见 FolderAccess），不往下走，弹一张卡片请用户允许访问文件夹
+    private func askForFolderAccessIfNeeded(_ raw: SelectionContent) -> Bool {
+        guard case .files(let urls) = raw, !FolderAccess.unreadable(urls).isEmpty else { return false }
+        let card = ResultCard(title: String(localized: "Pop 还不能读这些文件"),
+                              body: String(localized: "App Store 版的 Pop 只能读写你允许过的文件夹。允许一次（一般选个人文件夹），之后在访达里选中文件再唤起 Pop 就能用了。"),
+                              buttons: [CardButton(title: String(localized: "允许访问文件夹…"),
+                                                   action: .custom(PluginCardAction { [weak self] _ in
+                                                       self?.endSession()
+                                                       FolderAccess.shared.requestAccess()
+                                                   }))])
+        present(.card(card))
+        return true
     }
 
     private func route(_ content: ClassifiedContent) {

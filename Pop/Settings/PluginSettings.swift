@@ -30,7 +30,7 @@ struct PluginsSettingsView: View {
             Section {
                 if pluginStore.manifests.isEmpty {
                     Text(Distribution.isAppStore
-                         ? String(localized: "还没有自己的插件。可以从模板新建：用网址模板接入任何网站的搜索，用 JavaScript 脚本处理选中的文字，或者交给快捷指令。")
+                         ? String(localized: "还没有自己的插件。可以从模板新建：用网址模板接入任何网站的搜索，或者用 JavaScript 脚本处理选中的文字。")
                          : String(localized: "还没有自己的插件。可以到「插件库」里挑现成的装上，也可以从模板新建：用网址模板接入任何网站的搜索，用 Shell 或 JavaScript 脚本处理选中的文字，或者交给快捷指令。"))
                         .font(.callout)
                         .foregroundStyle(.secondary)
