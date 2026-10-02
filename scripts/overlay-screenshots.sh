@@ -152,6 +152,7 @@ plan = [
     ("spotlight", [1.0]),
     ("zoom", [1.0]),
     ("annotate", [1.5]),
+    ("settings-ring", [0.5]),
     ("settings-plugins", [0.5]),
     ("settings-ai", [0.5]),
     ("settings-hotKeys", [0.5]),
@@ -170,7 +171,7 @@ if appearance == "dark":
             ("idPhoto", [3.0]), ("webCapture", [3.0]), ("cropImage", [3.0]), ("beautify", [3.0]), ("compareImages", [3.0]), ("splitImage", [3.0]), ("appIcon", [3.0]),
             ("screenRecord-picker", [1.0]), ("screenRecord-countdown", [0.5]), ("screenRecord-recording", [0.6]), ("screenRecord", [3.0]), ("systemActions", [3.0]), ("textImage", [3.0]),
             ("menuShortcuts", [3.0]), ("quitApps", [3.0]), ("scrollCapture", [3.0]), ("screenPen", [3.0]), ("cameraBubble", [3.0]), ("pointerHighlight", [1.5]), ("teleprompter", [1.0]), ("spotlight", [1.0]), ("zoom", [1.0]), ("annotate", [1.5]),
-            ("settings-plugins", [0.5]), ("settings-ai", [0.5]), ("settings-hotKeys", [0.5]),
+            ("settings-ring", [0.5]), ("settings-plugins", [0.5]), ("settings-ai", [0.5]), ("settings-hotKeys", [0.5]),
             ("settings-pluginLibrary", [0.8])]
 factor = scale / 6.0
 

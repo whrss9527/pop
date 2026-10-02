@@ -25,7 +25,8 @@ struct PluginPackagesSection: View {
     }
 
     var body: some View {
-        let packages = PluginCatalog.packages.filter { matchesQuery($0) && matchesFilter($0) }
+        // 单独发布的插件包也在里面（发布页插件包列表里有的）
+        let packages = PluginCatalog.all.filter { matchesQuery($0) && matchesFilter($0) }
         let categories = BuiltinCategory.allCases.filter { category in packages.contains { $0.category == category } }
         Group {
             Section {
@@ -76,7 +77,7 @@ struct PluginPackagesSection: View {
 
     /// 装了几个、一共占多大
     private var summary: String {
-        let installed = PluginCatalog.packages.filter { manager.status(of: $0) == .installed }
+        let installed = PluginCatalog.all.filter { manager.status(of: $0) == .installed }
         guard !installed.isEmpty else { return String(localized: "还没有装插件") }
         let total = installed.compactMap { manager.sizes[$0.id] }.reduce(0, +)
         return String(localized: "已装 \(installed.count) 个插件，一共占用 \(ByteCountFormatter.string(fromByteCount: total, countStyle: .file))")
@@ -135,6 +136,10 @@ struct PluginPackageRow: View {
     private var detail: String {
         switch status {
         case .installed:
+            // 单独发布的新版本已经换好了，装载着的还是旧的
+            if manager.updatedOnDisk.contains(package.id) {
+                return String(localized: "新版本已经下载好，下次打开 Pop 时生效")
+            }
             guard let size = manager.sizes[package.id] else { return String(localized: "已安装") }
             return String(localized: "已安装 · 占用 \(Self.format(size))")
         case .installing:

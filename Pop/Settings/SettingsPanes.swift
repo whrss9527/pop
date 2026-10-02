@@ -313,6 +313,10 @@ struct RingSettingsView: View {
     let catalog: [PluginInfo]
     /// 正在编辑哪个 App 的圆盘；nil 是默认圆盘（所有没单独设置的 App）
     @State private var editing: String? = nil
+    /// 左边列表的搜索词、分类（nil 是全部分类）、放没放上圆盘
+    @State private var query = ""
+    @State private var category: BuiltinCategory? = nil
+    @State private var placement: RingFunctionFilter.Placement = .all
 
     private var installed: [PluginInfo] {
         catalog.filter { store.settings.isInstalled($0.id) }
@@ -349,9 +353,42 @@ struct RingSettingsView: View {
                 Text("拖到右边的格子上放置；拖到已占用的格子会互换位置。")
                     .font(.caption)
                     .foregroundStyle(.secondary)
-                List(installed) { info in
-                    PluginRow(info: info, slotIndex: layout.index(of: info.id))
-                        .draggable(info.id)
+                    .fixedSize(horizontal: false, vertical: true)
+                TextField("搜索功能", text: $query, prompt: Text("搜索功能，支持拼音首字母"))
+                    .textFieldStyle(.roundedBorder)
+                    .labelsHidden()
+                HStack(spacing: 6) {
+                    Picker("分类", selection: $category) {
+                        Text("全部分类").tag(BuiltinCategory?.none)
+                        Divider()
+                        ForEach(BuiltinCategory.allCases) { category in
+                            Text(category.title).tag(Optional(category))
+                        }
+                    }
+                    .labelsHidden()
+                    Picker("显示", selection: $placement) {
+                        ForEach(RingFunctionFilter.Placement.allCases) { placement in
+                            Text(placement.title).tag(placement)
+                        }
+                    }
+                    .labelsHidden()
+                }
+                .controlSize(.small)
+                // 按分类分组；搜索、过滤以后只列对得上的
+                let sections = RingFunctionFilter.sections(installed, layout: layout, query: query, category: category, placement: placement)
+                List {
+                    if sections.isEmpty {
+                        Text("没有匹配的功能")
+                            .foregroundStyle(.secondary)
+                    }
+                    ForEach(sections, id: \.category) { section in
+                        Section(section.category.title) {
+                            ForEach(section.functions) { info in
+                                PluginRow(info: info, slotIndex: layout.index(of: info.id))
+                                    .draggable(info.id)
+                            }
+                        }
+                    }
                 }
                 .listStyle(.bordered)
             }
@@ -434,6 +471,48 @@ struct RingSettingsView: View {
             }
         }
         editing = bundleID
+    }
+}
+
+/// 圆盘设置左边的功能列表：按搜索词（支持拼音、拼音首字母）、分类、放没放上圆盘过滤，按分类分组
+enum RingFunctionFilter {
+    enum Placement: CaseIterable, Identifiable {
+        case all
+        case unplaced
+        case placed
+
+        var id: Self { self }
+
+        var title: String {
+            switch self {
+            case .all: return String(localized: "全部")
+            case .unplaced: return String(localized: "未放置")
+            case .placed: return String(localized: "已放置")
+            }
+        }
+    }
+
+    struct Section {
+        let category: BuiltinCategory
+        let functions: [PluginInfo]
+    }
+
+    static func sections(_ functions: [PluginInfo], layout: RingLayout, query: String, category: BuiltinCategory?,
+                         placement: Placement) -> [Section] {
+        let trimmed = query.trimmingCharacters(in: .whitespaces)
+        let matched = functions.filter { info in
+            switch placement {
+            case .all: break
+            case .unplaced: guard layout.index(of: info.id) == nil else { return false }
+            case .placed: guard layout.index(of: info.id) != nil else { return false }
+            }
+            return trimmed.isEmpty || SearchText.matches(trimmed, keys: SearchText.keys(for: info.name) + [info.summary.lowercased()])
+        }
+        return BuiltinCategory.allCases.compactMap { current in
+            guard category == nil || category == current else { return nil }
+            let members = matched.filter { BuiltinCategory.of($0.id) == current }
+            return members.isEmpty ? nil : Section(category: current, functions: members)
+        }
     }
 }
 
@@ -525,8 +604,16 @@ struct RingEditorCanvas: View {
             }
         }
         .contextMenu {
-            ForEach(installed) { plugin in
-                Button(plugin.name) { onPlace(plugin.id, index) }
+            // 按分类分成子菜单，功能多了也好找
+            ForEach(BuiltinCategory.allCases) { category in
+                let members = installed.filter { BuiltinCategory.of($0.id) == category }
+                if !members.isEmpty {
+                    Menu(category.title) {
+                        ForEach(members) { plugin in
+                            Button(plugin.name) { onPlace(plugin.id, index) }
+                        }
+                    }
+                }
             }
             Divider()
             Button("清空这一格") { onPlace(nil, index) }

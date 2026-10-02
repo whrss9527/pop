@@ -111,6 +111,61 @@ final class PluginBundleTests: XCTestCase {
         XCTAssertNil(index.entry(id: "screenPen"))
     }
 
+    /// 单独发布的插件包：插件包列表里带着它自己的目录信息，Pop 里没写也能列出来
+    func testPublishedPackagesFromTheIndex() throws {
+        let json = """
+        {"format": 1, "version": "0.66.0", "build": "0.66.0+abc", "plugins": [
+          {"id": "teleprompter", "bundle": "PopTeleprompter.bundle", "file": "plugin-teleprompter.zip", "sha256": "A", "size": 1, "installedSize": 2,
+           "meta": {"name": {"zh-Hans": "提词器", "en": "Teleprompter"}, "summary": {"zh-Hans": "滚动", "en": "Scroll"},
+                    "symbol": "text.aligncenter", "category": "recording", "functions": ["teleprompter"]}},
+          {"id": "sleepTimer", "bundle": "PopSleepTimer.bundle", "file": "plugin-sleepTimer.zip", "sha256": "B", "size": 3, "installedSize": 4,
+           "meta": {"version": "1.0.0", "name": {"zh-Hans": "定时睡眠", "en": "Sleep Timer"}, "summary": {"zh-Hans": "到点睡眠", "en": "Sleep later"},
+                    "symbol": "moon.zzz", "category": "files", "functions": ["sleepTimer"],
+                    "defaultsKeys": ["pop.sleepTimer.action", "AppleLanguages"], "dataFolders": ["SleepTimer"]}},
+          {"id": "odd", "bundle": "../Odd.bundle", "file": "plugin-odd.zip", "sha256": "C", "size": 5, "installedSize": 6,
+           "meta": {"name": {"zh-Hans": "怪的"}, "summary": {}, "symbol": "questionmark", "category": "nope", "functions": ["odd"]}},
+          {"id": "noMeta", "bundle": "PopNoMeta.bundle", "file": "plugin-noMeta.zip", "sha256": "D", "size": 7, "installedSize": 8}]}
+        """
+        let index = try JSONDecoder().decode(PluginReleaseIndex.self, from: Data(json.utf8))
+        // Pop 里写好了的（提词器）、没带目录信息的、插件包名字带路径的都不算
+        XCTAssertEqual(index.published.map(\.id), ["sleepTimer"])
+        let package = try XCTUnwrap(index.published.first)
+        XCTAssertEqual(package.bundleName, "PopSleepTimer")
+        XCTAssertEqual(package.name, "定时睡眠")
+        XCTAssertEqual(package.summary, "到点睡眠")
+        XCTAssertEqual(package.symbol, "moon.zzz")
+        XCTAssertEqual(package.category, .files)
+        XCTAssertEqual(package.functions, ["sleepTimer"])
+        XCTAssertEqual(package.defaultsKeys, ["pop.sleepTimer.action"], "卸载时只删 pop. 开头的偏好")
+        XCTAssertEqual(package.dataFolders, ["SleepTimer"])
+        XCTAssertEqual(index.entry(id: "sleepTimer")?.meta?.version, "1.0.0")
+        XCTAssertEqual(PluginPackage(published: try XCTUnwrap(index.entry(id: "sleepTimer")), chinese: false)?.name, "Sleep Timer")
+        // 分类写错了算「其他」，没有英文名字时用中文的
+        var odd = try XCTUnwrap(index.entry(id: "odd"))
+        XCTAssertNil(PluginPackage(published: odd))
+        odd.bundle = "PopOdd.bundle"
+        XCTAssertEqual(PluginPackage(published: odd)?.category, .other)
+        XCTAssertEqual(PluginPackage(published: odd, chinese: false)?.name, "怪的")
+        XCTAssertEqual(PluginPackage(published: odd)?.summary, "odd")
+    }
+
+    /// 单独发布的插件包放进目录：按 ID、按功能都找得到，功能的分类照它自己写的
+    func testPublishedPackagesJoinTheCatalog() {
+        let package = PluginPackage(id: "sleepTimer", bundleName: "PopSleepTimer", name: "定时睡眠", summary: "到点睡眠", symbol: "moon.zzz",
+                                    category: .files, functions: ["sleepTimer"])
+        PluginCatalog.setPublished([package])
+        addTeardownBlock { PluginCatalog.setPublished([]) }
+        XCTAssertEqual(PluginCatalog.package(id: "sleepTimer")?.bundleName, "PopSleepTimer")
+        XCTAssertEqual(PluginCatalog.package(providing: "sleepTimer")?.id, "sleepTimer")
+        XCTAssertTrue(PluginCatalog.allFunctionIDs.contains("sleepTimer"))
+        XCTAssertFalse(PluginCatalog.functionIDs.contains("sleepTimer"))
+        XCTAssertEqual(PluginCatalog.all.count, PluginCatalog.packages.count + 1)
+        XCTAssertEqual(BuiltinCategory.of("sleepTimer"), .files)
+        XCTAssertEqual(BuiltinCategory.of("com.example.unknown"), .other)
+        XCTAssertEqual(BuiltinCategory.allCases.compactMap { BuiltinCategory(key: $0.key) }, BuiltinCategory.allCases)
+        XCTAssertNil(BuiltinCategory(key: "nope"))
+    }
+
     /// 文件夹里只认 Info.plist 里有 PopPluginID 的 .bundle
     func testFindsBundlesInAFolder() throws {
         let folder = FileManager.default.temporaryDirectory.appendingPathComponent("pop-plugins-\(UUID().uuidString)")

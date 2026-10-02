@@ -98,6 +98,25 @@ enum BuiltinCategory: CaseIterable, Identifiable {
 
     var id: Self { self }
 
+    /// 单独发布的插件包在 plugin.json 里写的分类
+    var key: String {
+        switch self {
+        case .text: return "text"
+        case .ai: return "ai"
+        case .convert: return "convert"
+        case .developer: return "developer"
+        case .screen: return "screen"
+        case .recording: return "recording"
+        case .files: return "files"
+        case .other: return "other"
+        }
+    }
+
+    init?(key: String) {
+        guard let category = Self.allCases.first(where: { $0.key == key }) else { return nil }
+        self = category
+    }
+
     var title: String {
         switch self {
         case .text: return String(localized: "文字")
@@ -157,9 +176,9 @@ enum BuiltinCategory: CaseIterable, Identifiable {
                  BuiltinPluginID.cleanKeyboard, BuiltinPluginID.timer, BuiltinPluginID.breakReminder, BuiltinPluginID.focusSounds],
     ]
 
-    /// 没有列出来的（剪贴板、全部功能、设置）都算「其他」
+    /// 没有列出来的按提供它的插件包（单独发布的插件包写在自己的目录信息里）；剩下的（剪贴板、全部功能、设置）都算「其他」
     static func of(_ pluginID: String) -> BuiltinCategory {
-        allCases.first { members[$0]?.contains(pluginID) == true } ?? .other
+        allCases.first { members[$0]?.contains(pluginID) == true } ?? PluginCatalog.package(providing: pluginID)?.category ?? .other
     }
 }
 

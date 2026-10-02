@@ -1397,7 +1397,7 @@ final class PopCoordinator: MouseTriggerDelegate {
         // 最近用过的排在前面，⌘1–5 就能直接选到
         let ordered = PluginUsage.ordered(plugins, recent: PluginUsage.shared.recent())
         // 这台 Mac 上没装的插件包：搜索时也列出来，点一下装上
-        let available = PluginCatalog.packages.filter { !PluginBundles.shared.isLoaded($0.id) }
+        let available = PluginCatalog.all.filter { !PluginBundles.shared.isLoaded($0.id) }
         let model = PluginChooserModel(plugins: ordered.plugins,
                                        recent: Set(ordered.plugins.prefix(ordered.recentCount).map(\.id)),
                                        packages: pluginManager == nil ? [] : available,
