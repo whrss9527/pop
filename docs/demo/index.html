@@ -7254,8 +7254,8 @@ function showCalendar(content, anchor) {
 // 「直接到点」时演示桌面变黑（睡眠、熄屏、关机）或者锁屏，点一下回来
 const SLEEP_TIMER = { action: 'sleep', minutes: 30, fades: true, pending: null, timer: 0, banner: null, offset: 0, redraw: null };
 const ST_DURATIONS = [15, 30, 45, 60, 90, 120];
-const ST_ACTIONS = [['sleep', { zh: '睡眠', en: 'Sleep' }, 'stSleep'], ['displaySleep', { zh: '熄屏', en: 'Turn Off Display' }, 'stDisplay'],
-  ['lock', { zh: '锁屏', en: 'Lock Screen' }, 'stLock'], ['shutDown', { zh: '关机', en: 'Shut Down' }, 'power']];
+const ST_ACTIONS = [['sleep', { zh: '睡眠', en: 'Sleep' }, 'stSleep'], ['displaySleep', { zh: '熄屏', en: 'Display Off' }, 'stDisplay'],
+  ['lock', { zh: '锁屏', en: 'Lock' }, 'stLock'], ['shutDown', { zh: '关机', en: 'Shut Down' }, 'power']];
 const stNow = () => Date.now() + SLEEP_TIMER.offset;
 const stIcon = (action) => icon(ST_ACTIONS.find(([id]) => id === action)[2]);
 // 「30 分钟」「1 小时」「1 小时 30 分钟」

@@ -2,8 +2,8 @@
 "定时睡眠" = "Sleep Timer";
 "过一会儿（15 分钟到 2 小时）或者到几点让 Mac 睡眠、熄屏、锁屏或者关机；最后一分钟在屏幕上方提示，可以推迟、取消，睡眠、关机前慢慢把音量调小" = "Put your Mac to sleep, turn off the display, lock the screen or shut down after a while (15 minutes to 2 hours) or at a set time. In the last minute a note at the top of the screen lets you postpone or cancel, and the volume fades out before sleep or shutdown";
 "睡眠" = "Sleep";
-"熄屏" = "Turn Off Display";
-"锁屏" = "Lock Screen";
+"熄屏" = "Display Off";
+"锁屏" = "Lock";
 "关机" = "Shut Down";
 "%@ 睡眠" = "Sleep at %@";
 "%@ 熄屏" = "Display off at %@";

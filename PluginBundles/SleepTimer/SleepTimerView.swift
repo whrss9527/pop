@@ -63,7 +63,7 @@ struct SleepTimerView: View {
             }
             .pickerStyle(.segmented)
             .labelsHidden()
-            // 按字的长短排，英文的「Turn Off Display」也不会被截掉
+            // 按字的长短排；英文用短的说法（Display Off、Lock），四段放得进卡片
             .fixedSize()
             VStack(alignment: .leading, spacing: 6) {
                 Text("多久以后", bundle: .sleepTimer)
