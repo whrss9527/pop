@@ -351,6 +351,9 @@ enum PluginCatalog {
         PluginPackage(id: "bluetooth", bundleName: "PopBluetooth", name: String(localized: "蓝牙设备"),
                       summary: String(localized: "一下子连接、断开配对过的蓝牙设备：AirPods 和别的耳机、键盘、鼠标、触控板、手柄，连着的键盘鼠标写着电量"),
                       symbol: "dot.radiowaves.left.and.right", category: .files, functions: [BuiltinPluginID.bluetooth]),
+        PluginPackage(id: "calendar", bundleName: "PopCalendar", name: String(localized: "万年历"),
+                      summary: String(localized: "月历上每天写着农历、节气和节日；选中一个日期、节日或者农历日子，翻到那一天"),
+                      symbol: "calendar", category: .convert, functions: [BuiltinPluginID.calendar], defaultsKeys: ["pop.calendar.lunar"]),
     ]
 
     /// 插件包提供的所有功能
