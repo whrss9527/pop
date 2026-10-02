@@ -9,13 +9,19 @@ import AppKit
 /// 最后是单位换算的卡片、贴图、AI 卡片、窗口布局卡片、翻译卡片、常用短语、文本对比、图片配色、暂存架、打开方式、
 /// Markdown 预览、截图标注窗口、设置窗口里新加的几页和插件库。
 /// 配合 POP_ANIMATION_SCALE 放慢动画，截图脚本就能拍到动画的中间帧；POP_APPEARANCE=dark 时用深色外观。
-/// 每一步开始时往 POP_DEMO_LOG 指定的文件里写一行「步骤名 时间戳」；region 行是截图区域在屏幕上的位置
+/// 每一步开始时往 POP_DEMO_LOG 指定的文件里写一行「步骤名 时间戳 这一步的动画放慢倍数」；region 行是截图区域在屏幕上的位置
 /// （点，AppKit 坐标：x y 宽 高）和屏幕大小，脚本按拍照时最新的那一行裁图。
+/// POP_DEMO_QUICK_STEPS（逗号隔开）是截图脚本列出的只拍停下来之后的样子的步骤：插件包的这些步骤不用放慢那么多，
+/// 按 quickScale 走（和深色那一遍一样），动画和停留都短一些，省下截图的时间。
 @MainActor
 enum OverlayDemo {
     static var isEnabled: Bool {
         ProcessInfo.processInfo.environment["POP_DEMO"] == "1"
     }
+
+    private static let quickSteps = Set((ProcessInfo.processInfo.environment["POP_DEMO_QUICK_STEPS"] ?? "")
+        .split(separator: ",").map(String.init))
+    private static let quickScale = 2.0
 
     static func run(overlay: OverlayController, coordinator: PopCoordinator, catalog: [PluginInfo], settings: AppSettings) {
         // POP_APPEARANCE=dark：用深色外观再走一遍，看看深色下的效果
@@ -41,9 +47,8 @@ enum OverlayDemo {
                                      ResultCard.Row(label: String(localized: "单词"), value: "2"),
                                      ResultCard.Row(label: String(localized: "行"), value: "1")])
         let unit = Motion.timeScale
-        // 一步停多久再换下一步：截图脚本在每一步开始后最多 3 秒（放慢 6 倍时，也就是 0.5 × unit）拍照，
-        // 拍完留一点余量就换，不多等。截图更晚的两步（「全部功能」列表、松开以后）单独写
-        let holdTime = 0.5 * unit + 1.0
+        // 截图更晚的两步（「全部功能」列表、松开以后）单独写，别的步骤停 holdTime 再换下一步
+        let holdTime = hold(unit)
 
         Task { @MainActor in
             await pause(1.5)
@@ -654,21 +659,32 @@ enum OverlayDemo {
         model.background = .sky
     }
 
-    /// 插件包注册的演示步骤：按顺序一个个显示、记下截图区域、停一会儿再收起。最多停到截图拍完（holdTime）
+    /// 一步停多久再换下一步：截图脚本在每一步开始后最多 3 秒（放慢 6 倍时，也就是 0.5 × 倍数）拍照，
+    /// 拍完留一点余量就换，不多等
+    private static func hold(_ unit: Double) -> Double {
+        0.5 * unit + 1.0
+    }
+
+    /// 插件包注册的演示步骤：按顺序一个个显示、记下截图区域、停一会儿再收起。最多停到截图拍完（hold）。
+    /// 只拍停下来之后的样子的步骤（quickSteps）按 quickScale 放慢，动画、停留都短一些
     private static func playPluginScenes(after step: String, in context: PluginHost.DemoContext, unit: Double, holdTime: Double) async {
-        // 上一步（主流程那一步，或者 hold 为 0、留在屏幕上等下一步换掉的卡片）靠这段等待撑到拍照，要等满 holdTime；
-        // 上一个插件步骤自己已经停够了的话，只等它收起的动画（Motion.exitDuration，0.17 × unit）走完
-        var previousHeld = false
+        // 上一步（主流程那一步，或者 hold 为 0、留在屏幕上等下一步换掉的卡片）靠这段等待撑到拍照，要等满它的 hold；
+        // 上一个插件步骤自己已经停够了的话，只等它收起的动画（Motion.exitDuration，0.17 × 它的放慢倍数）走完
+        var wait = holdTime
         for scene in PluginHost.shared.demoScenes(after: step) {
-            await pause(min(scene.delay * unit, previousHeld ? 0.25 * unit : holdTime))
+            await pause(min(scene.delay * unit, wait))
+            let sceneUnit = quickSteps.contains(scene.name) ? min(unit, quickScale) : unit
+            Motion.timeScale = sceneUnit
             if let region = await scene.show(context) {
                 logRegion(region == context.cardRegion ? region : region.insetBy(dx: -24, dy: -24), screen: context.screen)
             }
             Self.step(scene.name)
-            await pause(min(scene.hold * unit, holdTime))
+            await pause(min(scene.hold * sceneUnit, hold(sceneUnit)))
             scene.hide()
-            previousHeld = scene.hold * unit >= holdTime
+            wait = scene.hold * sceneUnit >= hold(sceneUnit) ? 0.25 * sceneUnit : hold(sceneUnit)
         }
+        // 主流程接下来的步骤照旧放慢
+        Motion.timeScale = unit
     }
 
     /// 截图区域（点，AppKit 坐标）和屏幕大小，截图脚本按它裁图
@@ -693,7 +709,7 @@ enum OverlayDemo {
     }
 
     private static func step(_ name: String) {
-        log("\(name) \(Date().timeIntervalSince1970)")
+        log("\(name) \(Date().timeIntervalSince1970) \(Motion.timeScale)")
     }
 
     private static func log(_ line: String) {

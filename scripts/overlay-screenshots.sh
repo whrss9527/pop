@@ -4,6 +4,7 @@
 # 圆盘展开、指向、滑动、选中、结果卡片、提示、列表、取消、贴图、常用短语、文本对比、图片配色、暂存架、打开方式、
 # Markdown 预览、截图标注都会拍到，包括动画的中间帧。
 # 之后用深色外观再拍一组停下来之后的样子（文件名以 dark- 开头），POP_SKIP_DARK=1 时不拍。
+# 只拍停下来之后的样子的插件包步骤不用放慢那么多：Pop 在这些步骤上按 2 倍走（POP_DEMO_QUICK_STEPS），省下时间。
 #
 # 用法：scripts/overlay-screenshots.sh <Pop.app> <输出目录> [动画放慢倍数，默认 6]
 set -euo pipefail
@@ -41,14 +42,11 @@ run_demo() {
     pgrep -x Pop > /dev/null || break
     sleep 0.5
   done
-  # Pop.app 旁边的插件包一起装载，演示里也有插件包的步骤
-  open -n --env POP_DEMO=1 --env "POP_ANIMATION_SCALE=${scale}" --env "POP_DEMO_LOG=${log}" \
-    --env "POP_APPEARANCE=${appearance}" --env "POP_PLUGIN_INDEX_URL=${PLUGIN_INDEX}" \
-    --env "POP_PLUGIN_DIR=$(cd "$(dirname "$APP")" && pwd)" "$APP"
-  python3 - "$log" "$WORK" "$OUT" "$scale" "$appearance" "$prefix" <<'PY'
+  python3 - "$log" "$WORK" "$OUT" "$scale" "$appearance" "$prefix" "$APP" "$PLUGIN_INDEX" <<'PY'
 import os, subprocess, sys, time
 
-log_path, work, out, scale, appearance, prefix = sys.argv[1], sys.argv[2], sys.argv[3], float(sys.argv[4]), sys.argv[5], sys.argv[6]
+log_path, work, out, scale_text, appearance, prefix, app, plugin_index = sys.argv[1:9]
+scale = float(scale_text)
 
 # 每一步开始后第几秒截图（按放慢 6 倍设计，别的倍数按比例换算）
 plan = [
@@ -161,6 +159,8 @@ plan = [
     ("settings-hotKeys", [0.5]),
     ("settings-pluginLibrary", [0.8]),
 ]
+# 每一张都在第 3 秒以后拍的步骤只拍停下来之后的样子
+quick = [name for name, offsets in plan if min(offsets) >= 3.0]
 if appearance == "dark":
     # 深色外观只拍停下来之后的样子
     plan = [("loaded", [2.6]), ("slide", [3.0]), ("commit", [5.0]), ("toast", [1.2]), ("chooser", [4.0]),
@@ -176,9 +176,15 @@ if appearance == "dark":
             ("menuShortcuts", [3.0]), ("quitApps", [3.0]), ("scrollCapture", [3.0]), ("screenPen", [3.0]), ("cameraBubble", [3.0]), ("pointerHighlight", [1.5]), ("teleprompter", [1.0]), ("spotlight", [1.0]), ("zoom", [1.0]), ("annotate", [1.5]),
             ("settings-ring", [0.5]), ("settings-plugins", [0.5]), ("settings-ai", [0.5]), ("settings-hotKeys", [0.5]),
             ("settings-pluginLibrary", [0.8])]
-factor = scale / 6.0
+
+# Pop.app 旁边的插件包一起装载，演示里也有插件包的步骤
+subprocess.run(["open", "-n", "--env", "POP_DEMO=1", "--env", f"POP_ANIMATION_SCALE={scale_text}",
+                "--env", f"POP_DEMO_LOG={log_path}", "--env", f"POP_APPEARANCE={appearance}",
+                "--env", f"POP_PLUGIN_INDEX_URL={plugin_index}", "--env", f"POP_PLUGIN_DIR={os.path.dirname(os.path.abspath(app))}",
+                "--env", "POP_DEMO_QUICK_STEPS=" + ",".join(quick), app], check=True)
 
 def markers():
+    """每一步开始的时间和这一步的动画放慢倍数（Pop 在步骤那一行里写着；没写时就是启动时给的倍数），以及最新的截图区域"""
     result = {}
     region = None
     if os.path.exists(log_path):
@@ -189,15 +195,15 @@ def markers():
             if parts[0] == "region" and len(parts) >= 7:
                 region = [int(p) for p in parts[1:7]]
             elif len(parts) >= 2:
-                result[parts[0]] = float(parts[1])
+                result[parts[0]] = (float(parts[1]), float(parts[2]) if len(parts) >= 3 else scale)
     return result, region
 
 def wait_for(name, timeout=120):
     deadline = time.time() + timeout
     while time.time() < deadline:
-        found, region = markers()
+        found, _ = markers()
         if name in found:
-            return found[name], region
+            return found[name]
         time.sleep(0.03)
     raise SystemExit(f"等不到演示步骤 {name}，Pop 可能没有启动")
 
@@ -213,9 +219,9 @@ def screen_rect(region):
 shots = []
 index = 0
 for name, offsets in plan:
-    start, _ = wait_for(name)
+    start, step_scale = wait_for(name)
     for offset in offsets:
-        target = start + offset * factor
+        target = start + offset * step_scale / 6.0
         delay = target - time.time()
         if delay > 0:
             time.sleep(delay)
