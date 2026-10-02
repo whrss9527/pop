@@ -107,7 +107,13 @@ final class RouterTests: XCTestCase {
     }
 
     /// 设置里按分类显示：只有剪贴板、全部功能、设置归到「其他」
+    /// Pop 写好了的功能（单独发布的插件包不在里面：分类写在它自己的 plugin.json 里，见 PluginBundleTests）
+    private var builtinCatalog: [PluginInfo] {
+        catalog.filter { !TestCatalog.publishedFunctionIDs.contains($0.id) }
+    }
+
     func testEveryBuiltinHasACategory() {
+        let catalog = builtinCatalog
         let others = catalog.map(\.id).filter { BuiltinCategory.of($0) == .other }
         XCTAssertEqual(Set(others), [BuiltinPluginID.clipboardHistory, BuiltinPluginID.allPlugins, BuiltinPluginID.settings])
         for category in BuiltinCategory.allCases {
@@ -131,7 +137,9 @@ final class RouterTests: XCTestCase {
     func testPluginIDsAreUniqueAndCoverDefaults() {
         let ids = catalog.map(\.id)
         XCTAssertEqual(Set(ids).count, ids.count)
-        XCTAssertEqual(Set(ids), Set(BuiltinPluginID.all))
+        // 单独发布的插件包用自己的功能 ID，不写进 BuiltinPluginID
+        XCTAssertEqual(Set(ids).subtracting(TestCatalog.publishedFunctionIDs), Set(BuiltinPluginID.all))
+        XCTAssertTrue(TestCatalog.publishedFunctionIDs.isDisjoint(with: BuiltinPluginID.all))
         for slot in RingLayout.default.slots.compactMap({ $0 }) {
             XCTAssertTrue(ids.contains(slot), slot)
         }

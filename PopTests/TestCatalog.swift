@@ -109,6 +109,12 @@ enum TestCatalog {
         return try? JSONDecoder().decode(PluginPackageMeta.self, from: data)
     }
 
+    /// 单独发布的插件包自己带的英文翻译（PluginBundles/<文件夹>/en.lproj）
+    static func publishedEnglishBundle(_ folder: String) -> Bundle? {
+        let root = URL(fileURLWithPath: #filePath).deletingLastPathComponent().deletingLastPathComponent()
+        return Bundle(path: root.appending(path: "PluginBundles/\(folder)/en.lproj").path(percentEncoded: false))
+    }
+
     /// 单独发布的插件包提供的功能
     static var publishedFunctionIDs: Set<String> {
         Set(published.values.flatMap { $0.makePlugins() }.map(\.info.id))
