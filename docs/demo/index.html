@@ -1072,6 +1072,7 @@ button { font: inherit; color: inherit; }
 .prow > svg { width: 19px; height: 19px; flex: none; color: var(--win-text); }
 .prow .pt { flex: 1; min-width: 0; }
 .prow .pn { font-size: 13px; }
+.prow .newb { display: inline-block; margin-left: 6px; padding: 0 5px; border-radius: 7px; background: var(--accent-soft); color: var(--accent); font-size: 10px; font-weight: 600; line-height: 15px; vertical-align: 1px; }
 .prow .ps { font-size: 11px; line-height: 1.4; color: var(--win-text-2); margin-top: 1px; }
 .prow .pd { font-size: 11px; color: var(--win-text-2); margin-top: 2px; font-variant-numeric: tabular-nums; }
 .prow .pd.busy { color: var(--accent); }
@@ -2028,6 +2029,7 @@ function renderWindow() {
     for (const file of state.extraFiles) file.fresh = false;
   }
   if (state.scene === 'plugins') win = prefsWindow();
+  else if (prefs.shown) prefs.seenNew = true;
   windowHost.replaceChildren(...(win ? [win] : []));
 }
 
@@ -9219,7 +9221,9 @@ const PT = {
   foot: { zh: '下面还有「我的插件」和 Pop 自带功能的开关，试玩里省略了。装上的插件会出现在圆盘的「全部功能」里，卸载的就没有了。', en: 'My Plugins and the switches for Pop’s built-in actions follow below; the demo leaves them out. Installed plugins show up in All Actions on the ring, and uninstalled ones disappear from it.' },
 };
 
-const prefs = { filter: 'all', query: '', installing: new Set(), confirming: null, fresh: null, list: null, panel: null };
+const prefs = { filter: 'all', query: '', installing: new Set(), confirming: null, fresh: null, list: null, panel: null, shown: false, seenNew: false };
+// 上次看过以后新出的插件包（单独发布的）：名字旁边标「新」，离开插件列表以后就不再标，和 App 一样
+const NEW_PACKAGES = new Set(['sleepTimer']);
 
 // 和 App 里的 ByteCountFormatter（.file）一样按 1000 进位：340 KB、1.2 MB
 function formatBytes(bytes) {
@@ -9236,6 +9240,7 @@ function prefsWindow() {
   search.addEventListener('input', () => { prefs.query = search.value.trim().toLowerCase(); renderPrefsList(); });
   prefs.list = h('div');
   prefs.panel = h('div', { class: 'prefs' }, search, prefs.list);
+  prefs.shown = true;
   const win = h('div', { class: 'win prefs-win' },
     h('div', { class: 'bar' }, trafficLights(), h('span', { class: 'title' }, L(PT.title))),
     h('div', { class: 'ptabs', title: L(PT.tabHint) }, PT.tabs.map(([iconName, label]) => h('span', { class: iconName === 'allPlugins' ? 'on' : '' }, icon(iconName), L(label)))),
@@ -9293,7 +9298,9 @@ function prefsRow(pkg) {
     action = button(L(PT.install), () => installPackage(pkg));
   }
   return h('div', { class: 'prow' + (prefs.fresh === pkg.id ? ' fresh' : '') }, icon(pkg.icon),
-    h('div', { class: 'pt' }, h('div', { class: 'pn' }, L(pkg.name)), h('div', { class: 'ps' }, L(pkg.summary)), detail), action);
+    h('div', { class: 'pt' }, h('div', { class: 'pn' }, L(pkg.name),
+      NEW_PACKAGES.has(pkg.id) && !prefs.seenNew ? h('span', { class: 'newb', 'aria-label': L({ zh: '新插件', en: 'New plugin' }) }, L({ zh: '新', en: 'New' })) : null),
+      h('div', { class: 'ps' }, L(pkg.summary)), detail), action);
 }
 
 // 装上：先「正在下载…」，下好了当场能用
