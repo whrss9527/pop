@@ -1,3 +1,4 @@
+import Foundation
 @testable import Pop
 
 /// 测试用的完整功能列表：Pop 自带的功能，加上插件包提供的功能（PluginBundles/ 下的代码也编进了单元测试）
@@ -93,7 +94,25 @@ enum TestCatalog {
         WindowPiPEntry.self,
         MouseWheelEntry.self,
         HoldToQuitEntry.self,
+        SleepTimerEntry.self,
     ]
+
+    /// 单独发布的插件包（不在 PluginCatalog 里，目录信息在它文件夹里的 plugin.json）：文件夹名 → 入口
+    static let published: [String: PopPluginBundle.Type] = [
+        "SleepTimer": SleepTimerEntry.self,
+    ]
+
+    /// 单独发布的插件包写在 PluginBundles/<文件夹>/plugin.json 里的目录信息（直接从源码里读）
+    static func publishedMeta(_ folder: String) -> PluginPackageMeta? {
+        let root = URL(fileURLWithPath: #filePath).deletingLastPathComponent().deletingLastPathComponent()
+        guard let data = try? Data(contentsOf: root.appending(path: "PluginBundles/\(folder)/plugin.json")) else { return nil }
+        return try? JSONDecoder().decode(PluginPackageMeta.self, from: data)
+    }
+
+    /// 单独发布的插件包提供的功能
+    static var publishedFunctionIDs: Set<String> {
+        Set(published.values.flatMap { $0.makePlugins() }.map(\.info.id))
+    }
 
     static func plugins() -> [any PopPlugin] {
         BuiltinPlugins.sorted(BuiltinPlugins.make() + bundles.flatMap { $0.makePlugins() })

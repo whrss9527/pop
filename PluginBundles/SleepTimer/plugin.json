@@ -1,0 +1,16 @@
+{
+  "id": "sleepTimer",
+  "version": "1.0.0",
+  "name": {
+    "zh-Hans": "定时睡眠",
+    "en": "Sleep Timer"
+  },
+  "summary": {
+    "zh-Hans": "过一会儿或者到几点让 Mac 睡眠、熄屏、锁屏或者关机；最后一分钟提示，可以推迟、取消，睡眠、关机前慢慢把音量调小",
+    "en": "Put your Mac to sleep, turn off the display, lock the screen or shut down after a while or at a set time. A last-minute note lets you postpone or cancel, and the volume fades out before sleep or shutdown"
+  },
+  "symbol": "moon.zzz",
+  "category": "files",
+  "functions": ["sleepTimer"],
+  "defaultsKeys": ["pop.sleepTimer.action", "pop.sleepTimer.minutes", "pop.sleepTimer.fade", "pop.sleepTimer.pending", "pop.sleepTimer.volume"]
+}
