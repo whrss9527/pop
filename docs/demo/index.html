@@ -3383,7 +3383,7 @@ function addPageNumbers(file, anchor) {
   const num = h('span', { class: 'pn-num' });
   const page = h('div', { class: 'pn-page', 'aria-hidden': 'true' }, [18, 28, 38, 48, 58, 74, 84, 94].map((top, i) => h('i', { style: `top:${top}px;${i % 4 === 3 ? 'right:46px' : ''}` })), num);
   const format = h('select', { class: 'fe-select', 'aria-label': zh ? '样式' : 'Style', onchange: () => { PAGE_NUMBERS.format = format.value; draw(); } });
-  const position = h('select', { class: 'fe-select', 'aria-label': zh ? '位置' : 'Position', onchange: () => { PAGE_NUMBERS.position = position.value; draw(); } },
+  const position = h('select', { class: 'fe-select', 'aria-label': zh ? '放在' : 'Position', onchange: () => { PAGE_NUMBERS.position = position.value; draw(); } },
     [['bottomCenter', zh ? '底部居中' : 'Bottom Center'], ['bottomRight', zh ? '右下角' : 'Bottom Right'], ['topRight', zh ? '右上角' : 'Top Right']].map(([value, title]) => h('option', { value }, title)));
   const first = h('input', { type: 'number', min: '1', max: String(pages), value: '1', 'aria-label': zh ? '从第几页开始标' : 'Start on page', oninput: () => { o.first = Math.min(Math.max(Number(first.value) || 1, 1), pages); draw(); } });
   const start = h('input', { type: 'number', min: '0', max: '9999', value: '1', 'aria-label': zh ? '第一个页码' : 'First number', oninput: () => { o.start = Math.min(Math.max(Number(start.value) || 0, 0), 9999); draw(); } });
@@ -3414,7 +3414,7 @@ function addPageNumbers(file, anchor) {
   presentCard(cardShell({ title: zh ? '加页码' : 'Add Page Numbers', subtitle: L(file.name), width: 420, children: [
     h('div', { class: 'pn-body' }, page, h('div', { class: 'pn-form' },
       h('span', null, zh ? '样式' : 'Style'), format,
-      h('span', null, zh ? '位置' : 'Position'), position,
+      h('span', null, zh ? '放在' : 'Position'), position,
       h('span', null, zh ? '从第几页开始标' : 'Start on page'), h('div', { class: 'pn-step' }, first),
       h('span', null, zh ? '第一个页码写' : 'First number'), h('div', { class: 'pn-step' }, start))),
     summary,

@@ -231,7 +231,7 @@ struct PDFPageNumbersView: View {
                             Text(verbatim: model.example(format)).tag(format)
                         }
                     }
-                    Picker("位置", selection: $model.options.position) {
+                    Picker("放在", selection: $model.options.position) {
                         ForEach(PDFPageNumbers.Position.allCases) { position in
                             Text(position.title).tag(position)
                         }

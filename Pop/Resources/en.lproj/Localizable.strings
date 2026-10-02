@@ -574,6 +574,8 @@
 "创建时间" = "Created";
 "修改时间" = "Modified";
 "位置" = "Location";
+"所在文件夹" = "Folder";
+"放在" = "Position";
 "选中" = "Selected";
 "%lld 项" = "%lld items";
 "总大小" = "Total size";
