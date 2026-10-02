@@ -90,7 +90,7 @@ final class LocalizationTests: XCTestCase {
                 }
             }
             func arguments(_ count: Int) -> [CVarArg] {
-                integers.map { $0 ? count : "x" }
+                integers.map { $0 ? count as CVarArg : "x" as CVarArg }
             }
             let format = bundle.localizedString(forKey: key, value: nil, table: nil)
             let one = String(format: format, locale: english, arguments: arguments(1))
