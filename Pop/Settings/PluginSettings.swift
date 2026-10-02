@@ -79,7 +79,7 @@ struct PluginsSettingsView: View {
             }
 
             // 插件包提供的功能在上面的「插件」里装上、卸载，这里只列 Pop 自带的
-            let builtins = catalog.filter { $0.source == .builtin && !PluginCatalog.functionIDs.contains($0.id) && matchesQuery($0) }
+            let builtins = catalog.filter { $0.source == .builtin && !PluginCatalog.allFunctionIDs.contains($0.id) && matchesQuery($0) }
             if builtins.isEmpty {
                 Section {
                     Text("没有匹配的内置功能")

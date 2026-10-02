@@ -1,4 +1,5 @@
 import Foundation
+import os
 
 /// Pop 的一个插件包：单独编译的功能，要用时从 GitHub 发布页下载装上，不用了可以卸载（见 PluginManager）。
 struct PluginPackage: Identifiable, Hashable {
@@ -14,6 +15,20 @@ struct PluginPackage: Identifiable, Hashable {
     let functions: [String]
     /// 存在 UserDefaults 里的偏好，卸载时一起删掉
     var defaultsKeys: [String] = []
+    /// 存在钥匙串里的密钥（KeychainSecret 的 account，service 是 keychainService(id)），卸载时一起删掉
+    var keychainAccounts: [String] = []
+    /// 放在「~/Library/Application Support/Pop」里的数据文件夹（相对路径），卸载时一起删掉
+    var dataFolders: [String] = []
+
+    /// 插件的数据文件夹放在这里
+    static var dataDirectory: URL {
+        FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0].appending(path: "Pop", directoryHint: .isDirectory)
+    }
+
+    /// 插件包在钥匙串里用的 service：<Pop 的 bundle ID>.plugin.<插件包 ID>
+    static func keychainService(_ id: String) -> String {
+        (Bundle.main.bundleIdentifier ?? "Pop") + ".plugin." + id
+    }
 }
 
 /// 所有插件包，没装的也在：设置的「插件」页按它列出来，没装上也知道插件包叫什么、提供哪些功能。
@@ -374,17 +389,43 @@ enum PluginCatalog {
                       symbol: "computermouse", category: .files, functions: [BuiltinPluginID.mouseWheel],
                       // 和插件包里 MouseWheel 的键一样
                       defaultsKeys: ["pop.mouseWheel.reverse", "pop.mouseWheel.reverseHorizontal", "pop.mouseWheel.speed"]),
+        PluginPackage(id: "holdToQuit", bundleName: "PopHoldToQuit", name: String(localized: "长按 ⌘Q 退出"),
+                      summary: String(localized: "按住 ⌘Q 一会儿（或者连按两下）才退出 App，误按一下不会关掉整个 App；可以让有的 App 照旧一按就退出"),
+                      symbol: "command", category: .files, functions: [BuiltinPluginID.holdToQuit],
+                      // 和插件包里 HoldToQuit 的键一样
+                      defaultsKeys: ["pop.holdToQuit.enabled", "pop.holdToQuit.mode", "pop.holdToQuit.duration", "pop.holdToQuit.exceptions"]),
     ]
 
     /// 插件包提供的所有功能
     static let functionIDs: Set<String> = Set(packages.flatMap(\.functions))
 
+    /// Pop 发布以后才单独发布的插件包（发布页插件包列表里带着目录信息、上面没写的）：PluginManager 读到插件包列表时换上
+    static var published: [PluginPackage] {
+        publishedPackages.withLock { $0 }
+    }
+
+    static func setPublished(_ packages: [PluginPackage]) {
+        publishedPackages.withLock { $0 = packages }
+    }
+
+    private static let publishedPackages = OSAllocatedUnfairLock(initialState: [PluginPackage]())
+
+    /// 所有插件包：上面写好的，加上单独发布的
+    static var all: [PluginPackage] {
+        packages + published
+    }
+
+    /// 所有插件包提供的功能，包括单独发布的
+    static var allFunctionIDs: Set<String> {
+        functionIDs.union(published.flatMap(\.functions))
+    }
+
     static func package(id: String) -> PluginPackage? {
-        packages.first { $0.id == id }
+        all.first { $0.id == id }
     }
 
     /// 提供这个功能的插件包；Pop 自带的功能返回 nil
     static func package(providing functionID: String) -> PluginPackage? {
-        packages.first { $0.functions.contains(functionID) }
+        all.first { $0.functions.contains(functionID) }
     }
 }

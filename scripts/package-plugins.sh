@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 # 把构建好、签好名的插件包打成发布用的压缩包，并写出插件包列表（Pop 装插件时从发布页下载它们）：
 #   <输出目录>/plugin-<ID>.zip           每个插件包一个，里面是 PopXxx.bundle
-#   <输出目录>/plugins-<版本号>.json     插件包列表：ID、文件名、SHA-256、下载大小、装好后的大小，以及构建标识
+#   <输出目录>/plugins-<版本号>.json     插件包列表：ID、文件名、SHA-256、下载大小、装好后的大小，以及构建标识；
+#                                       单独发布的插件包还带着它的 plugin.json（名字、介绍、分类、版本）
 #   <输出目录>/plugins-notary.zip        所有插件包放在一起，提交公证用（不上传）
 # 压缩包的文件名不能以 Pop 开头：已经装好的旧版 Pop 一键更新时，找的是发布页上「Pop 开头的 .zip」。
 #
@@ -51,14 +52,20 @@ for name in sorted(os.listdir(src)):
     if os.path.exists(target):
         os.remove(target)
     subprocess.run(["ditto", "-c", "-k", "--keepParent", bundle, target], check=True)
-    entries.append({
+    entry = {
         "id": plugin_id,
         "bundle": name,
         "file": archive,
         "sha256": sha256(target),
         "size": os.path.getsize(target),
         "installedSize": tree_size(bundle),
-    })
+    }
+    # 单独发布的插件包自己带着目录信息（plugin.json）：名字、介绍、分类，Pop 里没写也能列出来
+    meta_path = os.path.join(bundle, "Contents", "Resources", "plugin.json")
+    if os.path.isfile(meta_path):
+        with open(meta_path, encoding="utf-8") as f:
+            entry["meta"] = json.load(f)
+    entries.append(entry)
     bundles.append(bundle)
 
 if len(builds) > 1:

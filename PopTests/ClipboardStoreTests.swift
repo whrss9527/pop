@@ -93,6 +93,13 @@ final class ClipboardStoreTests: XCTestCase {
         XCTAssertEqual(store.item(id: fileID)?.fileURLs.map(\.lastPathComponent), ["a.txt", "b c.txt"])
     }
 
+    func testSkipsTwoFactorLinks() {
+        // 两步验证的链接里写着密钥：剪贴板历史不记
+        XCTAssertTrue(ClipboardMonitor.containsSecretLink("扫到的 OTPAUTH://totp/a?secret=JBSWY3DPEHPK3PXP"))
+        XCTAssertTrue(ClipboardMonitor.containsSecretLink("otpauth-migration://offline?data=abc"))
+        XCTAssertFalse(ClipboardMonitor.containsSecretLink("https://example.com/otpauth"))
+    }
+
     func testCaptureHashDistinguishesKinds() {
         let asText = ClipboardCapture(kind: .text, text: "/tmp/a", sourceApp: nil)
         let asFiles = ClipboardCapture(kind: .files, text: "/tmp/a", sourceApp: nil)

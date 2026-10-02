@@ -1,0 +1,87 @@
+name: Plugins
+
+# 单独发布插件包：不发 Pop 新版本，把改了版本号的插件包加到最新正式版的发布页上（见 scripts/publish-plugins.sh）。
+# 已安装的 Pop 打开设置时会看到新的插件包，装着的插件包有了新版本会在后台换上、下次打开时生效。
+#
+# 三种触发方式：
+#   - 自动：PluginBundles/<文件夹>/plugin.json 改了（加了插件包，或者把版本号往上加了）的提交合并进 main 以后
+#   - 手动：在 Actions 页面运行，可以只发布指定的插件包
+#   - PR 里改了 plugin.json：只构建、用正式版的 Pop 装载检查，不上传
+# Pop 的新版本还没发布时（CHANGELOG.md 最上面的版本还没有标签）不单独发布：插件包会跟着那个版本一起发布。
+on:
+  push:
+    branches: [main]
+    paths:
+      - "PluginBundles/*/plugin.json"
+  pull_request:
+    paths:
+      - "PluginBundles/*/plugin.json"
+  workflow_dispatch:
+    inputs:
+      plugins:
+        description: "要发布的插件包 ID，空格分开；不填就发布所有改了版本号的"
+        required: false
+        default: ""
+
+permissions:
+  contents: write
+
+jobs:
+  publish:
+    runs-on: macos-15
+    timeout-minutes: 60
+    # 同一时间只发布一次（两次一起改发布页上的插件包列表会互相覆盖）；PR 里的检查各管各的
+    concurrency:
+      group: ${{ github.event_name == 'pull_request' && format('plugins-check-{0}', github.ref) || 'plugins-publish' }}
+      cancel-in-progress: false
+    steps:
+      # 注意：shell 变量后面紧跟中文或全角符号时一定要写成 ${VAR}，否则 bash 可能把多字节字符的一部分当成变量名。
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - name: Select newest stable Xcode
+        run: |
+          XCODE=$(ls -d /Applications/Xcode_*.app | grep -iv -e beta -e release_candidate | sort -V | tail -1)
+          echo "Using $XCODE"
+          sudo xcode-select -s "$XCODE"
+          xcodebuild -version
+
+      - name: Install XcodeGen
+        run: brew install xcodegen
+
+      - name: Import signing certificate
+        env:
+          CERTIFICATE_P12_BASE64: ${{ secrets.MACOS_CERTIFICATE_P12 }}
+          CERTIFICATE_PASSWORD: ${{ secrets.MACOS_CERTIFICATE_PASSWORD }}
+        run: |
+          if [ -z "$CERTIFICATE_P12_BASE64" ]; then
+            echo "::warning::没有配置 MACOS_CERTIFICATE_P12：插件包用本地签名（ad-hoc），只有本地签名的 Pop 装得上"
+            exit 0
+          fi
+          scripts/import-certificate.sh
+
+      - name: Build, check and publish plugins
+        env:
+          GH_TOKEN: ${{ github.token }}
+          NOTARY_KEY_P8: ${{ secrets.NOTARY_KEY_P8 }}
+          NOTARY_KEY_ID: ${{ secrets.NOTARY_KEY_ID }}
+          NOTARY_ISSUER_ID: ${{ secrets.NOTARY_ISSUER_ID }}
+          NOTARY_APPLE_ID: ${{ secrets.NOTARY_APPLE_ID }}
+          NOTARY_PASSWORD: ${{ secrets.NOTARY_PASSWORD }}
+          NOTARY_TEAM_ID: ${{ secrets.NOTARY_TEAM_ID }}
+          CHECK_ONLY: ${{ github.event_name == 'pull_request' }}
+          PLUGINS: ${{ inputs.plugins }}
+        run: |
+          args=()
+          if [ "$CHECK_ONLY" = "true" ]; then
+            args+=(--dry-run)
+          fi
+          # PLUGINS 是空格分开的插件包 ID
+          # shellcheck disable=SC2206
+          ids=(${PLUGINS:-})
+          scripts/publish-plugins.sh ${args[@]+"${args[@]}"} ${ids[@]+"${ids[@]}"}
+
+      - name: Delete temporary keychain
+        if: always() && env.CODESIGN_KEYCHAIN != ''
+        run: security delete-keychain "$CODESIGN_KEYCHAIN" || true

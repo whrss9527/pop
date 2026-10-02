@@ -14,7 +14,7 @@ configFiles:
 settings:
   base:
     SWIFT_VERSION: "5.0"
-    MARKETING_VERSION: "0.64.0"
+    MARKETING_VERSION: "0.66.0"
     CURRENT_PROJECT_VERSION: "1"
     CODE_SIGN_STYLE: Automatic
     DEAD_CODE_STRIPPING: YES
@@ -1022,6 +1022,26 @@ targets:
         POP_PLUGIN_ID: mouseWheel
         POP_PLUGIN_ENTRY: PopMouseWheelEntry
 
+  PopHoldToQuit:
+    templates: [PopPlugin]
+    sources: [PluginBundles/HoldToQuit]
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: io.github.whrss9527.pop.plugin.holdToQuit
+        POP_PLUGIN_ID: holdToQuit
+        POP_PLUGIN_ENTRY: PopHoldToQuitEntry
+
+  # 单独发布的插件包（文件夹里有 plugin.json，翻译放在自己的 .lproj 里）：合并进 main 以后由 Plugins 工作流发布到最新正式版，
+  # 不用等 Pop 出新版本（见 scripts/publish-plugins.sh）
+  PopSleepTimer:
+    templates: [PopPlugin]
+    sources: [PluginBundles/SleepTimer]
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: io.github.whrss9527.pop.plugin.sleepTimer
+        POP_PLUGIN_ID: sleepTimer
+        POP_PLUGIN_ENTRY: PopSleepTimerEntry
+
   PopTests:
     type: bundle.unit-test
     platform: macOS
@@ -1032,6 +1052,9 @@ targets:
       - path: PluginBundles/CameraBubble
       - path: PluginBundles/PointerHighlight
       - path: PluginBundles/Teleprompter
+      - path: PluginBundles/SleepTimer
+        excludes: ["*.lproj", "*.lproj/**", plugin.json]
+      - path: PluginBundles/HoldToQuit
       - path: PluginBundles/MouseWheel
       - path: PluginBundles/WindowPiP
       - path: PluginBundles/BreakReminder
@@ -1150,6 +1173,8 @@ schemes:
         PopCameraBubble: all
         PopPointerHighlight: all
         PopTeleprompter: all
+        PopSleepTimer: all
+        PopHoldToQuit: all
         PopMouseWheel: all
         PopWindowPiP: all
         PopBreakReminder: all

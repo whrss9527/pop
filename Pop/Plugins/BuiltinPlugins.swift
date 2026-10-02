@@ -67,7 +67,7 @@ enum BuiltinPlugins {
         BuiltinPluginID.batchRename, BuiltinPluginID.revealInFinder, BuiltinPluginID.openWith, BuiltinPluginID.zip, BuiltinPluginID.encryptFiles,
         BuiltinPluginID.unzip, BuiltinPluginID.pdf, BuiltinPluginID.videoConvert, BuiltinPluginID.trimMedia,
         BuiltinPluginID.transcribe, BuiltinPluginID.shelf, BuiltinPluginID.openInTerminal, BuiltinPluginID.keepAwake,
-        BuiltinPluginID.systemActions, BuiltinPluginID.quitApps, BuiltinPluginID.uninstallApp, BuiltinPluginID.appInfo, BuiltinPluginID.batteryInfo, BuiltinPluginID.systemInfo, BuiltinPluginID.soundDevices, BuiltinPluginID.bluetooth, BuiltinPluginID.mouseWheel, BuiltinPluginID.resolution, BuiltinPluginID.diskSpeed, BuiltinPluginID.cleanKeyboard, BuiltinPluginID.timer, BuiltinPluginID.breakReminder, BuiltinPluginID.focusSounds,
+        BuiltinPluginID.systemActions, BuiltinPluginID.quitApps, BuiltinPluginID.uninstallApp, BuiltinPluginID.appInfo, BuiltinPluginID.batteryInfo, BuiltinPluginID.systemInfo, BuiltinPluginID.soundDevices, BuiltinPluginID.bluetooth, BuiltinPluginID.mouseWheel, BuiltinPluginID.holdToQuit, BuiltinPluginID.resolution, BuiltinPluginID.diskSpeed, BuiltinPluginID.cleanKeyboard, BuiltinPluginID.timer, BuiltinPluginID.breakReminder, BuiltinPluginID.focusSounds,
         BuiltinPluginID.clipboardHistory,
         BuiltinPluginID.snippets, BuiltinPluginID.allPlugins, BuiltinPluginID.settings,
     ]
@@ -97,6 +97,25 @@ enum BuiltinCategory: CaseIterable, Identifiable {
     case other
 
     var id: Self { self }
+
+    /// 单独发布的插件包在 plugin.json 里写的分类
+    var key: String {
+        switch self {
+        case .text: return "text"
+        case .ai: return "ai"
+        case .convert: return "convert"
+        case .developer: return "developer"
+        case .screen: return "screen"
+        case .recording: return "recording"
+        case .files: return "files"
+        case .other: return "other"
+        }
+    }
+
+    init?(key: String) {
+        guard let category = Self.allCases.first(where: { $0.key == key }) else { return nil }
+        self = category
+    }
 
     var title: String {
         switch self {
@@ -153,13 +172,13 @@ enum BuiltinCategory: CaseIterable, Identifiable {
                  BuiltinPluginID.transcribe,
                  BuiltinPluginID.shelf, BuiltinPluginID.airDrop, BuiltinPluginID.sendToPhone,
                  BuiltinPluginID.windowLayout, BuiltinPluginID.menuShortcuts,
-                 BuiltinPluginID.keepAwake, BuiltinPluginID.systemActions, BuiltinPluginID.quitApps, BuiltinPluginID.uninstallApp, BuiltinPluginID.appInfo, BuiltinPluginID.batteryInfo, BuiltinPluginID.systemInfo, BuiltinPluginID.soundDevices, BuiltinPluginID.bluetooth, BuiltinPluginID.mouseWheel, BuiltinPluginID.resolution, BuiltinPluginID.diskSpeed,
+                 BuiltinPluginID.keepAwake, BuiltinPluginID.systemActions, BuiltinPluginID.quitApps, BuiltinPluginID.uninstallApp, BuiltinPluginID.appInfo, BuiltinPluginID.batteryInfo, BuiltinPluginID.systemInfo, BuiltinPluginID.soundDevices, BuiltinPluginID.bluetooth, BuiltinPluginID.mouseWheel, BuiltinPluginID.holdToQuit, BuiltinPluginID.resolution, BuiltinPluginID.diskSpeed,
                  BuiltinPluginID.cleanKeyboard, BuiltinPluginID.timer, BuiltinPluginID.breakReminder, BuiltinPluginID.focusSounds],
     ]
 
-    /// 没有列出来的（剪贴板、全部功能、设置）都算「其他」
+    /// 没有列出来的按提供它的插件包（单独发布的插件包写在自己的目录信息里）；剩下的（剪贴板、全部功能、设置）都算「其他」
     static func of(_ pluginID: String) -> BuiltinCategory {
-        allCases.first { members[$0]?.contains(pluginID) == true } ?? .other
+        allCases.first { members[$0]?.contains(pluginID) == true } ?? PluginCatalog.package(providing: pluginID)?.category ?? .other
     }
 }
 

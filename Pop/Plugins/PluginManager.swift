@@ -16,6 +16,8 @@ struct PluginReleaseIndex: Decodable, Equatable {
         var size: Int64
         /// 装好后的大小（字节）
         var installedSize: Int64
+        /// 插件包自己带的目录信息（插件包文件夹里的 plugin.json）；跟着 Pop 一起发布、Pop 里写好了的插件包可以没有
+        var meta: PluginPackageMeta?
     }
 
     var format: Int
@@ -26,6 +28,57 @@ struct PluginReleaseIndex: Decodable, Equatable {
 
     func entry(id: String) -> Entry? {
         plugins.first { $0.id == id }
+    }
+
+    /// Pop 发布以后才单独发布的插件包：带着目录信息、Pop 里没写的
+    var published: [PluginPackage] {
+        plugins.compactMap { entry in
+            PluginCatalog.packages.contains { $0.id == entry.id } ? nil : PluginPackage(published: entry)
+        }
+    }
+}
+
+/// 插件包自己带的目录信息：插件包文件夹里的 plugin.json，打包时也写进发布页的插件包列表。
+/// Pop 发布以后才单独发布的插件包，Pop 里没写它叫什么、是哪一类，就照这个显示
+struct PluginPackageMeta: Codable, Equatable {
+    /// 插件包 ID（和 Info.plist 里的 PopPluginID 一样）
+    var id: String?
+    /// 插件包自己的版本：单独发布了新版本时，装着旧版本的 Pop 在后台换成新的
+    var version: String?
+    /// 语言（zh-Hans、en）→ 名字、介绍
+    var name: [String: String]
+    var summary: [String: String]
+    /// SF Symbol 名称
+    var symbol: String
+    /// 分类：text、ai、convert、developer、screen、recording、files、other
+    var category: String
+    /// 提供的功能（功能 ID）
+    var functions: [String]
+    var defaultsKeys: [String]?
+    var keychainAccounts: [String]?
+    var dataFolders: [String]?
+
+    /// 插件包里放着它的文件（Contents/Resources/plugin.json）
+    static func read(bundle url: URL) -> PluginPackageMeta? {
+        guard let data = try? Data(contentsOf: url.appendingPathComponent("Contents/Resources/plugin.json")) else { return nil }
+        return try? JSONDecoder().decode(PluginPackageMeta.self, from: data)
+    }
+}
+
+extension PluginPackage {
+    /// 发布页上单独发布的插件包：照它自己带的目录信息。名字、介绍按界面语言挑；
+    /// 插件包的名字只能是文件名（不带路径），卸载时只删 pop. 开头的偏好
+    init?(published entry: PluginReleaseIndex.Entry, chinese: Bool = Localization.isChinese) {
+        guard let meta = entry.meta, !meta.functions.isEmpty, entry.bundle.hasSuffix(".bundle") else { return nil }
+        let bundleName = String(entry.bundle.dropLast(".bundle".count))
+        guard !bundleName.isEmpty, !bundleName.contains("/"), !bundleName.hasPrefix(".") else { return nil }
+        func text(_ values: [String: String]) -> String {
+            values[chinese ? "zh-Hans" : "en"] ?? values["zh-Hans"] ?? values["en"] ?? entry.id
+        }
+        self.init(id: entry.id, bundleName: bundleName, name: text(meta.name), summary: text(meta.summary), symbol: meta.symbol,
+                  category: BuiltinCategory(key: meta.category) ?? .other, functions: meta.functions,
+                  defaultsKeys: (meta.defaultsKeys ?? []).filter { $0.hasPrefix("pop.") },
+                  keychainAccounts: meta.keychainAccounts ?? [], dataFolders: meta.dataFolders ?? [])
     }
 }
 
@@ -77,6 +130,8 @@ final class PluginManager: ObservableObject {
     @Published private(set) var index: PluginReleaseIndex?
     /// 读不到插件包列表时的原因
     @Published private(set) var indexError: String?
+    /// 单独发布了新版本、已经在后台换好的插件包：装载着的还是旧的，下次打开 Pop 时用新的
+    @Published private(set) var updatedOnDisk: Set<String> = []
 
     /// 「控制台」里按子系统 io.github.whrss9527.pop、类别 plugins 过滤
     private static let log = Logger(subsystem: Bundle.main.bundleIdentifier ?? "Pop", category: "plugins")
@@ -85,10 +140,19 @@ final class PluginManager: ObservableObject {
     private let registry: PluginRegistry
     private var cancellables = Set<AnyCancellable>()
     private var indexTask: Task<PluginReleaseIndex, Error>?
+    /// 插件包列表是什么时候读的（从发布页，或者本机存的那份）
+    private var indexLoadedAt: Date?
+    /// 正在后台换新版本的插件包
+    private var updating: Set<String> = []
+
+    /// 打开设置时插件包列表超过这么久就再读一次；平时（Pop 启动时）超过 6 小时才读
+    static let settingsRefreshAge: TimeInterval = 10 * 60
+    static let backgroundRefreshAge: TimeInterval = 6 * 3600
 
     init(settingsStore: SettingsStore, registry: PluginRegistry) {
         self.settingsStore = settingsStore
         self.registry = registry
+        loadCachedIndex()
         refreshStatuses()
     }
 
@@ -120,6 +184,13 @@ final class PluginManager: ObservableObject {
                 }
             }
             .store(in: &cancellables)
+        // App Store 版的插件包都在 App 里，不从网上读列表、不下载新版本
+        guard PluginBundles.bundledDirectory == nil else { return }
+        // 本机存的那份插件包列表里，装着的插件包有新版本的先换上；再去发布页看有没有新的插件包、新版本
+        if let index {
+            updateOutdated(index)
+        }
+        Task { _ = try? await loadIndex(maxAge: Self.backgroundRefreshAge) }
     }
 
     func status(of package: PluginPackage) -> Status {
@@ -150,7 +221,7 @@ final class PluginManager: ObservableObject {
     /// 对照设置和这台 Mac 上的插件包
     func reconcile() {
         let settings = settingsStore.settings
-        for package in PluginCatalog.packages {
+        for package in PluginCatalog.all {
             let wanted = package.functions.contains { settings.isInstalled($0) }
             if let item = PluginBundles.shared.loadedBundle(package.id), item.external {
                 // POP_PLUGIN_DIR 里的（测试、截图用）不归这里管
@@ -194,8 +265,9 @@ final class PluginManager: ObservableObject {
     }
 
     /// 发布页上这个版本的插件包列表；读过一次就记着
-    func loadIndex() async throws -> PluginReleaseIndex {
-        if let index {
+    /// 发布页上这个版本的插件包列表。读过、没超过 maxAge 就用读过的；单独发布了插件包以后列表会变，所以隔一阵子再读
+    func loadIndex(maxAge: TimeInterval = PluginManager.settingsRefreshAge) async throws -> PluginReleaseIndex {
+        if let index, let indexLoadedAt, Date().timeIntervalSince(indexLoadedAt) < maxAge {
             return index
         }
         if let indexTask {
@@ -208,14 +280,19 @@ final class PluginManager: ObservableObject {
             guard let index = try? JSONDecoder().decode(PluginReleaseIndex.self, from: data) else {
                 throw PluginInstallError.badIndex
             }
+            // 存一份：没网时也知道单独发布的插件包叫什么
+            if let cache = Self.indexCacheURL {
+                try? FileManager.default.createDirectory(at: cache.deletingLastPathComponent(), withIntermediateDirectories: true)
+                try? data.write(to: cache, options: .atomic)
+            }
             return index
         }
         indexTask = task
         do {
             let loaded = try await task.value
-            index = loaded
-            indexError = nil
             indexTask = nil
+            indexError = nil
+            indexLoaded(loaded, at: Date())
             return loaded
         } catch {
             indexError = error.localizedDescription
@@ -224,9 +301,60 @@ final class PluginManager: ObservableObject {
         }
     }
 
-    /// 设置页打开时读一下插件包列表，显示下载大小。App Store 版的插件包都在 App 里，不用读
+    /// 本机存的那份插件包列表（上次从发布页读到的）。POP_PLUGIN_SOURCE 换了地方时（测试用）不存
+    nonisolated static var indexCacheURL: URL? {
+        if let value = ProcessInfo.processInfo.environment["POP_PLUGIN_SOURCE"], !value.isEmpty {
+            return nil
+        }
+        return PluginPackage.dataDirectory.appending(path: "plugin-index.json")
+    }
+
+    /// 启动时先用本机存的那份：单独发布的插件包马上就认得。版本对不上（Pop 更新了）的不用
+    private func loadCachedIndex() {
+        guard PluginBundles.bundledDirectory == nil,
+              let cache = Self.indexCacheURL, let data = try? Data(contentsOf: cache),
+              let cached = try? JSONDecoder().decode(PluginReleaseIndex.self, from: data),
+              cached.version == UpdateChecker.currentVersion else { return }
+        let date = (try? cache.resourceValues(forKeys: [.contentModificationDateKey]).contentModificationDate) ?? .distantPast
+        indexLoaded(cached, at: date)
+    }
+
+    /// 读到了插件包列表：认得单独发布的插件包，对照设置装上要用的，换掉装着的旧版本
+    private func indexLoaded(_ loaded: PluginReleaseIndex, at date: Date) {
+        index = loaded
+        indexLoadedAt = date
+        PluginCatalog.setPublished(loaded.published)
+        refreshStatuses()
+        // 启动时 start() 之前读到的：start() 里会对照
+        guard !cancellables.isEmpty else { return }
+        reconcile()
+        updateOutdated(loaded)
+    }
+
+    /// 装着的插件包单独发布了新版本（插件包里的 plugin.json 版本和列表里的不一样）：在后台下载换上，下次打开 Pop 时用新的
+    private func updateOutdated(_ index: PluginReleaseIndex) {
+        guard index.build == PluginBundles.appBuildID else { return }
+        for item in PluginBundles.shared.loaded where !item.external && !updating.contains(item.id) && !updatedOnDisk.contains(item.id) {
+            guard let entry = index.entry(id: item.id), let latest = entry.meta?.version,
+                  let package = PluginCatalog.package(id: item.id),
+                  let installed = PluginPackageMeta.read(bundle: item.url)?.version, installed != latest else { continue }
+            updating.insert(item.id)
+            Task {
+                defer { updating.remove(item.id) }
+                do {
+                    _ = try await fetchBundle(package, entry: entry, index: index)
+                    updatedOnDisk.insert(item.id)
+                    Self.log.notice("updated plugin \(item.id, privacy: .public) on disk to \(latest, privacy: .public)")
+                } catch {
+                    Self.log.error("could not update plugin \(item.id, privacy: .public): \(error.localizedDescription, privacy: .public)")
+                }
+            }
+        }
+    }
+
+    /// 设置页打开时读一下插件包列表：显示下载大小，有新的单独发布的插件包也列出来。App Store 版的插件包都在 App 里，不用读
     func refreshIndex() {
-        guard index == nil, PluginBundles.bundledDirectory == nil else { return }
+        guard PluginBundles.bundledDirectory == nil else { return }
         Task { _ = try? await loadIndex() }
     }
 
@@ -240,28 +368,7 @@ final class PluginManager: ObservableObject {
             let index = try await loadIndex()
             guard let entry = index.entry(id: package.id) else { throw PluginInstallError.notInIndex }
             guard index.build == PluginBundles.appBuildID else { throw PluginInstallError.wrongBuild }
-            guard let source = Self.sourceURL else { throw PluginInstallError.noRelease }
-            let work = FileManager.default.temporaryDirectory.appendingPathComponent("pop-plugin-\(UUID().uuidString)", isDirectory: true)
-            try FileManager.default.createDirectory(at: work, withIntermediateDirectories: true)
-            defer { try? FileManager.default.removeItem(at: work) }
-            let archive = work.appendingPathComponent(entry.file)
-            try await Self.download(source.appendingPathComponent(entry.file), size: entry.size, to: archive)
-            let actual = try await runInBackground { () -> Result<String, Error> in
-                Result { try Checksums.sha256(of: archive) }
-            }.get()
-            guard actual == entry.sha256.lowercased() else { throw PluginInstallError.checksumMismatch }
-            let extracted = work.appendingPathComponent("extracted", isDirectory: true)
-            try await Self.extract(archive, to: extracted)
-            let bundle = extracted.appendingPathComponent(entry.bundle, isDirectory: true)
-            guard PluginBundles.pluginID(of: bundle) == package.id else {
-                throw PluginInstallError.extract(String(localized: "压缩包里没有这个插件包"))
-            }
-            let target = PluginBundles.installedURL(bundleName: package.bundleName)
-            try FileManager.default.createDirectory(at: PluginBundles.directory, withIntermediateDirectories: true)
-            if FileManager.default.fileExists(atPath: target.path) {
-                try FileManager.default.removeItem(at: target)
-            }
-            try FileManager.default.moveItem(at: bundle, to: target)
+            let target = try await fetchBundle(package, entry: entry, index: index)
             switch PluginBundles.shared.load(target) {
             case .success:
                 break
@@ -295,7 +402,43 @@ final class PluginManager: ObservableObject {
         }
     }
 
-    /// 卸载：拿掉功能，删掉插件包；deletingData 时连偏好一起删
+    /// 下载、校验、解压插件包，放进装插件包的文件夹（换掉原来的），返回放好的位置；不装载。
+    /// 换掉正装载着的旧版本时（后台更新），先确认新的签名没问题，免得把能用的换成不能用的
+    private func fetchBundle(_ package: PluginPackage, entry: PluginReleaseIndex.Entry, index: PluginReleaseIndex) async throws -> URL {
+        guard let source = Self.sourceURL else { throw PluginInstallError.noRelease }
+        // 列表里的文件名只能是文件名，不能带路径
+        guard !entry.file.contains("/"), !entry.bundle.contains("/") else { throw PluginInstallError.badIndex }
+        let work = FileManager.default.temporaryDirectory.appendingPathComponent("pop-plugin-\(UUID().uuidString)", isDirectory: true)
+        try FileManager.default.createDirectory(at: work, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: work) }
+        let archive = work.appendingPathComponent(entry.file)
+        try await Self.download(source.appendingPathComponent(entry.file), size: entry.size, to: archive)
+        let actual = try await runInBackground { () -> Result<String, Error> in
+            Result { try Checksums.sha256(of: archive) }
+        }.get()
+        guard actual == entry.sha256.lowercased() else { throw PluginInstallError.checksumMismatch }
+        let extracted = work.appendingPathComponent("extracted", isDirectory: true)
+        try await Self.extract(archive, to: extracted)
+        let bundle = extracted.appendingPathComponent(entry.bundle, isDirectory: true)
+        guard PluginBundles.pluginID(of: bundle) == package.id else {
+            throw PluginInstallError.extract(String(localized: "压缩包里没有这个插件包"))
+        }
+        let target = PluginBundles.installedURL(bundleName: package.bundleName)
+        if PluginBundles.shared.isLoaded(package.id) {
+            guard PluginBundles.buildID(of: bundle) == PluginBundles.appBuildID else { throw PluginInstallError.wrongBuild }
+            guard CodeSignature.isTrustedPlugin(bundle) else {
+                throw PluginInstallError.load(String(describing: PluginBundles.LoadError.untrusted))
+            }
+        }
+        try FileManager.default.createDirectory(at: PluginBundles.directory, withIntermediateDirectories: true)
+        if FileManager.default.fileExists(atPath: target.path) {
+            try FileManager.default.removeItem(at: target)
+        }
+        try FileManager.default.moveItem(at: bundle, to: target)
+        return target
+    }
+
+    /// 卸载：拿掉功能，删掉插件包；deletingData 时连偏好、密钥、数据文件夹一起删
     private func remove(_ package: PluginPackage, deletingData: Bool) {
         PluginBundles.shared.unload(package.id)
         try? FileManager.default.removeItem(at: PluginBundles.installedURL(bundleName: package.bundleName))
@@ -303,7 +446,14 @@ final class PluginManager: ObservableObject {
             for key in package.defaultsKeys {
                 UserDefaults.standard.removeObject(forKey: key)
             }
+            for account in package.keychainAccounts {
+                KeychainSecret(service: PluginPackage.keychainService(package.id), account: account, label: "").save("")
+            }
+            for folder in package.dataFolders where !folder.isEmpty && !folder.contains("..") {
+                try? FileManager.default.removeItem(at: PluginPackage.dataDirectory.appending(path: folder, directoryHint: .isDirectory))
+            }
         }
+        updatedOnDisk.remove(package.id)
         Self.log.notice("removed plugin \(package.id, privacy: .public)")
         statuses[package.id] = .notInstalled
         refreshStatuses()
@@ -316,7 +466,7 @@ final class PluginManager: ObservableObject {
 
     /// 按装载情况重新算每个插件包的状态和大小；正在装的、装失败的保持原样
     private func refreshStatuses() {
-        for package in PluginCatalog.packages {
+        for package in PluginCatalog.all {
             if let loaded = PluginBundles.shared.loadedBundle(package.id) {
                 statuses[package.id] = .installed
                 sizes[package.id] = Self.size(of: loaded.url)

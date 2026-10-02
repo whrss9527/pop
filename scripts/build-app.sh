@@ -106,6 +106,8 @@ if [ "$APPSTORE" = "1" ]; then
   for bundle in "$PRODUCTS"/Pop*.bundle; do
     [ -f "$bundle/Contents/Info.plist" ] || continue
     case "$APP_STORE_EXCLUDED_PLUGINS" in *" $(basename "$bundle" .bundle) "*) continue ;; esac
+    # 单独发布的插件包（带 plugin.json）要从发布页的插件包列表里认出来，App Store 版不读这个列表，也就不打进去
+    [ -f "$bundle/Contents/Resources/plugin.json" ] && continue
     target="$APP/Contents/PlugIns/$(basename "$bundle")"
     ditto "$bundle" "$target"
     codesign --force --sign - "$target"

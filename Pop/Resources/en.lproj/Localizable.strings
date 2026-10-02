@@ -1630,6 +1630,11 @@
 "0 号格在正上方\n顺时针排列" = "Slot 0 is at the top,\nthen clockwise";
 "空" = "Empty";
 "清空这一格" = "Clear This Slot";
+"搜索功能" = "Search actions";
+"搜索功能，支持拼音首字母" = "Search actions";
+"全部分类" = "All Categories";
+"已放置" = "Placed";
+"新版本已经下载好，下次打开 Pop 时生效" = "A new version is downloaded and takes effect the next time Pop opens";
 "空格子" = "Empty slot";
 "选中的内容满足条件时，不弹圆盘，直接执行对应功能" = "When the selection matches a condition, run the action directly instead of showing the ring";
 "从上到下依次匹配。没有命中任何规则、或者什么都没选中时，弹出圆盘。" = "Rules are checked from top to bottom. If none matches, or nothing is selected, the ring appears.";
@@ -3167,3 +3172,31 @@
 "在访达里选中文件再唤起 Pop，要先允许 Pop 访问文件所在的文件夹（一般选个人文件夹）。" = "To use Pop on files you select in Finder, first allow Pop to access the folder they’re in (usually your home folder).";
 "Pop 能读写这些文件夹里的文件：" = "Pop can read and write files in these folders:";
 "移除" = "Remove";
+
+/* 长按 ⌘Q 退出 */
+"长按 ⌘Q 退出" = "Hold to Quit";
+"按住 ⌘Q 一会儿（或者连按两下）才退出 App，误按一下不会关掉整个 App；可以让有的 App 照旧一按就退出" = "Quit apps only after holding ⌘Q for a moment (or pressing it twice), so a stray ⌘Q never closes a whole app; some apps can still quit right away";
+"误按一下 ⌘Q 不退出" = "Don’t quit on a single ⌘Q";
+"怎样才退出" = "Quit by";
+"按住 ⌘Q" = "Holding ⌘Q";
+"连按两下 ⌘Q" = "Pressing ⌘Q twice";
+"按住多久" = "Hold for";
+"两下最多隔" = "Second press within";
+"正在拦 ⌘Q：按住 %@才退出" = "On: hold ⌘Q for %@ to quit";
+"正在拦 ⌘Q：%@内连按两下才退出" = "On: press ⌘Q twice within %@ to quit";
+"没开：⌘Q 一按就退出" = "Off: ⌘Q quits right away";
+"要先在「系统设置 → 隐私与安全性 → 辅助功能」里允许 Pop，才能拦下 ⌘Q" = "Allow Pop in System Settings → Privacy & Security → Accessibility so it can catch ⌘Q";
+"系统暂时没让 Pop 拦下 ⌘Q，过几秒会再试一次" = "macOS didn’t let Pop catch ⌘Q yet; it tries again in a few seconds";
+"这些 App 里照旧一按就退出" = "These apps still quit right away";
+"还没有" = "None yet";
+"拿掉" = "Remove";
+"拿掉「%@」" = "Remove “%@”";
+"加上「%@」" = "Add “%@”";
+"添加 App" = "Add App";
+"没有别的正在运行的 App" = "No other apps are running";
+"访达的 ⌘Q 本来就不退出，不拦。Chrome 自己能设成按住 ⌘Q 才退出，装了的话一开始就在上面的列表里，交给它自己管。输入密码时系统不让别的 App 看到按键，这时 ⌘Q 照常一按就退出。设置会记住，Pop 启动时接着生效。" = "Finder’s ⌘Q doesn’t quit it anyway, so it’s left alone. Chrome can be set to quit only when you hold ⌘Q, so if it’s installed it starts on the list above and handles ⌘Q itself. While you type a password, macOS hides keystrokes from other apps, so ⌘Q quits right away then. Settings are remembered and apply again when Pop starts.";
+"按住 ⌘Q 退出「%@」" = "Hold ⌘Q to quit “%@”";
+"再按一次 ⌘Q 退出「%@」" = "Press ⌘Q again to quit “%@”";
+"正在退出「%@」" = "Quitting “%@”";
+"松开就不退出" = "Let go to keep it open";
+"不按就不退出" = "Otherwise it stays open";

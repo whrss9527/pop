@@ -455,9 +455,9 @@ enum OverlayDemo {
             await pause(holdTime)
             NSApp.windows.first { $0.isVisible && $0.title == String(localized: "截图标注") }?.close()
 
-            // 设置窗口里新加的几页：截图区域换成设置窗口
+            // 设置窗口里新加的几页（圆盘那一页看左边功能列表上的搜索和过滤）：截图区域换成设置窗口
             await pause(0.6 * unit)
-            for tab in [SettingsTab.plugins, .ai, .hotKeys] {
+            for tab in [SettingsTab.ring, .plugins, .ai, .hotKeys] {
                 coordinator.openSettings(tab)
                 await pause(0.6 * unit)
                 if let window = NSApp.windows.first(where: { $0.isVisible && $0.title == String(localized: "Pop 设置") }) {
