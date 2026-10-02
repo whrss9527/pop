@@ -3182,3 +3182,4 @@
 "正在退出「%@」" = "Quitting “%@”";
 "松开就不退出" = "Let go to keep it open";
 "不按就不退出" = "Otherwise it stays open";
+"新插件" = "New plugin";

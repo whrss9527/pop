@@ -73,6 +73,10 @@ struct PluginPackagesSection: View {
         .onAppear {
             manager.refreshIndex()
         }
+        // 看过了：这次标着「新」的，下次打开不再标
+        .onDisappear {
+            manager.markPackagesSeen()
+        }
     }
 
     /// 装了几个、一共占多大
@@ -110,7 +114,12 @@ struct PluginPackageRow: View {
             Image(systemName: package.symbol)
                 .frame(width: 22)
             VStack(alignment: .leading, spacing: 2) {
-                Text(package.name)
+                HStack(spacing: 6) {
+                    Text(package.name)
+                    if manager.newPackageIDs.contains(package.id) {
+                        NewBadge()
+                    }
+                }
                 Text(package.summary)
                     .font(.caption)
                     .foregroundStyle(.secondary)
@@ -188,5 +197,18 @@ struct PluginPackageRow: View {
 
     private static func format(_ bytes: Int64) -> String {
         ByteCountFormatter.string(fromByteCount: bytes, countStyle: .file)
+    }
+}
+
+/// 名字旁边的「新」：新出的插件包
+struct NewBadge: View {
+    var body: some View {
+        Text("新")
+            .font(.caption2.weight(.semibold))
+            .foregroundStyle(Color.accentColor)
+            .padding(.horizontal, 5)
+            .padding(.vertical, 1)
+            .background(Capsule().fill(Color.accentColor.opacity(0.15)))
+            .accessibilityLabel(Text("新插件"))
     }
 }
