@@ -160,17 +160,16 @@ struct FontPreviewView: View {
     /// 装着的字体
     @ViewBuilder
     private var installedList: some View {
-        HStack(spacing: 8) {
-            Picker("筛选", selection: $model.filter) {
-                ForEach(FontCatalog.Filter.allCases) { filter in
-                    Text(filter.title).tag(filter)
-                }
+        // 分段和勾选框一行放不下时（英文），勾选框放到下一行，不挤成一个字一行
+        ViewThatFits(in: .horizontal) {
+            HStack(spacing: 8) {
+                filterPicker
+                coveringToggle
             }
-            .pickerStyle(.segmented)
-            .labelsHidden()
-            .fixedSize()
-            Toggle("只看能显示的", isOn: $model.onlyCovering)
-                .toggleStyle(.checkbox)
+            VStack(alignment: .leading, spacing: 6) {
+                filterPicker
+                coveringToggle
+            }
         }
         ScrollView {
             LazyVStack(alignment: .leading, spacing: 10) {
@@ -184,6 +183,23 @@ struct FontPreviewView: View {
         Text(model.summary)
             .font(.caption)
             .foregroundStyle(.secondary)
+    }
+
+    private var filterPicker: some View {
+        Picker("筛选", selection: $model.filter) {
+            ForEach(FontCatalog.Filter.allCases) { filter in
+                Text(filter.title).tag(filter)
+            }
+        }
+        .pickerStyle(.segmented)
+        .labelsHidden()
+        .fixedSize()
+    }
+
+    private var coveringToggle: some View {
+        Toggle("只看能显示的", isOn: $model.onlyCovering)
+            .toggleStyle(.checkbox)
+            .fixedSize()
     }
 
     private func row(_ family: FontCatalog.Family) -> some View {
