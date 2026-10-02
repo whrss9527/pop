@@ -78,6 +78,15 @@ if [ "${POP_SANDBOX:-}" = "1" ]; then
   done
   # App Store 版不带赞赏码（审核指南 3.1.1）
   rm -f "$POP2/Contents/Resources/donate-wechat.png"
+  # App Store 版不从网上下载插件包（审核指南 2.5.2）：都打进 App 里（Contents/PlugIns），装上时从这里装载
+  mkdir -p "$POP2/Contents/PlugIns"
+  for bundle in "$(dirname "$APP")"/Pop*.bundle; do
+    [ -f "$bundle/Contents/Info.plist" ] || continue
+    target="$POP2/Contents/PlugIns/$(basename "$bundle")"
+    ditto "$bundle" "$target"
+    codesign --force --sign "${CODESIGN_IDENTITY:--}" ${CODESIGN_KEYCHAIN:+--keychain "$CODESIGN_KEYCHAIN"} "$target"
+  done
+  echo "打进 App 的插件包：$(find "$POP2/Contents/PlugIns" -maxdepth 1 -name '*.bundle' | wc -l | tr -d ' ') 个" >&2
   APP="$POP2"
   if [ -z "${CODESIGN_IDENTITY:-}" ]; then
     codesign --force --sign - --entitlements "$ROOT/$ENTITLEMENTS" "$APP"

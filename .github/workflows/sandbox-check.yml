@@ -85,6 +85,29 @@ jobs:
           pkill -x Pop2 || true
           exit $status
 
+      # App Store 版的插件包都在 Pop2.app/Contents/PlugIns 里：装上所有插件包（POP_INSTALL_PLUGINS=all），确认每一个都能在沙盒里装载
+      - name: Load every bundled plugin
+        run: |
+          for _ in $(seq 1 20); do pgrep -x Pop2 > /dev/null || break; sleep 0.5; done
+          START="$(date '+%Y-%m-%d %H:%M:%S')"
+          open --env POP_INSTALL_PLUGINS=all "$APP"
+          sleep 30
+          log show --start "$START" --style compact --predicate 'process == "Pop2" AND category == "plugins"' 2>/dev/null \
+            > build/sandbox/plugins.txt || true
+          grep -E 'could not|failed' build/sandbox/plugins.txt | tail -40 || true
+          total=$(ls -d "$APP"/Contents/PlugIns/*.bundle 2>/dev/null | wc -l | tr -d ' ')
+          loaded=$(grep -c 'loaded bundled plugin' build/sandbox/plugins.txt || true)
+          failed=$(grep -c 'could not' build/sandbox/plugins.txt || true)
+          echo "::notice title=插件包::PlugIns 里 ${total} 个，从 App 里装载了 ${loaded:-0} 个，失败 ${failed:-0} 个"
+          status=0
+          pgrep -x Pop2 > /dev/null || { echo "::error::装上所有插件包以后 Pop2 退出了"; status=1; }
+          if [ "${loaded:-0}" != "$total" ]; then
+            echo "::error::有插件包没有装载上（${loaded:-0}/${total}），见这一步的日志"
+            status=1
+          fi
+          pkill -x Pop2 || true
+          exit $status
+
       - name: Package
         run: |
           (cd "$(dirname "$APP")" && ditto -c -k --keepParent Pop2.app "$GITHUB_WORKSPACE/build/sandbox/Pop2.zip")
@@ -103,5 +126,6 @@ jobs:
           path: |
             build/sandbox/launch.png
             build/sandbox/denials.txt
+            build/sandbox/plugins.txt
             build/sandbox/entitlements.plist
           if-no-files-found: warn

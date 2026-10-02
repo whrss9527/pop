@@ -48,7 +48,9 @@ struct PluginPackagesSection: View {
                 }
             } header: {
                 VStack(alignment: .leading, spacing: 4) {
-                    Text("这些功能是单独的插件包，要用时再装：从 GitHub 发布页下载，几秒就好；不用了可以卸载，连同它的设置一起删掉，不占地方。")
+                    Text(Distribution.isAppStore
+                         ? String(localized: "这些功能是单独的插件包，要用时再装上；不用了可以卸载，连同它的设置一起删掉。")
+                         : String(localized: "这些功能是单独的插件包，要用时再装：从 GitHub 发布页下载，几秒就好；不用了可以卸载，连同它的设置一起删掉，不占地方。"))
                         .font(.caption)
                         .foregroundStyle(.secondary)
                         .fixedSize(horizontal: false, vertical: true)
@@ -78,6 +80,8 @@ struct PluginPackagesSection: View {
     private var summary: String {
         let installed = PluginCatalog.packages.filter { manager.status(of: $0) == .installed }
         guard !installed.isEmpty else { return String(localized: "还没有装插件") }
+        // App Store 版的插件包都在 App 里，装不装都占着地方
+        if Distribution.isAppStore { return String(localized: "已装 \(installed.count) 个插件") }
         let total = installed.compactMap { manager.sizes[$0.id] }.reduce(0, +)
         return String(localized: "已装 \(installed.count) 个插件，一共占用 \(ByteCountFormatter.string(fromByteCount: total, countStyle: .file))")
     }
@@ -135,7 +139,7 @@ struct PluginPackageRow: View {
     private var detail: String {
         switch status {
         case .installed:
-            guard let size = manager.sizes[package.id] else { return String(localized: "已安装") }
+            guard !Distribution.isAppStore, let size = manager.sizes[package.id] else { return String(localized: "已安装") }
             return String(localized: "已安装 · 占用 \(Self.format(size))")
         case .installing:
             return String(localized: "正在下载…")
@@ -169,7 +173,9 @@ struct PluginPackageRow: View {
     private func confirmUninstall() {
         let alert = NSAlert()
         alert.messageText = String(localized: "卸载「\(package.name)」？")
-        if let size = manager.sizes[package.id] {
+        if Distribution.isAppStore {
+            alert.informativeText = String(localized: "会删掉它的设置。圆盘上和快捷键里的这个功能也会拿掉，要用时可以再装。")
+        } else if let size = manager.sizes[package.id] {
             alert.informativeText = String(localized: "会删掉插件包和它的设置，腾出 \(Self.format(size))。圆盘上和快捷键里的这个功能也会拿掉，要用时可以再装。")
         } else {
             alert.informativeText = String(localized: "会删掉插件包和它的设置。圆盘上和快捷键里的这个功能也会拿掉，要用时可以再装。")
