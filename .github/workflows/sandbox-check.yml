@@ -62,16 +62,25 @@ jobs:
             echo "::error::没有沙盒容器 ~/Library/Containers/${BUNDLE_ID}"
             status=1
           fi
-          echo "---- Pop 的系统日志 ----"
-          log show --start "$START" --style compact --predicate 'process == "Pop"' 2>/dev/null | tail -80 || true
-          echo "---- 被沙盒拦下的操作 ----"
+          echo "---- Pop 自己打的日志 ----"
+          log show --start "$START" --style compact --predicate 'process == "Pop" AND eventMessage BEGINSWITH "Pop"' 2>/dev/null | tail -40 || true
+          # 每次被沙盒拦下，系统日志里都有一份带调用栈的报告：按操作汇总，附上 Pop 自己代码里最近的一层
           log show --start "$START" --style compact --predicate 'eventMessage CONTAINS "Sandbox: Pop("' 2>/dev/null \
-            | tee build/sandbox/denials.txt | tail -80 || true
-          denials=$(grep -c 'deny' build/sandbox/denials.txt || true)
-          echo "::notice title=沙盒拦下的操作::启动 15 秒内 ${denials:-0} 条，见日志的“被沙盒拦下的操作”"
-          for report in ~/Library/Logs/DiagnosticReports/Pop*; do
-            [ -f "$report" ] && { echo "---- $report ----"; head -80 "$report"; }
-          done
+            > build/sandbox/denials.txt || true
+          python3 - build/sandbox/denials.txt <<'PY'
+          import collections, re, sys
+          text = open(sys.argv[1], errors="replace").read()
+          found = collections.Counter()
+          for part in re.split(r"(?=Sandbox: Pop\()", text)[1:]:
+              summary = re.search(r'"summary":"([^"]+)"', part) or re.search(r"Sandbox: Pop\(\d+\) (deny\S* [^\n]+)", part)
+              frame = re.search(r"^\d+\s+Pop\s+\S+\s+(.+?)(?: \+ \d+)?(?: \(|$)", part, re.M)
+              if summary:
+                  found[(summary.group(1).strip(), frame.group(1).strip() if frame else "")] += 1
+          print(f"---- 被沙盒拦下的操作（{sum(found.values())} 次）----")
+          for (summary, frame), count in found.most_common():
+              print(f"{count} × {summary}  ←  {frame or '（调用栈里没有 Pop 的代码）'}")
+              print(f"::notice title=沙盒拦下::{summary} ← {frame or '-'}（{count} 次）")
+          PY
           pkill -x Pop || true
           exit $status
 
