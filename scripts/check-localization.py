@@ -10,7 +10,9 @@ Pop 的界面文字以中文原文作为 key（开发语言是简体中文），
    代码里用到的每一个带中文的 key 都有翻译。
 
 单独发布的插件包把翻译放在自己的文件夹里（PluginBundles/<文件夹>/en.lproj、zh-Hans.lproj 的 Localizable.strings），
-代码里用 bundle: 查自己的翻译。这些插件包的两份翻译也照上面检查，它们代码里用到的 key 查它自己的翻译。
+代码里用 bundle: 查自己的翻译。这些插件包的两份翻译也照上面检查，它们代码里用到的 key 查它自己的翻译；
+代码里直接写中文、又没带 bundle: 的界面文字（Text("中文")、Button("中文")、String(localized: "中文") 这些）会去 Pop 里查，
+查不到就显示中文，也报出来。
 
 用法：
   scripts/check-localization.py                          只检查两份翻译文件
@@ -137,6 +139,36 @@ def plugin_folders():
     return result
 
 
+# 单独发布的插件包里，这些写法的中文会去 Pop 的翻译里查：要带 bundle:（Text、String(localized:)），
+# 或者换成带 label 的写法（Button { } label: { Text("中文", bundle: …) }）
+UNBUNDLED = re.compile(
+    r'(?<![\w.])(?:Text|Button|Toggle|Label|Picker|Menu|Section|TextField|SecureField|Stepper|DatePicker|Link|LabeledContent|'
+    r'ProgressView|ContentUnavailableView|GroupBox|DisclosureGroup)\(\s*"[^"\n]*[\u3400-\u9fff]'
+    r'|\.(?:help|accessibilityLabel|accessibilityHint|navigationTitle|alert|confirmationDialog)\(\s*"[^"\n]*[\u3400-\u9fff]'
+    r'|String\(localized:\s*"(?:[^"\\\n]|\\.)*"(?!\s*,\s*(?:table:\s*[^,]+,\s*)?bundle:)')
+
+
+def unbundled_strings(folder):
+    """单独发布的插件包里没带 bundle: 的界面文字：[(文件:行, 那一行)]"""
+    found = []
+    for dirpath, _, files in os.walk(folder):
+        for name in sorted(files):
+            if not name.endswith(".swift"):
+                continue
+            path = os.path.join(dirpath, name)
+            for number, line in enumerate(open(path, encoding="utf-8"), 1):
+                code = line.split("//")[0] if "//" in line and '"' not in line.split("//")[0] else line
+                for m in UNBUNDLED.finditer(code):
+                    rest = code[m.start():]
+                    # Text("中文", bundle: …)、String(localized: "中文", bundle: …) 是对的
+                    if rest.startswith("Text(") and re.match(r'Text\(\s*"(?:[^"\\]|\\.)*"\s*,\s*(?:tableName:\s*[^,]+,\s*)?bundle:', rest):
+                        continue
+                    if not HAN.search(m.group(0)):
+                        continue
+                    found.append((f"{os.path.relpath(path, ROOT)}:{number}", line.strip()))
+    return found
+
+
 def owner(source, plugins):
     """这个源文件用谁的翻译：自己带翻译的插件包的文件夹名，或者 None（Pop 的）"""
     parts = source.replace("\\", "/").split("/")
@@ -206,6 +238,9 @@ def main():
     plugins = plugin_folders()
     plugin_tables = {name: check_tables(folder, "Localizable", f"{name}/Localizable", errors).get("en", {})
                      for name, folder in plugins.items()}
+    for name, folder in plugins.items():
+        for place, line in unbundled_strings(folder):
+            errors.append(f"{place}: 单独发布的插件包里的界面文字要查它自己的翻译（带 bundle:）：{line}")
 
     localizable = tables.get("Localizable", {}).get("en", {})
     missing = []
