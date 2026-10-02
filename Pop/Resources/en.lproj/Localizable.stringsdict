@@ -1,0 +1,1659 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!-- 英文的单复数（数量是 1 时用单数）。由 Localizable.strings 里同一条的英文加上单数形式得到；没列在这里的照 Localizable.strings -->
+<plist version="1.0">
+<dict>
+	<key> %lld 天</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string> %#@n1@</string>
+		<key>n1</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%lld day</string>
+			<key>other</key>
+			<string>%lld days</string>
+		</dict>
+	</dict>
+	<key> · %lld 天后</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string> · in %#@n1@</string>
+		<key>n1</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%lld day</string>
+			<key>other</key>
+			<string>%lld days</string>
+		</dict>
+	</dict>
+	<key>%@，%lld 个文件</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%@, %#@n1@</string>
+		<key>n1</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%lld file</string>
+			<key>other</key>
+			<string>%lld files</string>
+		</dict>
+	</dict>
+	<key>%@，一共 %lld 页</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%@, %#@n1@ in total</string>
+		<key>n1</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%lld page</string>
+			<key>other</key>
+			<string>%lld pages</string>
+		</dict>
+	</dict>
+	<key>%lld 个名字不能用：%@</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@n1@ can’t be used: %@</string>
+		<key>n1</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%lld name</string>
+			<key>other</key>
+			<string>%lld names</string>
+		</dict>
+	</dict>
+	<key>%lld 个字符</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@n1@</string>
+		<key>n1</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%lld character</string>
+			<key>other</key>
+			<string>%lld characters</string>
+		</dict>
+	</dict>
+	<key>%lld 个字，图片宽 1080 像素；按住拖动预览图也能拖到别的 App 里</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@n1@, 1080 pixels wide; drag the preview into another app</string>
+		<key>n1</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%lld character</string>
+			<key>other</key>
+			<string>%lld characters</string>
+		</dict>
+	</dict>
+	<key>%lld 个文件</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@n1@</string>
+		<key>n1</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%lld file</string>
+			<key>other</key>
+			<string>%lld files</string>
+		</dict>
+	</dict>
+	<key>%lld 个文件夹</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@n1@</string>
+		<key>n1</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%lld folder</string>
+			<key>other</key>
+			<string>%lld folders</string>
+		</dict>
+	</dict>
+	<key>%lld 个文件夹，%lld 个文件；最多展开 3 层，隐藏文件不列出</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@n1@, %#@n2@; up to 3 levels deep, hidden files not listed</string>
+		<key>n1</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%lld folder</string>
+			<key>other</key>
+			<string>%lld folders</string>
+		</dict>
+		<key>n2</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%lld file</string>
+			<key>other</key>
+			<string>%lld files</string>
+		</dict>
+	</dict>
+	<key>%lld 个文件，点一下进去看</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@n1@. Click to look inside.</string>
+		<key>n1</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%lld file</string>
+			<key>other</key>
+			<string>%lld files</string>
+		</dict>
+	</dict>
+	<key>%lld 个月 </key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@n1@ </string>
+		<key>n1</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%lld month</string>
+			<key>other</key>
+			<string>%lld months</string>
+		</dict>
+	</dict>
+	<key>%lld 个标题</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@n1@</string>
+		<key>n1</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%lld heading</string>
+			<key>other</key>
+			<string>%lld headings</string>
+		</dict>
+	</dict>
+	<key>%lld 个磁盘正在使用，推不出来：%@</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@n1@ in use and can’t be ejected: %@</string>
+		<key>n1</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%lld disk is</string>
+			<key>other</key>
+			<string>%lld disks are</string>
+		</dict>
+	</dict>
+	<key>%lld 个类型；字段是否可选、能否为空按示例推断</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@n1@; optional and nullable fields are inferred from the sample</string>
+		<key>n1</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%lld type</string>
+			<key>other</key>
+			<string>%lld types</string>
+		</dict>
+	</dict>
+	<key>%lld 个视频</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@n1@</string>
+		<key>n1</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%lld video</string>
+			<key>other</key>
+			<string>%lld videos</string>
+		</dict>
+	</dict>
+	<key>%lld 个，%lld 个还没记住</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@n1@, %lld not learned yet</string>
+		<key>n1</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%lld word</string>
+			<key>other</key>
+			<string>%lld words</string>
+		</dict>
+	</dict>
+	<key>%lld 周</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@n1@</string>
+		<key>n1</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%lld week</string>
+			<key>other</key>
+			<string>%lld weeks</string>
+		</dict>
+	</dict>
+	<key>%lld 处匹配</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@n1@</string>
+		<key>n1</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%lld match</string>
+			<key>other</key>
+			<string>%lld matches</string>
+		</dict>
+	</dict>
+	<key>%lld 天</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@n1@</string>
+		<key>n1</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%lld day</string>
+			<key>other</key>
+			<string>%lld days</string>
+		</dict>
+	</dict>
+	<key>%lld 天 %lld 小时</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@n1@ %lld hr</string>
+		<key>n1</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%lld day</string>
+			<key>other</key>
+			<string>%lld days</string>
+		</dict>
+	</dict>
+	<key>%lld 天前</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@n1@ ago</string>
+		<key>n1</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%lld day</string>
+			<key>other</key>
+			<string>%lld days</string>
+		</dict>
+	</dict>
+	<key>%lld 天后</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>In %#@n1@</string>
+		<key>n1</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%lld day</string>
+			<key>other</key>
+			<string>%lld days</string>
+		</dict>
+	</dict>
+	<key>%lld 天（周一到周五，不算节假日）</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@n1@ (Monday to Friday, not counting holidays)</string>
+		<key>n1</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%lld day</string>
+			<key>other</key>
+			<string>%lld days</string>
+		</dict>
+	</dict>
+	<key>%lld 字</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@n1@</string>
+		<key>n1</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%lld character</string>
+			<key>other</key>
+			<string>%lld characters</string>
+		</dict>
+	</dict>
+	<key>%lld 岁</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@n1@</string>
+		<key>n1</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%lld year</string>
+			<key>other</key>
+			<string>%lld years</string>
+		</dict>
+	</dict>
+	<key>%lld 年 </key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@n1@ </string>
+		<key>n1</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%lld year</string>
+			<key>other</key>
+			<string>%lld years</string>
+		</dict>
+	</dict>
+	<key>%lld 张图片</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@n1@</string>
+		<key>n1</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%lld image</string>
+			<key>other</key>
+			<string>%lld images</string>
+		</dict>
+	</dict>
+	<key>%lld 条</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@n1@</string>
+		<key>n1</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%lld item</string>
+			<key>other</key>
+			<string>%lld items</string>
+		</dict>
+	</dict>
+	<key>%lld 条常用短语</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@n1@</string>
+		<key>n1</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%lld snippet</string>
+			<key>other</key>
+			<string>%lld snippets</string>
+		</dict>
+	</dict>
+	<key>%lld 条，共 %@</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@n1@, %@ total</string>
+		<key>n1</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%lld item</string>
+			<key>other</key>
+			<string>%lld items</string>
+		</dict>
+	</dict>
+	<key>%lld 种字体</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@n1@</string>
+		<key>n1</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%lld font</string>
+			<key>other</key>
+			<string>%lld fonts</string>
+		</dict>
+	</dict>
+	<key>%lld 种字体能完整显示这段文字</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@n1@ show all of this text</string>
+		<key>n1</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%lld font can</string>
+			<key>other</key>
+			<string>%lld fonts can</string>
+		</dict>
+	</dict>
+	<key>%lld 种样式</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@n1@</string>
+		<key>n1</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%lld style</string>
+			<key>other</key>
+			<string>%lld styles</string>
+		</dict>
+	</dict>
+	<key>%lld 行 × %lld 列</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@n1@ × %#@n2@</string>
+		<key>n1</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%lld row</string>
+			<key>other</key>
+			<string>%lld rows</string>
+		</dict>
+		<key>n2</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%lld column</string>
+			<key>other</key>
+			<string>%lld columns</string>
+		</dict>
+	</dict>
+	<key>%lld 行 × %lld 列（第一行当作表头）</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@n1@ × %#@n2@ (first row as header)</string>
+		<key>n1</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%lld row</string>
+			<key>other</key>
+			<string>%lld rows</string>
+		</dict>
+		<key>n2</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%lld column</string>
+			<key>other</key>
+			<string>%lld columns</string>
+		</dict>
+	</dict>
+	<key>%lld 页</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@n1@</string>
+		<key>n1</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%lld page</string>
+			<key>other</key>
+			<string>%lld pages</string>
+		</dict>
+	</dict>
+	<key>%lld 页，%lld 个字</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@n1@, %#@n2@</string>
+		<key>n1</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%lld page</string>
+			<key>other</key>
+			<string>%lld pages</string>
+		</dict>
+		<key>n2</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%lld character</string>
+			<key>other</key>
+			<string>%lld characters</string>
+		</dict>
+	</dict>
+	<key>%lld 页，没有文字层：是扫描件的话可以识别文字，存成能搜索、复制的 PDF</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@n1@ with no text layer. If it’s a scan, recognize the text and save a PDF you can search and copy from</string>
+		<key>n1</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%lld page</string>
+			<key>other</key>
+			<string>%lld pages</string>
+		</dict>
+	</dict>
+	<key>%lld 项</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@n1@</string>
+		<key>n1</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%lld item</string>
+			<key>other</key>
+			<string>%lld items</string>
+		</dict>
+	</dict>
+	<key>%lld 项 · %lld 组数</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@n1@ · %lld series</string>
+		<key>n1</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%lld item</string>
+			<key>other</key>
+			<string>%lld items</string>
+		</dict>
+	</dict>
+	<key>SHA-256（%lld 个文件）</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>SHA-256 (%#@n1@)</string>
+		<key>n1</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%lld file</string>
+			<key>other</key>
+			<string>%lld files</string>
+		</dict>
+	</dict>
+	<key>「%@」→「%@」（旧的在前）：删去 %lld 行，新增 %lld 行</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>“%@” → “%@” (older first): %#@n1@ removed, %lld added</string>
+		<key>n1</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%lld line</string>
+			<key>other</key>
+			<string>%lld lines</string>
+		</dict>
+	</dict>
+	<key>一共 %lld 页。写上要取出的页码，比如 1-3, 5, 8-（8- 是第 8 页到最后）</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@n1@ in total. Enter the pages to extract, e.g. 1-3, 5, 8- (8- is page 8 to the end).</string>
+		<key>n1</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%lld page</string>
+			<key>other</key>
+			<string>%lld pages</string>
+		</dict>
+	</dict>
+	<key>两个文件夹里的 %lld 个文件完全一样</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>The %#@n1@ identical</string>
+		<key>n1</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%lld file in both folders is</string>
+			<key>other</key>
+			<string>%lld files in both folders are</string>
+		</dict>
+	</dict>
+	<key>中的 %lld 页</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@n1@</string>
+		<key>n1</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%lld page</string>
+			<key>other</key>
+			<string>%lld pages</string>
+		</dict>
+	</dict>
+	<key>会把 %lld 个文件放进 %lld 个子文件夹；子文件夹、隐藏文件和没下载完的文件不动</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>Moves %#@n1@ into %#@n2@. Subfolders, hidden files and unfinished downloads stay put</string>
+		<key>n1</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%lld file</string>
+			<key>other</key>
+			<string>%lld files</string>
+		</dict>
+		<key>n2</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%lld subfolder</string>
+			<key>other</key>
+			<string>%lld subfolders</string>
+		</dict>
+	</dict>
+	<key>会把 %lld 张照片和视频按拍摄的月份放进 %lld 个子文件夹；别的文件不动</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>Moves %#@n1@ into %#@n2@ by the month they were taken. Other files stay put</string>
+		<key>n1</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%lld photo or video</string>
+			<key>other</key>
+			<string>%lld photos and videos</string>
+		</dict>
+		<key>n2</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%lld subfolder</string>
+			<key>other</key>
+			<string>%lld subfolders</string>
+		</dict>
+	</dict>
+	<key>会改 %lld 个文件的名字</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>Renames %#@n1@</string>
+		<key>n1</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%lld file</string>
+			<key>other</key>
+			<string>%lld files</string>
+		</dict>
+	</dict>
+	<key>共 %lld 个数</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@n1@</string>
+		<key>n1</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%lld number</string>
+			<key>other</key>
+			<string>%lld numbers</string>
+		</dict>
+	</dict>
+	<key>共 %lld 页，只标第 %lld 页</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@n1@; only page %lld gets a number</string>
+		<key>n1</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%lld page</string>
+			<key>other</key>
+			<string>%lld pages</string>
+		</dict>
+	</dict>
+	<key>共 %lld 项</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@n1@</string>
+		<key>n1</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%lld item</string>
+			<key>other</key>
+			<string>%lld items</string>
+		</dict>
+	</dict>
+	<key>剪贴板 → 选中的文字：删去 %lld 行，新增 %lld 行</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>Clipboard → selection: %#@n1@ removed, %#@n2@ added</string>
+		<key>n1</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%lld line</string>
+			<key>other</key>
+			<string>%lld lines</string>
+		</dict>
+		<key>n2</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%lld line</string>
+			<key>other</key>
+			<string>%lld lines</string>
+		</dict>
+	</dict>
+	<key>剪贴板 → 选中的文字：删去 %lld 行，新增 %lld 行。红色是只在剪贴板里有的，绿色是只在选中的文字里有的。</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>Clipboard → selection: %#@n1@ removed, %#@n2@ added. Red is only on the clipboard; green is only in the selection.</string>
+		<key>n1</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%lld line</string>
+			<key>other</key>
+			<string>%lld lines</string>
+		</dict>
+		<key>n2</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%lld line</string>
+			<key>other</key>
+			<string>%lld lines</string>
+		</dict>
+	</dict>
+	<key>压好了 %lld 张，%lld 张失败：%@</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>Compressed %#@n1@, %lld failed: %@</string>
+		<key>n1</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%lld image</string>
+			<key>other</key>
+			<string>%lld images</string>
+		</dict>
+	</dict>
+	<key>已压缩 %lld 张，都在 %@ 以内</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>Compressed %#@n1@, all under %@</string>
+		<key>n1</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%lld image</string>
+			<key>other</key>
+			<string>%lld images</string>
+		</dict>
+	</dict>
+	<key>已取出 %lld 页</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>Extracted %#@n1@</string>
+		<key>n1</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%lld page</string>
+			<key>other</key>
+			<string>%lld pages</string>
+		</dict>
+	</dict>
+	<key>已复制 %lld 个路径</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>Copied %#@n1@</string>
+		<key>n1</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%lld path</string>
+			<key>other</key>
+			<string>%lld paths</string>
+		</dict>
+	</dict>
+	<key>已存成 %lld 张图片</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>Saved as %#@n1@</string>
+		<key>n1</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%lld image</string>
+			<key>other</key>
+			<string>%lld images</string>
+		</dict>
+	</dict>
+	<key>已把 %lld 个文件移到废纸篓，可以从废纸篓放回</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>Moved %#@n1@ back from the Trash.</string>
+		<key>n1</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%lld file to the Trash. You can put it</string>
+			<key>other</key>
+			<string>%lld files to the Trash. You can put them</string>
+		</dict>
+	</dict>
+	<key>已把 %lld 张裁成 %@</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>Cropped %#@n1@ to %@</string>
+		<key>n1</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%lld image</string>
+			<key>other</key>
+			<string>%lld images</string>
+		</dict>
+	</dict>
+	<key>已把 %lld 项移到废纸篓，腾出 %@</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>Moved %#@n1@ to the Trash, freeing %@</string>
+		<key>n1</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%lld item</string>
+			<key>other</key>
+			<string>%lld items</string>
+		</dict>
+	</dict>
+	<key>已推出 %lld 个磁盘</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>Ejected %#@n1@</string>
+		<key>n1</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%lld disk</string>
+			<key>other</key>
+			<string>%lld disks</string>
+		</dict>
+	</dict>
+	<key>已经看了 %lld 个文件，一共 %@…</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>Checked %#@n1@, %@ so far…</string>
+		<key>n1</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%lld file</string>
+			<key>other</key>
+			<string>%lld files</string>
+		</dict>
+	</dict>
+	<key>已给 %lld 个文件加上水印</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>Watermarked %#@n1@</string>
+		<key>n1</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%lld file</string>
+			<key>other</key>
+			<string>%lld files</string>
+		</dict>
+	</dict>
+	<key>已给 %lld 张图片加上水印</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>Watermarked %#@n1@</string>
+		<key>n1</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%lld image</string>
+			<key>other</key>
+			<string>%lld images</string>
+		</dict>
+	</dict>
+	<key>已给 %lld 张打码，各自另存在原图旁边</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>Redacted %#@n1@</string>
+		<key>n1</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%lld image and saved it next to the original</string>
+			<key>other</key>
+			<string>%lld images and saved each next to its original</string>
+		</dict>
+	</dict>
+	<key>已装 %lld 个插件，一共占用 %@</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@n1@ installed, using %@</string>
+		<key>n1</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%lld plugin</string>
+			<key>other</key>
+			<string>%lld plugins</string>
+		</dict>
+	</dict>
+	<key>已解压 %lld 个文件</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>Unzipped %#@n1@</string>
+		<key>n1</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%lld file</string>
+			<key>other</key>
+			<string>%lld files</string>
+		</dict>
+	</dict>
+	<key>已转换 %lld 个视频</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>Converted %#@n1@</string>
+		<key>n1</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%lld video</string>
+			<key>other</key>
+			<string>%lld videos</string>
+		</dict>
+	</dict>
+	<key>已转换 %lld 张</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>Converted %#@n1@</string>
+		<key>n1</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%lld image</string>
+			<key>other</key>
+			<string>%lld images</string>
+		</dict>
+	</dict>
+	<key>已重命名 %lld 个文件</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>Renamed %#@n1@</string>
+		<key>n1</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%lld file</string>
+			<key>other</key>
+			<string>%lld files</string>
+		</dict>
+	</dict>
+	<key>打好了 %lld 张，%lld 张失败：%@</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>Redacted %#@n1@, %lld failed: %@</string>
+		<key>n1</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%lld image</string>
+			<key>other</key>
+			<string>%lld images</string>
+		</dict>
+	</dict>
+	<key>找到 %lld 个码</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>Found %#@n1@</string>
+		<key>n1</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%lld code</string>
+			<key>other</key>
+			<string>%lld codes</string>
+		</dict>
+	</dict>
+	<key>找到 %lld 组相似的照片，一共 %lld 张；勾上的 %lld 张移到废纸篓能腾出 %@</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>Found %#@n1@ of similar photos, %#@n2@ in all. Moving the %#@n3@ to the Trash frees %@</string>
+		<key>n1</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%lld group</string>
+			<key>other</key>
+			<string>%lld groups</string>
+		</dict>
+		<key>n2</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%lld photo</string>
+			<key>other</key>
+			<string>%lld photos</string>
+		</dict>
+		<key>n3</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%lld checked one</string>
+			<key>other</key>
+			<string>%lld checked ones</string>
+		</dict>
+	</dict>
+	<key>把 %lld 张图片裁成哪种比例？</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>Crop %#@n1@ to which ratio?</string>
+		<key>n1</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%lld image</string>
+			<key>other</key>
+			<string>%lld images</string>
+		</dict>
+	</dict>
+	<key>推出 %lld 个磁盘</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>Eject %#@n1@</string>
+		<key>n1</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%lld Disk</string>
+			<key>other</key>
+			<string>%lld Disks</string>
+		</dict>
+	</dict>
+	<key>整理好了 %lld 个文件，放进了 %lld 个子文件夹</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>Moved %#@n1@ into %#@n2@</string>
+		<key>n1</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%lld file</string>
+			<key>other</key>
+			<string>%lld files</string>
+		</dict>
+		<key>n2</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%lld subfolder</string>
+			<key>other</key>
+			<string>%lld subfolders</string>
+		</dict>
+	</dict>
+	<key>有 %lld 个文件没能挪回去，比如「%@」</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@n1@ couldn’t be moved back, such as “%@”</string>
+		<key>n1</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%lld file</string>
+			<key>other</key>
+			<string>%lld files</string>
+		</dict>
+	</dict>
+	<key>有 %lld 张没能移到废纸篓</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@n1@ couldn’t be moved to the Trash</string>
+		<key>n1</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%lld photo</string>
+			<key>other</key>
+			<string>%lld photos</string>
+		</dict>
+	</dict>
+	<key>有 %lld 项没能移到废纸篓：%@</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@n1@ couldn’t be moved to the Trash: %@</string>
+		<key>n1</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%lld item</string>
+			<key>other</key>
+			<string>%lld items</string>
+		</dict>
+	</dict>
+	<key>正在传到手机（%lld 个文件）</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>Sending to phone (%#@n1@)</string>
+		<key>n1</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%lld file</string>
+			<key>other</key>
+			<string>%lld files</string>
+		</dict>
+	</dict>
+	<key>生成了 %lld 个文件，存在「%@」</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>Made %#@n1@ in “%@”</string>
+		<key>n1</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%lld file</string>
+			<key>other</key>
+			<string>%lld files</string>
+		</dict>
+	</dict>
+	<key>看了 %lld 个文件，有 %lld 组内容完全一样，每组只留一个可以腾出 %@。%@</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>Checked %#@n1@ and found %#@n2@ of identical files. Keeping one of each frees up %@.%@</string>
+		<key>n1</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%lld file</string>
+			<key>other</key>
+			<string>%lld files</string>
+		</dict>
+		<key>n2</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%lld group</string>
+			<key>other</key>
+			<string>%lld groups</string>
+		</dict>
+	</dict>
+	<key>看了 %lld 个文件，没有内容完全一样的。%@</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>Checked %#@n1@; none are identical.%@</string>
+		<key>n1</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%lld file</string>
+			<key>other</key>
+			<string>%lld files</string>
+		</dict>
+	</dict>
+	<key>移走了 %lld 张，腾出 %@</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>Moved %#@n1@, freeing %@</string>
+		<key>n1</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%lld photo</string>
+			<key>other</key>
+			<string>%lld photos</string>
+		</dict>
+	</dict>
+	<key>约 %lld 分钟</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>About %#@n1@</string>
+		<key>n1</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%lld minute</string>
+			<key>other</key>
+			<string>%lld minutes</string>
+		</dict>
+	</dict>
+	<key>给 %lld 个文件加水印</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>Watermark %#@n1@</string>
+		<key>n1</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%lld File</string>
+			<key>other</key>
+			<string>%lld Files</string>
+		</dict>
+	</dict>
+	<key>给 %lld 张图片加水印</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>Watermark %#@n1@</string>
+		<key>n1</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%lld Image</string>
+			<key>other</key>
+			<string>%lld Images</string>
+		</dict>
+	</dict>
+	<key>裁好了 %lld 张，%lld 张失败：%@</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>Cropped %#@n1@, %lld failed: %@</string>
+		<key>n1</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%lld image</string>
+			<key>other</key>
+			<string>%lld images</string>
+		</dict>
+	</dict>
+	<key>认出了 %lld 页的文字，存成了「%@」</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>Recognized text on %#@n1@ and saved “%@”</string>
+		<key>n1</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%lld page</string>
+			<key>other</key>
+			<string>%lld pages</string>
+		</dict>
+	</dict>
+	<key>跳转了 %lld 次</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>Redirected %#@n1@</string>
+		<key>n1</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%lld time</string>
+			<key>other</key>
+			<string>%lld times</string>
+		</dict>
+	</dict>
+	<key>转好了 %lld 个文件</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>Converted %#@n1@</string>
+		<key>n1</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%lld file</string>
+			<key>other</key>
+			<string>%lld files</string>
+		</dict>
+	</dict>
+	<key>转换了 %lld 张，%lld 张失败：%@</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>Converted %#@n1@, %lld failed: %@</string>
+		<key>n1</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%lld image</string>
+			<key>other</key>
+			<string>%lld images</string>
+		</dict>
+	</dict>
+	<key>，跳过 %lld 个太大或不是文字的文件</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>; skipped %#@n1@ too large or not text</string>
+		<key>n1</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%lld file that is</string>
+			<key>other</key>
+			<string>%lld files that are</string>
+		</dict>
+	</dict>
+</dict>
+</plist>

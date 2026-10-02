@@ -690,15 +690,15 @@
 "读不了这个字体文件" = "Can’t read this font file";
 
 /* FontPreviewView.swift */
-"%@ 种字体能完整显示这段文字" = "%@ fonts can show all of this text";
-"%@ 种字体" = "%@ fonts";
+"%lld 种字体能完整显示这段文字" = "%lld fonts can show all of this text";
+"%lld 种字体" = "%lld fonts";
 "装不上：%@" = "Couldn’t install: %@";
 "字体预览" = "Font Preview";
 "要预览的文字" = "Text to preview";
 "搜索字体" = "Search fonts";
 "筛选" = "Filter";
 "只看能显示的" = "Only fonts that can show it";
-"%@ 种样式" = "%@ styles";
+"%lld 种样式" = "%lld styles";
 "取消收藏" = "Remove from Favorites";
 "加到收藏" = "Add to Favorites";
 "复制字体名" = "Copy Font Name";

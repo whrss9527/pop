@@ -85,7 +85,7 @@ final class FontPreviewModel: ObservableObject {
         if count == 0 && onlyCovering {
             return String(localized: "没有能完整显示这段文字的字体，取消「只看能显示的」再看看")
         }
-        return onlyCovering ? String(localized: "\(String(count)) 种字体能完整显示这段文字") : String(localized: "\(String(count)) 种字体")
+        return onlyCovering ? String(localized: "\(count) 种字体能完整显示这段文字") : String(localized: "\(count) 种字体")
     }
 
     func toggleFavorite(_ family: FontCatalog.Family) {
@@ -214,7 +214,7 @@ struct FontPreviewView: View {
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
-                Text(String(localized: "\(String(family.styles)) 种样式"))
+                Text(String(localized: "\(family.styles) 种样式"))
                     .font(.caption2)
                     .foregroundStyle(.tertiary)
                 Spacer(minLength: 0)

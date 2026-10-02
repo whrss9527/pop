@@ -67,6 +67,44 @@ final class LocalizationTests: XCTestCase {
         assertTranslated(ContentKind.allCases.map(\.title), in: bundle)
     }
 
+    /// 英文的单复数（en.lproj/Localizable.stringsdict）：数量都是 2 时和 Localizable.strings 里的英文一样，
+    /// 都是 1 时换成单数（每一条至少有一处不一样），占位符都填上了
+    func testEnglishPluralsFollowTheStringsFile() throws {
+        let bundle = try englishBundle()
+        let folder = URL(fileURLWithPath: bundle.bundlePath)
+        let plurals = try XCTUnwrap(NSDictionary(contentsOf: folder.appendingPathComponent("Localizable.stringsdict")) as? [String: Any])
+        let table = try XCTUnwrap(NSDictionary(contentsOf: folder.appendingPathComponent("Localizable.strings")) as? [String: String])
+        XCTAssertGreaterThan(plurals.count, 50)
+        let english = Locale(identifier: "en_US")
+        for key in plurals.keys.sorted() {
+            let plain = try XCTUnwrap(table[key], "Localizable.strings 里没有「\(key)」")
+            // key 里的占位符按顺序：%lld 填数量，%@ 填一个词
+            var integers: [Bool] = []
+            var rest = Substring(key)
+            while let mark = rest.firstIndex(of: "%") {
+                rest = rest[rest.index(after: mark)...]
+                if rest.hasPrefix("lld") {
+                    integers.append(true)
+                } else if rest.hasPrefix("@") {
+                    integers.append(false)
+                }
+            }
+            func arguments(_ count: Int) -> [CVarArg] {
+                integers.map { $0 ? count : "x" }
+            }
+            let format = bundle.localizedString(forKey: key, value: nil, table: nil)
+            let one = String(format: format, locale: english, arguments: arguments(1))
+            let two = String(format: format, locale: english, arguments: arguments(2))
+            XCTAssertEqual(two, String(format: plain, locale: english, arguments: arguments(2)), key)
+            XCTAssertNotEqual(one, two, key)
+            XCTAssertFalse(one.contains("%") || two.contains("%"), "「\(key)」→「\(one)」「\(two)」")
+        }
+        // 用的时候（String(localized:)）也是这样。单复数按 locale 的语言分，英文界面时 Locale.current 的语言就是英文；
+        // 测试用中文跑，这里写明
+        XCTAssertEqual(String(localized: "\(1) 个文件", bundle: bundle, locale: english), "1 file")
+        XCTAssertEqual(String(localized: "\(3) 个文件", bundle: bundle, locale: english), "3 files")
+    }
+
     /// 设置里的界面语言：用单独的 UserDefaults，不改测试进程自己的语言
     func testInterfaceLanguageSetting() throws {
         let suite = "pop.tests.language.\(UUID().uuidString)"
