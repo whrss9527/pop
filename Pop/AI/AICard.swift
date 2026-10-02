@@ -214,6 +214,7 @@ struct AICardView: View {
                 if canReplace {
                     Button("替换原文") { onAction(.replace(model.output)) }
                         .keyboardShortcut(.return, modifiers: .command)
+                        .buttonStyle(.borderedProminent)
                         .help("用结果替换选中的文字（⌘↩）")
                 }
                 Button("贴到屏幕") { onAction(.pinText(model.output)) }
