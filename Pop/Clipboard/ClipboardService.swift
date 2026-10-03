@@ -285,7 +285,7 @@ final class ClipboardService: ObservableObject {
     /// 把一条历史写回剪贴板并粘贴到前台 App（调用前要先收起浮窗）。
     func paste(_ item: ClipboardItem) {
         let imageURL = store.imageURL(for: item)
-        Paster.paste(restoringPrevious: false) { pasteboard in
+        Paster.paste { pasteboard in
             Self.write(item, imageURL: imageURL, to: pasteboard)
         }
         store.markUsed(id: item.id)

@@ -1475,7 +1475,7 @@ final class PopCoordinator: MouseTriggerDelegate {
         model.onPasteText = { [weak self] text in
             // 合在一起的文字留在剪贴板里，和粘贴一条历史一样
             self?.endSession()
-            Paster.paste(restoringPrevious: false) { pasteboard in
+            Paster.paste { pasteboard in
                 pasteboard.setString(text, forType: .string)
             }
         }
