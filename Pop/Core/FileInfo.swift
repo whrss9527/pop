@@ -41,7 +41,7 @@ enum FileInfo {
         if let type = values.contentType, values.isDirectory != true {
             rows += await details(for: url, type: type)
         }
-        rows.append(ResultCard.Row(label: String(localized: "位置"), value: abbreviated(url.deletingLastPathComponent())))
+        rows.append(ResultCard.Row(label: String(localized: "所在文件夹"), value: abbreviated(url.deletingLastPathComponent())))
         return rows
     }
 

@@ -82,6 +82,15 @@ extension PluginPackage {
     }
 }
 
+/// 哪些插件包是新的。还没记过看过哪些时（第一次读到插件包列表），现在有的都算看过：
+/// 刚装好 Pop、刚更新到会标「新」的版本时不会一下子全标上，之后发布的、Pop 新版本里加的才标
+enum PluginNewness {
+    static func update(seen: Set<String>?, current: Set<String>) -> (seen: Set<String>, new: Set<String>) {
+        guard let seen else { return (current, []) }
+        return (seen, current.subtracting(seen))
+    }
+}
+
 enum PluginInstallError: LocalizedError, Equatable {
     /// 自己构建的 Pop 没有发布页，也就没有可以下载的插件包
     case noRelease
@@ -132,6 +141,8 @@ final class PluginManager: ObservableObject {
     @Published private(set) var indexError: String?
     /// 单独发布了新版本、已经在后台换好的插件包：装载着的还是旧的，下次打开 Pop 时用新的
     @Published private(set) var updatedOnDisk: Set<String> = []
+    /// 新出的插件包：还没在「设置 → 功能」里看过的，名字旁边标「新」
+    @Published private(set) var newPackageIDs: Set<String> = []
 
     /// 「控制台」里按子系统 io.github.whrss9527.pop、类别 plugins 过滤
     private static let log = Logger(subsystem: Bundle.main.bundleIdentifier ?? "Pop", category: "plugins")
@@ -325,10 +336,32 @@ final class PluginManager: ObservableObject {
         indexLoadedAt = date
         PluginCatalog.setPublished(loaded.published)
         refreshStatuses()
+        refreshNewPackages()
         // 启动时 start() 之前读到的：start() 里会对照
         guard !cancellables.isEmpty else { return }
         reconcile()
         updateOutdated(loaded)
+    }
+
+    /// 看过的插件包记在这里（插件包 ID）
+    static let seenKey = "pop.plugins.seen"
+
+    /// 读到插件包列表以后：算出哪些插件包是新的
+    private func refreshNewPackages() {
+        let saved = UserDefaults.standard.stringArray(forKey: Self.seenKey).map { Set($0) }
+        let result = PluginNewness.update(seen: saved, current: Set(PluginCatalog.all.map(\.id)))
+        if result.seen != saved {
+            UserDefaults.standard.set(result.seen.sorted(), forKey: Self.seenKey)
+        }
+        newPackageIDs = result.new
+    }
+
+    /// 在「设置 → 功能」里看过插件列表了：现在标着「新」的，以后不再标
+    func markPackagesSeen() {
+        guard !newPackageIDs.isEmpty else { return }
+        let saved = Set(UserDefaults.standard.stringArray(forKey: Self.seenKey) ?? [])
+        UserDefaults.standard.set(saved.union(newPackageIDs).sorted(), forKey: Self.seenKey)
+        newPackageIDs = []
     }
 
     /// 装着的插件包单独发布了新版本（插件包里的 plugin.json 版本和列表里的不一样）：在后台下载换上，下次打开 Pop 时用新的

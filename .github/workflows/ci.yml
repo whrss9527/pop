@@ -82,7 +82,8 @@ jobs:
   launch-smoke:
     name: launch-smoke (${{ matrix.os }})
     runs-on: ${{ matrix.os }}
-    timeout-minutes: 30
+    # macOS 15 上编通用版要 10～14 分钟，截图要 13 分钟左右，30 分钟已经不够用
+    timeout-minutes: 45
     # 截图推到 ci-screenshots/<系统> 分支上
     permissions:
       contents: write

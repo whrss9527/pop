@@ -180,6 +180,18 @@ final class PluginBundleTests: XCTestCase {
         XCTAssertEqual(PluginPackage(published: odd)?.summary, "odd")
     }
 
+    /// 新插件：第一次读到插件包列表时都算看过，之后出来的才标「新」；看过以后不再标
+    func testNewPackages() {
+        let first = PluginNewness.update(seen: nil, current: ["zip", "sleepTimer"])
+        XCTAssertEqual(first.seen, ["zip", "sleepTimer"])
+        XCTAssertTrue(first.new.isEmpty, "刚装好、刚更新时不会一下子全标上")
+        let later = PluginNewness.update(seen: first.seen, current: ["zip", "sleepTimer", "screenDimmer"])
+        XCTAssertEqual(later.new, ["screenDimmer"])
+        XCTAssertEqual(later.seen, first.seen, "看过以前不记成看过")
+        // 卸载了、发布页上没有了的不影响
+        XCTAssertEqual(PluginNewness.update(seen: ["zip", "gone"], current: ["zip", "calcPad"]).new, ["calcPad"])
+    }
+
     /// 单独发布的插件包放进目录：按 ID、按功能都找得到，功能的分类照它自己写的
     func testPublishedPackagesJoinTheCatalog() {
         let package = PluginPackage(id: "sleepTimer", bundleName: "PopSleepTimer", name: "定时睡眠", summary: "到点睡眠", symbol: "moon.zzz",
