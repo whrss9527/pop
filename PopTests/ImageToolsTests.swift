@@ -205,6 +205,29 @@ final class ImageSizeLimitTests: XCTestCase {
     }
 }
 
+final class ImageSaveFailureTests: XCTestCase {
+    /// 存不进去的文件夹：说没有权限，不要说成这台 Mac 不支持这种格式
+    func testReadOnlyFolderSaysNoPermission() throws {
+        let folder = try Canvas.folder(self)
+        let locked = folder.appending(path: "只读")
+        try FileManager.default.createDirectory(at: locked, withIntermediateDirectories: true)
+        let png = locked.appending(path: "截图.png")
+        XCTAssertTrue(Canvas.write(try XCTUnwrap(Canvas.solid(width: 40, height: 30, gray: 0.5)), to: png, type: .png))
+        try FileManager.default.setAttributes([.posixPermissions: 0o555], ofItemAtPath: locked.path)
+        // 后加的先执行：先恢复权限，删临时文件夹时才删得掉
+        addTeardownBlock { try? FileManager.default.setAttributes([.posixPermissions: 0o755], ofItemAtPath: locked.path) }
+
+        XCTAssertThrowsError(try ImageConverter.convert(png, .jpeg)) { error in
+            XCTAssertEqual(error as? ImageConverter.Failure, ImageConverter.Failure(message: "没有权限在「只读」里存文件"))
+        }
+    }
+
+    func testUnsupportedFormatStillSaysSo() {
+        XCTAssertEqual(ImageConverter.cannotCreateMessage(URL(fileURLWithPath: "/tmp/说明.txt"), type: .plainText),
+                       "这台 Mac 不支持存成 TXT")
+    }
+}
+
 final class FolderCompareTests: XCTestCase {
     private func makeFolder(_ root: URL, _ files: [String: String]) throws {
         for (path, text) in files {

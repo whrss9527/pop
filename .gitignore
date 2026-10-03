@@ -6,6 +6,8 @@ DerivedData/
 .build/
 build/
 *.xcarchive
+# scripts/build-app-store.sh 打出来的 App Store 安装包
+dist/
 
 # 本地签名配置（Team ID 等），模板见 Config/Local.xcconfig.example
 Config/Local.xcconfig
@@ -17,3 +19,4 @@ Config/Local.xcconfig
 .pop-signing/
 
 .DS_Store
+__pycache__/

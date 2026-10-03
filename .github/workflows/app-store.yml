@@ -1,0 +1,346 @@
+name: app-store
+
+# 手动运行：把 Pop 的 Mac App Store 版传上 App Store Connect、填好资料、提交审核。网页上只做一次的事（新建 App、App 隐私、
+# 欧盟 DSA 商家身份、协议）见 docs/app-store.md。之后都在这里：
+#   1. build（macOS）：scripts/build-app-store.sh 构建 App Store 版（开沙盒、插件包打在 App 里），签名打包成 Pop-AppStore.pkg，
+#      用 App Store Connect API 密钥校验、上传。输入 build 选 upload（默认）就上传，validate 只构建和校验，none 跳过这一步。
+#   2. listing（Linux）：scripts/app-store-connect.py sync，把 docs/app-store/listing 里的资料填进 App Store Connect：
+#      类别、名称、描述、关键词、截图、年龄分级、价格（免费）、销售范围（除了中国大陆）、审核备注，选上构建；
+#      勾上 submit 时最后提交审核。
+# 需要仓库 Secrets（Settings → Secrets and variables → Actions）。证书和 API 密钥和 Stox 的一样，描述文件是 Pop 自己的：
+#   APPSTORE_CERTIFICATE_P12        Apple Distribution 证书和私钥导出的 .p12，base64
+#   APPSTORE_CERTIFICATE_PASSWORD   上面 .p12 的密码
+#   APPSTORE_INSTALLER_P12          Mac Installer Distribution 证书和私钥导出的 .p12，base64
+#   APPSTORE_INSTALLER_PASSWORD     上面 .p12 的密码
+#   APPSTORE_PROVISIONING_PROFILE   Pop 的 Mac App Store Connect 类型的描述文件（.provisionprofile），base64
+#   ASC_KEY_ID                      App Store Connect API 密钥的 Key ID
+#   ASC_ISSUER_ID                   App Store Connect API 密钥的 Issuer ID
+#   ASC_KEY_P8                      API 密钥文件 AuthKey_XXXX.p8 的内容（原文或 base64 都行）
+#   APPSTORE_REVIEW_CONTACT         可选，审核联系人，四行：名、姓、带国家码的电话、邮箱
+on:
+  workflow_dispatch:
+    inputs:
+      build:
+        description: "构建：upload 构建、校验并上传；validate 只构建和校验；none 不构建"
+        type: choice
+        options:
+          - upload
+          - validate
+          - none
+        default: upload
+      listing:
+        description: "把 docs/app-store/listing 里的资料填进 App Store Connect，并选上构建"
+        type: boolean
+        default: true
+      submit:
+        description: "最后提交审核（要和 listing 一起勾）"
+        type: boolean
+        default: false
+      withdraw:
+        description: "有版本还在等审核或审核中时，先把它撤回、用这个版本替换（要和 listing 一起勾）"
+        type: boolean
+        default: false
+      version:
+        description: "版本号（CFBundleShortVersionString），留空时取 project.yml 里的 MARKETING_VERSION"
+        required: false
+        default: ""
+
+permissions:
+  contents: read
+
+concurrency:
+  group: app-store
+  cancel-in-progress: false
+
+jobs:
+  check-inputs:
+    name: Check inputs
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Check inputs
+        env:
+          BUILD: ${{ inputs.build }}
+          LISTING: ${{ inputs.listing }}
+          SUBMIT: ${{ inputs.submit }}
+          WITHDRAW: ${{ inputs.withdraw }}
+          VERSION: ${{ inputs.version }}
+        run: |
+          if [ "$WITHDRAW" = "true" ] && [ "$LISTING" != "true" ]; then
+            echo "::error title=输入不对::withdraw（撤回审核）要和 listing 一起勾上：撤回以后要把这个版本的资料和构建填上。"
+            exit 1
+          fi
+          if [ "$SUBMIT" = "true" ] && [ "$LISTING" != "true" ]; then
+            echo "::error title=输入不对::submit（提交审核）要和 listing 一起勾上：提交前要先把资料填好、选上构建。"
+            exit 1
+          fi
+          if [ "$BUILD" = "none" ] && [ "$LISTING" != "true" ]; then
+            echo "::error title=输入不对::build 选了 none，listing 也没勾，没有要做的事。"
+            exit 1
+          fi
+          if [ -n "$VERSION" ] && ! printf '%s' "$VERSION" | grep -Eq '^[0-9]+(\.[0-9]+){0,2}$'; then
+            echo "::error title=输入不对::version 要写成 0.49.0 这样，现在是 ${VERSION}"
+            exit 1
+          fi
+
+  build:
+    name: Build and upload to App Store Connect
+    needs: check-inputs
+    if: inputs.build != 'none'
+    runs-on: macos-15
+    timeout-minutes: 45
+    outputs:
+      version: ${{ steps.package.outputs.version }}
+      build-number: ${{ steps.package.outputs.build }}
+    env:
+      APPSTORE_CERTIFICATE_P12: ${{ secrets.APPSTORE_CERTIFICATE_P12 }}
+      APPSTORE_CERTIFICATE_PASSWORD: ${{ secrets.APPSTORE_CERTIFICATE_PASSWORD }}
+      APPSTORE_INSTALLER_P12: ${{ secrets.APPSTORE_INSTALLER_P12 }}
+      APPSTORE_INSTALLER_PASSWORD: ${{ secrets.APPSTORE_INSTALLER_PASSWORD }}
+      APPSTORE_PROVISIONING_PROFILE: ${{ secrets.APPSTORE_PROVISIONING_PROFILE }}
+      ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+      ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+      ASC_KEY_P8: ${{ secrets.ASC_KEY_P8 }}
+    steps:
+      - name: Check secrets
+        run: |
+          missing=""
+          for name in APPSTORE_CERTIFICATE_P12 APPSTORE_CERTIFICATE_PASSWORD APPSTORE_INSTALLER_P12 APPSTORE_INSTALLER_PASSWORD \
+                      APPSTORE_PROVISIONING_PROFILE ASC_KEY_ID ASC_ISSUER_ID ASC_KEY_P8; do
+            if [ -z "${!name}" ]; then
+              missing="$missing $name"
+            fi
+          done
+          if [ -n "$missing" ]; then
+            echo "::error title=缺少 Secrets::仓库的 Actions Secrets 里没有:${missing}。怎么准备见 docs/app-store.md 的“添加 Secrets”。"
+            exit 1
+          fi
+
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - name: Toolchain
+        run: |
+          latest=$(ls -d /Applications/Xcode_*.app 2>/dev/null | grep -iv -e beta -e release_candidate -e '_rc' | sort -V | tail -1 || true)
+          if [ -n "$latest" ]; then
+            sudo xcode-select -s "$latest"
+          fi
+          xcodebuild -version
+          if ! xcrun --find altool > /dev/null 2>&1; then
+            echo "::error::这个 Xcode 里没有 altool，没法上传。可以把 .pkg 下载下来用 Transporter App 上传。"
+            exit 1
+          fi
+
+      - name: Install XcodeGen
+        run: brew install xcodegen
+
+      - name: Import certificates and profile
+        run: |
+          KEYCHAIN="$RUNNER_TEMP/appstore.keychain-db"
+          KEYCHAIN_PASSWORD="$(uuidgen)"
+          security create-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN"
+          security set-keychain-settings -lut 21600 "$KEYCHAIN"
+          security unlock-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN"
+          printf '%s' "$APPSTORE_CERTIFICATE_P12" | base64 --decode > "$RUNNER_TEMP/distribution.p12"
+          printf '%s' "$APPSTORE_INSTALLER_P12" | base64 --decode > "$RUNNER_TEMP/installer.p12"
+          security import "$RUNNER_TEMP/distribution.p12" -k "$KEYCHAIN" -P "$APPSTORE_CERTIFICATE_PASSWORD" -f pkcs12 \
+            -T /usr/bin/codesign -T /usr/bin/productbuild -T /usr/bin/security \
+            || { echo "::error::导入 APPSTORE_CERTIFICATE_P12 失败（base64 或密码不对？）"; exit 1; }
+          security import "$RUNNER_TEMP/installer.p12" -k "$KEYCHAIN" -P "$APPSTORE_INSTALLER_PASSWORD" -f pkcs12 \
+            -T /usr/bin/codesign -T /usr/bin/productbuild -T /usr/bin/security \
+            || { echo "::error::导入 APPSTORE_INSTALLER_P12 失败（base64 或密码不对？）"; exit 1; }
+          rm -f "$RUNNER_TEMP/distribution.p12" "$RUNNER_TEMP/installer.p12"
+          security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "$KEYCHAIN_PASSWORD" "$KEYCHAIN" > /dev/null
+          # 放进搜索列表，codesign 和 productbuild 才找得到证书链。
+          security list-keychains -d user -s "$KEYCHAIN" $(security list-keychains -d user | tr -d '"')
+          security find-identity -v "$KEYCHAIN"
+
+          APP_IDENTITY=$(security find-identity -v -p codesigning "$KEYCHAIN" | grep -E '"(Apple Distribution|3rd Party Mac Developer Application): ' | head -1 | sed -E 's/.*"(.*)"/\1/' || true)
+          INSTALLER_IDENTITY=$(security find-identity -v "$KEYCHAIN" | grep -E '"(3rd Party Mac Developer Installer|Mac Installer Distribution): ' | head -1 | sed -E 's/.*"(.*)"/\1/' || true)
+          [ -n "$APP_IDENTITY" ] || { echo "::error::APPSTORE_CERTIFICATE_P12 里没有 Apple Distribution 证书"; exit 1; }
+          [ -n "$INSTALLER_IDENTITY" ] || { echo "::error::APPSTORE_INSTALLER_P12 里没有 Mac Installer Distribution 证书（钥匙串里叫 3rd Party Mac Developer Installer）"; exit 1; }
+          echo "App: $APP_IDENTITY"
+          echo "Installer: $INSTALLER_IDENTITY"
+
+          printf '%s' "$APPSTORE_PROVISIONING_PROFILE" | base64 --decode > "$RUNNER_TEMP/Pop.provisionprofile"
+          {
+            echo "CODESIGN_KEYCHAIN=$KEYCHAIN"
+            echo "APP_SIGN_IDENTITY=$APP_IDENTITY"
+            echo "INSTALLER_SIGN_IDENTITY=$INSTALLER_IDENTITY"
+            echo "APPSTORE_PROFILE=$RUNNER_TEMP/Pop.provisionprofile"
+          } >> "$GITHUB_ENV"
+
+      - name: Build and package
+        id: package
+        env:
+          VERSION: ${{ inputs.version }}
+        run: |
+          # 版本号：输入的，没填时用 project.yml 里的 MARKETING_VERSION（和 CHANGELOG.md 最上面的版本一样）
+          if [ -z "$VERSION" ]; then
+            VERSION=$(sed -n 's/^ *MARKETING_VERSION: *"\{0,1\}\([0-9.]*\)"\{0,1\}.*/\1/p' project.yml | head -1)
+          fi
+          [ -n "$VERSION" ] || { echo "::error::不知道版本号：没有填 version，project.yml 里也没找到 MARKETING_VERSION"; exit 1; }
+          # 构建号每次上传都要变大：提交数（换了代码就变大）加上这个工作流的运行次数（同一份代码重新上传也变大）。
+          export POP_BUILD_NUMBER="$(git rev-list --count HEAD).${{ github.run_number }}"
+          scripts/build-app-store.sh "$VERSION"
+          # 给 listing 用：它按这两个号找刚上传的构建。
+          plist=dist/appstore/Pop.app/Contents/Info.plist
+          {
+            echo "version=$(/usr/libexec/PlistBuddy -c "Print :CFBundleShortVersionString" "$plist")"
+            echo "build=$(/usr/libexec/PlistBuddy -c "Print :CFBundleVersion" "$plist")"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: App Store Connect API key
+        run: |
+          mkdir -p ~/.appstoreconnect/private_keys
+          key=~/.appstoreconnect/private_keys/AuthKey_${ASC_KEY_ID}.p8
+          if printf '%s' "$ASC_KEY_P8" | grep -q "BEGIN PRIVATE KEY"; then
+            printf '%s\n' "$ASC_KEY_P8" > "$key"
+          else
+            printf '%s' "$ASC_KEY_P8" | base64 --decode > "$key"
+          fi
+          grep -q "BEGIN PRIVATE KEY" "$key" || { echo "::error::ASC_KEY_P8 不是 .p8 私钥（原文或 base64）"; exit 1; }
+          chmod 600 "$key"
+
+      - name: Validate
+        run: |
+          xcrun altool --validate-app -f dist/Pop-AppStore.pkg -t macos \
+            --apiKey "$ASC_KEY_ID" --apiIssuer "$ASC_ISSUER_ID" --output-format normal
+
+      - name: Upload
+        if: inputs.build == 'upload'
+        env:
+          VERSION: ${{ steps.package.outputs.version }}
+          BUILD: ${{ steps.package.outputs.build }}
+          LISTING: ${{ inputs.listing }}
+        run: |
+          xcrun altool --upload-app -f dist/Pop-AppStore.pkg -t macos \
+            --apiKey "$ASC_KEY_ID" --apiIssuer "$ASC_ISSUER_ID" --output-format normal
+          if [ "$LISTING" = "true" ]; then
+            echo "::notice title=已上传::Pop ${VERSION}（构建 ${BUILD}）已上传。接下来 listing 等 App Store Connect 处理完（通常 10～30 分钟）就选上它。"
+          else
+            echo "::notice title=已上传::Pop ${VERSION}（构建 ${BUILD}）已上传。App Store Connect 处理完（通常 10～30 分钟）后，再勾上 listing 运行一次（build 选 none），或者在网页上的版本页选这个构建。"
+          fi
+
+      - uses: actions/upload-artifact@v5
+        if: always()
+        continue-on-error: true
+        with:
+          name: Pop-AppStore
+          path: dist/Pop-AppStore.pkg
+
+      - name: Clean up
+        if: always()
+        run: |
+          security delete-keychain "$RUNNER_TEMP/appstore.keychain-db" 2>/dev/null || true
+          rm -rf ~/.appstoreconnect "$RUNNER_TEMP/Pop.provisionprofile"
+
+  listing:
+    name: Fill in the App Store listing
+    needs: [check-inputs, build]
+    # build 跳过（选了 none）时也要运行，build 失败或取消时不运行。
+    if: >-
+      !cancelled() && inputs.listing && needs.check-inputs.result == 'success'
+      && (needs.build.result == 'success' || needs.build.result == 'skipped')
+    runs-on: ubuntu-latest
+    # 上传后等构建处理最多 60 分钟。
+    timeout-minutes: 90
+    permissions:
+      actions: read
+      contents: read
+    env:
+      ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+      ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+      ASC_KEY_P8: ${{ secrets.ASC_KEY_P8 }}
+      APPSTORE_REVIEW_CONTACT: ${{ secrets.APPSTORE_REVIEW_CONTACT }}
+    steps:
+      - name: Check secrets
+        run: |
+          missing=""
+          for name in ASC_KEY_ID ASC_ISSUER_ID ASC_KEY_P8; do
+            if [ -z "${!name}" ]; then
+              missing="$missing $name"
+            fi
+          done
+          if [ -n "$missing" ]; then
+            echo "::error title=缺少 Secrets::仓库的 Actions Secrets 里没有:${missing}。怎么准备见 docs/app-store.md 的“添加 Secrets”。"
+            exit 1
+          fi
+
+      - uses: actions/checkout@v5
+        with:
+          # 没有填 version、也没有构建时，用最近的标签当版本号。
+          fetch-depth: 0
+
+      - name: App Store Connect API key
+        run: |
+          mkdir -p ~/.appstoreconnect/private_keys
+          key=~/.appstoreconnect/private_keys/AuthKey_${ASC_KEY_ID}.p8
+          if printf '%s' "$ASC_KEY_P8" | grep -q "BEGIN PRIVATE KEY"; then
+            printf '%s\n' "$ASC_KEY_P8" > "$key"
+          else
+            printf '%s' "$ASC_KEY_P8" | base64 --decode > "$key"
+          fi
+          grep -q "BEGIN PRIVATE KEY" "$key" || { echo "::error::ASC_KEY_P8 不是 .p8 私钥（原文或 base64）"; exit 1; }
+          chmod 600 "$key"
+
+      - name: Screenshots
+        id: screenshots
+        run: |
+          # 截图放在仓库里（文件名决定顺序），随便多大都行：scripts/fit-screenshots.py 做成 App Store 认的 2880×1800。
+          # 没有截图时不动 App Store Connect 上的截图
+          committed=docs/app-store/listing/screenshots/en-US
+          if [ -n "$(find "$committed" -maxdepth 1 -type f \( -iname '*.png' -o -iname '*.jpg' -o -iname '*.jpeg' \) 2>/dev/null)" ]; then
+            pip install --quiet pillow
+            python3 scripts/fit-screenshots.py "$committed" "$RUNNER_TEMP/screenshots"
+            echo "dir=$RUNNER_TEMP/screenshots" >> "$GITHUB_OUTPUT"
+          else
+            echo "::warning title=没有截图::$committed 里没有截图，这次不动 App Store Connect 上的截图。"
+          fi
+
+      - name: Sync with App Store Connect
+        env:
+          BUILD_MODE: ${{ inputs.build }}
+          BUILD_RESULT: ${{ needs.build.result }}
+          BUILT_VERSION: ${{ needs.build.outputs.version }}
+          BUILD_NUMBER: ${{ needs.build.outputs.build-number }}
+          INPUT_VERSION: ${{ inputs.version }}
+          SUBMIT: ${{ inputs.submit }}
+          WITHDRAW: ${{ inputs.withdraw }}
+          SCREENSHOTS: ${{ steps.screenshots.outputs.dir }}
+        run: |
+          # 版本号：这次构建的；没有构建时用输入的；都没有时用 project.yml 里的 MARKETING_VERSION。
+          version="$BUILT_VERSION"
+          if [ -z "$version" ]; then
+            version="$INPUT_VERSION"
+          fi
+          if [ -z "$version" ]; then
+            version=$(sed -n 's/^ *MARKETING_VERSION: *"\{0,1\}\([0-9.]*\)"\{0,1\}.*/\1/p' project.yml | head -1)
+          fi
+          if [ -z "$version" ]; then
+            echo "::error::不知道版本号：没有构建，没有填 version，project.yml 里也没找到 MARKETING_VERSION。"
+            exit 1
+          fi
+          args=(sync --version "$version")
+          if [ "$BUILD_RESULT" = "success" ] && [ "$BUILD_MODE" = "upload" ]; then
+            # 这次刚上传的构建：等它处理完（通常 10～30 分钟）再选上。
+            args+=(--build "$BUILD_NUMBER" --wait-build-minutes 60)
+          else
+            args+=(--attach-latest-build)
+          fi
+          if [ "$SUBMIT" = "true" ]; then
+            args+=(--submit)
+          fi
+          if [ "$WITHDRAW" = "true" ]; then
+            args+=(--withdraw-review)
+          fi
+          if [ -n "$SCREENSHOTS" ]; then
+            args+=(--screenshots "$SCREENSHOTS")
+          fi
+          echo "scripts/app-store-connect.py ${args[*]}"
+          python3 scripts/app-store-connect.py "${args[@]}"
+
+      - name: Clean up
+        if: always()
+        run: rm -rf ~/.appstoreconnect

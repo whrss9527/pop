@@ -1,0 +1,152 @@
+name: Sandbox check
+
+# 上 Mac App Store 必须开 App Sandbox。这里构建开了沙盒的 Pop2（scripts/build-app.sh 的 POP_SANDBOX=1，
+# 名字和 Bundle ID io.github.whrss9527.pop2 都和 Pop 分开），确认它真的跑在沙盒里、启动后没有闪退，列出启动时被沙盒拦下的操作，
+# 再把 Pop2.app 打成 Pop2.zip 上传（产物 Pop2），拿到自己的 Mac 上试长按右键、读取选中内容这些要辅助功能权限的功能。
+# runner 上没法授予辅助功能，所以这里只能看到没有权限时的样子。
+on:
+  workflow_dispatch:
+  push:
+    branches: ["claude/app-store*"]
+
+jobs:
+  sandbox:
+    runs-on: macos-15
+    timeout-minutes: 40
+    env:
+      BUNDLE_ID: io.github.whrss9527.pop2
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - name: Select newest stable Xcode
+        run: |
+          XCODE=$(ls -d /Applications/Xcode_*.app | grep -iv -e beta -e release_candidate | sort -V | tail -1)
+          sudo xcode-select -s "$XCODE"
+          xcodebuild -version
+
+      - name: Install XcodeGen
+        run: brew install xcodegen
+
+      - name: Build sandboxed app
+        run: |
+          # 版本号写得比正式版都大，Pop2 就不会提示更新成 Pop
+          APP=$(POP_SANDBOX=1 scripts/build-app.sh 99.0.0 build/sandbox | tail -n 1)
+          echo "APP=$APP" >> "$GITHUB_ENV"
+
+      - name: Check entitlements
+        run: |
+          /usr/libexec/PlistBuddy -c 'Print CFBundleIdentifier' "$APP/Contents/Info.plist"
+          codesign -d --entitlements - --xml "$APP" > build/sandbox/entitlements.plist
+          plutil -p build/sandbox/entitlements.plist
+          if ! /usr/libexec/PlistBuddy -c 'Print :com.apple.security.app-sandbox' build/sandbox/entitlements.plist | grep -q true; then
+            echo "::error::Pop2.app 没有开 App Sandbox"
+            exit 1
+          fi
+
+      - name: Launch in the sandbox
+        run: |
+          START="$(date '+%Y-%m-%d %H:%M:%S')"
+          open "$APP"
+          sleep 15
+          screencapture -x build/sandbox/launch.png || true
+          status=0
+          if ! pgrep -x Pop2 > /dev/null; then
+            echo "::error::Pop2 启动以后退出了"
+            status=1
+          fi
+          # 沙盒 App 的偏好设置和数据都在自己的容器里，有容器说明真的跑在沙盒里
+          if [ -d "$HOME/Library/Containers/${BUNDLE_ID}" ]; then
+            echo "沙盒容器：$HOME/Library/Containers/${BUNDLE_ID}"
+          else
+            echo "::error::没有沙盒容器 ~/Library/Containers/${BUNDLE_ID}"
+            status=1
+          fi
+          echo "---- Pop2 自己打的日志 ----"
+          log show --start "$START" --style compact --predicate 'process == "Pop2" AND eventMessage BEGINSWITH "Pop"' 2>/dev/null | tail -40 || true
+          # 每次被沙盒拦下，系统日志里都有一份带调用栈的报告：按操作汇总，附上 Pop 自己代码里最近的一层
+          log show --start "$START" --style compact --predicate 'eventMessage CONTAINS "Sandbox: Pop2("' 2>/dev/null \
+            > build/sandbox/denials.txt || true
+          python3 - build/sandbox/denials.txt <<'PY'
+          import collections, re, sys
+          text = open(sys.argv[1], errors="replace").read()
+          found = collections.Counter()
+          for part in re.split(r"(?=Sandbox: Pop2\()", text)[1:]:
+              summary = re.search(r'"summary":"([^"]+)"', part) or re.search(r"Sandbox: Pop2\(\d+\) (deny\S* [^\n]+)", part)
+              frame = re.search(r"^\d+\s+Pop2\s+\S+\s+(.+?)(?: \+ \d+)?(?: \(|$)", part, re.M)
+              if summary:
+                  found[(summary.group(1).strip(), frame.group(1).strip() if frame else "")] += 1
+          print(f"---- 被沙盒拦下的操作（{sum(found.values())} 次）----")
+          for (summary, frame), count in found.most_common():
+              print(f"{count} × {summary}  ←  {frame or '（调用栈里没有 Pop 的代码）'}")
+              print(f"::notice title=沙盒拦下::{summary} ← {frame or '-'}（{count} 次）")
+          PY
+          pkill -x Pop2 || true
+          exit $status
+
+      # App Store 版的插件包都在 Pop2.app/Contents/PlugIns 里：装上所有插件包（POP_INSTALL_PLUGINS=all），确认每一个都能在沙盒里装载
+      - name: Load every bundled plugin
+        run: |
+          for _ in $(seq 1 20); do pgrep -x Pop2 > /dev/null || break; sleep 0.5; done
+          START="$(date '+%Y-%m-%d %H:%M:%S')"
+          open --env POP_INSTALL_PLUGINS=all "$APP"
+          sleep 30
+          log show --start "$START" --style compact --predicate 'process == "Pop2" AND category == "plugins"' 2>/dev/null \
+            > build/sandbox/plugins.txt || true
+          grep -E 'could not|failed' build/sandbox/plugins.txt | tail -40 || true
+          total=$(ls -d "$APP"/Contents/PlugIns/*.bundle 2>/dev/null | wc -l | tr -d ' ')
+          loaded=$(grep -c 'loaded bundled plugin' build/sandbox/plugins.txt || true)
+          failed=$(grep -c 'could not' build/sandbox/plugins.txt || true)
+          echo "::notice title=插件包::PlugIns 里 ${total} 个，从 App 里装载了 ${loaded:-0} 个，失败 ${failed:-0} 个"
+          status=0
+          pgrep -x Pop2 > /dev/null || { echo "::error::装上所有插件包以后 Pop2 退出了"; status=1; }
+          if [ "${loaded:-0}" != "$total" ]; then
+            echo "::error::有插件包没有装载上（${loaded:-0}/${total}），见这一步的日志"
+            status=1
+          fi
+          pkill -x Pop2 || true
+          exit $status
+
+      - name: Package
+        run: |
+          (cd "$(dirname "$APP")" && ditto -c -k --keepParent Pop2.app "$GITHUB_WORKSPACE/build/sandbox/Pop2.zip")
+          ls -la build/sandbox/Pop2.zip
+
+      # 产物 Pop2 里只有 Pop2.zip，下载解压后再双击它就是 Pop2.app；诊断用的文件放在 sandbox-logs 里
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Pop2
+          path: build/sandbox/Pop2.zip
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: sandbox-logs
+          path: |
+            build/sandbox/launch.png
+            build/sandbox/denials.txt
+            build/sandbox/plugins.txt
+            build/sandbox/entitlements.plist
+          if-no-files-found: warn
+
+  # 上传用的 App Store 安装包（scripts/build-app-store.sh）：没有证书时用 ADHOC=1 走一遍构建、签名、打包，确认流程是通的
+  appstore-package:
+    runs-on: macos-15
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - name: Select newest stable Xcode
+        run: |
+          XCODE=$(ls -d /Applications/Xcode_*.app | grep -iv -e beta -e release_candidate | sort -V | tail -1)
+          sudo xcode-select -s "$XCODE"
+          xcodebuild -version
+
+      - name: Install XcodeGen
+        run: brew install xcodegen
+
+      - name: Build the App Store package (ad-hoc)
+        run: ADHOC=1 scripts/build-app-store.sh 99.0.0

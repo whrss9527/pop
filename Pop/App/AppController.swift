@@ -33,6 +33,8 @@ final class AppController {
     init() {
         settingsStore = SettingsStore()
         pluginStore = PluginStore()
+        // App Store 版：先打开允许访问的文件夹，选中的文件才读得了
+        FolderAccess.shared.start()
         // 先装载装好的插件包，功能列表里才有它们提供的功能
         PluginBundles.shared.loadInstalled()
         registry = PluginRegistry()
@@ -300,7 +302,9 @@ final class AppController {
                             settings: settingsStore.settings)
             return
         }
-        updater.startAutomaticChecks()
+        if !Distribution.isAppStore {
+            updater.startAutomaticChecks()
+        }
 
         // 第一次启动、或者还没授权时，主动打开设置窗口：Pop 没有程序坞图标，
         // 菜单栏图标也可能被刘海或其他图标挤掉，不弹窗的话用户会以为什么都没发生。

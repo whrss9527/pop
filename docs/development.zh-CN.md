@@ -38,6 +38,8 @@ make clean
 
 每次推送代码，GitHub Actions 都会在 macOS 上生成工程、编译并运行测试（`.github/workflows/ci.yml`），检查翻译，然后真正启动一次 Release 包，再用本地的假发布把一键更新完整走一遍（校验和不对要拒绝、换了签名证书要拒绝、正常版本要替换并重新启动；本地签名和证书签名各测一遍）。
 
+**沙盒验证包**（为上 Mac App Store 做准备，App Store 要求开 App Sandbox）：`POP_SANDBOX=1 scripts/build-app.sh 99.0.0 build/sandbox` 构建开了沙盒的 Pop2（`Pop/Resources/Pop-Sandbox.entitlements`）：名字、进程名和 Bundle ID（`io.github.whrss9527.pop2`）都和 Pop 分开，可以和装着的 Pop 同时存在、分开授权。推到 `claude/app-store*` 分支或手动运行 `.github/workflows/sandbox-check.yml`，会在 runner 上确认它跑在沙盒里、列出启动时被沙盒拦下的操作，并上传 `Pop2` 压缩包，下载到自己的 Mac 上试需要辅助功能的功能。
+
 ### 界面语言
 
 Pop 的开发语言是简体中文，界面文字直接用中文原文作 key；英文翻译在 `Pop/Resources/en.lproj/Localizable.strings`（授权提示在 `InfoPlist.strings`）。系统语言是英文时显示英文界面，是中文时显示中文。

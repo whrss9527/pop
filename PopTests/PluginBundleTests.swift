@@ -25,6 +25,17 @@ final class PluginBundleTests: XCTestCase {
         XCTAssertNil(PluginCatalog.package(providing: BuiltinPluginID.translate))
     }
 
+    /// App Store 版不提供的插件包，scripts/build-app.sh 也不打进 App：两边列的要一样
+    func testAppStoreExclusionsMatchTheBuildScript() throws {
+        let root = URL(fileURLWithPath: #filePath).deletingLastPathComponent().deletingLastPathComponent()
+        let script = try String(contentsOf: root.appending(path: "scripts/build-app.sh"), encoding: .utf8)
+        let line = try XCTUnwrap(script.split(separator: "\n").first { $0.contains("APP_STORE_EXCLUDED_PLUGINS=\"") })
+        let listed = Set(line.split(separator: "\"")[1].split(separator: " ").map(String.init))
+        let expected = Set(PluginCatalog.unavailableInAppStore.compactMap { PluginCatalog.package(id: $0)?.bundleName })
+        XCTAssertEqual(expected.count, PluginCatalog.unavailableInAppStore.count, "有的 ID 不在插件包目录里")
+        XCTAssertEqual(listed, expected)
+    }
+
     /// 单独发布的插件包：文件夹里的 plugin.json 写全了目录信息，和插件包提供的功能对得上；不写进 Pop 的目录
     func testPublishedPluginsDescribeThemselves() throws {
         XCTAssertFalse(TestCatalog.published.isEmpty)

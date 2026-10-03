@@ -145,7 +145,7 @@ enum VideoConverter {
 
         guard let destination = CGImageDestinationCreateWithURL(output as CFURL, UTType.gif.identifier as CFString,
                                                                 times.count, nil) else {
-            throw Failure(message: String(localized: "这台 Mac 不支持存成 GIF"))
+            throw Failure(message: ImageConverter.cannotCreateMessage(output, type: .gif))
         }
         CGImageDestinationSetProperties(destination, [kCGImagePropertyGIFDictionary: [kCGImagePropertyGIFLoopCount: 0]] as CFDictionary)
         let delay = 1 / gifFrameRate
