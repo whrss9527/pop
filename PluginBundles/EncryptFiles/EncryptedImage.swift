@@ -126,10 +126,22 @@ enum EncryptedImage {
     }
 
     /// 映像是不是加密的（hdiutil isencrypted）
+    /// 刚做好的映像有时还被系统占着，hdiutil 会出错退出：等半秒再看，最多看三次。超时的不再等
     static func isEncrypted(_ image: URL) async -> Bool {
-        guard case .success(let run) = await ProcessRunner.run(URL(fileURLWithPath: "/usr/bin/hdiutil"),
-                                                               arguments: ["isencrypted", image.path(percentEncoded: false)],
-                                                               stdin: nil, environment: [:], timeout: 60) else { return false }
-        return run.status == 0 && run.stdout.contains("encrypted: YES")
+        for attempt in 0..<3 {
+            if attempt > 0 {
+                try? await Task.sleep(for: .milliseconds(500))
+            }
+            guard case .success(let run) = await ProcessRunner.run(URL(fileURLWithPath: "/usr/bin/hdiutil"),
+                                                                   arguments: ["isencrypted", image.path(percentEncoded: false)],
+                                                                   stdin: nil, environment: [:], timeout: 60) else { return false }
+            if run.status == 0 {
+                return run.stdout.contains("encrypted: YES")
+            }
+            if run.timedOut {
+                return false
+            }
+        }
+        return false
     }
 }
