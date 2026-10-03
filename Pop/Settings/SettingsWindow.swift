@@ -67,10 +67,10 @@ final class SettingsWindowController: NSObject, NSWindowDelegate {
 
     var isVisible: Bool { window?.isVisible ?? false }
 
-    /// 打开「功能」页上的插件库
+    /// 打开「功能」页上的插件库。App Store 版没有插件库，只打开「功能」页
     func showPluginLibrary() {
         show(tab: .plugins)
-        navigation.showsPluginLibrary = true
+        navigation.showsPluginLibrary = !Distribution.isAppStore
     }
 
     func show(tab: SettingsTab? = nil) {

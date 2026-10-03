@@ -1,0 +1,1 @@
+Hold the right mouse button and a ring of actions pops up by the pointer: translate, calculate, convert, read text in images, clipboard history and more.

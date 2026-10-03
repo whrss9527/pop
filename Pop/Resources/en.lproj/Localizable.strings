@@ -804,7 +804,6 @@
 "至少选两张图片" = "Select at least two images";
 "一次最多合成 %lld 张" = "Up to %lld images at a time";
 " 动图" = " Animated";
-"这台 Mac 不支持存成 GIF" = "This Mac can’t save GIFs";
 "合成动图失败" = "Couldn’t create the animated image";
 "存储「%@」失败" = "Couldn’t save “%@”";
 
@@ -820,6 +819,8 @@
 "去掉位置信息" = "Remove Location";
 "去掉拍摄信息" = "Remove Capture Info";
 "这台 Mac 不支持存成 %@" = "This Mac can’t save %@";
+"没有权限在「%@」里存文件" = "Pop doesn’t have permission to save files in “%@”";
+"没有权限在「%@」里存文件：在「设置 → 通用 → 文件夹访问」里允许 Pop 访问这个文件夹" = "Pop doesn’t have permission to save files in “%@”. Allow access to this folder in Settings → General → Folder Access.";
 "这种格式" = "this format";
 "没能去掉「%@」的拍摄信息" = "Couldn’t remove the capture info from “%@”";
 "没能去掉「%@」的位置信息" = "Couldn’t remove the location from “%@”";
@@ -3154,6 +3155,24 @@
 "只改一格一格的滚轮鼠标；触控板、妙控鼠标，还有开着平滑滚动的鼠标照旧。设置会记住，Pop 启动时接着生效。" = "Only mice with a notched scroll wheel change; trackpads, Magic Mouse and mice with smooth scrolling turned on stay as they are. Settings are remembered and apply again when Pop starts.";
 "系统暂时没让 Pop 拦下滚动事件，过几秒会再试一次" = "macOS didn’t let Pop catch scroll events yet; it tries again in a few seconds";
 "打开辅助功能设置" = "Open Accessibility Settings";
+"通过 Mac App Store 更新" = "Updated through the Mac App Store";
+"点「去授权」，在打开的「辅助功能」列表下面点「+」选中 Pop（访达里已经选好了，也可以直接把它拖进列表），再打开开关。授权后不用重启，几秒内自动生效。" = "Click Grant Access, then click + below the Accessibility list that opens and choose Pop (it’s already selected in Finder, so you can also drag it into the list), and turn it on. No restart is needed; it takes effect within seconds.";
+"App Store 版的 Pop 不能运行 Shell 脚本" = "Pop from the App Store can’t run shell scripts";
+"还没有自己的插件。可以从模板新建：用网址模板接入任何网站的搜索，或者用 JavaScript 脚本处理选中的文字。" = "No plugins yet. Start from a template: search any website with a URL template, or process the selected text with a JavaScript script.";
+"这些功能是单独的插件包，要用时再装上；不用了可以卸载，连同它的设置一起删掉。" = "These features are separate plugins: install one when you need it, and uninstall it, along with its settings, when you don’t.";
+"已装 %lld 个插件" = "%lld plugins installed";
+"会删掉它的设置。圆盘上和快捷键里的这个功能也会拿掉，要用时可以再装。" = "This deletes its settings. It’s also removed from the ring and shortcuts. You can install it again any time.";
+"推出前请先关掉磁盘上打开的文件" = "Close files that are open on a disk before ejecting it";
+"App Store 版的 Pop 不能运行快捷指令" = "Pop from the App Store can’t run shortcuts";
+"先允许 Pop 访问文件所在的文件夹" = "Allow Pop to Access the Folder First";
+"App Store 版的 Pop 只能读写你允许过的文件夹。允许一次（一般选个人文件夹），之后在访达里选中文件再唤起 Pop 就能用了。" = "Pop from the App Store can only read and write folders you’ve allowed. Allow one once (usually your home folder), then select files in Finder and open Pop again.";
+"允许访问文件夹…" = "Allow Folder Access…";
+"允许访问" = "Allow Access";
+"选一个文件夹，Pop 就能读写里面的文件，比如在访达里选中图片后识别文字、转换格式。一般选个人文件夹就行。" = "Choose a folder and Pop can read and write the files in it, for example to recognize text in an image you select in Finder or convert it. Your home folder is usually the right choice.";
+"文件夹访问" = "Folder Access";
+"在访达里选中文件再唤起 Pop，要先允许 Pop 访问文件所在的文件夹（一般选个人文件夹）。" = "To use Pop on files you select in Finder, first allow Pop to access the folder they’re in (usually your home folder).";
+"Pop 能读写这些文件夹里的文件：" = "Pop can read and write files in these folders:";
+"移除" = "Remove";
 
 /* 长按 ⌘Q 退出 */
 "长按 ⌘Q 退出" = "Hold to Quit";

@@ -29,7 +29,9 @@ struct PluginsSettingsView: View {
 
             Section {
                 if pluginStore.manifests.isEmpty {
-                    Text("还没有自己的插件。可以到「插件库」里挑现成的装上，也可以从模板新建：用网址模板接入任何网站的搜索，用 Shell 或 JavaScript 脚本处理选中的文字，或者交给快捷指令。")
+                    Text(Distribution.isAppStore
+                         ? String(localized: "还没有自己的插件。可以从模板新建：用网址模板接入任何网站的搜索，或者用 JavaScript 脚本处理选中的文字。")
+                         : String(localized: "还没有自己的插件。可以到「插件库」里挑现成的装上，也可以从模板新建：用网址模板接入任何网站的搜索，用 Shell 或 JavaScript 脚本处理选中的文字，或者交给快捷指令。"))
                         .font(.callout)
                         .foregroundStyle(.secondary)
                 }
@@ -48,8 +50,11 @@ struct PluginsSettingsView: View {
                         .foregroundStyle(Color.orange)
                 }
                 HStack {
-                    Button("插件库…") {
-                        showsLibrary = true
+                    // App Store 版不从网上下载插件（审核指南 2.5.2）
+                    if !Distribution.isAppStore {
+                        Button("插件库…") {
+                            showsLibrary = true
+                        }
                     }
                     Menu("新建插件") {
                         ForEach(PluginManifest.templates) { template in
@@ -328,7 +333,7 @@ struct PluginEditorView: View {
 
                 Section {
                     Picker("类型", selection: $manifest.action.type) {
-                        ForEach(PluginManifest.Action.Kind.allCases) { kind in
+                        ForEach(PluginManifest.Action.Kind.available(keeping: manifest.action.type)) { kind in
                             Text(kind.title).tag(kind)
                         }
                     }

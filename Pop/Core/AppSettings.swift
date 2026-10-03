@@ -363,6 +363,17 @@ enum HotKeyPreset: String, Codable, CaseIterable, Identifiable {
         case .optionV: return "⌥ V"
         }
     }
+
+    /// 只用 ⌥ 当修饰键的组合。macOS 15 起开了沙盒的 App 注册不了这种全局快捷键（系统防止偷看 ⌥ 输入的特殊字符），
+    /// App Store 版不提供
+    var isOptionOnly: Bool {
+        self == .optionSpace || self == .optionBacktick || self == .optionV
+    }
+
+    /// 设置里能选的快捷键；已经选着的（比如从 GitHub 版同步过来的）也留在列表里，免得选择框是空的
+    static func available(keeping current: HotKeyPreset) -> [HotKeyPreset] {
+        allCases.filter { !Distribution.isAppStore || !$0.isOptionOnly || $0 == current }
+    }
 }
 
 struct TriggerSettings: Codable, Equatable {

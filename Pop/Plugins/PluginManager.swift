@@ -163,6 +163,14 @@ final class PluginManager: ObservableObject {
         settingsStore.update { settings in
             _ = settings.adoptPluginBundles(recentlyUsed: recent, onDisk: onDisk)
         }
+        // CI 用：POP_INSTALL_PLUGINS=all 时装上所有插件包，检查每一个都装载得上（App Store 版是从 App 里装载）
+        if ProcessInfo.processInfo.environment["POP_INSTALL_PLUGINS"] == "all" {
+            settingsStore.update { settings in
+                for id in PluginCatalog.packages.flatMap(\.functions) {
+                    settings.setInstalled(id, true)
+                }
+            }
+        }
         reconcile()
         settingsStore.$settings
             .map(\.installedPlugins)
@@ -176,6 +184,8 @@ final class PluginManager: ObservableObject {
                 }
             }
             .store(in: &cancellables)
+        // App Store 版的插件包都在 App 里，不从网上读列表、不下载新版本
+        guard PluginBundles.bundledDirectory == nil else { return }
         // 本机存的那份插件包列表里，装着的插件包有新版本的先换上；再去发布页看有没有新的插件包、新版本
         if let index {
             updateOutdated(index)
@@ -301,7 +311,8 @@ final class PluginManager: ObservableObject {
 
     /// 启动时先用本机存的那份：单独发布的插件包马上就认得。版本对不上（Pop 更新了）的不用
     private func loadCachedIndex() {
-        guard let cache = Self.indexCacheURL, let data = try? Data(contentsOf: cache),
+        guard PluginBundles.bundledDirectory == nil,
+              let cache = Self.indexCacheURL, let data = try? Data(contentsOf: cache),
               let cached = try? JSONDecoder().decode(PluginReleaseIndex.self, from: data),
               cached.version == UpdateChecker.currentVersion else { return }
         let date = (try? cache.resourceValues(forKeys: [.contentModificationDateKey]).contentModificationDate) ?? .distantPast
@@ -341,13 +352,18 @@ final class PluginManager: ObservableObject {
         }
     }
 
-    /// 设置页打开时读一下插件包列表：显示下载大小，有新的单独发布的插件包也列出来
+    /// 设置页打开时读一下插件包列表：显示下载大小，有新的单独发布的插件包也列出来。App Store 版的插件包都在 App 里，不用读
     func refreshIndex() {
+        guard PluginBundles.bundledDirectory == nil else { return }
         Task { _ = try? await loadIndex() }
     }
 
     private func download(_ package: PluginPackage) async {
         statuses[package.id] = .installing
+        if let bundled = PluginBundles.bundledDirectory {
+            installBundled(package, from: bundled)
+            return
+        }
         do {
             let index = try await loadIndex()
             guard let entry = index.entry(id: package.id) else { throw PluginInstallError.notInIndex }
@@ -368,6 +384,21 @@ final class PluginManager: ObservableObject {
         } catch {
             Self.log.error("could not install plugin \(package.id, privacy: .public): \(error.localizedDescription, privacy: .public)")
             statuses[package.id] = .failed(error.localizedDescription)
+        }
+    }
+
+    /// App Store 版：从 Pop.app 里的插件包装载，不下载
+    private func installBundled(_ package: PluginPackage, from directory: URL) {
+        let url = directory.appendingPathComponent("\(package.bundleName).bundle", isDirectory: true)
+        switch PluginBundles.shared.load(url) {
+        case .success:
+            Self.log.notice("loaded bundled plugin \(package.id, privacy: .public)")
+            refreshStatuses()
+            registry.reloadBuiltins()
+            // 装载期间在设置里卸载了的话，这时候拿掉
+            reconcile()
+        case .failure(let error):
+            statuses[package.id] = .failed(PluginInstallError.load(String(describing: error)).localizedDescription)
         }
     }
 

@@ -141,6 +141,11 @@ final class PluginBundles {
             .appendingPathComponent("PluginBundles", isDirectory: true)
     }
 
+    /// App Store 版：插件包都打在 Pop.app/Contents/PlugIns 里，装上就是从那里装载，不从网上下载（审核指南 2.5.2）
+    nonisolated static var bundledDirectory: URL? {
+        Distribution.isAppStore ? Bundle.main.builtInPlugInsURL : nil
+    }
+
     /// 测试和截图用：POP_PLUGIN_DIR 指向一个放着插件包的文件夹（比如构建出来的那个），启动时一起装载
     nonisolated static var extraDirectory: URL? {
         guard let path = ProcessInfo.processInfo.environment["POP_PLUGIN_DIR"], !path.isEmpty else { return nil }

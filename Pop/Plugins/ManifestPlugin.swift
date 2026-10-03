@@ -88,6 +88,10 @@ enum ManifestRunner {
             }
             return .success(url.absoluteString)
         case .shell:
+            // App Store 版开了沙盒，不运行 Shell 脚本（比如从 GitHub 版同步过来的插件）
+            if Distribution.isAppStore {
+                return .failure(PluginRunError(String(localized: "App Store 版的 Pop 不能运行 Shell 脚本")))
+            }
             let result = await ProcessRunner.run(URL(fileURLWithPath: "/bin/zsh"),
                                                  arguments: ["-c", action.script],
                                                  stdin: input.text,
@@ -97,6 +101,10 @@ enum ManifestRunner {
         case .javascript:
             return await JavaScriptRunner.run(action.script, input: input, timeout: action.timeout).map(trimTrailingNewlines)
         case .shortcut:
+            // App Store 版开了沙盒，跑不了 shortcuts 命令行
+            if Distribution.isAppStore {
+                return .failure(PluginRunError(String(localized: "App Store 版的 Pop 不能运行快捷指令")))
+            }
             return await runShortcut(action.shortcut, input: input, timeout: action.timeout)
         case .ai:
             guard let ai else {

@@ -17,7 +17,11 @@ struct UpdateSettingsView: View {
                     Text(signatureDescription)
                         .foregroundStyle(.secondary)
                 }
-                statusRow
+                if Distribution.isAppStore {
+                    LabeledContent("更新") { Text("通过 Mac App Store 更新").foregroundStyle(.secondary) }
+                } else {
+                    statusRow
+                }
             }
 
             // 更新记录只有中文，中文界面才列出来
@@ -40,38 +44,41 @@ struct UpdateSettingsView: View {
                 }
             }
 
-            Section {
-                Toggle("自动检查更新", isOn: $updater.automaticChecks)
-                Toggle("也接收测试版（预发布版本）", isOn: $updater.includePrereleases)
-                if let date = updater.lastChecked {
-                    LabeledContent("上次检查") {
-                        Text(date.formatted(date: .abbreviated, time: .shortened))
+            // App Store 版只能由 App Store 更新
+            if !Distribution.isAppStore {
+                Section {
+                    Toggle("自动检查更新", isOn: $updater.automaticChecks)
+                    Toggle("也接收测试版（预发布版本）", isOn: $updater.includePrereleases)
+                    if let date = updater.lastChecked {
+                        LabeledContent("上次检查") {
+                            Text(date.formatted(date: .abbreviated, time: .shortened))
+                        }
                     }
-                }
-                HStack {
-                    Button("检查更新", action: updater.checkNow)
-                        .disabled(updater.isInstalling || updater.phase == .checking)
-                    if updater.phase == .checking {
-                        ProgressView()
-                            .controlSize(.small)
+                    HStack {
+                        Button("检查更新", action: updater.checkNow)
+                            .disabled(updater.isInstalling || updater.phase == .checking)
+                        if updater.phase == .checking {
+                            ProgressView()
+                                .controlSize(.small)
+                        }
+                        Spacer()
+                        Button("所有版本…") {
+                            NSWorkspace.shared.open(UpdateChecker.releasesPageURL)
+                        }
                     }
-                    Spacer()
-                    Button("所有版本…") {
-                        NSWorkspace.shared.open(UpdateChecker.releasesPageURL)
+                    if let error = updater.checkError {
+                        Text(error)
+                            .font(.caption)
+                            .foregroundStyle(Color.red)
                     }
-                }
-                if let error = updater.checkError {
-                    Text(error)
+                } footer: {
+                    Text("新版本从 GitHub Releases 下载：先比对 SHA-256 校验和，再检查代码签名，确认无误后替换 Pop.app 并自动重新启动，设置、插件和剪贴板历史都会保留。打开自动检查时，启动后检查一次、之后每 6 小时一次，发现新版本会发通知，菜单栏图标也会变成下载箭头。")
                         .font(.caption)
-                        .foregroundStyle(Color.red)
+                        .foregroundStyle(.secondary)
                 }
-            } footer: {
-                Text("新版本从 GitHub Releases 下载：先比对 SHA-256 校验和，再检查代码签名，确认无误后替换 Pop.app 并自动重新启动，设置、插件和剪贴板历史都会保留。打开自动检查时，启动后检查一次、之后每 6 小时一次，发现新版本会发通知，菜单栏图标也会变成下载箭头。")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
             }
 
-            if CodeSignature.isAdHoc {
+            if CodeSignature.isAdHoc && !Distribution.isAppStore {
                 Section {
                     Text("当前是本地签名（ad-hoc）的测试包：每个版本的签名都不一样，更新后 macOS 会把它当成另一个程序，需要重新授权辅助功能。更新完 Pop 会自动打开设置，在「通用」里点「清除旧的授权记录」再授权一次即可。用固定的签名证书发布后就不用这一步了（见 README）。")
                         .font(.caption)
@@ -79,7 +86,8 @@ struct UpdateSettingsView: View {
                 }
             }
 
-            if let image = DonateCard.image {
+            // App Store 版不放赞赏码：App 里收钱只能用 App 内购买（审核指南 3.1.1）
+            if !Distribution.isAppStore, let image = DonateCard.image {
                 Section {
                     DonateCard(image: image)
                 } header: {

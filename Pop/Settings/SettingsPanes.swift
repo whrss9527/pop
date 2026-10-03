@@ -39,6 +39,9 @@ struct GeneralSettingsView: View {
                         Button("去授权") {
                             Permissions.requestAccessibility()
                             Permissions.openAccessibilitySettings()
+                            if Distribution.isAppStore {
+                                Permissions.revealApp()
+                            }
                         }
                     } else if !permissions.isTriggerRunning {
                         Button("重启 Pop") {
@@ -46,7 +49,12 @@ struct GeneralSettingsView: View {
                         }
                     }
                 }
-                if !permissions.isTrusted {
+                // App Store 版：在访达里选中的文件，要先允许 Pop 访问所在的文件夹才读得了（见 FolderAccess）
+                if Distribution.isAppStore {
+                    FolderAccessRow()
+                }
+                // App Store 版的签名不会变，也不能在沙盒里清除授权记录
+                if !permissions.isTrusted && !Distribution.isAppStore {
                     HStack(alignment: .firstTextBaseline, spacing: 10) {
                         Text("列表里已经有 Pop、开关也打开了，但还是不生效？多半是更新后签名变了：先清除旧的授权记录，再授权一次。")
                             .font(.caption)
@@ -89,7 +97,7 @@ struct GeneralSettingsView: View {
                     }
                 }
                 Picker("键盘快捷键", selection: store.binding(\.trigger.hotKey)) {
-                    ForEach(HotKeyPreset.allCases) { preset in
+                    ForEach(HotKeyPreset.available(keeping: store.settings.trigger.hotKey)) { preset in
                         Text(preset.title).tag(preset)
                     }
                 }
@@ -201,6 +209,9 @@ extension GeneralSettingsView {
 
     private var permissionDetail: String {
         if !permissions.isTrusted {
+            if Distribution.isAppStore {
+                return String(localized: "点「去授权」，在打开的「辅助功能」列表下面点「+」选中 Pop（访达里已经选好了，也可以直接把它拖进列表），再打开开关。授权后不用重启，几秒内自动生效。")
+            }
             return String(localized: "点「去授权」，在「系统设置 → 隐私与安全性 → 辅助功能」里打开 Pop。授权后不用重启，几秒内自动生效。")
         }
         if !permissions.isTriggerRunning {
@@ -224,6 +235,46 @@ extension GeneralSettingsView {
             return String(localized: "点击鼠标中键唤起 Pop。")
         case .disabled:
             return trigger.hotKey == .none ? String(localized: "鼠标唤起已关闭，可以在下面设置一个键盘快捷键。") : String(localized: "用键盘快捷键 \(trigger.hotKey.title) 唤起 Pop。")
+        }
+    }
+}
+
+/// App Store 版：允许 Pop 读写的文件夹
+private struct FolderAccessRow: View {
+    @ObservedObject private var access = FolderAccess.shared
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            HStack(spacing: 10) {
+                Image(systemName: access.folders.isEmpty ? "folder.badge.questionmark" : "folder")
+                    .foregroundStyle(access.folders.isEmpty ? Color.orange : Color.green)
+                    .font(.title3)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("文件夹访问")
+                    Text(access.folders.isEmpty
+                         ? String(localized: "在访达里选中文件再唤起 Pop，要先允许 Pop 访问文件所在的文件夹（一般选个人文件夹）。")
+                         : String(localized: "Pop 能读写这些文件夹里的文件："))
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                Spacer()
+                Button("允许访问文件夹…") {
+                    access.requestAccess()
+                }
+            }
+            ForEach(access.folders, id: \.self) { folder in
+                HStack {
+                    Text(folder.path(percentEncoded: false))
+                        .font(.caption)
+                        .textSelection(.enabled)
+                    Spacer()
+                    Button("移除") {
+                        access.remove(folder)
+                    }
+                    .controlSize(.small)
+                }
+            }
         }
     }
 }

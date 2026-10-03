@@ -1,0 +1,41 @@
+Pop is a free, open-source right-click toolbox for the Mac (github.com/whrss9527/pop). It has no Dock icon and no main window; it lives in the menu bar (the ◎ icon). No account or login, no in-app purchase, no user-generated content shared with others.
+
+1. SCREEN RECORDING
+A recording made on a Mac running the latest macOS is attached. It starts by launching Pop, shows granting Accessibility and folder access, then follows the steps in section 3.
+
+2. PURPOSE AND AUDIENCE
+For Mac users who do small tasks on selected text, images and files many times a day (translate, calculate, convert units or colors, read text in an image, convert an image). Instead of opening a separate app for each, they hold the right mouse button and move toward an action in a ring next to the pointer.
+
+3. HOW TO TRY IT (no login or sample files needed)
+1) Launch Pop. Settings opens on General with a short guide.
+2) Click Grant Access. Pop is sandboxed, so macOS can't show its usual prompt: Pop opens System Settings → Privacy & Security → Accessibility and selects Pop in Finder. Click + (or drag Pop into the list) and turn it on; it works within seconds.
+3) Select text in any app and hold the right mouse button for about a quarter second. A ring of actions appears; keep holding, move toward an action and release. A short right click still opens the normal context menu.
+4) Select text in another language and hold the right button: Pop shows a translation (Apple's Translation framework; macOS may first download the language).
+5) Select "12*(3+4)" and hold the right button: Pop shows the result.
+6) Hold the right button over an empty area: tools such as screenshot text recognition, color picker and clipboard history (also Command-Shift-V).
+7) Select an image in Finder and hold the right button. The first time, Pop asks for access to the folder (the home folder is enough). Then Recognize Text reads the image and Image Convert saves a converted copy next to it.
+8) Settings → Features lists optional plugins; Install turns one on (all are inside the app).
+
+4. EXTERNAL SERVICES
+None by default. Only when the user picks an action that needs one:
+- Search actions open the chosen website in the browser.
+- AI actions call the OpenAI-compatible endpoint and API key the user entered, or Apple's on-device model on macOS 26.
+- DeepL translation, only with the user's own DeepL key (default: Apple's on-device translation).
+- Link Inspect and Web Archive load the address the user selected.
+No analytics, ads, crash reporting, payments or third-party SDKs.
+
+5. REGIONAL DIFFERENCES
+Same in every region where it is offered (all except mainland China). The interface follows the system language (English or Simplified Chinese) and can be changed in Settings.
+
+6. REGULATED INDUSTRY AND THIRD-PARTY MATERIAL
+A general productivity utility, not in a regulated industry; ships no third-party content. Generative AI is optional and uses the provider and key the user sets up (or Apple's on-device model); results are shown only to that user.
+
+PRIVACY AND PERMISSIONS
+Data stays on the Mac; API keys are kept in the Keychain. Entitlements: App Sandbox, outgoing connections, user-selected files with app-scoped bookmarks, camera, microphone, calendars.
+- Accessibility: to detect the long press and read the selected text. No keystroke logging.
+- Folder access: only for files the user selects in Finder.
+- Screen Recording: only for screenshots, on-screen text recognition and the color picker, asked on first use.
+- Camera, microphone, speech recognition, calendars and reminders: only for the optional camera bubble, voice recorder, screen recording, transcription and reminder plugins, asked when used.
+
+PLUGINS AND UPDATES
+All plugins are inside the app (Contents/PlugIns) and are only turned on or off; nothing is downloaded. Custom actions are URL templates or JavaScript run in JavaScriptCore inside the app. No self-updater; updates come only through the App Store.
