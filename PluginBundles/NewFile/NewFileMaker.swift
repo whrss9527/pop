@@ -157,16 +157,21 @@ enum NewFileMaker {
         return url
     }
 
-    /// 访达最前面的窗口正在看的文件夹；没有窗口、看的不是文件夹或者不让问时为 nil
-    @MainActor static func frontFinderFolder() -> URL? {
+    /// 访达最前面的窗口正在看的文件夹；没有窗口、看的不是文件夹、不让问或者访达没反应时为 nil。
+    /// 用 osascript 在别的进程里问、最多等 3 秒：访达卡住时 Pop 不跟着卡（在 Pop 里直接跑脚本要在主线程上，最多会等两分钟）
+    static func frontFinderFolder() async -> URL? {
         let source = """
-        tell application "Finder"
-            if (count of Finder windows) is 0 then return ""
-            return POSIX path of (target of front Finder window as alias)
-        end tell
+        with timeout of 3 seconds
+            tell application "Finder"
+                if (count of Finder windows) is 0 then return ""
+                return POSIX path of (target of front Finder window as alias)
+            end tell
+        end timeout
         """
-        var error: NSDictionary?
-        guard let path = NSAppleScript(source: source)?.executeAndReturnError(&error).stringValue, !path.isEmpty else { return nil }
-        return URL(fileURLWithPath: path, isDirectory: true)
+        guard case .success(let run) = await ProcessRunner.run(URL(fileURLWithPath: "/usr/bin/osascript"), arguments: ["-e", source],
+                                                               stdin: nil, environment: [:], timeout: 3),
+              run.status == 0 else { return nil }
+        let path = run.stdout.trimmingCharacters(in: .whitespacesAndNewlines)
+        return path.isEmpty ? nil : URL(fileURLWithPath: path, isDirectory: true)
     }
 }

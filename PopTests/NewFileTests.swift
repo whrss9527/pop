@@ -109,13 +109,16 @@ final class NewFileTests: XCTestCase {
     }
 
     @MainActor
-    func testFolderComesFromTheSelection() throws {
+    func testFolderComesFromTheSelection() async throws {
         let file = folder.appending(path: "a.txt")
         try Data().write(to: file)
-        XCTAssertEqual(NewFilePlugin.folder(for: [folder], sourcePID: nil), folder)
-        XCTAssertEqual(NewFilePlugin.folder(for: [file], sourcePID: nil).standardizedFileURL, folder.standardizedFileURL)
+        let selectedFolder = await NewFilePlugin.folder(for: [folder], sourcePID: nil)
+        XCTAssertEqual(selectedFolder, folder)
+        let selectedFile = await NewFilePlugin.folder(for: [file], sourcePID: nil)
+        XCTAssertEqual(selectedFile.standardizedFileURL, folder.standardizedFileURL)
         // 什么都没选、不在访达里时是桌面
-        XCTAssertEqual(NewFilePlugin.folder(for: [], sourcePID: nil), FileManager.default.urls(for: .desktopDirectory, in: .userDomainMask).first)
+        let nothing = await NewFilePlugin.folder(for: [], sourcePID: nil)
+        XCTAssertEqual(nothing, FileManager.default.urls(for: .desktopDirectory, in: .userDomainMask).first)
     }
 
     func testPluginNeedsNoSelection() {

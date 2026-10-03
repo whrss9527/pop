@@ -43,8 +43,10 @@ struct WindowLayoutPlugin: PopPlugin {
         guard session.isCurrent else { return }
         session.end()
         guard let pid else { return }
-        if let problem = WindowMover.apply(layout, pid: pid) {
-            session.finish(toast: problem)
+        Task { @MainActor in
+            if let problem = await WindowMover.apply(layout, pid: pid) {
+                session.finish(toast: problem)
+            }
         }
     }
 }

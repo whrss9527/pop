@@ -201,12 +201,19 @@ final class PictureInPicture {
     }
 }
 
-/// 回到原来的窗口：把那个 App 叫到前台，用辅助功能接口把这个窗口提到最前（最小化了就先还原）
-@MainActor
+/// 回到原来的窗口：把那个 App 叫到前台，用辅助功能接口把这个窗口提到最前（最小化了就先还原）。
+/// 辅助功能调用是跨进程的同步调用，那个 App 卡住或者窗口很多时要等一阵，放在后台做，Pop 不跟着卡
 enum PiPWindowRaiser {
-    static func raise(_ item: PiPWindows.Item) {
+    @MainActor static func raise(_ item: PiPWindows.Item) {
         guard let app = NSRunningApplication(processIdentifier: item.pid) else { return }
         app.activate()
+        DispatchQueue.global(qos: .userInitiated).async {
+            raiseWindow(item)
+        }
+    }
+
+    /// 后台线程上
+    private static func raiseWindow(_ item: PiPWindows.Item) {
         let element = AXUIElementCreateApplication(item.pid)
         // Pop 不在前台时 activate 不一定能把那个 App 叫到前面：用辅助功能接口再说一次
         AXUIElementSetAttributeValue(element, kAXFrontmostAttribute as CFString, kCFBooleanTrue)
