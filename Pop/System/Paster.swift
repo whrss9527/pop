@@ -51,17 +51,47 @@ enum PasteboardWriter {
     static func copy(png: Data) {
         let pasteboard = NSPasteboard.general
         pasteboard.clearContents()
-        pasteboard.setData(png, forType: .png)
-        // 有些 App 只认 TIFF
-        if let tiff = NSImage(data: png)?.tiffRepresentation {
-            pasteboard.setData(tiff, forType: .tiff)
+        let item = NSPasteboardItem()
+        item.setData(png, forType: .png)
+        // 有些 App 只认 TIFF：别的 App 来要的时候才转。长截图转成不压缩的 TIFF 有几百 MB，复制时就转要卡好一会儿
+        let provider = TIFFProvider(png: png)
+        if item.setDataProvider(provider, forTypes: [.tiff]) {
+            TIFFProvider.current = provider
         }
+        pasteboard.writeObjects([item])
     }
 
     static func copy(files: [URL]) {
         let pasteboard = NSPasteboard.general
         pasteboard.clearContents()
         pasteboard.writeObjects(files as [NSURL])
+    }
+}
+
+/// 别的 App 来要 TIFF 时才从 PNG 转（PasteboardWriter.copy(png:)）
+final class TIFFProvider: NSObject, NSPasteboardItemDataProvider {
+    /// 剪贴板上现在这张图的：剪贴板不替我们留着，换了内容（pasteboardFinishedWithDataProvider）再放掉
+    @MainActor static var current: TIFFProvider?
+
+    private let png: Data
+
+    init(png: Data) {
+        self.png = png
+    }
+
+    func pasteboard(_ pasteboard: NSPasteboard?, item: NSPasteboardItem, provideDataForType type: NSPasteboard.PasteboardType) {
+        guard type == .tiff, let tiff = NSImage(data: png)?.tiffRepresentation else { return }
+        item.setData(tiff, forType: .tiff)
+    }
+
+    func pasteboardFinishedWithDataProvider(_ pasteboard: NSPasteboard) {
+        DispatchQueue.main.async { [self] in
+            MainActor.assumeIsolated {
+                if Self.current === self {
+                    Self.current = nil
+                }
+            }
+        }
     }
 }
 
