@@ -9,6 +9,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     func applicationDidFinishLaunching(_ notification: Notification) {
         // 跑单元测试时 App 只是测试宿主，不做事件拦截、权限申请这些系统层面的初始化。
         guard ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] == nil else { return }
+        // CI 的截图、启动测试里看主线程有没有卡住（从启动这一刻开始看）
+        HangWatchdog.startIfRequested()
         let controller = AppController()
         self.controller = controller
         controller.start()

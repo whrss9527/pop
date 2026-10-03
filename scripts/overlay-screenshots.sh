@@ -5,6 +5,7 @@
 # Markdown 预览、截图标注都会拍到，包括动画的中间帧。
 # 之后用深色外观再拍一组停下来之后的样子（文件名以 dark- 开头），POP_SKIP_DARK=1 时不拍。
 # 只拍停下来之后的样子的插件包步骤不用放慢那么多：Pop 在这些步骤上按 2 倍走（POP_DEMO_QUICK_STEPS），省下时间。
+# 两遍演示里主线程卡住超过 0.25 秒的地方最后都列出来，卡了 2 秒以上（POP_HANG_LIMIT）的算失败。
 #
 # 用法：scripts/overlay-screenshots.sh <Pop.app> <输出目录> [动画放慢倍数，默认 6]
 set -euo pipefail
@@ -194,6 +195,8 @@ def markers():
                 continue
             if parts[0] == "region" and len(parts) >= 7:
                 region = [int(p) for p in parts[1:7]]
+            elif parts[0] == "hang":
+                continue
             elif len(parts) >= 2:
                 result[parts[0]] = (float(parts[1]), float(parts[2]) if len(parts) >= 3 else scale)
     return result, region
@@ -237,6 +240,21 @@ for name, offsets in plan:
         shots.append(path)
 wait_for("end")
 
+# 主线程卡住的地方（Pop 里 HangWatchdog 写的 hang 行）：按开始的时间找是在哪两步之间，记进 hangs.txt，最后一起看
+found, _ = markers()
+steps = sorted((start, name) for name, (start, _) in found.items())
+hangs = []
+for line in open(log_path, encoding="utf-8").read().splitlines():
+    parts = line.split()
+    if len(parts) >= 3 and parts[0] == "hang":
+        start, seconds = float(parts[1]), float(parts[2])
+        before = [name for at, name in steps if at <= start]
+        after = [name for at, name in steps if at > start]
+        hangs.append(f"{appearance} {seconds:.2f} {before[-1] if before else '启动'} → {after[0] if after else '结束'}")
+with open(os.path.join(work, "hangs.txt"), "a", encoding="utf-8") as f:
+    f.writelines(line + "\n" for line in hangs)
+print(f"{appearance}：主线程卡住超过 0.25 秒 {len(hangs)} 次")
+
 # 一次转好：长边缩到 640，存成 JPEG（每张单独调用 sips 要多花几分钟）
 taken_shots = []
 for path in shots:
@@ -273,3 +291,17 @@ fi
 
 ls "$OUT"
 pkill -x Pop 2>/dev/null || true
+
+# 主线程卡住的地方都列出来（外观、卡了几秒、在哪两步之间）；卡了 POP_HANG_LIMIT 秒（默认 2 秒）以上的算失败。
+# 截图照样都拍完、转好，后面的步骤可以照常把它们传上去
+HANG_LIMIT="${POP_HANG_LIMIT:-2}"
+if [ -s "$WORK/hangs.txt" ]; then
+  echo "主线程卡住超过 0.25 秒的地方（外观 秒数 在哪两步之间）："
+  sort -k2,2 -n -r "$WORK/hangs.txt"
+  if awk -v limit="$HANG_LIMIT" '$2 + 0 >= limit + 0 { bad = 1 } END { exit bad ? 0 : 1 }' "$WORK/hangs.txt"; then
+    echo "❌ 主线程卡了 ${HANG_LIMIT} 秒以上：用的时候会觉得 Pop 卡死了"
+    exit 1
+  fi
+else
+  echo "主线程没有卡住超过 0.25 秒的时候"
+fi

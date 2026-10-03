@@ -11,6 +11,7 @@ import AppKit
 /// 配合 POP_ANIMATION_SCALE 放慢动画，截图脚本就能拍到动画的中间帧；POP_APPEARANCE=dark 时用深色外观。
 /// 每一步开始时往 POP_DEMO_LOG 指定的文件里写一行「步骤名 时间戳 这一步的动画放慢倍数」；region 行是截图区域在屏幕上的位置
 /// （点，AppKit 坐标：x y 宽 高）和屏幕大小，脚本按拍照时最新的那一行裁图。
+/// 主线程卡住超过 0.25 秒时，HangWatchdog 也往这个文件里写一行「hang 开始的时间戳 卡了几秒」，截图脚本按步骤列出来。
 /// POP_DEMO_QUICK_STEPS（逗号隔开）是截图脚本列出的只拍停下来之后的样子的步骤：插件包的这些步骤不用放慢那么多，
 /// 按 quickScale 走（和深色那一遍一样），动画和停留都短一些，省下截图的时间。
 @MainActor
@@ -712,16 +713,9 @@ enum OverlayDemo {
         log("\(name) \(Date().timeIntervalSince1970) \(Motion.timeScale)")
     }
 
+    /// 检测卡顿的线程（HangWatchdog）也往这个文件里写，都用追加的方式写，不会互相盖掉
     private static func log(_ line: String) {
         guard let path = ProcessInfo.processInfo.environment["POP_DEMO_LOG"] else { return }
-        let url = URL(fileURLWithPath: path)
-        let data = Data((line + "\n").utf8)
-        if let handle = try? FileHandle(forWritingTo: url) {
-            defer { try? handle.close() }
-            _ = try? handle.seekToEnd()
-            try? handle.write(contentsOf: data)
-        } else {
-            try? data.write(to: url)
-        }
+        LineLog.append(line, to: path)
     }
 }
