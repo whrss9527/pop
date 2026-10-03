@@ -10,8 +10,9 @@ final class KeyboardCleaner {
     /// 锁多久
     static let duration: TimeInterval = 60
 
-    private var tap: CFMachPort?
-    private var runLoopSource: CFRunLoopSource?
+    /// 拦按键的线程：一律吞掉，不经过主线程。放在主线程上的话 Pop 一忙回调就慢，
+    /// 系统嫌慢会停用拦截，按键就漏到前台的 App 里去了
+    private var tap: EventTapThread?
     private var windows: [NSWindow] = []
     private var timer: Timer?
     private var endsAt: Date?
@@ -37,16 +38,12 @@ final class KeyboardCleaner {
     /// 开始；没有辅助功能权限时返回原因
     func start() -> String? {
         guard !isActive else { return nil }
-        guard let tap = CGEvent.tapCreate(tap: .cgSessionEventTap, place: .headInsertEventTap, options: .defaultTap,
-                                          eventsOfInterest: Self.eventMask, callback: keyboardCleanerCallback,
-                                          userInfo: Unmanaged.passUnretained(self).toOpaque()) else {
+        // 按键一律拦下
+        let tap = EventTapThread(name: "Pop.KeyboardCleaner") { _, _ in true }
+        guard tap.start(mask: Self.eventMask) else {
             return String(localized: "要先在「系统设置 → 隐私与安全性 → 辅助功能」里允许 Pop，才能锁住键盘")
         }
-        let source = CFMachPortCreateRunLoopSource(kCFAllocatorDefault, tap, 0)
-        CFRunLoopAddSource(CFRunLoopGetMain(), source, .commonModes)
-        CGEvent.tapEnable(tap: tap, enable: true)
         self.tap = tap
-        runLoopSource = source
         previousApp = NSWorkspace.shared.frontmostApplication
         let endsAt = Date().addingTimeInterval(Self.duration)
         self.endsAt = endsAt
@@ -63,15 +60,8 @@ final class KeyboardCleaner {
     func stop() {
         timer?.invalidate()
         timer = nil
-        if let tap {
-            CGEvent.tapEnable(tap: tap, enable: false)
-            CFMachPortInvalidate(tap)
-        }
-        if let runLoopSource {
-            CFRunLoopRemoveSource(CFRunLoopGetMain(), runLoopSource, .commonModes)
-        }
+        tap?.stop()
         tap = nil
-        runLoopSource = nil
         endsAt = nil
         for window in windows {
             window.orderOut(nil)
@@ -81,13 +71,6 @@ final class KeyboardCleaner {
             previousApp.activate()
         }
         previousApp = nil
-    }
-
-    /// 系统嫌回调太慢停用了 tap：重新打开，接着拦
-    fileprivate func reenable() {
-        if let tap {
-            CGEvent.tapEnable(tap: tap, enable: true)
-        }
     }
 
     private func tick() {
@@ -117,22 +100,6 @@ final class KeyboardCleaner {
             windows.append(window)
         }
     }
-}
-
-private func keyboardCleanerCallback(proxy: CGEventTapProxy, type: CGEventType, event: CGEvent,
-                                     userInfo: UnsafeMutableRawPointer?) -> Unmanaged<CGEvent>? {
-    if type == .tapDisabledByTimeout || type == .tapDisabledByUserInput {
-        if let userInfo {
-            let cleaner = Unmanaged<KeyboardCleaner>.fromOpaque(userInfo).takeUnretainedValue()
-            // Tap 的 RunLoop source 挂在主线程上，所以这里一定在主线程
-            MainActor.assumeIsolated {
-                cleaner.reenable()
-            }
-        }
-        return nil
-    }
-    // 按键一律拦下
-    return nil
 }
 
 @MainActor

@@ -4,7 +4,9 @@ import Foundation
 @testable import Pop
 
 /// 拦 ⌘Q 的 CGEventTap，跑在自己的线程上：别的按键在这个线程上马上放过，不经过 Pop 的主线程，Pop 忙的时候打字也不会卡；
-/// 只有 ⌘Q 和吞着的那个键才到主线程上交给 HoldToQuit 决定
+/// 只有 ⌘Q 和吞着的那个键才到主线程上交给 HoldToQuit 决定，而且最多等 0.1 秒（EventTapThread.askMain）：
+/// Pop 正忙、主线程一时顾不上时当作吞掉，不会误退出，晚一点再按一次就好；
+/// 主线程空下来以后照样按顺序处理这个按键（HoldToQuit 自己会发现 ⌘ 已经松开了）
 final class QuitKeyTap: @unchecked Sendable {
     /// 补发给 App 的 ⌘Q 带着这个记号，自己不再拦
     static let marker: Int64 = 0x506F_7051
@@ -118,10 +120,8 @@ final class QuitKeyTap: @unchecked Sendable {
             // 别的按键：马上放过
             guard isQuit || keyCode == trackedKeyCode, let model else { return false }
             let isRepeat = event.getIntegerValueField(.keyboardEventAutorepeat) != 0
-            return DispatchQueue.main.sync {
-                MainActor.assumeIsolated {
-                    model.decide(isDown: isDown, keyCode: keyCode, isRepeat: isRepeat, isQuitShortcut: isQuit)
-                }
+            return EventTapThread.askMain(fallback: true) {
+                model.decide(isDown: isDown, keyCode: keyCode, isRepeat: isRepeat, isQuitShortcut: isQuit)
             }
         case .flagsChanged:
             if !event.flags.contains(.maskCommand), trackedKeyCode != nil, let model {

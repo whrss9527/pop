@@ -21,220 +21,340 @@ protocol MouseTriggerDelegate: AnyObject {
 /// - 计时到：这次按压归我们，之后的拖动和松开也一并吞掉。
 /// 补发的事件带有标记，回到这里时直接放行。
 ///
-/// Tap 挂在主线程 RunLoop 上，回调里只做状态判断，耗时的事情（取选中内容等）都交给 delegate 异步处理。
+/// Tap 跑在自己的线程上（EventTapThread）：系统里每一次右键、中键都要等回调返回，放在主线程上的话，
+/// Pop 一忙全系统的右键都跟着卡。判定在拦截的线程上做（MouseTriggerCore）；按下时要不要接手问主线程上的 delegate，
+/// 最多等 0.1 秒，等不到就当普通的右键放过。唤起、拖动、松开按顺序交给主线程，不等它。
 @MainActor
 final class MouseTrigger {
-    struct Configuration: Equatable {
-        var mode: TriggerMode = .longPressRight
-        var holdDuration: TimeInterval = 0.25
-        var modifier: TriggerModifier = .option
-    }
+    typealias Configuration = MouseTriggerConfiguration
 
     weak var delegate: MouseTriggerDelegate?
 
     var configuration = Configuration() {
         didSet {
             if configuration != oldValue {
-                reset(replayPending: true)
+                core?.configuration = configuration
             }
         }
     }
 
     private(set) var isRunning = false
 
-    private var tap: CFMachPort?
-    private var runLoopSource: CFRunLoopSource?
+    private var tap: EventTapThread?
+    private var core: MouseTriggerCore?
+
+    /// 需要辅助功能权限，没有权限时返回 false。
+    @discardableResult
+    func start() -> Bool {
+        if isRunning { return true }
+        // 这两个闭包在拦截的线程上调用
+        let core = MouseTriggerCore(
+            configuration: configuration,
+            shouldBegin: { @Sendable [weak self] in
+                EventTapThread.askMain(fallback: false) { [weak self] in
+                    self?.delegate?.mouseTriggerShouldBegin() == true
+                }
+            },
+            deliver: { @Sendable [weak self] signal in
+                DispatchQueue.main.async { [weak self] in
+                    MainActor.assumeIsolated {
+                        self?.deliver(signal)
+                    }
+                }
+            })
+        let tap = EventTapThread(name: "Pop.MouseTrigger") { type, event in
+            core.handle(type: type, event: event)
+        }
+        guard tap.start(events: MouseTriggerCore.eventTypes) else {
+            return false
+        }
+        self.tap = tap
+        self.core = core
+        isRunning = true
+        return true
+    }
+
+    func stop() {
+        // 扣住的按下事件还给系统，之后的事件都放过
+        core?.stop()
+        tap?.stop()
+        tap = nil
+        core = nil
+        isRunning = false
+    }
+
+    private func deliver(_ signal: MouseTriggerSignal) {
+        switch signal {
+        case .activate(let location): delegate?.mouseTriggerDidActivate(at: location)
+        case .drag(let location): delegate?.mouseTriggerDidDrag(to: location)
+        case .release(let location): delegate?.mouseTriggerDidRelease(at: location)
+        }
+    }
+}
+
+/// 怎么唤起：拦截的线程上也要读，所以不放在 MouseTrigger（主线程）里面
+struct MouseTriggerConfiguration: Equatable {
+    var mode: TriggerMode = .longPressRight
+    var holdDuration: TimeInterval = 0.25
+    var modifier: TriggerModifier = .option
+}
+
+/// 拦截的线程交给主线程的事
+enum MouseTriggerSignal: Equatable {
+    case activate(CGPoint)
+    case drag(CGPoint)
+    case release(CGPoint)
+}
+
+/// 长按、修饰键+右键、中键的判定，在拦截的线程上跑（长按计时到了在计时的队列上）。
+/// 状态在锁里改；交给主线程的唤起、拖动、松开也在锁里排队，顺序和状态的变化一致。
+/// 问 delegate 要不要接手（可能要等主线程）时不拿着锁
+final class MouseTriggerCore: @unchecked Sendable {
+    /// 补发事件的标记（写在 eventSourceUserData 里）
+    static let replayMarker: Int64 = 0x504F_5021
+    static let eventTypes: [CGEventType] = [.rightMouseDown, .rightMouseUp, .rightMouseDragged,
+                                            .otherMouseDown, .otherMouseUp, .otherMouseDragged]
+    private static let dragTolerance: CGFloat = 6
+    private static let timerQueue = DispatchQueue(label: "io.github.whrss9527.pop.mouse-trigger", qos: .userInteractive)
 
     private enum State {
         case idle
-        /// 长按判定中：按下事件被扣住了
-        case pending(down: CGEvent, timer: Timer)
+        /// 长按判定中：按下事件被扣住了。id 认计时，cancel 取消计时
+        case pending(down: CGEvent, id: Int, cancel: () -> Void)
         /// 已唤起：本次按压归我们
         case active
         /// 已判定为普通按压，剩下的事件都放行
         case passthrough
     }
 
+    private let lock = NSLock()
     private var state: State = .idle
+    private var current: MouseTriggerConfiguration
+    private var nextTimerID = 0
+    /// 停下来以后不再接手，也不再交事给主线程（拦截的线程上可能还有一个事件在判定）
+    private var isStopped = false
 
-    /// 补发事件的标记（写在 eventSourceUserData 里）
-    static let replayMarker: Int64 = 0x504F_5021
-    private let dragTolerance: CGFloat = 6
+    /// 要不要接手这次按压（可能要等主线程，等不到当作不要）
+    private let shouldBegin: () -> Bool
+    /// 交给主线程的事，在锁里调用，不能等
+    private let deliver: (MouseTriggerSignal) -> Void
+    /// 补发事件
+    private let post: ([CGEvent]) -> Void
+    /// 长按计时：过多久调用 fire，返回取消计时的闭包
+    private let startTimer: (TimeInterval, @escaping () -> Void) -> () -> Void
 
-    /// 需要辅助功能权限，没有权限时返回 false。
-    @discardableResult
-    func start() -> Bool {
-        if isRunning { return true }
-        let types: [CGEventType] = [.rightMouseDown, .rightMouseUp, .rightMouseDragged,
-                                    .otherMouseDown, .otherMouseUp, .otherMouseDragged]
-        let mask = types.reduce(CGEventMask(0)) { $0 | (CGEventMask(1) << CGEventMask($1.rawValue)) }
-        guard let tap = CGEvent.tapCreate(tap: .cgSessionEventTap,
-                                          place: .headInsertEventTap,
-                                          options: .defaultTap,
-                                          eventsOfInterest: mask,
-                                          callback: mouseTriggerCallback,
-                                          userInfo: Unmanaged.passUnretained(self).toOpaque()) else {
-            return false
-        }
-        let source = CFMachPortCreateRunLoopSource(kCFAllocatorDefault, tap, 0)
-        CFRunLoopAddSource(CFRunLoopGetMain(), source, .commonModes)
-        CGEvent.tapEnable(tap: tap, enable: true)
-        self.tap = tap
-        runLoopSource = source
-        isRunning = true
-        return true
+    init(configuration: MouseTriggerConfiguration,
+         shouldBegin: @escaping () -> Bool,
+         deliver: @escaping (MouseTriggerSignal) -> Void,
+         post: @escaping ([CGEvent]) -> Void = MouseTriggerCore.replay,
+         startTimer: @escaping (TimeInterval, @escaping () -> Void) -> () -> Void = MouseTriggerCore.dispatchTimer(after:fire:)) {
+        current = configuration
+        self.shouldBegin = shouldBegin
+        self.deliver = deliver
+        self.post = post
+        self.startTimer = startTimer
     }
 
+    private func withLock<T>(_ body: () -> T) -> T {
+        lock.lock()
+        defer { lock.unlock() }
+        return body()
+    }
+
+    /// 改了设置：扣着的按下事件还给系统，重新开始
+    var configuration: MouseTriggerConfiguration {
+        get { withLock { current } }
+        set {
+            withLock {
+                current = newValue
+                resetLocked(replayPending: true)
+            }
+        }
+    }
+
+    /// 扣着的按下事件还给系统，重新开始
+    func reset() {
+        withLock { resetLocked(replayPending: true) }
+    }
+
+    /// 停下来：扣着的按下事件还给系统，之后的事件都放过
     func stop() {
-        reset(replayPending: true)
-        if let tap {
-            CGEvent.tapEnable(tap: tap, enable: false)
-            CFMachPortInvalidate(tap)
+        withLock {
+            resetLocked(replayPending: true)
+            isStopped = true
         }
-        if let runLoopSource {
-            CFRunLoopRemoveSource(CFRunLoopGetMain(), runLoopSource, .commonModes)
-        }
-        tap = nil
-        runLoopSource = nil
-        isRunning = false
     }
 
-    /// 返回 true 表示吞掉这个事件。
-    fileprivate func handle(type: CGEventType, event: CGEvent) -> Bool {
+    /// 拦截的线程上：返回 true 表示吞掉这个事件。
+    func handle(type: CGEventType, event: CGEvent) -> Bool {
         if type == .tapDisabledByTimeout || type == .tapDisabledByUserInput {
-            // 回调太慢或系统原因被停用了，重新启用；扣住的按下事件还给系统。
-            reset(replayPending: true)
-            if let tap { CGEvent.tapEnable(tap: tap, enable: true) }
+            // 回调太慢或系统原因被停用过（EventTapThread 已经重新打开）：扣住的按下事件还给系统
+            reset()
             return false
         }
-        if event.getIntegerValueField(.eventSourceUserData) == Self.replayMarker {
+        let (configuration, isStopped) = withLock { (current, self.isStopped) }
+        if isStopped || event.getIntegerValueField(.eventSourceUserData) == Self.replayMarker {
             return false
         }
         switch configuration.mode {
-        case .longPressRight: return handleLongPress(type: type, event: event)
-        case .modifierRightClick: return handleModifierClick(type: type, event: event)
+        case .longPressRight: return handleLongPress(type: type, event: event, holdDuration: configuration.holdDuration)
+        case .modifierRightClick: return handleModifierClick(type: type, event: event, modifier: configuration.modifier)
         case .middleClick: return handleMiddleClick(type: type, event: event)
         case .disabled: return false
         }
     }
 
-    private func handleLongPress(type: CGEventType, event: CGEvent) -> Bool {
-        switch (type, state) {
-        case (.rightMouseDown, _):
-            reset(replayPending: true)
-            guard delegate?.mouseTriggerShouldBegin() == true, let down = event.copy() else {
-                state = .passthrough
+    private func handleLongPress(type: CGEventType, event: CGEvent, holdDuration: TimeInterval) -> Bool {
+        if type == .rightMouseDown {
+            let pressedAt = ProcessInfo.processInfo.systemUptime
+            reset()
+            guard shouldBegin(), let down = event.copy() else {
+                withLock { state = .passthrough }
                 return false
             }
             let location = event.location
-            let timer = Timer(timeInterval: configuration.holdDuration, repeats: false) { [weak self] _ in
-                MainActor.assumeIsolated {
-                    self?.holdTimerFired(at: location)
+            // 问 delegate 用掉的时间也算在长按里
+            let remaining = max(0, holdDuration - (ProcessInfo.processInfo.systemUptime - pressedAt))
+            return withLock {
+                guard !isStopped else { return false }
+                nextTimerID += 1
+                let id = nextTimerID
+                let cancel = startTimer(remaining) { [weak self] in
+                    self?.holdTimerFired(id: id, at: location)
                 }
+                state = .pending(down: down, id: id, cancel: cancel)
+                return true
             }
-            RunLoop.main.add(timer, forMode: .common)
-            state = .pending(down: down, timer: timer)
-            return true
+        }
+        return withLock {
+            switch (type, state) {
+            case (.rightMouseDragged, .pending(let down, _, let cancel)):
+                let dx = event.location.x - down.location.x
+                let dy = event.location.y - down.location.y
+                if (dx * dx + dy * dy).squareRoot() > Self.dragTolerance {
+                    cancel()
+                    state = .passthrough
+                    post([down, event])
+                }
+                return true
 
-        case (.rightMouseDragged, .pending(let down, let timer)):
-            let dx = event.location.x - down.location.x
-            let dy = event.location.y - down.location.y
-            if (dx * dx + dy * dy).squareRoot() > dragTolerance {
-                timer.invalidate()
-                state = .passthrough
-                replay([down, event])
+            case (.rightMouseDragged, .active):
+                deliver(.drag(event.location))
+                return true
+
+            case (.rightMouseUp, .pending(let down, _, let cancel)):
+                cancel()
+                state = .idle
+                post([down, event])
+                return true
+
+            case (.rightMouseUp, .active):
+                state = .idle
+                deliver(.release(event.location))
+                return true
+
+            case (.rightMouseUp, .passthrough):
+                state = .idle
+                return false
+
+            default:
+                return false
             }
-            return true
-
-        case (.rightMouseDragged, .active):
-            delegate?.mouseTriggerDidDrag(to: event.location)
-            return true
-
-        case (.rightMouseUp, .pending(let down, let timer)):
-            timer.invalidate()
-            state = .idle
-            replay([down, event])
-            return true
-
-        case (.rightMouseUp, .active):
-            state = .idle
-            delegate?.mouseTriggerDidRelease(at: event.location)
-            return true
-
-        case (.rightMouseUp, .passthrough):
-            state = .idle
-            return false
-
-        default:
-            return false
         }
     }
 
-    private func handleModifierClick(type: CGEventType, event: CGEvent) -> Bool {
-        switch (type, state) {
-        case (.rightMouseDown, _):
-            state = .idle
-            guard event.flags.contains(configuration.modifier.eventFlag),
-                  delegate?.mouseTriggerShouldBegin() == true else { return false }
-            state = .active
-            delegate?.mouseTriggerDidActivate(at: event.location)
-            return true
-        case (.rightMouseDragged, .active):
-            delegate?.mouseTriggerDidDrag(to: event.location)
-            return true
-        case (.rightMouseUp, .active):
-            state = .idle
-            delegate?.mouseTriggerDidRelease(at: event.location)
-            return true
-        default:
-            return false
+    private func handleModifierClick(type: CGEventType, event: CGEvent, modifier: TriggerModifier) -> Bool {
+        if type == .rightMouseDown {
+            withLock { state = .idle }
+            // 没按着修饰键的右键不问主线程，马上放过
+            guard event.flags.contains(modifier.eventFlag), shouldBegin() else { return false }
+            return activate(at: event.location)
+        }
+        return withLock {
+            switch (type, state) {
+            case (.rightMouseDragged, .active):
+                deliver(.drag(event.location))
+                return true
+            case (.rightMouseUp, .active):
+                state = .idle
+                deliver(.release(event.location))
+                return true
+            default:
+                return false
+            }
         }
     }
 
     private func handleMiddleClick(type: CGEventType, event: CGEvent) -> Bool {
         guard event.getIntegerValueField(.mouseEventButtonNumber) == 2 else { return false }
-        switch (type, state) {
-        case (.otherMouseDown, _):
-            state = .idle
-            guard delegate?.mouseTriggerShouldBegin() == true else { return false }
-            state = .active
-            delegate?.mouseTriggerDidActivate(at: event.location)
-            return true
-        case (.otherMouseDragged, .active):
-            delegate?.mouseTriggerDidDrag(to: event.location)
-            return true
-        case (.otherMouseUp, .active):
-            state = .idle
-            delegate?.mouseTriggerDidRelease(at: event.location)
-            return true
-        default:
-            return false
+        if type == .otherMouseDown {
+            withLock { state = .idle }
+            guard shouldBegin() else { return false }
+            return activate(at: event.location)
+        }
+        return withLock {
+            switch (type, state) {
+            case (.otherMouseDragged, .active):
+                deliver(.drag(event.location))
+                return true
+            case (.otherMouseUp, .active):
+                state = .idle
+                deliver(.release(event.location))
+                return true
+            default:
+                return false
+            }
         }
     }
 
-    private func holdTimerFired(at location: CGPoint) {
-        guard case .pending = state else { return }
-        // 扣住的按下事件不再补发：目标 App 完全感知不到这次按压，选区也不会被右键改变。
-        state = .active
-        delegate?.mouseTriggerDidActivate(at: location)
+    /// 修饰键+右键、中键按下：马上唤起，这次按压归我们
+    private func activate(at location: CGPoint) -> Bool {
+        withLock {
+            guard !isStopped else { return false }
+            state = .active
+            deliver(.activate(location))
+            return true
+        }
     }
 
-    private func reset(replayPending: Bool) {
-        if case .pending(let down, let timer) = state {
-            timer.invalidate()
+    /// 计时的队列上
+    private func holdTimerFired(id: Int, at location: CGPoint) {
+        withLock {
+            // 计时到之前已经松开、拖开、重新开始或者停下来了
+            guard !isStopped, case .pending(_, let pendingID, _) = state, pendingID == id else { return }
+            // 扣住的按下事件不再补发：目标 App 完全感知不到这次按压，选区也不会被右键改变。
+            state = .active
+            deliver(.activate(location))
+        }
+    }
+
+    /// 拿着锁调用
+    private func resetLocked(replayPending: Bool) {
+        if case .pending(let down, _, let cancel) = state {
+            cancel()
             if replayPending {
-                replay([down])
+                post([down])
             }
         }
         state = .idle
     }
 
-    private func replay(_ events: [CGEvent]) {
+    /// 补发扣住的事件：带上标记，回到这里时直接放行
+    static func replay(_ events: [CGEvent]) {
         for event in events {
             guard let copy = event.copy() else { continue }
-            copy.setIntegerValueField(.eventSourceUserData, value: Self.replayMarker)
+            copy.setIntegerValueField(.eventSourceUserData, value: replayMarker)
             copy.post(tap: .cgSessionEventTap)
         }
+    }
+
+    /// 长按计时：到点在 timerQueue 上调用 fire；返回的闭包取消计时，在哪个线程上调用都行
+    static func dispatchTimer(after seconds: TimeInterval, fire: @escaping () -> Void) -> () -> Void {
+        let timer = DispatchSource.makeTimerSource(queue: timerQueue)
+        timer.schedule(deadline: .now() + seconds)
+        timer.setEventHandler(handler: fire)
+        timer.resume()
+        return { timer.cancel() }
     }
 }
 
@@ -247,17 +367,4 @@ extension TriggerModifier {
         case .shift: return .maskShift
         }
     }
-}
-
-private func mouseTriggerCallback(proxy: CGEventTapProxy,
-                                  type: CGEventType,
-                                  event: CGEvent,
-                                  userInfo: UnsafeMutableRawPointer?) -> Unmanaged<CGEvent>? {
-    guard let userInfo else { return Unmanaged.passUnretained(event) }
-    let trigger = Unmanaged<MouseTrigger>.fromOpaque(userInfo).takeUnretainedValue()
-    // Tap 的 RunLoop source 挂在主线程上，所以这里一定在主线程。
-    let swallow = MainActor.assumeIsolated {
-        trigger.handle(type: type, event: event)
-    }
-    return swallow ? nil : Unmanaged.passUnretained(event)
 }
