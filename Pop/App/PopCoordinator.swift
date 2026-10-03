@@ -723,7 +723,13 @@ final class PopCoordinator: MouseTriggerDelegate {
         case .system(let action):
             runSystemAction(action)
         case .textImage(let text, let style):
-            present(TextImage.outcome(text, style: style))
+            // 在后台画；画好时还是这一次唤起才换上
+            let id = session?.id
+            Task { [weak self] in
+                let outcome = await TextImage.outcomeInBackground(text, style: style)
+                guard let self, self.session?.id == id else { return }
+                self.present(outcome)
+            }
         case .barcode(let text):
             if let png = QRCode.barcode(text) {
                 present(.card(ResultCard(title: String(localized: "条形码"), body: text, detail: String(localized: "Code 128 条形码"), image: png,
