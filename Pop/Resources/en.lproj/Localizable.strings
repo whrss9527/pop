@@ -2536,7 +2536,7 @@
 "把选中的 Markdown 显示成排好版的样子，或者转成带格式的文字复制下来，粘贴到文稿、邮件、备忘录里保留格式" = "Preview the selected Markdown formatted, or copy it as formatted text that keeps its formatting when pasted into documents, mail or notes";
 "显示" = "Show";
 "还没有装插件" = "No plugins installed yet";
-"已装 %lld 个插件，一共占用 %@" = "%lld plugins installed, using %@";
+"已装 %lld 个插件，一共占用 %@" = "Plugins installed: %lld, using %@";
 "压缩和解压" = "Zip and Unzip";
 "把选中的文件或文件夹压缩成 zip，存在原来的文件夹里；把选中的 zip 解压到旁边的同名文件夹里" = "Compress the selected files or folders into a zip in the same folder, or extract the selected zip files into folders next to them";
 "聚光灯" = "Spotlight";
@@ -3162,7 +3162,7 @@
 "App Store 版的 Pop 不能运行 Shell 脚本" = "Pop from the App Store can’t run shell scripts";
 "还没有自己的插件。可以从模板新建：用网址模板接入任何网站的搜索，或者用 JavaScript 脚本处理选中的文字。" = "No plugins yet. Start from a template: search any website with a URL template, or process the selected text with a JavaScript script.";
 "这些功能是单独的插件包，要用时再装上；不用了可以卸载，连同它的设置一起删掉。" = "These features are separate plugins: install one when you need it, and uninstall it, along with its settings, when you don’t.";
-"已装 %lld 个插件" = "%lld plugins installed";
+"已装 %lld 个插件" = "Plugins installed: %lld";
 "会删掉它的设置。圆盘上和快捷键里的这个功能也会拿掉，要用时可以再装。" = "This deletes its settings. It’s also removed from the ring and shortcuts. You can install it again any time.";
 "推出前请先关掉磁盘上打开的文件" = "Close files that are open on a disk before ejecting it";
 "App Store 版的 Pop 不能运行快捷指令" = "Pop from the App Store can’t run shortcuts";
