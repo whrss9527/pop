@@ -46,7 +46,8 @@ struct FileInfoPlugin: PopPlugin {
             // 不在主线程上算：文件夹可能很大
             let rows = await FileInfo.rows(for: first)
             guard !rows.isEmpty else { return .failure(String(localized: "读不到「\(first.lastPathComponent)」的信息")) }
-            return .card(ResultCard(title: String(localized: "文件信息"), body: first.lastPathComponent, rows: rows, buttons: Self.photoButtons(for: first)))
+            let buttons = await runInBackground { Self.photoButtons(for: first) }
+            return .card(ResultCard(title: String(localized: "文件信息"), body: first.lastPathComponent, rows: rows, buttons: buttons))
         }
         let rows = await runInBackground { FileInfo.summary(for: files) }
         return .card(ResultCard(title: String(localized: "文件信息"), body: String(localized: "\(files.count) 项"), rows: rows))

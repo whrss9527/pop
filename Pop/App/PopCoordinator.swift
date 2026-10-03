@@ -890,11 +890,17 @@ final class PopCoordinator: MouseTriggerDelegate {
     private func presentPDFPassword(_ pdf: URL) {
         guard let current = session else { return }
         stopPointerTracking()
-        let model = PDFPasswordModel(pdf: pdf, mode: PDFTools.isLocked(pdf) ? .remove : .add)
-        overlay.showCard(PDFPasswordView(model: model,
-                                         onSubmit: { [weak self] password in self?.savePDFPassword(model, password) },
-                                         onClose: { [weak self] in self?.endSession() }),
-                         anchor: current.anchor)
+        let sessionID = current.id
+        Task { [weak self] in
+            // 打开 PDF 看有没有密码放在后台
+            let locked = await runInBackground { PDFTools.isLocked(pdf) }
+            guard let self, let current = self.session, current.id == sessionID else { return }
+            let model = PDFPasswordModel(pdf: pdf, mode: locked ? .remove : .add)
+            self.overlay.showCard(PDFPasswordView(model: model,
+                                                  onSubmit: { [weak self] password in self?.savePDFPassword(model, password) },
+                                                  onClose: { [weak self] in self?.endSession() }),
+                                  anchor: current.anchor)
+        }
     }
 
     private func savePDFPassword(_ model: PDFPasswordModel, _ password: String) {
