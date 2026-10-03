@@ -19,7 +19,8 @@ final class HangWatchdogTests: XCTestCase {
 
         let lines = try String(contentsOfFile: path, encoding: .utf8).split(separator: "\n").map { $0.split(separator: " ") }
         let hangs = lines.filter { $0.count == 3 && $0[0] == "hang" }
-        XCTAssertEqual(hangs.count, lines.count)
+        // 卡到半秒时可能先写了一行 stall，别的都是 hang 行
+        XCTAssertEqual(hangs.count + lines.filter { $0.first == "stall" }.count, lines.count)
         let longest = try XCTUnwrap(hangs.max { (Double($0[2]) ?? 0) < (Double($1[2]) ?? 0) })
         XCTAssertGreaterThanOrEqual(Double(longest[2]) ?? 0, 0.4)
         XCTAssertLessThan(Double(longest[2]) ?? 0, 1.5)
@@ -27,7 +28,7 @@ final class HangWatchdogTests: XCTestCase {
         XCTAssertEqual(Double(longest[1]) ?? 0, stalledAt, accuracy: 0.2)
     }
 
-    /// 卡了 1 秒还没缓过来时先写一行「stall 开始的时间戳」，缓过来以后照样写 hang 行
+    /// 卡了半秒还没缓过来时先写一行「stall 开始的时间戳」（卡多久都只写一次），缓过来以后照样写 hang 行
     func testNoticesALongStallWhileItLasts() async throws {
         let path = FileManager.default.temporaryDirectory.appending(path: "pop-stall-\(UUID().uuidString).log").path(percentEncoded: false)
         addTeardownBlock { try? FileManager.default.removeItem(atPath: path) }
@@ -36,7 +37,7 @@ final class HangWatchdogTests: XCTestCase {
         defer { watchdog.stop() }
         try await Task.sleep(for: .milliseconds(200))
 
-        // 比 1 秒多留些余量：机器忙的时候，检测的线程发空任务、看等了多久都会晚一点
+        // 留些余量：机器忙的时候，检测的线程发空任务、看等了多久都会晚一点
         blockMainThread(for: 1.5)
         try await Task.sleep(for: .milliseconds(300))
 

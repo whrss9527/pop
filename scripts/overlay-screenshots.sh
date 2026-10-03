@@ -6,7 +6,7 @@
 # 之后用深色外观再拍一组停下来之后的样子（文件名以 dark- 开头），POP_SKIP_DARK=1 时不拍。
 # 只拍停下来之后的样子的插件包步骤不用放慢那么多：Pop 在这些步骤上按 2 倍走（POP_DEMO_QUICK_STEPS），省下时间。
 # 两遍演示里主线程卡住超过 0.25 秒的地方最后都列出来，卡了 2 秒以上（POP_HANG_LIMIT）的算失败。
-# 卡了 1 秒还没缓过来时（Pop 写一行 stall）用 sample 采样主线程，最后把在忙什么（scripts/sample-summary.py 缩短的）一起列出来。
+# 卡了半秒还没缓过来时（Pop 写一行 stall）用 sample 采样主线程，最后把卡了 1 秒以上的那几次在忙什么（scripts/sample-summary.py 缩短的）一起列出来。
 #
 # 用法：scripts/overlay-screenshots.sh <Pop.app> <输出目录> [动画放慢倍数，默认 6]
 set -euo pipefail
@@ -185,7 +185,7 @@ os.makedirs(samples, exist_ok=True)
 stop_sampling = threading.Event()
 
 def sample_stalls():
-    """Pop 写了 stall 行（主线程卡了 1 秒还没缓过来）就用 sample 采样 3 秒：一次只采一个，每遍最多 8 个。
+    """Pop 写了 stall 行（主线程卡了半秒还没缓过来）就用 sample 采样 3 秒：一次只采一个，每遍最多 16 个。
     GitHub 的 runner 上用 sudo（不用输密码），本机 sudo 要密码时直接采（Pop 是同一个用户开的）"""
     use_sudo = shutil.which("sudo") is not None and subprocess.run(["sudo", "-n", "true"], capture_output=True).returncode == 0
     seen, running, taken = set(), None, 0
@@ -198,7 +198,7 @@ def sample_stalls():
             if len(parts) < 2 or parts[0] != "stall" or parts[1] in seen:
                 continue
             seen.add(parts[1])
-            if running or taken >= 8:
+            if running or taken >= 16:
                 continue
             pid = subprocess.run(["pgrep", "-nx", "Pop"], capture_output=True, text=True).stdout.strip()
             if not pid:
@@ -300,7 +300,7 @@ def hang_lines():
     return hangs, lasted, place
 
 def stall_report():
-    """等采样做完，把采到的样缩短（stall 行和 hang 行记的是同一个开始时间）"""
+    """等采样做完，把卡了 1 秒以上（或者还没缓过来）的那几次采到的样缩短（stall 行和 hang 行记的是同一个开始时间）"""
     stop_sampling.set()
     sampler.join(timeout=90)
     _, lasted, place = hang_lines()
@@ -309,6 +309,8 @@ def stall_report():
         if not name.endswith(".log"):
             continue
         stamp = name[:-4]
+        if lasted.get(stamp, 99) < 1.0:
+            continue
         seconds = f"{lasted[stamp]:.2f}" if stamp in lasted else "?"
         summaries.append(f"{appearance} {seconds} 秒 {place(float(stamp))}：")
         report = os.path.join(samples, stamp + ".txt")
