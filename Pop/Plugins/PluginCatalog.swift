@@ -33,9 +33,11 @@ struct PluginPackage: Identifiable, Hashable {
 
 /// 所有插件包，没装的也在：设置的「插件」页按它列出来，没装上也知道插件包叫什么、提供哪些功能。
 enum PluginCatalog {
-    /// App Store 版不提供的插件包：沙盒里跑不了（调用命令行工具、改系统设置、蓝牙）。
+    /// App Store 版不提供的插件包：沙盒里跑不了（调用命令行工具、改系统设置、蓝牙；退出别的 App、
+    /// 找别的 App 留下的文件、问访达当前的文件夹、开网页服务让手机来连，沙盒都不让）。
     /// scripts/build-app.sh 的 APP_STORE_EXCLUDED_PLUGINS 列着同样的插件包，不打进 App Store 版
-    static let unavailableInAppStore: Set<String> = ["zip", "systemActions", "encryptFiles", "bluetooth"]
+    static let unavailableInAppStore: Set<String> = ["zip", "systemActions", "encryptFiles", "bluetooth",
+                                                     "quitApps", "uninstallApp", "newFile", "sendToPhone"]
 
     static let packages: [PluginPackage] = allPackages.filter { !Distribution.isAppStore || !unavailableInAppStore.contains($0.id) }
 

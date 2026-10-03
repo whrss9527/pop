@@ -5,7 +5,7 @@ Pop 的 App Store 版和 GitHub 版用同一份代码，编译时带 `APP_STORE`
 - 开 App Sandbox，不带 iCloud 同步；
 - 只能由 App Store 更新，没有一键更新、没有赞赏码；
 - 插件包都打在 App 里（`Contents/PlugIns`），装上就是装载，不从网上下载；没有插件库，自己的插件不能用 Shell 脚本和快捷指令；
-- 沙盒里跑不了的插件包不提供：压缩和解压、系统操作、加密打包、蓝牙设备（`PluginCatalog.unavailableInAppStore`）；
+- 沙盒里跑不了的插件包不提供：压缩和解压、系统操作、加密打包、蓝牙设备、退出 App、卸载 App、新建文件、传到手机（`PluginCatalog.unavailableInAppStore`）；
 - 沙盒里弹不出辅助功能的授权提示：「去授权」会打开系统设置并在访达里选中 Pop，请用户点「+」加进去；
 - 在访达里选中的文件，要先在「设置 → 通用」里允许 Pop 访问所在的文件夹（security-scoped bookmark，见 `Pop/System/FolderAccess.swift`）；
 - 不能注册只带 ⌥ 的全局快捷键（macOS 15 起沙盒里的 App 注册不了）。
@@ -19,7 +19,7 @@ Pop 的 App Store 版和 GitHub 版用同一份代码，编译时带 `APP_STORE`
 1. **App ID**：[开发者网站 → Identifiers](https://developer.apple.com/account/resources/identifiers/list) → +，App IDs → App，Bundle ID 选 Explicit，填 `io.github.whrss9527.pop`，能力都不用勾。
 2. **描述文件**：[Profiles](https://developer.apple.com/account/resources/profiles/list) → +，Distribution 下面选 **Mac App Store Connect**，App ID 选上面那个，证书选 Apple Distribution，下载得到 `.provisionprofile`。
 3. **新建 App**：[App Store Connect](https://appstoreconnect.apple.com/apps) → + → 新建 App，平台 macOS，名称 `Pop – Right-Click Toolbox`（被占用的话换一个，同时改 `docs/app-store/listing/en-US/name.txt`），主要语言英语（美国），Bundle ID 选 `io.github.whrss9527.pop`，SKU 随便填（比如 pop）。
-4. **App 隐私**：App Store Connect 里这个 App → App 隐私 → 「不收集数据」。隐私政策网址是 `docs/privacy.md` 在 GitHub 上的地址。
+4. **App 隐私**：App Store Connect 里这个 App → App 隐私 → 「不收集数据」。隐私政策网址：英文 https://whrss.com/privacy/pop/ ，中文 https://whrss.com/zh/privacy/pop/ （`docs/app-store/listing/*/privacy_url.txt`，工作流会填进去）。
 5. **Secrets**：在 pop 仓库的 Settings → Secrets and variables → Actions 里加上 `.github/workflows/app-store.yml` 开头列的那些。证书、密码和 API 密钥照抄 Stox 仓库里的，`APPSTORE_PROVISIONING_PROFILE` 是第 2 步的描述文件（`base64 -i Pop_Mac_App_Store.provisionprofile | pbcopy`）。
 
 ## 上传、填资料、提交

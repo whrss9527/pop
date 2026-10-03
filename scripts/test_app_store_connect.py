@@ -320,7 +320,7 @@ class SyncTests(SyncTestCase):
         self.assertEqual((info["primaryCategory"]["data"]["id"], info["secondaryCategory"]["data"]["id"]), ("PRODUCTIVITY", "UTILITIES"))
         self.assertEqual(fake.payload("PATCH", "/v1/appInfoLocalizations/ail-en-US")["data"]["attributes"], {
             "name": "Pop – Right-Click Toolbox", "subtitle": "Hold right click. Flick. Done.",
-            "privacyPolicyUrl": "https://github.com/whrss9527/pop/blob/main/docs/privacy.md"})
+            "privacyPolicyUrl": "https://whrss.com/privacy/pop/"})
         zh_info = fake.payload("POST", "/v1/appInfoLocalizations")["data"]
         self.assertEqual(zh_info["attributes"]["locale"], "zh-Hans")
         self.assertEqual(zh_info["relationships"]["appInfo"]["data"]["id"], "info1")

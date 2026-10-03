@@ -98,9 +98,13 @@ if [ "$APPSTORE" = "1" ]; then
   fi
   # App Store 版不带赞赏码（审核指南 3.1.1）
   rm -f "$APP/Contents/Resources/donate-wechat.png"
+  # App Store 版用不到的权限说明也去掉，免得审核时以为要用：蓝牙设备插件不打进去，也不给别的 App 发 Apple 事件
+  for key in NSBluetoothAlwaysUsageDescription NSAppleEventsUsageDescription; do
+    /usr/libexec/PlistBuddy -c "Delete :$key" "$APP/Contents/Info.plist" 2>/dev/null || true
+  done
   # App Store 版不从网上下载插件包（审核指南 2.5.2）：都打进 App 里（Contents/PlugIns），装上时从这里装载。
   # 沙盒里跑不了的不打进去，和 PluginCatalog.unavailableInAppStore 对应
-  APP_STORE_EXCLUDED_PLUGINS=" PopZip PopSystemActions PopEncryptFiles PopBluetooth "
+  APP_STORE_EXCLUDED_PLUGINS=" PopZip PopSystemActions PopEncryptFiles PopBluetooth PopQuitApps PopUninstallApp PopNewFile PopSendToPhone "
   rm -rf "$APP/Contents/PlugIns"
   mkdir -p "$APP/Contents/PlugIns"
   for bundle in "$PRODUCTS"/Pop*.bundle; do
