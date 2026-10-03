@@ -11,7 +11,7 @@ final class EmojiSymbolsEntry: NSObject, PopPluginBundle {
     @MainActor static func didLoad(_ host: PluginHost.Registrar) {
         // CI 截图：搜「笑」，选中第一个
         host.addDemoScene(PluginHost.DemoScene(name: "emojiSymbols", after: "pdfPages", order: 20, delay: 1.4, hold: 0, show: { demo in
-            await EmojiSymbols.prepare(query: EmojiSymbolsPlugin.demoQuery)
+            await EmojiSymbols.prepare(query: EmojiSymbolsPlugin.demoQuery, scales: EmojiSymbolsPlugin.screenScales())
             demo.overlay.showCard(EmojiSymbolsView(model: EmojiSymbolsPlugin.demoModel(), onClose: {}), anchor: demo.center)
             return demo.cardRegion
         }))
@@ -28,7 +28,7 @@ struct EmojiSymbolsPlugin: PopPlugin {
 
     @MainActor func run(_ content: ClassifiedContent, context: PluginContext) async -> PluginOutcome {
         let query = Self.query(from: content.text)
-        await EmojiSymbols.prepare(query: query)
+        await EmojiSymbols.prepare(query: query, scales: Self.screenScales())
         let model = EmojiSymbolsModel(query: query)
         model.keepsSelection = Self.keepsSelection(content.text)
         return .present(PluginPresentation { session in
@@ -44,6 +44,12 @@ struct EmojiSymbolsPlugin: PopPlugin {
         guard let text = text?.trimmingCharacters(in: .whitespacesAndNewlines), !text.isEmpty,
               text.count <= maxQueryLength, !text.contains(where: \.isNewline) else { return "" }
         return text
+    }
+
+    /// 连着的几块屏幕各是几倍屏（1 倍屏、2 倍屏用的是表情字体里不同大小的图）
+    @MainActor static func screenScales() -> [CGFloat] {
+        let scales = Set(NSScreen.screens.map(\.backingScaleFactor))
+        return scales.isEmpty ? [2] : scales.sorted()
     }
 
     /// 选中了一大段文字（没拿来搜）：插入会把它整个换掉，所以只复制

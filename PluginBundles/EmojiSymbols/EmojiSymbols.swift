@@ -206,18 +206,19 @@ enum EmojiSymbols {
     }
 
     /// 打开卡片前在后台先把数据拆开（两千多个表情），再把卡片一打开就看得见的表情、符号画一遍：
-    /// 放在主线程上，第一次打开卡片要顿好一会儿。query 是卡片打开时搜的（没有就是「笑脸和情感」那一类）
-    static func prepare(query: String = "") async {
+    /// 放在主线程上，第一次打开卡片要顿好一会儿。query 是卡片打开时搜的（没有就是「笑脸和情感」那一类），
+    /// scales 是屏幕的倍数（`EmojiSymbolsPlugin.screenScales()`，在主线程上先读好）
+    static func prepare(query: String = "", scales: [CGFloat] = [2]) async {
         await runInBackground {
             _ = items.count
-            warmUpGlyphs(query: query)
+            warmUpGlyphs(query: query, scales: scales)
         }
     }
 
     /// 表情、符号不在系统字体里，要沿着后备字体一个个找过去；表情字体很大，每个表情每一档大小的图在文件里各在一处，
     /// 第一次画时才从磁盘上读。卡片一打开就看得见的（列出来的前 50 个、底下放大的那个、分类按钮）先在后台
-    /// 用界面上的系统字体、按卡片上的大小在 2 倍屏上画一遍，主线程画的时候就不用等了
-    private static func warmUpGlyphs(query: String) {
+    /// 用界面上的系统字体、按卡片上的大小和屏幕的倍数画一遍，主线程画的时候就不用等了
+    private static func warmUpGlyphs(query: String, scales: [CGFloat]) {
         let listed = Array((query.isEmpty ? items(in: .smileys) : search(query)).prefix(50))
         let runs: [(texts: [String], size: CGFloat)] = [
             (listed.filter(\.isEmoji).map(\.id), 24),
@@ -226,18 +227,20 @@ enum EmojiSymbols {
             (Category.emojiCategories.map(\.icon), 16),
             (Category.symbolCategories.map(\.icon), 14),
         ]
-        guard let context = CGContext(data: nil, width: 640, height: 128, bitsPerComponent: 8, bytesPerRow: 0,
-                                      space: CGColorSpaceCreateDeviceRGB(),
-                                      bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue) else { return }
-        context.scaleBy(x: 2, y: 2)
-        for run in runs where !run.texts.isEmpty {
-            let font = CTFontCreateUIFontForLanguage(.system, run.size, nil) ?? CTFontCreateWithName("AppleColorEmoji" as CFString, run.size, nil)
-            // 一行 8 个，都落在画布里（画布外面的不会真的画）
-            for start in stride(from: 0, to: run.texts.count, by: 8) {
-                let line = run.texts[start..<min(start + 8, run.texts.count)].joined(separator: " ")
-                let text = NSAttributedString(string: line, attributes: [NSAttributedString.Key(kCTFontAttributeName as String): font])
-                context.textPosition = CGPoint(x: 4, y: 8)
-                CTLineDraw(CTLineCreateWithAttributedString(text as CFAttributedString), context)
+        for scale in scales where scale > 0 {
+            guard let context = CGContext(data: nil, width: Int(320 * scale), height: Int(64 * scale), bitsPerComponent: 8, bytesPerRow: 0,
+                                          space: CGColorSpaceCreateDeviceRGB(),
+                                          bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue) else { continue }
+            context.scaleBy(x: scale, y: scale)
+            for run in runs where !run.texts.isEmpty {
+                let font = CTFontCreateUIFontForLanguage(.system, run.size, nil) ?? CTFontCreateWithName("AppleColorEmoji" as CFString, run.size, nil)
+                // 一行 8 个，都落在画布里（画布外面的不会真的画）
+                for start in stride(from: 0, to: run.texts.count, by: 8) {
+                    let line = run.texts[start..<min(start + 8, run.texts.count)].joined(separator: " ")
+                    let text = NSAttributedString(string: line, attributes: [NSAttributedString.Key(kCTFontAttributeName as String): font])
+                    context.textPosition = CGPoint(x: 4, y: 8)
+                    CTLineDraw(CTLineCreateWithAttributedString(text as CFAttributedString), context)
+                }
             }
         }
     }
