@@ -177,6 +177,7 @@ final class ContentClassifierTests: XCTestCase {
         let text = String(repeating: "今天天气很好，我们出去走走吧。", count: 3000)
         let content = await ContentClassifier.classifyOffMain(.text(text), catalog: [])
         XCTAssertEqual(content.checked?.characterCount, text.count)
-        XCTAssertEqual(content.summary, "\(text.count) 字")
+        // 数字按界面语言的写法（45,000）
+        XCTAssertEqual(content.summary, String(localized: "\(text.count) 字"))
     }
 }
