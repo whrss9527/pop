@@ -9,6 +9,7 @@ final class AnnotationWindowController: NSObject, NSWindowDelegate {
 
     private let window: NSWindow
     private let model: AnnotationModel
+    private var isFinishing = false
 
     /// 在屏幕中间打开一张截图（太大时缩小显示，合成时仍是原图大小）
     @discardableResult
@@ -63,7 +64,19 @@ final class AnnotationWindowController: NSObject, NSWindowDelegate {
             window.close()
             return
         }
-        guard let png = model.renderPNG() else { return }
+        // 按原图大小合成在后台做；合成的时候再点按钮不算
+        guard !isFinishing else { return }
+        isFinishing = true
+        Task { [weak self] in
+            guard let self else { return }
+            let png = await self.model.renderPNG()
+            self.isFinishing = false
+            guard let png else { return }
+            self.deliver(png, action)
+        }
+    }
+
+    private func deliver(_ png: Data, _ action: Action) {
         let center = CGPoint(x: window.frame.midX, y: window.frame.midY)
         switch action {
         case .copy:

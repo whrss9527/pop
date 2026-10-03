@@ -183,8 +183,8 @@ final class AnnotationModel: ObservableObject {
     let image: CGImage
     /// 图片的大小（点）：像素除以屏幕倍率
     let size: CGSize
-    /// 打了马赛克的整张图，马赛克区域从这里取
-    let pixelated: CGImage?
+    /// 打了马赛克的整张图，马赛克区域从这里取。打开后在后台做（大截图要算一会儿），做好以前打码的地方先不显示
+    @Published private(set) var pixelated: CGImage?
 
     @Published private(set) var annotations: [Annotation] = []
     @Published var current: Annotation?
@@ -200,7 +200,10 @@ final class AnnotationModel: ObservableObject {
     init(image: CGImage, pointSize: CGSize) {
         self.image = image
         size = pointSize
-        pixelated = Self.pixelate(image)
+        Task { [weak self] in
+            let pixelated = await runInBackground { AnnotationRenderer.pixelate(image) }
+            self?.pixelated = pixelated
+        }
     }
 
     var canUndo: Bool { !annotations.isEmpty }
@@ -282,7 +285,7 @@ final class AnnotationModel: ObservableObject {
     }
 
     /// 加背景时截图的圆角（点）
-    static let backgroundCornerRadius: CGFloat = 10
+    nonisolated static let backgroundCornerRadius: CGFloat = 10
 
     /// 合成后图片的大小（点）：加了背景时四周多出 backgroundPadding
     var outputSize: CGSize {
@@ -291,18 +294,37 @@ final class AnnotationModel: ObservableObject {
     }
 
     /// 文字的字号跟着线宽变
-    static func fontSize(for lineWidth: CGFloat) -> CGFloat {
+    nonisolated static func fontSize(for lineWidth: CGFloat) -> CGFloat {
         max(lineWidth * 4, 14)
     }
 
     /// 序号圆圈的半径
-    static func counterRadius(for lineWidth: CGFloat) -> CGFloat {
+    nonisolated static func counterRadius(for lineWidth: CGFloat) -> CGFloat {
         max(lineWidth * 3, 11)
     }
 
-    /// 画上所有标注（加了背景时再套上背景），得到 PNG；截图部分和原图的像素大小一样
-    func renderPNG() -> Data? {
+    /// 画上所有标注（加了背景时再套上背景），得到 PNG；截图部分和原图的像素大小一样。
+    /// 按原图大小合成、编码 PNG 放在后台：5K 屏的截图要画、编好一会儿
+    func renderPNG() async -> Data? {
         commitText()
+        let renderer = AnnotationRenderer(image: image, pixelated: pixelated, size: size, annotations: annotations,
+                                          background: background, backgroundPadding: backgroundPadding, outputSize: outputSize)
+        return await runInBackground { renderer.png() }
+    }
+}
+
+/// 按原图大小合成标注（不在主线程上用）
+struct AnnotationRenderer {
+    let image: CGImage
+    /// 还没做好时要用到马赛克就当场做
+    let pixelated: CGImage?
+    let size: CGSize
+    let annotations: [Annotation]
+    let background: AnnotationBackground?
+    let backgroundPadding: CGFloat
+    let outputSize: CGSize
+
+    func png() -> Data? {
         guard let annotated = composedImage() else { return nil }
         var output = annotated
         if let background {
@@ -324,11 +346,12 @@ final class AnnotationModel: ObservableObject {
         // 换成「点、左上角为原点」的坐标，和屏幕上画的一样
         context.translateBy(x: 0, y: CGFloat(height))
         context.scaleBy(x: CGFloat(width) / size.width, y: -CGFloat(height) / size.height)
+        let mosaic = pixelated ?? (annotations.contains { $0.kind == .mosaic } ? Self.pixelate(image) : nil)
         let graphics = NSGraphicsContext(cgContext: context, flipped: true)
         NSGraphicsContext.saveGraphicsState()
         NSGraphicsContext.current = graphics
         for annotation in annotations {
-            draw(annotation, in: context)
+            draw(annotation, in: context, mosaic: mosaic)
         }
         NSGraphicsContext.restoreGraphicsState()
         return context.makeImage()
@@ -350,7 +373,7 @@ final class AnnotationModel: ObservableObject {
         context.scaleBy(x: pixelsPerPoint, y: pixelsPerPoint)
         context.drawLinearGradient(gradient, start: CGPoint(x: 0, y: full.height), end: CGPoint(x: full.width, y: 0), options: [])
         let rect = CGRect(x: padding, y: padding, width: size.width, height: size.height)
-        let path = CGPath(roundedRect: rect, cornerWidth: Self.backgroundCornerRadius, cornerHeight: Self.backgroundCornerRadius,
+        let path = CGPath(roundedRect: rect, cornerWidth: AnnotationModel.backgroundCornerRadius, cornerHeight: AnnotationModel.backgroundCornerRadius,
                           transform: nil)
         // 阴影的偏移和模糊不跟着坐标缩放，按像素算
         context.saveGState()
@@ -368,26 +391,26 @@ final class AnnotationModel: ObservableObject {
         return context.makeImage()
     }
 
-    private func draw(_ annotation: Annotation, in context: CGContext) {
+    private func draw(_ annotation: Annotation, in context: CGContext, mosaic: CGImage?) {
         let color = annotation.color.nsColor.cgColor
         switch annotation.kind {
         case .mosaic:
-            guard let pixelated else { return }
+            guard let mosaic else { return }
             context.saveGState()
             context.clip(to: annotation.bounds)
             // 这里的坐标是翻转过的，画图片要再翻回来
             context.translateBy(x: 0, y: size.height)
             context.scaleBy(x: 1, y: -1)
-            context.draw(pixelated, in: CGRect(origin: .zero, size: size))
+            context.draw(mosaic, in: CGRect(origin: .zero, size: size))
             context.restoreGState()
         case .text(let text):
             let attributes: [NSAttributedString.Key: Any] = [
-                .font: NSFont.systemFont(ofSize: Self.fontSize(for: annotation.lineWidth), weight: .semibold),
+                .font: NSFont.systemFont(ofSize: AnnotationModel.fontSize(for: annotation.lineWidth), weight: .semibold),
                 .foregroundColor: annotation.color.nsColor,
             ]
             NSAttributedString(string: text, attributes: attributes).draw(at: annotation.start)
         case .counter(let number):
-            let radius = Self.counterRadius(for: annotation.lineWidth)
+            let radius = AnnotationModel.counterRadius(for: annotation.lineWidth)
             let circle = CGRect(x: annotation.start.x - radius, y: annotation.start.y - radius, width: radius * 2, height: radius * 2)
             context.setFillColor(color)
             context.fillEllipse(in: circle)
@@ -409,7 +432,7 @@ final class AnnotationModel: ObservableObject {
     }
 
     /// 整张图打上马赛克（格子大小随图片大小变）
-    private static func pixelate(_ image: CGImage) -> CGImage? {
+    static func pixelate(_ image: CGImage) -> CGImage? {
         let input = CIImage(cgImage: image)
         let filter = CIFilter.pixellate()
         filter.inputImage = input.clampedToExtent()

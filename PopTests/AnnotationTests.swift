@@ -50,7 +50,7 @@ final class AnnotationTests: XCTestCase {
         XCTAssertTrue(model.canUndo)
     }
 
-    func testRenderingKeepsPixelSizeAndDrawsStrokes() throws {
+    func testRenderingKeepsPixelSizeAndDrawsStrokes() async throws {
         let model = try makeModel()
         model.color = .red
         model.lineWidth = 4
@@ -65,7 +65,8 @@ final class AnnotationTests: XCTestCase {
         model.drag(to: CGPoint(x: 8, y: 8))
         model.end()
 
-        let png = try XCTUnwrap(model.renderPNG())
+        let rendered = await model.renderPNG()
+        let png = try XCTUnwrap(rendered)
         let image = try XCTUnwrap(NSBitmapImageRep(data: png))
         XCTAssertEqual(image.pixelsWide, 100)
         XCTAssertEqual(image.pixelsHigh, 60)
@@ -78,12 +79,13 @@ final class AnnotationTests: XCTestCase {
         XCTAssertGreaterThan(inside.greenComponent, 0.9)
     }
 
-    func testRenderingWithBackground() throws {
+    func testRenderingWithBackground() async throws {
         let model = try makeModel()
         model.background = .sky
         // 四周各留 24 点
         XCTAssertEqual(model.outputSize, CGSize(width: 98, height: 78))
-        let png = try XCTUnwrap(model.renderPNG())
+        let rendered = await model.renderPNG()
+        let png = try XCTUnwrap(rendered)
         let image = try XCTUnwrap(NSBitmapImageRep(data: png))
         XCTAssertEqual(image.pixelsWide, 196)
         XCTAssertEqual(image.pixelsHigh, 156)
