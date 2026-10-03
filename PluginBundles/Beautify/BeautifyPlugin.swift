@@ -29,7 +29,7 @@ struct BeautifyPlugin: PopPlugin {
         let image: CGImage
         if case .image(let data) = content.selection, let decoded = TextRecognizer.cgImage(from: data) {
             image = decoded
-        } else if let url = content.files.first(where: ContentClassifier.isImageFile), let decoded = TextRecognizer.cgImage(contentsOf: url) {
+        } else if let url = content.files.first(where: ContentClassifier.isImageFile), let decoded = await TextRecognizer.decodedImage(contentsOf: url) {
             image = decoded
         } else {
             switch await ScreenCapture.selectRegion() {

@@ -17,7 +17,9 @@ struct ImageConvertPlugin: PopPlugin {
     @MainActor func run(_ content: ClassifiedContent, context: PluginContext) async -> PluginOutcome {
         let files = content.files.filter(ContentClassifier.isImageFile)
         guard !files.isEmpty else { return .failure(String(localized: "没有选中图片文件")) }
-        let rows = files.count == 1 ? ImageInfo.rows(for: files[0]) : []
+        let first = files[0]
+        let single = files.count == 1
+        let rows = await runInBackground { single ? ImageInfo.rows(for: first) : [] }
         let what = files.count == 1 ? files[0].lastPathComponent : String(localized: "\(files.count) 张图片")
         // 照片里有位置、拍摄信息时才给去掉的按钮。最多看 200 张，要一张张读（iCloud 里没下载下来的还要先下载），放在后台
         let sample = Array(files.prefix(200))

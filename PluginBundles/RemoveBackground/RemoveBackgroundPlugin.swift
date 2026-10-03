@@ -19,7 +19,7 @@ struct RemoveBackgroundPlugin: PopPlugin {
         if case .image(let data) = content.selection {
             image = TextRecognizer.cgImage(from: data)
         } else if let url = content.files.first {
-            image = TextRecognizer.cgImage(contentsOf: url)
+            image = await TextRecognizer.decodedImage(contentsOf: url)
             name = url.deletingPathExtension().lastPathComponent + String(localized: " 抠图")
         } else {
             image = nil

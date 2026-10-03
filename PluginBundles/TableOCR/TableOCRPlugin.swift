@@ -81,7 +81,7 @@ struct TableOCRPlugin: PopPlugin {
         if case .image(let data) = content.selection, let image = TextRecognizer.cgImage(from: data) {
             return await Self.recognize(image)
         }
-        if let url = content.files.first(where: ContentClassifier.isImageFile), let image = TextRecognizer.cgImage(contentsOf: url) {
+        if let url = content.files.first(where: ContentClassifier.isImageFile), let image = await TextRecognizer.decodedImage(contentsOf: url) {
             return await Self.recognize(image)
         }
         switch await ScreenCapture.selectRegion() {
