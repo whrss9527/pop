@@ -5,7 +5,8 @@ import SwiftUI
 /// 环境变量 POP_ANIMATION_SCALE 可以把所有动画放慢若干倍（CI 截图时用来拍动画的中间帧）。
 /// 系统打开了「减弱动态效果」时，各个视图自己去掉缩放、飞出这些位移，只留淡入淡出。
 enum Motion {
-    static let timeScale: Double = {
+    /// 动画放慢的倍数。演示模式在只拍停下来之后的样子的步骤上会临时调小（见 OverlayDemo，只在主线程上改）
+    static var timeScale: Double = {
         guard let text = ProcessInfo.processInfo.environment["POP_ANIMATION_SCALE"],
               let value = Double(text), value > 0 else { return 1 }
         return min(value, 40)

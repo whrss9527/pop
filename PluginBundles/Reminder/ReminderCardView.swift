@@ -93,8 +93,10 @@ struct ReminderCardView: View {
                     .fixedSize(horizontal: false, vertical: true)
             }
             FlowLayout(spacing: 8) {
+                // ⌘↩ 的按钮在 macOS 26 上不会自己变成蓝色的默认按钮，写明
                 Button("加到提醒事项") { onAdd(.reminder) }
                     .keyboardShortcut(.return, modifiers: .command)
+                    .buttonStyle(.borderedProminent)
                     .help("⌘↩")
                 Button("加到日历") { onAdd(.calendar) }
             }

@@ -154,8 +154,10 @@ struct ResultCardView: View {
                         .keyboardShortcut("c", modifiers: .command)
                 }
                 if let replaceText = card.replaceText {
+                    // ⌘↩ 的按钮在 macOS 26 上不会自己变成蓝色的默认按钮，写明
                     Button("替换原文") { onAction(.replace(replaceText)) }
                         .keyboardShortcut(.return, modifiers: .command)
+                        .buttonStyle(.borderedProminent)
                         .help("把结果粘贴回原来的 App，替换选中的文字（⌘↩）")
                 }
                 ForEach(card.buttons) { button in
@@ -549,6 +551,7 @@ struct TranslationCardView: View {
                     if canReplace {
                         Button("替换原文") { onAction(.replace(translated)) }
                             .keyboardShortcut(.return, modifiers: .command)
+                            .buttonStyle(.borderedProminent)
                             .help("用译文替换选中的文字（⌘↩）")
                     }
                     Button("贴到屏幕") { onAction(.pinText(translated)) }

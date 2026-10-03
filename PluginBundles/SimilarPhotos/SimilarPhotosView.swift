@@ -238,20 +238,15 @@ struct SimilarPhotosView: View {
                 .frame(width: 76, height: 76)
                 .clipShape(RoundedRectangle(cornerRadius: 6))
                 .opacity(marked ? 0.45 : 1)
-                Image(systemName: marked ? "trash.circle.fill" : "checkmark.circle.fill")
-                    .font(.system(size: 15))
-                    .foregroundStyle(.white, marked ? Color.red : Color.green)
+                Image(nsImage: marked ? TileBadge.trash : TileBadge.kept)
                     .padding(3)
+                    .accessibilityHidden(true)
             }
             .overlay(alignment: .bottomLeading) {
                 if best && !marked {
-                    Text("留着")
-                        .font(.system(size: 9, weight: .semibold))
-                        .foregroundStyle(.white)
-                        .padding(.horizontal, 5)
-                        .padding(.vertical, 1)
-                        .background(Capsule().fill(Color.green))
+                    Image(nsImage: TileBadge.best)
                         .padding(4)
+                        .accessibilityHidden(true)
                 }
             }
         }
@@ -261,5 +256,29 @@ struct SimilarPhotosView: View {
             Button("在访达中显示") { onReveal(photo.url) }
         }
         .accessibilityLabel(photo.url.lastPathComponent)
+    }
+}
+
+/// 照片上的角标（打勾、移走、「留着」）先画成图片再放上去：macOS 26 的深色玻璃会把卡片里的形状和文字跟下面的内容叠在一起提亮，
+/// 盖在浅色照片上时颜色淡得几乎看不见；画成图片就和照片一样照原样显示
+@MainActor
+private enum TileBadge {
+    static let kept = render(Image(systemName: "checkmark.circle.fill")
+        .font(.system(size: 15))
+        .foregroundStyle(.white, Color.green))
+    static let trash = render(Image(systemName: "trash.circle.fill")
+        .font(.system(size: 15))
+        .foregroundStyle(.white, Color.red))
+    static let best = render(Text("留着")
+        .font(.system(size: 9, weight: .semibold))
+        .foregroundStyle(.white)
+        .padding(.horizontal, 5)
+        .padding(.vertical, 1)
+        .background(Capsule().fill(Color.green)))
+
+    private static func render(_ view: some View) -> NSImage {
+        let renderer = ImageRenderer(content: view)
+        renderer.scale = 2
+        return renderer.nsImage ?? NSImage()
     }
 }

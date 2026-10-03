@@ -183,10 +183,15 @@ struct DuplicatesView: View {
             }
             ForEach(Array(group.files.enumerated()), id: \.offset) { index, file in
                 HStack(spacing: 6) {
-                    Text(index == 0 ? String(localized: "留") : "")
-                        .font(.caption2)
-                        .foregroundStyle(.green)
-                        .frame(width: 14)
+                    // 每一行都占着「留」字的宽度（英文的 Keep 也放得下），路径对齐
+                    ZStack(alignment: .leading) {
+                        Text("留").hidden()
+                        if index == 0 {
+                            Text("留").foregroundStyle(.green)
+                        }
+                    }
+                    .font(.caption2)
+                    .fixedSize()
                     Text(Self.abbreviated(file))
                         .font(.caption)
                         .foregroundStyle(.secondary)

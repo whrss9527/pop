@@ -85,7 +85,7 @@ final class FontPreviewModel: ObservableObject {
         if count == 0 && onlyCovering {
             return String(localized: "没有能完整显示这段文字的字体，取消「只看能显示的」再看看")
         }
-        return onlyCovering ? String(localized: "\(String(count)) 种字体能完整显示这段文字") : String(localized: "\(String(count)) 种字体")
+        return onlyCovering ? String(localized: "\(count) 种字体能完整显示这段文字") : String(localized: "\(count) 种字体")
     }
 
     func toggleFavorite(_ family: FontCatalog.Family) {
@@ -160,17 +160,16 @@ struct FontPreviewView: View {
     /// 装着的字体
     @ViewBuilder
     private var installedList: some View {
-        HStack(spacing: 8) {
-            Picker("筛选", selection: $model.filter) {
-                ForEach(FontCatalog.Filter.allCases) { filter in
-                    Text(filter.title).tag(filter)
-                }
+        // 分段和勾选框一行放不下时（英文），勾选框放到下一行，不挤成一个字一行
+        ViewThatFits(in: .horizontal) {
+            HStack(spacing: 8) {
+                filterPicker
+                coveringToggle
             }
-            .pickerStyle(.segmented)
-            .labelsHidden()
-            .fixedSize()
-            Toggle("只看能显示的", isOn: $model.onlyCovering)
-                .toggleStyle(.checkbox)
+            VStack(alignment: .leading, spacing: 6) {
+                filterPicker
+                coveringToggle
+            }
         }
         ScrollView {
             LazyVStack(alignment: .leading, spacing: 10) {
@@ -186,6 +185,23 @@ struct FontPreviewView: View {
             .foregroundStyle(.secondary)
     }
 
+    private var filterPicker: some View {
+        Picker("筛选", selection: $model.filter) {
+            ForEach(FontCatalog.Filter.allCases) { filter in
+                Text(filter.title).tag(filter)
+            }
+        }
+        .pickerStyle(.segmented)
+        .labelsHidden()
+        .fixedSize()
+    }
+
+    private var coveringToggle: some View {
+        Toggle("只看能显示的", isOn: $model.onlyCovering)
+            .toggleStyle(.checkbox)
+            .fixedSize()
+    }
+
     private func row(_ family: FontCatalog.Family) -> some View {
         let font = Font.custom(family.postScriptName, size: model.size)
         let favorite = model.favorites.contains(family.name)
@@ -198,7 +214,7 @@ struct FontPreviewView: View {
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
-                Text(String(localized: "\(String(family.styles)) 种样式"))
+                Text(String(localized: "\(family.styles) 种样式"))
                     .font(.caption2)
                     .foregroundStyle(.tertiary)
                 Spacer(minLength: 0)

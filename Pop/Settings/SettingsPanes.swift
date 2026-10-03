@@ -456,6 +456,8 @@ struct RingSettingsView: View {
                     }
                 }
                 .pickerStyle(.segmented)
+                // 段上写着「4 格」「6 格」，不用标题；macOS 15 上标题会挤成两行
+                .labelsHidden()
                 .frame(width: 320)
                 HStack {
                     Text("格子上点右键可以直接选择功能或清空。")

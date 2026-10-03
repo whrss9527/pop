@@ -223,11 +223,16 @@ struct SubtitlesView: View {
                         HStack(spacing: 8) {
                             Toggle("合成一份", isOn: $model.merge)
                                 .toggleStyle(.checkbox)
+                            // 和左边一列的标题一样用小字，不用选择框自己的大字标题
+                            Text("上面一行")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
                             Picker("上面一行", selection: $model.topIndex) {
                                 ForEach(model.sources.indices, id: \.self) { index in
                                     Text(model.sources[index].url.lastPathComponent).tag(index)
                                 }
                             }
+                            .labelsHidden()
                             .disabled(!model.merge)
                             .fixedSize()
                         }

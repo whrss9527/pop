@@ -353,9 +353,12 @@ private struct RingSlotLabel: View {
                     .font(.system(size: 19, weight: .medium))
                     .symbolEffect(.bounce, value: isCommitted)
                     .frame(height: 22)
+                // 英文名字稍长一点时缩小一些放下，少截掉一些
                 Text(info.name)
                     .font(.system(size: 10.5, weight: active ? .semibold : .regular))
                     .lineLimit(1)
+                    .minimumScaleFactor(0.8)
+                    .allowsTightening(true)
             } else {
                 Circle()
                     .fill(Color.secondary.opacity(0.35))
