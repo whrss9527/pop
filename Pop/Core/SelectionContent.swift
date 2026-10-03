@@ -80,6 +80,9 @@ struct ClassifiedContent: Equatable {
     var language: String?
     var url: URL?
     var files: [URL]
+    /// 很长的文字：后台先看好的字数和每个功能能不能处理（ContentClassifier.classifyOffMain），圆盘、分发规则直接用。
+    /// 一般的内容是 nil，当场看
+    var checked: CheckedLongText? = nil
 
     static let empty = ClassifiedContent(selection: .none, kinds: [], text: nil, language: nil, url: nil, files: [])
 
@@ -103,7 +106,14 @@ struct ClassifiedContent: Equatable {
                 return kind == .files ? String(localized: "路径") : kind.title
             }
             if kinds.contains(.word), let text { return text }
-            return String(localized: "\(text?.count ?? 0) 字")
+            return String(localized: "\(checked?.characterCount ?? text?.count ?? 0) 字")
         }
     }
+}
+
+/// 很长的文字在后台看好的结果：数字数、跑插件的正则和内容检查都要把整段文字看一遍
+struct CheckedLongText: Equatable {
+    var characterCount: Int
+    /// 功能 ID → 能不能处理
+    var handled: [String: Bool]
 }

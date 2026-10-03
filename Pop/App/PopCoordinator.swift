@@ -265,7 +265,8 @@ final class PopCoordinator: MouseTriggerDelegate {
             let raw = await self.reader.read(pid: pid)
             guard self.session?.id == sessionID else { return }
             if self.askForFolderAccessIfNeeded(raw) { return }
-            let content = ContentClassifier.classify(raw)
+            let content = await ContentClassifier.classifyOffMain(raw, catalog: self.registry.catalog)
+            guard self.session?.id == sessionID else { return }
             self.session?.content = content
             if plugin.info.canHandle(content) {
                 self.run(pluginID)
@@ -327,7 +328,8 @@ final class PopCoordinator: MouseTriggerDelegate {
             } else if clickCount < 2, let last = self.lastToolbarSelection, last.pid == pid, last.text == selection.text {
                 return
             }
-            let content = ContentClassifier.classify(.text(selection.text))
+            let content = await ContentClassifier.classifyOffMain(.text(selection.text), catalog: self.registry.catalog)
+            guard generation == self.toolbarGeneration, self.session == nil else { return }
             self.showToolbar(content: content, selection: bounds, pointer: point, pid: pid, appName: app.localizedName,
                              bundleID: app.bundleIdentifier)
         }
@@ -449,7 +451,8 @@ final class PopCoordinator: MouseTriggerDelegate {
             let raw = await self.reader.read(pid: pid)
             guard self.session?.id == sessionID else { return }
             if self.askForFolderAccessIfNeeded(raw) { return }
-            let content = ContentClassifier.classify(raw)
+            let content = await ContentClassifier.classifyOffMain(raw, catalog: self.registry.catalog)
+            guard self.session?.id == sessionID else { return }
             self.session?.content = content
             self.route(content)
         }
