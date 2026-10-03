@@ -1656,6 +1656,8 @@
 "译文" = "To";
 "下载语言包" = "Download Languages";
 "语言包已就绪" = "Languages are ready";
+"正在下载语言包，下完就能翻译（可能要几分钟）" = "Downloading the language pack. Translation works once it finishes (this may take a few minutes).";
+"还没下完，系统会在后台接着下，下完就能翻译" = "Still downloading. macOS keeps downloading in the background; translation works once it finishes.";
 "下载没有完成：%@" = "Download didn’t finish: %@";
 "正在检查…" = "Checking…";
 "未下载" = "Not downloaded";
