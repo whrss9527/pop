@@ -239,6 +239,26 @@ enum OverlayDemo {
             // 插件包的步骤：正则测试
             await playPluginScenes(after: "toMarkdown", in: demo, unit: unit, holdTime: holdTime)
 
+            // 选中了 2 MB 多的 JSON：认内容、看每一格能不能用都在后台，圆盘马上出来；格式化也在后台，卡片上只显示前面一部分。
+            // 主线程不该卡住（卡住时 HangWatchdog 记下来，截图脚本按步骤列出）
+            await pause(holdTime)
+            overlay.hide()
+            step("longText")
+            let longJSON = await runInBackground {
+                "[" + Array(repeating: #"{"name": "Pop", "tags": ["ring", "card"], "count": 12345, "note": "液态玻璃"}"#, count: 30_000)
+                    .joined(separator: ",\n") + "]"
+            }
+            let longContent = await ContentClassifier.classifyOffMain(.text(longJSON), catalog: catalog)
+            overlay.showRing(RingViewModel(layout: settings.ring, catalog: catalog, installed: installed, content: longContent),
+                             center: center)
+
+            await pause(holdTime)
+            step("longJSON")
+            let formatted = await FormatJSONPlugin().run(longContent, context: PluginContext(settings: settings, openSettings: {}))
+            if case .card(let longCard) = formatted {
+                overlay.showCard(ResultCardView(card: longCard, onAction: { _ in }, onMore: {}, onClose: {}), anchor: center)
+            }
+
             // 剪贴板历史：几条示例记录，⌘ 点选两条准备合在一起粘贴
             await pause(holdTime)
             if let history = sampleClipboardHistory() {

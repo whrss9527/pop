@@ -168,7 +168,7 @@ if appearance == "dark":
             ("drag-clipboard", [2.4]), ("release", [3.5]), ("unit", [3.0]), ("pin", [3.0]), ("ai", [3.0]),
             ("layout", [3.0]), ("translate", [3.0]), ("translate-compare", [3.0]), ("snippets", [3.0]), ("diff", [3.0]), ("palette", [3.0]),
             ("shelf", [3.0]), ("openWith", [3.0]), ("markdown", [3.0]), ("extract", [3.0]), ("jsonTypes", [3.0]),
-            ("toMarkdown", [3.0]), ("regex", [3.0]), ("history", [3.0]), ("history-search", [3.0]),
+            ("toMarkdown", [3.0]), ("regex", [3.0]), ("longText", [3.0]), ("longJSON", [3.0]), ("history", [3.0]), ("history-search", [3.0]),
             ("reminder", [3.0]), ("table", [3.0]), ("photo", [3.0]), ("rename", [3.0]), ("sql", [3.0]), ("vocabulary", [3.0]),
             ("duplicates", [3.0]), ("pdfPages", [3.0]), ("diskUsage", [3.0]), ("tidyFolder", [3.0]), ("uninstallApp", [3.0]), ("newFile", [3.0]), ("fileEncoding", [3.0]), ("appInfo", [3.0]), ("similarPhotos", [3.0]), ("mediaInfo", [3.0]), ("subtitles", [3.0]), ("fontPreview", [3.0]), ("encryptFiles", [3.0]), ("batteryInfo", [3.0]), ("voiceRecorder", [3.0]), ("systemInfo", [3.0]), ("soundDevices", [3.0]), ("resolution", [3.0]), ("diskSpeed", [3.0]), ("worldTime", [3.0]), ("chart", [3.0]), ("focusSounds", [3.0]), ("emojiSymbols", [3.0]), ("bluetooth", [3.0]), ("calendar", [3.0]), ("breakReminder", [3.0]), ("breakReminder-banner", [3.0]), ("windowPiP", [3.0]), ("windowPiP-panel", [3.0]), ("mouseWheel", [3.0]), ("holdToQuit", [3.0]), ("holdToQuit-prompt", [3.0]), ("sleepTimer", [3.0]), ("sleepTimer-banner", [3.0]), ("sleepTimer-setup", [3.0]), ("pdfPassword", [3.0]),
             ("toolbar", [1.2]), ("watermark", [3.0]), ("sendToPhone", [3.0]), ("idNumber", [3.0]), ("transcribe", [3.0]),
