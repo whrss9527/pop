@@ -51,13 +51,15 @@ struct AdaptiveText: View {
 
     /// 最多显示这么多字：几 MB 的文字（格式化好的大 JSON、XML）放进一个 Text 里，排版要好几秒，Pop 跟着卡住。
     /// 卡片上的复制、替换原文用的还是全部
-    static let displayLimit = 100_000
+    static let displayLimit = 20_000
 
     /// 显示的文字：太长时只留前面的，后面说一句
     static func displayed(_ text: String) -> String {
-        // UTF-8 的字节数是现成的，先用它粗看一下，短的不用数字数
-        guard text.utf8.count > displayLimit, text.count > displayLimit else { return text }
-        return String(text.prefix(displayLimit)) + "\n…\n" + String(localized: "（太长了，这里只显示前面一部分；复制、替换原文用的是全部）")
+        // UTF-8 的字节数是现成的，先用它粗看一下，短的不用数字数；长的只往后数到上限，不把几 MB 的字从头数到尾
+        guard text.utf8.count > displayLimit,
+              let end = text.index(text.startIndex, offsetBy: displayLimit, limitedBy: text.endIndex),
+              end < text.endIndex else { return text }
+        return String(text[..<end]) + "\n…\n" + String(localized: "（太长了，这里只显示前面一部分；复制、替换原文用的是全部）")
     }
 
     var body: some View {
