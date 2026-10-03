@@ -39,11 +39,17 @@ struct TidyFolderPlugin: PopPlugin {
         case .failure(let failure):
             return .failure(failure.message)
         case .success(let items):
-            if FolderTidy.plan(items, in: folder, mode: .kind).moves.isEmpty {
+            // 怎么放也在后台算好（每个文件都要看类型）
+            let mode = TidyFolderModel.savedMode
+            let plans = await runInBackground { () -> (kind: FolderTidy.Plan, saved: FolderTidy.Plan) in
+                let kind = FolderTidy.plan(items, in: folder, mode: .kind)
+                return (kind, mode == .kind ? kind : FolderTidy.plan(items, in: folder, mode: mode))
+            }
+            if plans.kind.moves.isEmpty {
                 return .done(toast: String(localized: "「\(folder.lastPathComponent)」里没有要整理的文件"))
             }
             return .present(PluginPresentation { session in
-                let model = TidyFolderModel(folder: folder, items: items)
+                let model = TidyFolderModel(folder: folder, items: items, mode: mode, plan: plans.saved)
                 session.showCard(TidyFolderView(model: model, onReveal: {
                     if case .done(let done) = model.phase {
                         NSWorkspace.shared.activateFileViewerSelecting(Array(Set(done.moves.map { $0.to.deletingLastPathComponent() })))

@@ -275,18 +275,44 @@ enum AlertVolume {
         }
     }
 
+    /// 启动以后闲着的时候先把要用的脚本编好：第一次编要装载 AppleScript，主线程上要等好一会儿，
+    /// 放到第一次在读不出选中内容的 App 里唤起时，圆盘出来的时候会顿一下
+    static func prepare() {
+        _ = script(currentSource)
+        _ = script(setSource(0))
+    }
+
+    private static let currentSource = "alert volume of (get volume settings)"
+
+    private static func setSource(_ volume: Int) -> String {
+        "set volume alert volume \(volume)"
+    }
+
     private static func current() -> Int? {
-        guard let result = run("alert volume of (get volume settings)") else { return nil }
+        guard let result = run(currentSource) else { return nil }
         return Int(result.int32Value)
     }
 
     private static func set(_ volume: Int) {
-        _ = run("set volume alert volume \(volume)")
+        _ = run(setSource(volume))
+    }
+
+    /// 编好的脚本，编一次留着
+    private static var compiled: [String: NSAppleScript] = [:]
+
+    private static func script(_ source: String) -> NSAppleScript? {
+        if let script = compiled[source] {
+            return script
+        }
+        var error: NSDictionary?
+        guard let script = NSAppleScript(source: source), script.compileAndReturnError(&error) else { return nil }
+        compiled[source] = script
+        return script
     }
 
     private static func run(_ source: String) -> NSAppleEventDescriptor? {
         var error: NSDictionary?
-        let result: NSAppleEventDescriptor? = NSAppleScript(source: source)?.executeAndReturnError(&error)
+        let result = script(source)?.executeAndReturnError(&error)
         return error == nil ? result : nil
     }
 }

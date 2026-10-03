@@ -55,7 +55,8 @@ final class DuplicatesTests: XCTestCase {
         guard case .done(let result) = model.phase else { return XCTFail("没有扫完") }
         XCTAssertEqual(result.groups.count, 1)
 
-        model.keepOne(in: result.groups)
+        await model.keepOne(in: result.groups)
+        XCTAssertFalse(model.isTrashing)
         guard case .done(let after) = model.phase else { return XCTFail("状态不对") }
         XCTAssertTrue(after.groups.isEmpty)
         XCTAssertEqual(model.message, "已把 2 个文件移到废纸篓，可以从废纸篓放回")

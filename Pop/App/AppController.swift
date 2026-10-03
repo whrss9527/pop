@@ -125,6 +125,12 @@ final class AppController {
     func start() {
         UpdateLog.launched(version: UpdateChecker.currentVersion)
         AlertVolume.restorePendingIfNeeded()
+        // 启动后闲下来再编好调提示音量的脚本（演示模式不读选中内容，不用）
+        if ProcessInfo.processInfo.environment["POP_DEMO"] != "1" {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 5) {
+                MainActor.assumeIsolated { AlertVolume.prepare() }
+            }
+        }
         MainMenu.install()
         // 老用户迁移到插件包，装上设置里要的、缺着的插件包（Pop 更新后换成对应的版本）
         pluginManager.start()

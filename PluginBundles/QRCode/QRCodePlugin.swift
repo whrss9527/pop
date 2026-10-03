@@ -16,7 +16,7 @@ struct QRCodePlugin: PopPlugin {
 
     @MainActor func run(_ content: ClassifiedContent, context: PluginContext) async -> PluginOutcome {
         if content.kinds.contains(.image) || content.kinds.contains(.imageFile) {
-            return decode(content)
+            return await decode(content)
         }
         guard let text = content.text else { return .failure(String(localized: "没有内容")) }
         guard let png = await runInBackground({ QRCode.generate(text) }) else {
@@ -31,15 +31,20 @@ struct QRCodePlugin: PopPlugin {
                                 buttons: buttons))
     }
 
-    @MainActor private func decode(_ content: ClassifiedContent) -> PluginOutcome {
-        let image: CGImage?
-        if case .image(let data) = content.selection {
-            image = TextRecognizer.cgImage(from: data)
-        } else {
-            image = content.files.first.flatMap(TextRecognizer.cgImage(contentsOf:))
+    /// 读图片、认码都在后台：几千万像素的照片要认好一会儿
+    @MainActor private func decode(_ content: ClassifiedContent) async -> PluginOutcome {
+        let selection = content.selection
+        let file = content.files.first
+        let messages: [String]? = await runInBackground {
+            let image: CGImage?
+            if case .image(let data) = selection {
+                image = TextRecognizer.cgImage(from: data)
+            } else {
+                image = file.flatMap(TextRecognizer.cgImage(contentsOf:))
+            }
+            return image.map(QRCode.decode)
         }
-        guard let image else { return .failure(String(localized: "无法读取图片")) }
-        let messages = QRCode.decode(image)
+        guard let messages else { return .failure(String(localized: "无法读取图片")) }
         guard !messages.isEmpty else { return .failure(String(localized: "图片里没有找到二维码或条形码")) }
         return .card(QRCode.card(for: messages))
     }
