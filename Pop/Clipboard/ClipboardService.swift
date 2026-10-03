@@ -252,6 +252,11 @@ final class ClipboardService: ObservableObject {
         store.items(matching: search, limit: limit)
     }
 
+    /// 在数据库的队列上查，调用的线程不用等
+    func searchItems(matching search: String, limit: Int = 300) async -> [ClipboardItem] {
+        await store.searchItems(matching: search, limit: limit)
+    }
+
     func setPinned(_ pinned: Bool, item: ClipboardItem) {
         store.setPinned(pinned, id: item.id)
         didChange()

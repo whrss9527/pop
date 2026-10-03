@@ -131,25 +131,40 @@ final class ClipboardStore: @unchecked Sendable {
 
     /// 固定的排在最前，其余按最近使用排序。search 不为空时按文字搜索，图片按里面识别出的文字搜索。
     func items(matching search: String = "", limit: Int = 200) -> [ClipboardItem] {
-        queue.sync { () -> [ClipboardItem] in
-            var items: [ClipboardItem] = []
-            let keyword = search.trimmingCharacters(in: .whitespacesAndNewlines)
-            var values: [SQLValue] = []
-            var sql = "SELECT \(Self.columns) FROM items"
-            if !keyword.isEmpty {
-                sql += " WHERE text LIKE ? ESCAPE '\\' OR recognized_text LIKE ? ESCAPE '\\'"
-                let pattern = "%" + Self.escapeLike(keyword) + "%"
-                values += [.text(pattern), .text(pattern)]
-            }
-            sql += " ORDER BY pinned DESC, used_at DESC LIMIT ?"
-            values.append(.int(Int64(max(limit, 0))))
-            _ = run(sql, values) { statement in
-                if let item = Self.item(from: statement) {
-                    items.append(item)
-                }
-            }
-            return items
+        queue.sync {
+            query(search, limit: limit)
         }
+    }
+
+    /// 和 items(matching:limit:) 一样，只是调用的线程不用等着：历史多、内容长的时候一个字一个字搜要好一会儿，
+    /// 历史面板打字搜索时用它，主线程不卡
+    func searchItems(matching search: String, limit: Int = 200) async -> [ClipboardItem] {
+        await withCheckedContinuation { continuation in
+            queue.async {
+                continuation.resume(returning: self.query(search, limit: limit))
+            }
+        }
+    }
+
+    /// 在 queue 上调用
+    private func query(_ search: String, limit: Int) -> [ClipboardItem] {
+        var items: [ClipboardItem] = []
+        let keyword = search.trimmingCharacters(in: .whitespacesAndNewlines)
+        var values: [SQLValue] = []
+        var sql = "SELECT \(Self.columns) FROM items"
+        if !keyword.isEmpty {
+            sql += " WHERE text LIKE ? ESCAPE '\\' OR recognized_text LIKE ? ESCAPE '\\'"
+            let pattern = "%" + Self.escapeLike(keyword) + "%"
+            values += [.text(pattern), .text(pattern)]
+        }
+        sql += " ORDER BY pinned DESC, used_at DESC LIMIT ?"
+        values.append(.int(Int64(max(limit, 0))))
+        _ = run(sql, values) { statement in
+            if let item = Self.item(from: statement) {
+                items.append(item)
+            }
+        }
+        return items
     }
 
     func item(id: Int64) -> ClipboardItem? {

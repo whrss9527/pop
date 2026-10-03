@@ -33,12 +33,15 @@ enum ClipboardFilter: String, CaseIterable, Identifiable {
 @MainActor
 final class ClipboardHistoryModel: ObservableObject {
     @Published var query = "" {
-        didSet { reload() }
+        didSet { search() }
     }
     @Published var filter: ClipboardFilter = .all {
-        didSet { reload() }
+        didSet { applyFilter(keepSelection: false) }
     }
     @Published private(set) var items: [ClipboardItem] = []
+    /// 按 query 从数据库里查到的（还没按 filter 筛）
+    private var found: [ClipboardItem] = []
+    private var searchTask: Task<Void, Never>?
     @Published var selection = 0
     /// ⌘ 点选的几条文字，按点选的顺序；回车时合在一起粘贴
     @Published private(set) var marked: [ClipboardItem] = []
@@ -61,11 +64,13 @@ final class ClipboardHistoryModel: ObservableObject {
 
     init(service: ClipboardService) {
         self.service = service
-        reload()
+        // 打开面板时先同步读一次，面板一出来就有内容
+        found = service.items(matching: "")
+        applyFilter(keepSelection: false)
         cancellable = service.changes
             .receive(on: RunLoop.main)
             .sink { [weak self] _ in
-                self?.reload(keepSelection: true)
+                self?.search(keepSelection: true)
             }
     }
 
@@ -75,9 +80,24 @@ final class ClipboardHistoryModel: ObservableObject {
         items.indices.contains(selection) ? items[selection] : nil
     }
 
-    func reload(keepSelection: Bool = false) {
+    /// 按现在的 query 重新查：在数据库的队列上查（历史多、内容长的时候要一会儿，一个字一个字打的时候不能卡），
+    /// 查完以前又打了字就不要这次的
+    func search(keepSelection: Bool = false) {
+        searchTask?.cancel()
+        let query = query
+        searchTask = Task { [weak self] in
+            guard let self else { return }
+            let results = await service.searchItems(matching: query)
+            guard !Task.isCancelled, query == self.query else { return }
+            found = results
+            applyFilter(keepSelection: keepSelection)
+        }
+    }
+
+    /// 按类型筛查到的（不用再查数据库）
+    private func applyFilter(keepSelection: Bool) {
         let selectedID = keepSelection ? selectedItem?.id : nil
-        items = service.items(matching: query).filter(filter.includes)
+        items = found.filter(filter.includes)
         if let selectedID, let index = items.firstIndex(where: { $0.id == selectedID }) {
             selection = index
         } else {
