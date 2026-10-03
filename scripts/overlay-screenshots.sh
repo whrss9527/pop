@@ -296,7 +296,9 @@ def hang_lines():
         parts = line.split()
         if len(parts) >= 3 and parts[0] == "hang":
             lasted[parts[1]] = float(parts[2])
-            hangs.append(f"{appearance} {float(parts[2]):.2f} {place(float(parts[1]))}")
+            # Pop 整个被停住的那段（采样的工具接上时）已经扣掉了，写出来扣了多少
+            paused = f"（Pop 被停住 {float(parts[4]):.2f} 秒，没算进去）" if len(parts) >= 5 and parts[3] == "paused" else ""
+            hangs.append(f"{appearance} {float(parts[2]):.2f} {place(float(parts[1]))}{paused}")
     return hangs, lasted, place
 
 def stall_report():

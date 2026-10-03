@@ -107,9 +107,11 @@ def own_samples(frame, counter):
 def summarize(text, depth=30):
     root = main_thread(text.splitlines())
     if root is None:
-        # 看看 sample 写了什么
-        head = [line.strip() for line in text.splitlines() if line.strip()][:6]
-        return ["报告里找不到主线程的调用图，报告开头："] + ["  " + line[:WIDTH] for line in head]
+        # 看看 sample 写了什么：有调用图的列出前几行（各个线程是怎么标的），没有的列出最后几行（多半是出错的原因）
+        lines = text.splitlines()
+        graph = next((index for index, line in enumerate(lines) if line.startswith("Call graph:")), None)
+        shown = lines[graph:graph + 8] if graph is not None else [line for line in lines if line.strip()][-6:]
+        return ["报告里找不到主线程的调用图：" + ("调用图开头" if graph is not None else "报告最后几行")] + ["  " + line[:WIDTH] for line in shown]
     mark_idle(root)
     lines = []
     if "com.apple.main-thread" not in root.title:

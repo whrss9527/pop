@@ -18,7 +18,7 @@ final class HangWatchdogTests: XCTestCase {
         try await Task.sleep(for: .milliseconds(300))
 
         let lines = try String(contentsOfFile: path, encoding: .utf8).split(separator: "\n").map { $0.split(separator: " ") }
-        let hangs = lines.filter { $0.count == 3 && $0[0] == "hang" }
+        let hangs = lines.filter { $0.first == "hang" }
         // 卡到半秒时可能先写了一行 stall，别的都是 hang 行
         XCTAssertEqual(hangs.count + lines.filter { $0.first == "stall" }.count, lines.count)
         let longest = try XCTUnwrap(hangs.max { (Double($0[2]) ?? 0) < (Double($1[2]) ?? 0) })
@@ -49,6 +49,35 @@ final class HangWatchdogTests: XCTestCase {
         XCTAssertGreaterThanOrEqual(Double(longest[2]) ?? 0, 1.2)
         // stall 行记的是同一次卡住开始的时间
         XCTAssertEqual(Double(stalls[0][1]) ?? 0, Double(longest[1]) ?? -1, accuracy: 0.001)
+    }
+
+    /// 检测的线程自己也被耽误的那段（整个 Pop 被停住，比如 CI 上采样的工具接上时）不算主线程卡的，写在 hang 行后面
+    func testLeavesOutTimeWhenTheWholeAppWasHeldUp() async throws {
+        let path = FileManager.default.temporaryDirectory.appending(path: "pop-paused-\(UUID().uuidString).log").path(percentEncoded: false)
+        addTeardownBlock { try? FileManager.default.removeItem(atPath: path) }
+        let watchdog = HangWatchdog(path: path)
+        watchdog.start()
+        defer { watchdog.stop() }
+        try await Task.sleep(for: .milliseconds(200))
+
+        // 主线程卡 1.5 秒，其中有 1 秒检测的线程也停着：主线程自己卡的大约半秒
+        watchdog.holdUpForTesting(1.0, after: 0.2)
+        blockMainThread(for: 1.5)
+        try await Task.sleep(for: .milliseconds(300))
+
+        let lines = try String(contentsOfFile: path, encoding: .utf8).split(separator: "\n").map { $0.split(separator: " ") }
+        let longest = try XCTUnwrap(lines.filter { $0.first == "hang" }.max { (Double($0[2]) ?? 0) < (Double($1[2]) ?? 0) })
+        XCTAssertEqual(longest.count, 5)
+        XCTAssertEqual(longest.dropFirst(3).first, "paused")
+        XCTAssertEqual(Double(longest[2]) ?? 0, 0.5, accuracy: 0.3)
+        XCTAssertEqual(Double(longest.last ?? "") ?? 0, 0.95, accuracy: 0.25)
+    }
+
+    /// 隔了多久才算 Pop 被停住：平常排队晚一点不算；停住的话扣掉多出该隔的 50 毫秒的那段
+    func testPausedTime() {
+        XCTAssertEqual(HangWatchdog.pausedTime(gap: 0.05), 0)
+        XCTAssertEqual(HangWatchdog.pausedTime(gap: 0.14), 0)
+        XCTAssertEqual(HangWatchdog.pausedTime(gap: 1.05), 1.0, accuracy: 0.0001)
     }
 
     /// 同步地卡住主线程（在 async 的测试里不能直接调用 Thread.sleep）
