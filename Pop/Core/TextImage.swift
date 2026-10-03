@@ -133,4 +133,12 @@ enum TextImage {
         guard let png = render(text, style: style) else { return .failure(String(localized: "没能把这段文字画成图片")) }
         return .card(card(text, style: style, png: png))
     }
+
+    /// 和 outcome 一样，只是在后台画：几万字的长图有几千万像素，画、存成 PNG 要好一会儿
+    @MainActor static func outcomeInBackground(_ text: String, style: Style) async -> PluginOutcome {
+        guard let png = await runInBackground({ render(text, style: style) }) else {
+            return .failure(String(localized: "没能把这段文字画成图片"))
+        }
+        return .card(card(text, style: style, png: png))
+    }
 }

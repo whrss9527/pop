@@ -161,6 +161,32 @@ final class BatchRenameTests: XCTestCase {
         XCTAssertNotNil(names[note]?.range(of: #"^\d{4}-\d{2}-\d{2} \d{2}\.\d{2}\.\d{2}$"#, options: .regularExpression))
     }
 
+    /// 打开卡片时读一次文件夹：已经有的名字不分大小写，选中的文件夹认得出来（App 这类包不算）
+    func testSnapshotOfTheFolder() throws {
+        let root = FileManager.default.temporaryDirectory.appending(path: "pop-rename-\(UUID().uuidString)", directoryHint: .isDirectory)
+        try FileManager.default.createDirectory(at: root.appending(path: "照片"), withIntermediateDirectories: true)
+        try FileManager.default.createDirectory(at: root.appending(path: "Tool.app"), withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: root) }
+        try Data().write(to: root.appending(path: "a.txt"))
+        try Data().write(to: root.appending(path: "Notes.md"))
+
+        let snapshot = BatchRename.Snapshot.read([root.appending(path: "a.txt"), root.appending(path: "照片"), root.appending(path: "Tool.app")])
+        XCTAssertTrue(snapshot.exists(root.appending(path: "notes.MD")))
+        XCTAssertTrue(snapshot.exists(root.appending(path: "照片")))
+        XCTAssertFalse(snapshot.exists(root.appending(path: "b.txt")))
+        XCTAssertTrue(snapshot.isFolder(root.appending(path: "照片")))
+        XCTAssertFalse(snapshot.isFolder(root.appending(path: "Tool.app")))
+        XCTAssertFalse(snapshot.isFolder(root.appending(path: "a.txt")))
+        // 和直接问文件系统算出来的一样
+        var rule = BatchRename.Rule()
+        rule.mode = .replace
+        rule.find = "a"
+        rule.replacement = "notes"
+        let selected = [root.appending(path: "a.txt")]
+        let fromSnapshot = BatchRename.plan(selected, rule: rule, exists: snapshot.exists, isFolder: snapshot.isFolder)
+        XCTAssertEqual(fromSnapshot.items.map(\.problem), BatchRename.plan(selected, rule: rule).items.map(\.problem))
+    }
+
     @MainActor
     func testPluginOpensTheRenameCard() async {
         let selected = files(["b.txt", "a.txt"])

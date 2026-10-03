@@ -14,11 +14,17 @@ final class BeautifyModel: ObservableObject {
     /// 连着改的时候只画最后一次
     private var generation = 0
 
-    init(image: CGImage, options: ScreenshotBeautifier.Options = .saved) {
+    private init(image: CGImage, thumbnail: CGImage, options: ScreenshotBeautifier.Options) {
         self.image = image
         self.options = options
-        thumbnail = ScreenshotBeautifier.downscaled(image, maxSide: 900)
+        self.thumbnail = thumbnail
         schedulePreview()
+    }
+
+    /// 预览用的小图在后台缩好再建：缩的时候才把原图解开，大照片、长截图要画好一会儿
+    static func make(image: CGImage, options: ScreenshotBeautifier.Options = .saved) async -> BeautifyModel {
+        let thumbnail = await runInBackground { ScreenshotBeautifier.downscaled(image, maxSide: 900) }
+        return BeautifyModel(image: image, thumbnail: thumbnail, options: options)
     }
 
     /// 马上画好预览（演示用）

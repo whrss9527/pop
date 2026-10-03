@@ -819,8 +819,33 @@ enum RandomGenerator {
 // MARK: - 搜索
 
 enum SearchText {
-    /// 搜索用的关键字：原文小写、拼音全拼、拼音首字母（「翻译」可以用 fanyi、fy 搜到）。
+    /// 算过的关键字。转拼音不快（第一次还要先建转换规则），列表打开时一下子算几百个，主线程要等好一会儿
+    private static let cache: NSCache<NSString, NSArray> = {
+        let cache = NSCache<NSString, NSArray>()
+        cache.countLimit = 20_000
+        return cache
+    }()
+
+    /// 搜索用的关键字：原文小写、拼音全拼、拼音首字母（「翻译」可以用 fanyi、fy 搜到）。算过的直接给
     static func keys(for text: String) -> [String] {
+        if let cached = cache.object(forKey: text as NSString) as? [String] {
+            return cached
+        }
+        let keys = computeKeys(for: text)
+        cache.setObject(keys as NSArray, forKey: text as NSString)
+        return keys
+    }
+
+    /// 在后台先把这些文字的关键字算好（功能名、插件名、菜单项），列表打开、打字搜索时直接用
+    static func prepare(_ texts: [String]) async {
+        await runInBackground {
+            for text in texts {
+                _ = keys(for: text)
+            }
+        }
+    }
+
+    private static func computeKeys(for text: String) -> [String] {
         let lower = text.lowercased()
         guard let latin = text.applyingTransform(.toLatin, reverse: false)?
             .applyingTransform(.stripDiacritics, reverse: false)?

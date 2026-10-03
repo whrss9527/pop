@@ -48,7 +48,8 @@ struct PDFPlugin: PopPlugin {
 
     /// 一个 PDF：列出页数，可以把每页存成图片、复制全部文字；有密码的可以去掉密码
     @MainActor private func summary(of pdf: URL) async -> PluginOutcome {
-        if PDFTools.isLocked(pdf) {
+        // 打开 PDF 放在后台：文件很大、或者目录表坏了要从头找的，要读好一会儿
+        if await runInBackground({ PDFTools.isLocked(pdf) }) {
             return .card(ResultCard(title: "PDF", body: pdf.lastPathComponent, detail: String(localized: "有密码，先去掉密码才能取页、压缩或者复制文字"),
                                     buttons: [CardButton(title: String(localized: "去掉密码…"), action: .pdfPassword(pdf))]))
         }

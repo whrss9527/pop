@@ -21,18 +21,42 @@ final class TidyFolderModel: ObservableObject {
     let folder: URL
     @Published private(set) var items: [FolderTidy.Item]
     @Published var mode: FolderTidy.Mode {
-        didSet { UserDefaults.standard.set(mode.rawValue, forKey: Self.modeKey) }
+        didSet {
+            UserDefaults.standard.set(mode.rawValue, forKey: Self.modeKey)
+            if mode != oldValue {
+                replan()
+            }
+        }
     }
     @Published private(set) var phase = Phase.preview
+    /// 按现在的整理方式怎么放：每个文件都要看类型、子文件夹里有什么，文件多的时候要好一会儿，
+    /// 所以算一次记住，换了整理方式再在后台重新算
+    @Published private(set) var plan: FolderTidy.Plan
+    /// 正在重新算：算好以前不能整理
+    @Published private(set) var isPlanning = false
+    private var planGeneration = 0
 
-    init(folder: URL, items: [FolderTidy.Item], mode: FolderTidy.Mode = TidyFolderModel.savedMode) {
+    /// plan 是在后台按这个整理方式算好的；没给时这里算
+    init(folder: URL, items: [FolderTidy.Item], mode: FolderTidy.Mode = TidyFolderModel.savedMode, plan: FolderTidy.Plan? = nil) {
         self.folder = folder
         self.items = items
         self.mode = mode
+        self.plan = plan ?? FolderTidy.plan(items, in: folder, mode: mode)
     }
 
-    var plan: FolderTidy.Plan {
-        FolderTidy.plan(items, in: folder, mode: mode)
+    private func replan() {
+        planGeneration += 1
+        let generation = planGeneration
+        let items = items
+        let folder = folder
+        let mode = mode
+        isPlanning = true
+        Task {
+            let plan = await runInBackground { FolderTidy.plan(items, in: folder, mode: mode) }
+            guard generation == planGeneration else { return }
+            self.plan = plan
+            isPlanning = false
+        }
     }
 
     var summary: String {
@@ -47,7 +71,7 @@ final class TidyFolderModel: ObservableObject {
 
     func apply() {
         let plan = self.plan
-        guard !plan.moves.isEmpty, phase == .preview else { return }
+        guard !plan.moves.isEmpty, phase == .preview, !isPlanning else { return }
         phase = .working
         Task {
             let result: Result<FolderTidy.Done, FolderTidy.Failure> = await runInBackground {
@@ -85,6 +109,7 @@ final class TidyFolderModel: ObservableObject {
             case .success(let items):
                 self.items = items
                 phase = .preview
+                replan()
             case .failure(let failure):
                 phase = .failed(failure.message)
             }
@@ -177,7 +202,7 @@ struct TidyFolderView: View {
             }
             Button("整理") { model.apply() }
                 .keyboardShortcut(.defaultAction)
-                .disabled(plan.moves.isEmpty || model.phase == .working)
+                .disabled(plan.moves.isEmpty || model.phase == .working || model.isPlanning)
         }
     }
 }

@@ -9,6 +9,8 @@ final class FileShelf: ObservableObject {
 
     @Published private(set) var files: [URL] = []
     private var panel: ShelfPanel?
+    /// 正在后台取图标，取好就显示
+    private var presenting: Task<Void, Never>?
 
     var isVisible: Bool { panel?.isVisible ?? false }
 
@@ -41,12 +43,23 @@ final class FileShelf: ObservableObject {
             panel.orderFrontRegardless()
             return
         }
-        let panel = self.panel ?? ShelfPanel(shelf: self)
-        self.panel = panel
-        panel.present(near: point)
+        guard presenting == nil else { return }
+        // 文件图标先在后台取好再显示：第一次取图标要问系统，几个文件一起取，主线程要等一会儿
+        let paths = files.map { $0.path(percentEncoded: false) }
+        presenting = Task { [weak self] in
+            await FileIcons.preload(paths, size: ShelfRow.iconSize)
+            await FileIcons.preload(Array(paths.prefix(3)), size: ShelfDragAll.iconSize)
+            guard let self, !Task.isCancelled else { return }
+            self.presenting = nil
+            let panel = self.panel ?? ShelfPanel(shelf: self)
+            self.panel = panel
+            panel.present(near: point)
+        }
     }
 
     func hide() {
+        presenting?.cancel()
+        presenting = nil
         panel?.dismiss()
     }
 }
@@ -197,15 +210,17 @@ struct ShelfView: View {
 
 /// 最上面的一叠图标：按住拖走全部文件
 private struct ShelfDragAll: View {
+    static let iconSize: CGFloat = 38
+
     let files: [URL]
 
     var body: some View {
         HStack(spacing: 10) {
             ZStack {
                 ForEach(Array(files.prefix(3).enumerated().reversed()), id: \.offset) { index, url in
-                    Image(nsImage: NSWorkspace.shared.icon(forFile: url.path(percentEncoded: false)))
+                    Image(nsImage: FileIcons.icon(forFile: url.path(percentEncoded: false), size: Self.iconSize))
                         .resizable()
-                        .frame(width: 38, height: 38)
+                        .frame(width: Self.iconSize, height: Self.iconSize)
                         .rotationEffect(.degrees(Double(index) * 7 - 7))
                         .offset(x: CGFloat(index) * 5)
                 }
@@ -230,6 +245,7 @@ private struct ShelfDragAll: View {
 
 private struct ShelfRow: View {
     static let height: CGFloat = 28
+    static let iconSize: CGFloat = 20
 
     let url: URL
     let onRemove: () -> Void
@@ -238,9 +254,9 @@ private struct ShelfRow: View {
     var body: some View {
         HStack(spacing: 6) {
             HStack(spacing: 8) {
-                Image(nsImage: NSWorkspace.shared.icon(forFile: url.path(percentEncoded: false)))
+                Image(nsImage: FileIcons.icon(forFile: url.path(percentEncoded: false), size: Self.iconSize))
                     .resizable()
-                    .frame(width: 20, height: 20)
+                    .frame(width: Self.iconSize, height: Self.iconSize)
                 Text(url.lastPathComponent)
                     .font(.callout)
                     .lineLimit(1)

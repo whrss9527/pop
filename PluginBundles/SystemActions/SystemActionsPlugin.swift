@@ -14,8 +14,10 @@ struct SystemActionsPlugin: PopPlugin {
                           summary: String(localized: "锁屏、熄屏、睡眠、打开屏幕保护程序、切换深色和浅色模式、静音、隐藏或显示桌面图标、显示隐藏文件、推出所有磁盘"), accepts: [])
 
     @MainActor func run(_ content: ClassifiedContent, context: PluginContext) async -> PluginOutcome {
-        .card(SystemActions.card(desktopIconsVisible: SystemActions.desktopIconsVisible(), darkMode: SystemActions.isDarkMode(),
-                                 ejectable: SystemActions.ejectableVolumes().count, muted: SystemActions.isMuted() ?? false,
-                                 hiddenFilesShown: SystemActions.hiddenFilesShown()))
+        // 看有哪些磁盘能推出要问每个挂着的磁盘：连不上的网络磁盘会让它等很久，放在后台问
+        let ejectable = await runInBackground { SystemActions.ejectableVolumes().count }
+        return .card(SystemActions.card(desktopIconsVisible: SystemActions.desktopIconsVisible(), darkMode: SystemActions.isDarkMode(),
+                                        ejectable: ejectable, muted: SystemActions.isMuted() ?? false,
+                                        hiddenFilesShown: SystemActions.hiddenFilesShown()))
     }
 }

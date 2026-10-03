@@ -27,8 +27,10 @@ struct PalettePlugin: PopPlugin {
         let image: CGImage?
         if case .image(let data) = content.selection {
             image = TextRecognizer.cgImage(from: data)
+        } else if let url = content.files.first {
+            image = await TextRecognizer.decodedImage(contentsOf: url)
         } else {
-            image = content.files.first.flatMap(TextRecognizer.cgImage(contentsOf:))
+            image = nil
         }
         guard let image else { return .failure(String(localized: "无法读取图片")) }
         let swatches = await runInBackground { ColorPalette.extract(from: image) }

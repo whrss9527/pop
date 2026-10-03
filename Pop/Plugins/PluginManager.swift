@@ -394,7 +394,7 @@ final class PluginManager: ObservableObject {
     private func download(_ package: PluginPackage) async {
         statuses[package.id] = .installing
         if let bundled = PluginBundles.bundledDirectory {
-            installBundled(package, from: bundled)
+            await installBundled(package, from: bundled)
             return
         }
         do {
@@ -402,7 +402,7 @@ final class PluginManager: ObservableObject {
             guard let entry = index.entry(id: package.id) else { throw PluginInstallError.notInIndex }
             guard index.build == PluginBundles.appBuildID else { throw PluginInstallError.wrongBuild }
             let target = try await fetchBundle(package, entry: entry, index: index)
-            switch PluginBundles.shared.load(target) {
+            switch await PluginBundles.shared.loadCheckingInBackground(target) {
             case .success:
                 break
             case .failure(let error):
@@ -421,9 +421,9 @@ final class PluginManager: ObservableObject {
     }
 
     /// App Store 版：从 Pop.app 里的插件包装载，不下载
-    private func installBundled(_ package: PluginPackage, from directory: URL) {
+    private func installBundled(_ package: PluginPackage, from directory: URL) async {
         let url = directory.appendingPathComponent("\(package.bundleName).bundle", isDirectory: true)
-        switch PluginBundles.shared.load(url) {
+        switch await PluginBundles.shared.loadCheckingInBackground(url) {
         case .success:
             Self.log.notice("loaded bundled plugin \(package.id, privacy: .public)")
             refreshStatuses()
@@ -459,7 +459,7 @@ final class PluginManager: ObservableObject {
         let target = PluginBundles.installedURL(bundleName: package.bundleName)
         if PluginBundles.shared.isLoaded(package.id) {
             guard PluginBundles.buildID(of: bundle) == PluginBundles.appBuildID else { throw PluginInstallError.wrongBuild }
-            guard CodeSignature.isTrustedPlugin(bundle) else {
+            guard await runInBackground({ CodeSignature.isTrustedPlugin(bundle) }) else {
                 throw PluginInstallError.load(String(describing: PluginBundles.LoadError.untrusted))
             }
         }

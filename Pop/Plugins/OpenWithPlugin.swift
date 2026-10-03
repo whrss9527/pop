@@ -46,6 +46,7 @@ struct OpenWithPlugin: PopPlugin {
         guard let first = targets.first else { return .failure(String(localized: "没有可以打开的文件或链接")) }
         let apps = await runInBackground { OpenWith.applications(for: first) }
         guard !apps.isEmpty else { return .failure(String(localized: "没有找到能打开「\(OpenWith.subject(of: targets))」的 App")) }
+        await FileIcons.preload(apps.map { $0.path(percentEncoded: false) }, size: AppTile.iconSize)
         return .chooseApp(OpenWithRequest(targets: targets, apps: apps))
     }
 }
@@ -83,7 +84,9 @@ struct OpenWithCardView: View {
     }
 }
 
-private struct AppTile: View {
+struct AppTile: View {
+    static let iconSize: CGFloat = 36
+
     let app: URL
     let number: Int?
     let isDefault: Bool
@@ -93,9 +96,9 @@ private struct AppTile: View {
     var body: some View {
         Button(action: action) {
             VStack(spacing: 3) {
-                Image(nsImage: NSWorkspace.shared.icon(forFile: app.path(percentEncoded: false)))
+                Image(nsImage: FileIcons.icon(forFile: app.path(percentEncoded: false), size: Self.iconSize))
                     .resizable()
-                    .frame(width: 36, height: 36)
+                    .frame(width: Self.iconSize, height: Self.iconSize)
                 Text(OpenWith.name(of: app))
                     .font(.system(size: 10, weight: isDefault ? .semibold : .regular))
                     .lineLimit(1)

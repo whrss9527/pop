@@ -35,12 +35,16 @@ for bundle in "$PLUGIN_DIR"/*.bundle; do
   EXECUTABLES+=("$(basename "$bundle")/Contents/MacOS/${executable}")
 done
 
+# Pop 的主线程卡住超过 0.25 秒时往这个文件里写一行「hang 开始时间 秒数」（HangWatchdog）。
+# 旧版本的 Pop（比如「发布插件」用的正式版）不写这个文件
+HANG_LOG="$(mktemp -t pop-hangs)"
+
 START="$(date '+%Y-%m-%d %H:%M:%S')"
 if [ ${#PLUGINS[@]} -gt 0 ]; then
   echo "一起装载的插件包：${PLUGINS[*]}"
-  open --env "POP_PLUGIN_DIR=${PLUGIN_DIR}" "$APP"
+  open --env "POP_PLUGIN_DIR=${PLUGIN_DIR}" --env "POP_HANG_LOG=${HANG_LOG}" "$APP"
 else
-  open "$APP"
+  open --env "POP_HANG_LOG=${HANG_LOG}" "$APP"
 fi
 sleep 10
 
@@ -52,6 +56,19 @@ dump_logs() {
     echo "---- 崩溃报告 $report ----"
     head -c 8000 "$report"
   done
+}
+
+# 主线程卡住的地方都列出来，卡了 2 秒以上的算失败：用的时候会觉得 Pop 卡死了
+check_hangs() {
+  local when="$1"
+  [ -s "$HANG_LOG" ] || return 0
+  echo "${when}时主线程卡住超过 0.25 秒：$(awk '$1 == "hang" { printf "%s 秒 ", $3 }' "$HANG_LOG")"
+  if awk '$1 == "hang" && $3 + 0 >= 2 { bad = 1 } END { exit bad ? 0 : 1 }' "$HANG_LOG"; then
+    echo "❌ ${when}时主线程卡了 2 秒以上"
+    dump_logs
+    exit 1
+  fi
+  : > "$HANG_LOG"
 }
 
 if ! pgrep -x Pop > /dev/null; then
@@ -139,9 +156,11 @@ if [ ${#PLUGINS[@]} -gt 0 ]; then
     exit 1
   fi
   echo "插件包都装载上了：${PLUGINS[*]}"
+  echo "启动时装载插件包用了：$(grep -oE 'loaded [0-9]+ plugins in [0-9]+ ms' <<< "$PLUGIN_LOG" | tail -1 || true)"
 fi
 
 pkill -x Pop || true
+check_hangs "启动"
 echo "✅ Pop 启动正常：进程存活、有菜单栏图标、设置窗口在最前面"
 
 [ ${#PLUGINS[@]} -gt 0 ] || exit 0
@@ -167,7 +186,7 @@ defaults write "$BUNDLE_ID" pop.settings.v1 -data "$SETTINGS_HEX"
 
 START="$(date '+%Y-%m-%d %H:%M:%S')"
 echo "从 ${SOURCE} 装插件包 ${INSTALL_ID}"
-open --env "POP_PLUGIN_SOURCE=${SOURCE}" "$APP"
+open --env "POP_PLUGIN_SOURCE=${SOURCE}" --env "POP_HANG_LOG=${HANG_LOG}" "$APP"
 installed=""
 for _ in $(seq 1 40); do
   if pop_log_has 'process == "Pop" AND category == "plugins"' "installed plugin ${INSTALL_ID}"; then
@@ -191,6 +210,7 @@ if ! grep -q "loaded plugin ${INSTALL_ID} " <<< "$PLUGIN_LOG" || [ ! -d "$INSTAL
   exit 1
 fi
 echo "装好的插件包：$(ls "$INSTALLED_DIR")"
+check_hangs "下载、装插件包"
 # 恢复成全新安装的样子，后面的测试不受影响
 rm -rf "$INSTALLED_DIR" "$SOURCE"
 defaults delete "$BUNDLE_ID" 2>/dev/null || true

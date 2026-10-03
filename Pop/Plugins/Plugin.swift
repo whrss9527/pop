@@ -29,6 +29,9 @@ struct PluginInfo: Identifiable, Hashable {
 
     func canHandle(_ content: ClassifiedContent) -> Bool {
         guard accepts.isEmpty || !accepts.isDisjoint(with: content.kinds) else { return false }
+        if let handled = content.checked?.handled[id] {
+            return handled
+        }
         return matchesConstraints(content)
     }
 

@@ -28,7 +28,7 @@ struct NewFilePlugin: PopPlugin {
     static let demoSelection = "## 本周计划\n\n- 整理「下载」文件夹\n- 给新版本换图标\n- 周五前发布 0.49"
 
     @MainActor func run(_ content: ClassifiedContent, context: PluginContext) async -> PluginOutcome {
-        let folder = Self.folder(for: content.files, sourcePID: context.sourcePID)
+        let folder = await Self.folder(for: content.files, sourcePID: context.sourcePID)
         let pasteboard = NSPasteboard.general
         let model = NewFileModel(folder: folder, selection: content.files.isEmpty ? content.text : nil,
                                  clipboardText: pasteboard.string(forType: .string), clipboardImage: Self.clipboardPNG(pasteboard))
@@ -47,7 +47,7 @@ struct NewFilePlugin: PopPlugin {
 
     /// 存到哪：选中了文件夹就是它，选中了文件就是文件所在的文件夹；什么都没选时是访达最前面的窗口正在看的文件夹，
     /// 不在访达里（或者访达没开窗口）时是桌面
-    @MainActor static func folder(for files: [URL], sourcePID: pid_t?) -> URL {
+    @MainActor static func folder(for files: [URL], sourcePID: pid_t?) async -> URL {
         if let selected = files.first(where: { FolderTree.isFolder($0.path(percentEncoded: false)) }) {
             return selected
         }
@@ -55,7 +55,7 @@ struct NewFilePlugin: PopPlugin {
             return file.deletingLastPathComponent()
         }
         if let pid = sourcePID, NSRunningApplication(processIdentifier: pid)?.bundleIdentifier == "com.apple.finder",
-           let front = NewFileMaker.frontFinderFolder() {
+           let front = await NewFileMaker.frontFinderFolder() {
             return front
         }
         return FileManager.default.urls(for: .desktopDirectory, in: .userDomainMask).first

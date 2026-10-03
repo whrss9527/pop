@@ -84,6 +84,41 @@ enum BatchRename {
         let message: String
     }
 
+    /// 改名前文件夹里的样子：选中的哪些是文件夹（App 这类包除外）、每个文件夹里已经有哪些名字（不分大小写，和访达一样）
+    struct Snapshot {
+        var folders: Set<String> = []
+        var names: [String: Set<String>] = [:]
+
+        private static func key(_ url: URL) -> String {
+            url.standardizedFileURL.path(percentEncoded: false)
+        }
+
+        /// 在后台读
+        static func read(_ files: [URL]) -> Snapshot {
+            var snapshot = Snapshot()
+            for file in files {
+                let values = try? file.resourceValues(forKeys: [.isDirectoryKey, .isPackageKey])
+                if values?.isDirectory == true && values?.isPackage != true {
+                    snapshot.folders.insert(key(file))
+                }
+                let parent = key(file.deletingLastPathComponent())
+                if snapshot.names[parent] == nil {
+                    let entries = (try? FileManager.default.contentsOfDirectory(atPath: parent)) ?? []
+                    snapshot.names[parent] = Set(entries.map { $0.lowercased() })
+                }
+            }
+            return snapshot
+        }
+
+        func exists(_ url: URL) -> Bool {
+            names[Self.key(url.deletingLastPathComponent())]?.contains(url.lastPathComponent.lowercased()) ?? false
+        }
+
+        func isFolder(_ url: URL) -> Bool {
+            folders.contains(Self.key(url))
+        }
+    }
+
     /// 按文件名排好的顺序（和访达按名称排列一样，数字按大小排）
     static func ordered(_ files: [URL]) -> [URL] {
         files.sorted { $0.lastPathComponent.localizedStandardCompare($1.lastPathComponent) == .orderedAscending }

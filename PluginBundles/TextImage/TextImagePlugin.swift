@@ -16,6 +16,6 @@ struct TextImagePlugin: PopPlugin {
 
     @MainActor func run(_ content: ClassifiedContent, context: PluginContext) async -> PluginOutcome {
         guard let text = content.text else { return .failure(String(localized: "没有文字")) }
-        return TextImage.outcome(text, style: .paper)
+        return await TextImage.outcomeInBackground(text, style: .paper)
     }
 }

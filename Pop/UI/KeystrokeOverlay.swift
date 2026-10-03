@@ -11,8 +11,9 @@ final class KeystrokeOverlay {
     /// 面板固定这么宽，胶囊在里面居中（字变了不用重新算大小）
     nonisolated static let width: CGFloat = 640
 
-    private var tap: CFMachPort?
-    private var runLoopSource: CFRunLoopSource?
+    /// 拦按键的线程：只把按键交给主线程显示，从不吞掉，也不等主线程。
+    /// 显示按键时整个系统的打字都会经过这里，Pop 的主线程正忙也不能让打字跟着卡
+    private var tap: EventTapThread?
     private var panel: NSPanel?
     private let model = KeystrokeModel()
     private var display: Keystrokes.Display?
@@ -25,31 +26,30 @@ final class KeystrokeOverlay {
     /// 开始显示；没有辅助功能权限时返回原因
     func start() -> String? {
         guard tap == nil else { return nil }
-        let types: [CGEventType] = [.keyDown]
-        let mask = types.reduce(CGEventMask(0)) { $0 | (CGEventMask(1) << CGEventMask($1.rawValue)) }
-        guard let tap = CGEvent.tapCreate(tap: .cgSessionEventTap, place: .tailAppendEventTap, options: .defaultTap,
-                                          eventsOfInterest: mask, callback: keystrokeCallback,
-                                          userInfo: Unmanaged.passUnretained(self).toOpaque()) else {
+        let pid = Int64(getpid())
+        let tap = EventTapThread(name: "Pop.Keystrokes") { [weak self] type, event in
+            // Pop 自己模拟的按键（读选中内容时的 ⌘C、替换原文时的 ⌘V）不显示
+            guard type == .keyDown, event.getIntegerValueField(.eventSourceUnixProcessID) != pid else { return false }
+            let keyCode = Int(event.getIntegerValueField(.keyboardEventKeycode))
+            let flags = event.flags
+            let isRepeat = event.getIntegerValueField(.keyboardEventAutorepeat) != 0
+            DispatchQueue.main.async { [weak self] in
+                MainActor.assumeIsolated {
+                    self?.handle(keyCode: keyCode, flags: flags, isRepeat: isRepeat)
+                }
+            }
+            return false
+        }
+        guard tap.start(events: [.keyDown], place: .tailAppendEventTap) else {
             return String(localized: "要先在「系统设置 → 隐私与安全性 → 辅助功能」里允许 Pop，才能显示按键")
         }
-        let source = CFMachPortCreateRunLoopSource(kCFAllocatorDefault, tap, 0)
-        CFRunLoopAddSource(CFRunLoopGetMain(), source, .commonModes)
-        CGEvent.tapEnable(tap: tap, enable: true)
         self.tap = tap
-        runLoopSource = source
         return nil
     }
 
     func stop() {
-        if let tap {
-            CGEvent.tapEnable(tap: tap, enable: false)
-            CFMachPortInvalidate(tap)
-        }
-        if let runLoopSource {
-            CFRunLoopRemoveSource(CFRunLoopGetMain(), runLoopSource, .commonModes)
-        }
+        tap?.stop()
         tap = nil
-        runLoopSource = nil
         hideWork?.cancel()
         hideWork = nil
         panel?.orderOut(nil)
@@ -89,13 +89,7 @@ final class KeystrokeOverlay {
         return screen?.visibleFrame ?? .zero
     }
 
-    fileprivate func reenable() {
-        if let tap {
-            CGEvent.tapEnable(tap: tap, enable: true)
-        }
-    }
-
-    fileprivate func handle(keyCode: Int, flags: CGEventFlags, isRepeat: Bool) {
+    private func handle(keyCode: Int, flags: CGEventFlags, isRepeat: Bool) {
         // 按住不放的重复按键只让它多显示一会儿，不重复计数
         if isRepeat {
             if display != nil { scheduleHide() }
@@ -160,30 +154,6 @@ final class KeystrokeOverlay {
         panel.contentView = NSHostingView(rootView: KeystrokeView(model: model))
         return panel
     }
-}
-
-private func keystrokeCallback(proxy: CGEventTapProxy, type: CGEventType, event: CGEvent,
-                               userInfo: UnsafeMutableRawPointer?) -> Unmanaged<CGEvent>? {
-    guard let userInfo else { return Unmanaged.passUnretained(event) }
-    let overlay = Unmanaged<KeystrokeOverlay>.fromOpaque(userInfo).takeUnretainedValue()
-    if type == .tapDisabledByTimeout || type == .tapDisabledByUserInput {
-        // Tap 的 RunLoop source 挂在主线程上，所以这里一定在主线程
-        MainActor.assumeIsolated {
-            overlay.reenable()
-        }
-        return Unmanaged.passUnretained(event)
-    }
-    // Pop 自己模拟的按键（读选中内容时的 ⌘C、替换原文时的 ⌘V）不显示
-    guard type == .keyDown, event.getIntegerValueField(.eventSourceUnixProcessID) != Int64(getpid()) else {
-        return Unmanaged.passUnretained(event)
-    }
-    let keyCode = Int(event.getIntegerValueField(.keyboardEventKeycode))
-    let flags = event.flags
-    let isRepeat = event.getIntegerValueField(.keyboardEventAutorepeat) != 0
-    MainActor.assumeIsolated {
-        overlay.handle(keyCode: keyCode, flags: flags, isRepeat: isRepeat)
-    }
-    return Unmanaged.passUnretained(event)
 }
 
 @MainActor

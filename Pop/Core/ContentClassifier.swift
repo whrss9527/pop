@@ -24,6 +24,25 @@ enum ContentClassifier {
         }
     }
 
+    /// 很长的文字（10 万字节以上）算长：识别、数字数、看每个功能能不能处理都放到后台
+    static let longTextBytes = 100_000
+
+    /// 选中了很长的文字（整份日志、几 MB 的 JSON）时要看好一会儿：识别内容、数字数、看 catalog 里每个功能能不能处理
+    /// 都放到后台，免得卡住圆盘。短的照旧当场看
+    static func classifyOffMain(_ selection: SelectionContent, catalog: [PluginInfo]) async -> ClassifiedContent {
+        guard case .text(let text) = selection, text.utf8.count > longTextBytes else { return classify(selection) }
+        return await runInBackground {
+            var content = classify(selection)
+            guard let classified = content.text else { return content }
+            var handled: [String: Bool] = [:]
+            for info in catalog where handled[info.id] == nil {
+                handled[info.id] = info.canHandle(content)
+            }
+            content.checked = CheckedLongText(characterCount: classified.count, handled: handled)
+            return content
+        }
+    }
+
     private static func classifyText(_ text: String) -> ClassifiedContent {
         var content = ClassifiedContent(selection: .text(text), kinds: [.text], text: text, language: nil, url: nil, files: [])
 

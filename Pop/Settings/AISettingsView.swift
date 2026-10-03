@@ -42,6 +42,7 @@ struct AISettingsView: View {
             Section {
                 TextField("接口地址", text: store.binding(\.ai.baseURL), prompt: Text("https://api.openai.com/v1"))
                 SecureField("API Key", text: $apiKey, prompt: Text("本机运行的服务可以不填"))
+                    .disabled(!keyLoaded)
                     .onSubmit(saveKey)
                 TextField("模型", text: store.binding(\.ai.model), prompt: Text("比如 gpt-4o-mini"))
                 HStack(spacing: 8) {
@@ -83,8 +84,11 @@ struct AISettingsView: View {
         }
         .onAppear {
             onDevice = OnDeviceModel.status
+        }
+        // 钥匙串在后台读：换了签名的新版本读的时候系统会弹框问，用户点之前设置窗口不跟着卡住
+        .task {
             guard !keyLoaded else { return }
-            apiKey = AIKeyStore.read() ?? ""
+            apiKey = await runInBackground { AIKeyStore.read() ?? "" }
             keyLoaded = true
         }
         .onDisappear(perform: saveKey)

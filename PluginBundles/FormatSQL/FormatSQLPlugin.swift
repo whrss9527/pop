@@ -28,9 +28,10 @@ struct FormatSQLPlugin: PopPlugin {
 
     @MainActor func run(_ content: ClassifiedContent, context: PluginContext) async -> PluginOutcome {
         guard let text = content.text else { return .failure(String(localized: "没有选中文字")) }
-        let formatted = SQLFormatter.format(text)
+        // 几十万字的 SQL 格式化要好一会儿，放在后台
+        let (formatted, oneLine) = await runInBackground { (SQLFormatter.format(text), SQLFormatter.format(text, compact: true)) }
         guard !formatted.isEmpty else { return .failure(String(localized: "没有可以格式化的 SQL")) }
         return .card(ResultCard(title: String(localized: "SQL 格式化"), body: formatted, monospaced: true, copyText: formatted, replaceText: formatted,
-                                buttons: [CardButton(title: String(localized: "复制成一行"), action: .copy(SQLFormatter.format(text, compact: true)))]))
+                                buttons: [CardButton(title: String(localized: "复制成一行"), action: .copy(oneLine))]))
     }
 }

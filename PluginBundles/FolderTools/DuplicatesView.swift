@@ -66,14 +66,21 @@ final class DuplicatesModel: ObservableObject {
         cancelFlag.set()
     }
 
+    /// 正在移到废纸篓：按钮先不能点
+    @Published private(set) var isTrashing = false
+
     /// 每组留下最早的那个，其余的移到废纸篓
-    func keepOne(in groups: [DuplicateFinder.Group]) {
-        trash(groups.flatMap { $0.files.dropFirst() })
+    func keepOne(in groups: [DuplicateFinder.Group]) async {
+        await trash(groups.flatMap { $0.files.dropFirst() })
     }
 
-    func trash(_ urls: [URL]) {
-        guard case .done(var result) = phase, !urls.isEmpty else { return }
-        let outcome = DuplicateFinder.trash(urls)
+    /// 一个个移到废纸篓：几千个要好一会儿，放在后台移
+    func trash(_ urls: [URL]) async {
+        guard case .done = phase, !urls.isEmpty, !isTrashing else { return }
+        isTrashing = true
+        let outcome = await runInBackground { DuplicateFinder.trash(urls) }
+        isTrashing = false
+        guard case .done(var result) = phase else { return }
         let moved = Set(outcome.moved)
         result.groups = result.groups.compactMap { group in
             var remaining = group
@@ -155,7 +162,8 @@ struct DuplicatesView: View {
                         .lineLimit(2)
                 }
                 Spacer()
-                Button("每组只留一个") { model.keepOne(in: result.groups) }
+                Button("每组只留一个") { Task { await model.keepOne(in: result.groups) } }
+                    .disabled(model.isTrashing)
                     .help("每组留下最早的那个，其余的移到废纸篓（可以从废纸篓放回）")
             }
             .controlSize(.small)
@@ -177,7 +185,8 @@ struct DuplicatesView: View {
                 Button("在访达中显示") { onReveal(group.files) }
                     .buttonStyle(.link)
                     .font(.caption)
-                Button("只留一个") { model.keepOne(in: [group]) }
+                Button("只留一个") { Task { await model.keepOne(in: [group]) } }
+                    .disabled(model.isTrashing)
                     .buttonStyle(.link)
                     .font(.caption)
             }
@@ -201,7 +210,8 @@ struct DuplicatesView: View {
                 }
                 .contextMenu {
                     Button("在访达中显示") { onReveal([file]) }
-                    Button("移到废纸篓") { model.trash([file]) }
+                    Button("移到废纸篓") { Task { await model.trash([file]) } }
+                        .disabled(model.isTrashing)
                 }
             }
         }

@@ -16,10 +16,25 @@ final class RenameModel: ObservableObject {
     @Published private(set) var errorMessage: String?
     /// 「拍摄时间」模式下每个文件的时间写法，第一次用到时在后台读
     private var dateNames: [URL: String]?
+    /// 文件夹里已经有哪些名字、选中的哪些是文件夹：每打一个字都要看，一个个去问文件系统，几千个文件、网络上的文件夹要好一会儿。
+    /// 卡片打开、改完名以后在后台读一次记住；读好以前照旧直接问
+    private var snapshot: BatchRename.Snapshot?
 
     init(files: [URL]) {
         self.files = BatchRename.ordered(files)
         update()
+        reloadSnapshot()
+    }
+
+    private func reloadSnapshot() {
+        snapshot = nil
+        let files = self.files
+        Task { [weak self] in
+            let snapshot = await runInBackground { BatchRename.Snapshot.read(files) }
+            guard let self else { return }
+            self.snapshot = snapshot
+            self.update()
+        }
     }
 
     private func update() {
@@ -33,7 +48,11 @@ final class RenameModel: ObservableObject {
                 self.update()
             }
         }
-        plan = BatchRename.plan(files, rule: rule, dateNames: dateNames ?? [:])
+        if let snapshot {
+            plan = BatchRename.plan(files, rule: rule, dateNames: dateNames ?? [:], exists: snapshot.exists, isFolder: snapshot.isFolder)
+        } else {
+            plan = BatchRename.plan(files, rule: rule, dateNames: dateNames ?? [:])
+        }
     }
 
     func apply() {
@@ -59,6 +78,7 @@ final class RenameModel: ObservableObject {
             case .failure(let failure):
                 self.errorMessage = failure.message
                 self.update()
+                self.reloadSnapshot()
             }
         }
     }
@@ -84,6 +104,7 @@ final class RenameModel: ObservableObject {
             } else {
                 self.renamed = []
                 self.update()
+                self.reloadSnapshot()
             }
         }
     }

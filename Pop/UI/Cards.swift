@@ -48,28 +48,95 @@ struct AdaptiveText: View {
     var monospaced = false
     /// 几段排在一起时（翻译对比），长文本的滚动区域矮一些
     var compact = false
+    /// 用浅一些的颜色（还没出完的译文）
+    var secondary = false
+
+    /// 最多显示这么多字：几 MB 的文字（格式化好的大 JSON、XML）放进一个 Text 里，排版要好几秒，Pop 跟着卡住。
+    /// 卡片上的复制、替换原文用的还是全部
+    static let displayLimit = 20_000
+
+    /// 显示的文字：太长时只留前面的，后面说一句
+    static func displayed(_ text: String) -> String {
+        // UTF-8 的字节数是现成的，先用它粗看一下，短的不用数字数；长的只往后数到上限，不把几 MB 的字从头数到尾
+        guard text.utf8.count > displayLimit,
+              let end = text.index(text.startIndex, offsetBy: displayLimit, limitedBy: text.endIndex),
+              end < text.endIndex else { return text }
+        return String(text[..<end]) + "\n…\n" + String(localized: "（太长了，这里只显示前面一部分；复制、替换原文用的是全部）")
+    }
 
     var body: some View {
-        let content = Text(text)
-            .font(monospaced ? .system(size: 12, design: .monospaced) : .body)
-            .textSelection(.enabled)
-            .frame(maxWidth: .infinity, alignment: .leading)
         if Self.isLong(text, compact: compact) {
-            ScrollView {
-                content.padding(.trailing, 6)
-            }
-            .frame(height: compact ? 120 : 280)
+            // 长的交给 NSTextView，只排看得见的那一段：SwiftUI 的 Text 会把几万字一次排完，卡片要好几秒才出来
+            LongTextView(text: Self.displayed(text), monospaced: monospaced, secondary: secondary)
+                .frame(height: compact ? 120 : 280)
         } else {
-            content.fixedSize(horizontal: false, vertical: true)
+            Text(text)
+                .font(monospaced ? .system(size: 12, design: .monospaced) : .body)
+                .foregroundStyle(secondary ? .secondary : .primary)
+                .textSelection(.enabled)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .fixedSize(horizontal: false, vertical: true)
         }
     }
 
     static func isLong(_ text: String, compact: Bool = false) -> Bool {
-        let lines = text.filter { $0 == "\n" }.count
-        if compact {
-            return text.count > 240 || lines > 6
+        let (characters, lines) = compact ? (240, 6) : (600, 14)
+        // 字节数是现成的：一个字最多 4 个字节，字节多到这个份上一定算长，几 MB 的文字不用一个个数
+        if text.utf8.count > characters * 4 { return true }
+        return text.count > characters || text.utf8.lazy.filter { $0 == 10 }.count > lines
+    }
+}
+
+/// 长文字的滚动区域：NSTextView 只排看得见的那一段，能选中、复制，文字颜色跟着深浅色变
+struct LongTextView: NSViewRepresentable {
+    let text: String
+    var monospaced = false
+    var secondary = false
+
+    /// 上次放进去的文字和样式：没变就不重放（每次重画卡片都会调 updateNSView）
+    final class Coordinator {
+        var text = ""
+        var style: [Bool] = []
+    }
+
+    func makeCoordinator() -> Coordinator {
+        Coordinator()
+    }
+
+    func makeNSView(context: Context) -> NSScrollView {
+        let scrollView = NSTextView.scrollableTextView()
+        scrollView.drawsBackground = false
+        scrollView.borderType = .noBorder
+        scrollView.hasVerticalScroller = true
+        scrollView.autohidesScrollers = true
+        if let textView = scrollView.documentView as? NSTextView {
+            textView.isEditable = false
+            textView.isSelectable = true
+            textView.isRichText = false
+            textView.drawsBackground = false
+            textView.textContainerInset = .zero
+            textView.textContainer?.lineFragmentPadding = 0
         }
-        return text.count > 600 || lines > 14
+        return scrollView
+    }
+
+    func updateNSView(_ scrollView: NSScrollView, context: Context) {
+        guard let textView = scrollView.documentView as? NSTextView, let storage = textView.textStorage else { return }
+        let coordinator = context.coordinator
+        let style = [monospaced, secondary]
+        guard coordinator.text != text || coordinator.style != style else { return }
+        let font = monospaced ? NSFont.monospacedSystemFont(ofSize: 12, weight: .regular) : NSFont.systemFont(ofSize: NSFont.systemFontSize)
+        let attributes: [NSAttributedString.Key: Any] = [.font: font, .foregroundColor: secondary ? NSColor.secondaryLabelColor : NSColor.labelColor]
+        if coordinator.style == style, !coordinator.text.isEmpty, text.utf8.starts(with: coordinator.text.utf8) {
+            // 一段段出来的（翻译、AI 的回答）：只接上新的部分，看到哪儿还停在哪儿
+            let added = String(decoding: text.utf8.dropFirst(coordinator.text.utf8.count), as: UTF8.self)
+            storage.append(NSAttributedString(string: added, attributes: attributes))
+        } else {
+            storage.setAttributedString(NSAttributedString(string: text, attributes: attributes))
+            textView.scroll(.zero)
+        }
+        coordinator.text = text
+        coordinator.style = style
     }
 }
 
@@ -657,8 +724,7 @@ struct TranslationCardView: View {
             }
             .transition(.opacity)
         case .partial(let translated):
-            AdaptiveText(text: translated, compact: compact)
-                .foregroundStyle(.secondary)
+            AdaptiveText(text: translated, compact: compact, secondary: true)
         case .done(let translated):
             AdaptiveText(text: translated, compact: compact)
                 .transition(.opacity)

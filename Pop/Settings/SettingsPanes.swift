@@ -831,6 +831,7 @@ struct DeepLKeyView: View {
         Group {
             SecureField("API Key", text: $key, prompt: Text("粘贴 DeepL 的 API Key"))
                 .onSubmit(save)
+                .disabled(!loaded)
             HStack(spacing: 8) {
                 Button("保存并测试", action: runTest)
                     .disabled(test == .testing || key.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
@@ -839,9 +840,10 @@ struct DeepLKeyView: View {
                 Link("申请 API Key", destination: DeepLClient.signUpURL)
             }
         }
-        .onAppear {
+        // 钥匙串在后台读：换了签名的新版本读的时候系统会弹框问，用户点之前设置窗口不跟着卡住
+        .task {
             guard !loaded else { return }
-            key = DeepLKeyStore.read() ?? ""
+            key = await runInBackground { DeepLKeyStore.read() ?? "" }
             loaded = true
         }
         .onDisappear(perform: save)

@@ -12,7 +12,7 @@ final class BeautifyEntry: NSObject, PopPluginBundle {
         // CI 截图：示例截图放在天蓝的背景上，中等留白，圆角加阴影
         host.addDemoScene(PluginHost.DemoScene(name: "beautify", after: "cropImage", delay: 1.4, hold: 0, show: { demo in
             guard let sample = OverlayDemo.sampleScreenshot() else { return nil }
-            let model = BeautifyModel(image: sample.image, options: ScreenshotBeautifier.Options())
+            let model = await BeautifyModel.make(image: sample.image, options: ScreenshotBeautifier.Options())
             await model.prepare()
             demo.overlay.showCard(BeautifyView(model: model, onCopy: {}, onSave: {}, onPin: {}, onClose: {}), anchor: demo.center)
             return demo.cardRegion
@@ -29,7 +29,7 @@ struct BeautifyPlugin: PopPlugin {
         let image: CGImage
         if case .image(let data) = content.selection, let decoded = TextRecognizer.cgImage(from: data) {
             image = decoded
-        } else if let url = content.files.first(where: ContentClassifier.isImageFile), let decoded = TextRecognizer.cgImage(contentsOf: url) {
+        } else if let url = content.files.first(where: ContentClassifier.isImageFile), let decoded = await TextRecognizer.decodedImage(contentsOf: url) {
             image = decoded
         } else {
             switch await ScreenCapture.selectRegion() {
@@ -41,8 +41,8 @@ struct BeautifyPlugin: PopPlugin {
                 image = capture.image
             }
         }
+        let model = await BeautifyModel.make(image: image)
         return .present(PluginPresentation { session in
-            let model = BeautifyModel(image: image)
             session.showCard(BeautifyView(model: model,
                                           onCopy: { Self.export(model, session: session) { .copyImage($0) } },
                                           onSave: { Self.export(model, session: session) { .saveImage($0, name: ImageFiles.timestampedName(String(localized: "Pop 截图"))) } },

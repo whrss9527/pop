@@ -11,6 +11,7 @@ import AppKit
 /// 配合 POP_ANIMATION_SCALE 放慢动画，截图脚本就能拍到动画的中间帧；POP_APPEARANCE=dark 时用深色外观。
 /// 每一步开始时往 POP_DEMO_LOG 指定的文件里写一行「步骤名 时间戳 这一步的动画放慢倍数」；region 行是截图区域在屏幕上的位置
 /// （点，AppKit 坐标：x y 宽 高）和屏幕大小，脚本按拍照时最新的那一行裁图。
+/// 主线程卡住超过 0.25 秒时，HangWatchdog 也往这个文件里写一行「hang 开始的时间戳 卡了几秒」，截图脚本按步骤列出来。
 /// POP_DEMO_QUICK_STEPS（逗号隔开）是截图脚本列出的只拍停下来之后的样子的步骤：插件包的这些步骤不用放慢那么多，
 /// 按 quickScale 走（和深色那一遍一样），动画和停留都短一些，省下截图的时间。
 @MainActor
@@ -199,7 +200,10 @@ enum OverlayDemo {
             FileShelf.shared.hide()
             FileShelf.shared.clear()
             if let note = files.first(where: { $0.pathExtension == "txt" }) {
-                let request = OpenWithRequest(targets: [note], apps: OpenWith.applications(for: note))
+                // 和插件一样，在后台找能打开的 App、取好图标
+                let apps = await runInBackground { OpenWith.applications(for: note) }
+                await FileIcons.preload(apps.map { $0.path(percentEncoded: false) }, size: AppTile.iconSize)
+                let request = OpenWithRequest(targets: [note], apps: apps)
                 overlay.showCard(OpenWithCardView(request: request, onChoose: { _ in }, onClose: {}), anchor: center)
             }
             step("openWith")
@@ -237,6 +241,26 @@ enum OverlayDemo {
 
             // 插件包的步骤：正则测试
             await playPluginScenes(after: "toMarkdown", in: demo, unit: unit, holdTime: holdTime)
+
+            // 选中了 2 MB 多的 JSON：认内容、看每一格能不能用都在后台，圆盘马上出来；格式化也在后台，卡片上只显示前面一部分。
+            // 主线程不该卡住（卡住时 HangWatchdog 记下来，截图脚本按步骤列出）
+            await pause(holdTime)
+            overlay.hide()
+            step("longText")
+            let longJSON = await runInBackground {
+                "[" + Array(repeating: #"{"name": "Pop", "tags": ["ring", "card"], "count": 12345, "note": "液态玻璃"}"#, count: 30_000)
+                    .joined(separator: ",\n") + "]"
+            }
+            let longContent = await ContentClassifier.classifyOffMain(.text(longJSON), catalog: catalog)
+            overlay.showRing(RingViewModel(layout: settings.ring, catalog: catalog, installed: installed, content: longContent),
+                             center: center)
+
+            await pause(holdTime)
+            step("longJSON")
+            let formatted = await FormatJSONPlugin().run(longContent, context: PluginContext(settings: settings, openSettings: {}))
+            if case .card(let longCard) = formatted {
+                overlay.showCard(ResultCardView(card: longCard, onAction: { _ in }, onMore: {}, onClose: {}), anchor: center)
+            }
 
             // 剪贴板历史：几条示例记录，⌘ 点选两条准备合在一起粘贴
             await pause(holdTime)
@@ -675,6 +699,9 @@ enum OverlayDemo {
             await pause(min(scene.delay * unit, wait))
             let sceneUnit = quickSteps.contains(scene.name) ? min(unit, quickScale) : unit
             Motion.timeScale = sceneUnit
+            // 开始准备这一步：主线程卡在「X.start → X」之间的是这一步自己准备、弹出来的时候，
+            // 卡在「X → 下一步.start」之间的是它停在屏幕上、收起来的时候
+            Self.step(scene.name + ".start")
             if let region = await scene.show(context) {
                 logRegion(region == context.cardRegion ? region : region.insetBy(dx: -24, dy: -24), screen: context.screen)
             }
@@ -712,16 +739,9 @@ enum OverlayDemo {
         log("\(name) \(Date().timeIntervalSince1970) \(Motion.timeScale)")
     }
 
+    /// 检测卡顿的线程（HangWatchdog）也往这个文件里写，都用追加的方式写，不会互相盖掉
     private static func log(_ line: String) {
         guard let path = ProcessInfo.processInfo.environment["POP_DEMO_LOG"] else { return }
-        let url = URL(fileURLWithPath: path)
-        let data = Data((line + "\n").utf8)
-        if let handle = try? FileHandle(forWritingTo: url) {
-            defer { try? handle.close() }
-            _ = try? handle.seekToEnd()
-            try? handle.write(contentsOf: data)
-        } else {
-            try? data.write(to: url)
-        }
+        LineLog.append(line, to: path)
     }
 }

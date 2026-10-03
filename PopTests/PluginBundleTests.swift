@@ -228,6 +228,10 @@ final class PluginBundleTests: XCTestCase {
         XCTAssertEqual(PluginBundles.buildID(of: found[0]), "1.0+abc")
         XCTAssertGreaterThan(PluginManager.size(of: found[0]), 0)
         XCTAssertEqual(PluginBundles.bundles(in: folder.appendingPathComponent("missing")), [])
+        // 启动时几个线程一起查签名：每个插件包都有结果，没签名的不能装载
+        let unsigned = folder.appendingPathComponent("Other.bundle")
+        XCTAssertEqual(PluginBundles.checkSignatures(found + [unsigned]), [found[0]: false, unsigned: false])
+        XCTAssertEqual(PluginBundles.checkSignatures([]), [:])
     }
 
     /// 演示步骤按顺序排

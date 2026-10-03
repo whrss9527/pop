@@ -265,7 +265,8 @@ final class PopCoordinator: MouseTriggerDelegate {
             let raw = await self.reader.read(pid: pid)
             guard self.session?.id == sessionID else { return }
             if self.askForFolderAccessIfNeeded(raw) { return }
-            let content = ContentClassifier.classify(raw)
+            let content = await ContentClassifier.classifyOffMain(raw, catalog: self.registry.catalog)
+            guard self.session?.id == sessionID else { return }
             self.session?.content = content
             if plugin.info.canHandle(content) {
                 self.run(pluginID)
@@ -327,7 +328,8 @@ final class PopCoordinator: MouseTriggerDelegate {
             } else if clickCount < 2, let last = self.lastToolbarSelection, last.pid == pid, last.text == selection.text {
                 return
             }
-            let content = ContentClassifier.classify(.text(selection.text))
+            let content = await ContentClassifier.classifyOffMain(.text(selection.text), catalog: self.registry.catalog)
+            guard generation == self.toolbarGeneration, self.session == nil else { return }
             self.showToolbar(content: content, selection: bounds, pointer: point, pid: pid, appName: app.localizedName,
                              bundleID: app.bundleIdentifier)
         }
@@ -449,7 +451,8 @@ final class PopCoordinator: MouseTriggerDelegate {
             let raw = await self.reader.read(pid: pid)
             guard self.session?.id == sessionID else { return }
             if self.askForFolderAccessIfNeeded(raw) { return }
-            let content = ContentClassifier.classify(raw)
+            let content = await ContentClassifier.classifyOffMain(raw, catalog: self.registry.catalog)
+            guard self.session?.id == sessionID else { return }
             self.session?.content = content
             self.route(content)
         }
@@ -723,7 +726,13 @@ final class PopCoordinator: MouseTriggerDelegate {
         case .system(let action):
             runSystemAction(action)
         case .textImage(let text, let style):
-            present(TextImage.outcome(text, style: style))
+            // 在后台画；画好时还是这一次唤起才换上
+            let id = session?.id
+            Task { [weak self] in
+                let outcome = await TextImage.outcomeInBackground(text, style: style)
+                guard let self, self.session?.id == id else { return }
+                self.present(outcome)
+            }
         case .barcode(let text):
             if let png = QRCode.barcode(text) {
                 present(.card(ResultCard(title: String(localized: "条形码"), body: text, detail: String(localized: "Code 128 条形码"), image: png,
@@ -881,11 +890,17 @@ final class PopCoordinator: MouseTriggerDelegate {
     private func presentPDFPassword(_ pdf: URL) {
         guard let current = session else { return }
         stopPointerTracking()
-        let model = PDFPasswordModel(pdf: pdf, mode: PDFTools.isLocked(pdf) ? .remove : .add)
-        overlay.showCard(PDFPasswordView(model: model,
-                                         onSubmit: { [weak self] password in self?.savePDFPassword(model, password) },
-                                         onClose: { [weak self] in self?.endSession() }),
-                         anchor: current.anchor)
+        let sessionID = current.id
+        Task { [weak self] in
+            // 打开 PDF 看有没有密码放在后台
+            let locked = await runInBackground { PDFTools.isLocked(pdf) }
+            guard let self, let current = self.session, current.id == sessionID else { return }
+            let model = PDFPasswordModel(pdf: pdf, mode: locked ? .remove : .add)
+            self.overlay.showCard(PDFPasswordView(model: model,
+                                                  onSubmit: { [weak self] password in self?.savePDFPassword(model, password) },
+                                                  onClose: { [weak self] in self?.endSession() }),
+                                  anchor: current.anchor)
+        }
     }
 
     private func savePDFPassword(_ model: PDFPasswordModel, _ password: String) {
@@ -1469,7 +1484,7 @@ final class PopCoordinator: MouseTriggerDelegate {
         model.onPasteText = { [weak self] text in
             // 合在一起的文字留在剪贴板里，和粘贴一条历史一样
             self?.endSession()
-            Paster.paste(restoringPrevious: false) { pasteboard in
+            Paster.paste { pasteboard in
                 pasteboard.setString(text, forType: .string)
             }
         }

@@ -47,8 +47,9 @@ enum SystemInfo {
 
     // MARK: - 读
 
+    /// includingDisk 为 false 时不问启动磁盘（disk 是 nil）：算「重要用途的可用空间」要等文件系统一会儿，放在后台另外读
     @MainActor
-    static func read() -> Report {
+    static func read(includingDisk: Bool = true) -> Report {
         let identifier = sysctlString("hw.model") ?? ""
         let serial = platformString("IOPlatformSerialNumber")
         let name = cachedModelName(serial: serial) ?? productName() ?? family(of: identifier)
@@ -64,7 +65,7 @@ enum SystemInfo {
                       osVersion: osVersionText(major: version.majorVersion, minor: version.minorVersion, patch: version.patchVersion),
                       osBuild: sysctlString("kern.osversion") ?? "",
                       bootTime: bootTime(),
-                      disk: startupDisk(),
+                      disk: includingDisk ? startupDisk() : nil,
                       displays: displays(),
                       serial: serial.flatMap { $0.isEmpty ? nil : $0 })
     }

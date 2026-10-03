@@ -11,7 +11,9 @@ final class QuitAppsEntry: NSObject, PopPluginBundle {
     @MainActor static func didLoad(_ host: PluginHost.Registrar) {
         // CI 截图：几个系统自带的 App 和示例的内存、CPU 占用，按内存排；退出不会真的退出
         host.addDemoScene(PluginHost.DemoScene(name: "quitApps", after: "textImage", order: 1, delay: 1.4, hold: 0, show: { demo in
-            let model = QuitAppsModel(rows: QuitAppsPlugin.demoRows(), front: 1, terminate: { _, _ in true }, isRunning: { _ in true },
+            // 和插件一样在后台取图标
+            let rows = await runInBackground { QuitAppsPlugin.demoRows() }
+            let model = QuitAppsModel(rows: rows, front: 1, terminate: { _, _ in true }, isRunning: { _ in true },
                                       sort: .memory)
             demo.overlay.showCard(QuitAppsView(model: model, onClose: {}), anchor: demo.center)
             return demo.cardRegion
@@ -43,7 +45,10 @@ struct QuitAppsPlugin: PopPlugin {
             })
         }
         let byPID = Dictionary(apps.map { ($0.processIdentifier, $0) }, uniquingKeysWith: { first, _ in first })
-        let rows = entries.map { QuitAppsModel.Row(entry: $0, icon: byPID[$0.pid]?.icon) }
+        // 图标在后台画好（几十个 App 的图标一起画，主线程要等一会儿）
+        let icons = entries.map { byPID[$0.pid]?.icon }
+        let drawn = await runInBackground { icons.map { $0.map { FileIcons.rendered($0, size: QuitAppsModel.iconSize) } } }
+        let rows = zip(entries, drawn).map { QuitAppsModel.Row(entry: $0, icon: $1) }
         return .present(PluginPresentation { session in
             let model = QuitAppsModel(rows: rows, front: context.sourcePID, terminate: { pid, force in
                 guard let app = byPID[pid], !app.isTerminated else { return false }
@@ -56,7 +61,7 @@ struct QuitAppsPlugin: PopPlugin {
     }
 
     /// 演示用的列表：系统自带的几个 App（图标从系统里取），内存和 CPU 是示例数据（Xcode 正在编译，音乐在放歌）
-    @MainActor static func demoRows() -> [QuitAppsModel.Row] {
+    static func demoRows() -> [QuitAppsModel.Row] {
         let samples: [(String, String, UInt64, Double)] = [
             ("com.apple.dt.Xcode", "Xcode", 2_350_000_000, 186),
             ("com.apple.Safari", "Safari 浏览器", 1_240_000_000, 7.4),
@@ -68,7 +73,7 @@ struct QuitAppsPlugin: PopPlugin {
         return samples.enumerated().map { index, sample in
             let url = NSWorkspace.shared.urlForApplication(withBundleIdentifier: sample.0)
             return QuitAppsModel.Row(entry: RunningApps.Entry(pid: pid_t(index + 1), name: sample.1, bundleID: sample.0, memory: sample.2, cpu: sample.3),
-                                     icon: url.map { NSWorkspace.shared.icon(forFile: $0.path(percentEncoded: false)) })
+                                     icon: url.map { FileIcons.icon(forFile: $0.path(percentEncoded: false), size: QuitAppsModel.iconSize) })
         }
     }
 }

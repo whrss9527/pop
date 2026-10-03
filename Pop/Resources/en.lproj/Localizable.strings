@@ -3206,3 +3206,5 @@
 "松开就不退出" = "Let go to keep it open";
 "不按就不退出" = "Otherwise it stays open";
 "新插件" = "New plugin";
+"（太长了，这里只显示前面一部分；复制、替换原文用的是全部）" = "(Too long to show in full. Copy and Replace use all of it.)";
+"正在看哪些文件要转…" = "Checking which files need converting…";

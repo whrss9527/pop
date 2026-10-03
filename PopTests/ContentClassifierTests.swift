@@ -137,4 +137,47 @@ final class ContentClassifierTests: XCTestCase {
         let b = try XCTUnwrap(pretty.range(of: "\"b\"")?.lowerBound)
         XCTAssertLessThan(a, b)
     }
+
+    /// 很长的文字在后台识别，字数和每个功能能不能处理也在后台看好，圆盘、分发规则直接用
+    func testLongTextIsCheckedOffMain() async throws {
+        let text = "[" + String(repeating: "{\"name\": \"Pop\", \"items\": [1, 2, 3]},\n", count: 4000) + "{}]"
+        XCTAssertGreaterThan(text.utf8.count, ContentClassifier.longTextBytes)
+        let json = PluginInfo(id: "test.json", name: "JSON", symbol: "curlybraces", summary: "", accepts: [.json])
+        let yaml = PluginInfo(id: "test.yaml", name: "YAML", symbol: "doc", summary: "", accepts: [.text], check: .yamlOrJSON)
+        let short = PluginInfo(id: "test.short", name: "短文字", symbol: "textformat", summary: "", accepts: [.text], maxLength: 100)
+        let image = PluginInfo(id: "test.image", name: "图片", symbol: "photo", summary: "", accepts: [.image])
+
+        let content = await ContentClassifier.classifyOffMain(.text(text), catalog: [json, yaml, short, image])
+        XCTAssertTrue(content.kinds.contains(.json))
+        let checked = try XCTUnwrap(content.checked)
+        XCTAssertEqual(checked.characterCount, text.count)
+        XCTAssertEqual(checked.handled, ["test.json": true, "test.yaml": true, "test.short": false, "test.image": false])
+        XCTAssertTrue(json.canHandle(content))
+        XCTAssertTrue(yaml.canHandle(content))
+        XCTAssertFalse(short.canHandle(content))
+        XCTAssertFalse(image.canHandle(content))
+        XCTAssertEqual(content.summary, "JSON")
+        // 没在 catalog 里的功能照旧当场看
+        let other = PluginInfo(id: "test.other", name: "别的", symbol: "circle", summary: "", accepts: [.text], minLength: 10)
+        XCTAssertTrue(other.canHandle(content))
+    }
+
+    /// 一般长度的文字、文件照旧当场识别，不在后台另看
+    func testShortContentIsClassifiedOnTheSpot() async {
+        let text = await ContentClassifier.classifyOffMain(.text("Hello, how are you doing today?"), catalog: [])
+        XCTAssertNil(text.checked)
+        XCTAssertEqual(text, ContentClassifier.classify(.text("Hello, how are you doing today?")))
+        let files = await ContentClassifier.classifyOffMain(.files([URL(fileURLWithPath: "/tmp/a.png")]), catalog: [])
+        XCTAssertNil(files.checked)
+        XCTAssertEqual(files.kinds, [.files, .imageFile])
+    }
+
+    /// 很长的普通文字：圆盘中间显示的字数是后台数好的
+    func testLongTextSummaryUsesTheCountedLength() async {
+        let text = String(repeating: "今天天气很好，我们出去走走吧。", count: 3000)
+        let content = await ContentClassifier.classifyOffMain(.text(text), catalog: [])
+        XCTAssertEqual(content.checked?.characterCount, text.count)
+        // 数字按界面语言的写法（45,000）
+        XCTAssertEqual(content.summary, String(localized: "\(text.count) 字"))
+    }
 }

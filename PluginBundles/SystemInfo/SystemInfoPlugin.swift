@@ -24,7 +24,9 @@ struct SystemInfoPlugin: PopPlugin {
                           accepts: [])
 
     @MainActor func run(_ content: ClassifiedContent, context: PluginContext) async -> PluginOutcome {
-        let report = SystemInfo.read()
+        let disk = await runInBackground { SystemInfo.startupDisk() }
+        var report = SystemInfo.read(includingDisk: false)
+        report.disk = disk
         return .present(PluginPresentation { session in
             let model = SystemInfoModel(report: report)
             session.showCard(SystemInfoView(model: model,

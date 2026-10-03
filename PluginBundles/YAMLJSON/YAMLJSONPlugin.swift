@@ -16,6 +16,12 @@ struct YAMLJSONPlugin: PopPlugin {
 
     @MainActor func run(_ content: ClassifiedContent, context: PluginContext) async -> PluginOutcome {
         guard let text = content.text else { return .failure(String(localized: "没有选中文字")) }
+        // 几十万字的转换要好一会儿，放在后台
+        return await runInBackground { Self.convert(text) }
+    }
+
+    /// 在后台转换
+    static func convert(_ text: String) -> PluginOutcome {
         if JSONFormatter.isJSON(text) {
             guard let value = OrderedJSON.parse(text) else { return .failure(String(localized: "不是合法的 JSON")) }
             let yaml = YAMLConverter.yaml(from: value)

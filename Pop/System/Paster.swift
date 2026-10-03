@@ -51,17 +51,47 @@ enum PasteboardWriter {
     static func copy(png: Data) {
         let pasteboard = NSPasteboard.general
         pasteboard.clearContents()
-        pasteboard.setData(png, forType: .png)
-        // 有些 App 只认 TIFF
-        if let tiff = NSImage(data: png)?.tiffRepresentation {
-            pasteboard.setData(tiff, forType: .tiff)
+        let item = NSPasteboardItem()
+        item.setData(png, forType: .png)
+        // 有些 App 只认 TIFF：别的 App 来要的时候才转。长截图转成不压缩的 TIFF 有几百 MB，复制时就转要卡好一会儿
+        let provider = TIFFProvider(png: png)
+        if item.setDataProvider(provider, forTypes: [.tiff]) {
+            TIFFProvider.current = provider
         }
+        pasteboard.writeObjects([item])
     }
 
     static func copy(files: [URL]) {
         let pasteboard = NSPasteboard.general
         pasteboard.clearContents()
         pasteboard.writeObjects(files as [NSURL])
+    }
+}
+
+/// 别的 App 来要 TIFF 时才从 PNG 转（PasteboardWriter.copy(png:)）
+final class TIFFProvider: NSObject, NSPasteboardItemDataProvider {
+    /// 剪贴板上现在这张图的：剪贴板不替我们留着，换了内容（pasteboardFinishedWithDataProvider）再放掉
+    @MainActor static var current: TIFFProvider?
+
+    private let png: Data
+
+    init(png: Data) {
+        self.png = png
+    }
+
+    func pasteboard(_ pasteboard: NSPasteboard?, item: NSPasteboardItem, provideDataForType type: NSPasteboard.PasteboardType) {
+        guard type == .tiff, let tiff = NSImage(data: png)?.tiffRepresentation else { return }
+        item.setData(tiff, forType: .tiff)
+    }
+
+    func pasteboardFinishedWithDataProvider(_ pasteboard: NSPasteboard) {
+        DispatchQueue.main.async { [self] in
+            MainActor.assumeIsolated {
+                if Self.current === self {
+                    Self.current = nil
+                }
+            }
+        }
     }
 }
 
@@ -94,38 +124,42 @@ enum KeySimulator {
 /// 把内容粘贴到当前的前台 App（写剪贴板 + 模拟 ⌘V）。调用前要先收起 Pop 的浮窗，让键盘焦点回到原来的 App。
 @MainActor
 enum Paster {
+    /// 替换原文的几步按顺序在这里做：连着替换两次时，第二次等第一次把剪贴板还原以后再存剪贴板
+    private nonisolated static let queue = DispatchQueue(label: "Pop.Paster", qos: .userInitiated)
+
     /// 用一段文字替换原来 App 里选中的内容。粘贴完把剪贴板恢复原样，不影响用户自己复制的东西。
     static func replaceSelection(with text: String) {
-        paste(restoringPrevious: true) { pasteboard in
+        PasteboardGuard.shared.begin()
+        queue.async {
+            let pasteboard = NSPasteboard.general
+            // 存下剪贴板原来的内容。别的 App 延后提供的内容（表格、大图）要等它给，所以不在主线程上存
+            let snapshot = PasteboardSnapshot(pasteboard)
+            pasteboard.clearContents()
             pasteboard.setString(text, forType: .string)
+            // 标记成临时内容，其他剪贴板工具也不会记录
+            pasteboard.setData(Data(), forType: PasteboardSnapshot.transientType)
+            Self.pressPaste()
+            // 目标 App 收到 ⌘V 后才去读剪贴板，等一会儿再还原
+            Thread.sleep(forTimeInterval: 0.5)
+            snapshot.restore(to: pasteboard)
+            PasteboardGuard.shared.end(changeCount: pasteboard.changeCount)
         }
     }
 
-    /// 写入剪贴板并粘贴。restoringPrevious 为 false 时，粘贴的内容会留在剪贴板里（剪贴板历史就是这样用的）。
-    static func paste(restoringPrevious: Bool, write: (NSPasteboard) -> Void) {
+    /// 写入剪贴板并粘贴，粘贴的内容留在剪贴板里（剪贴板历史就是这样用的）。
+    static func paste(write: (NSPasteboard) -> Void) {
         let pasteboard = NSPasteboard.general
-        let snapshot = restoringPrevious ? PasteboardSnapshot(pasteboard) : nil
-        if restoringPrevious {
-            PasteboardGuard.shared.begin()
-        }
         pasteboard.clearContents()
         write(pasteboard)
-        if restoringPrevious {
-            // 标记成临时内容，其他剪贴板工具也不会记录
-            pasteboard.setData(Data(), forType: PasteboardSnapshot.transientType)
+        DispatchQueue.global(qos: .userInitiated).async {
+            Self.pressPaste()
         }
-        DispatchQueue.global(qos: .userInitiated).asyncAfter(deadline: .now() + 0.05) {
-            KeySimulator.waitForModifierRelease(ignoring: .maskCommand, timeout: 0.5)
-            KeySimulator.pressCommand(kVK_ANSI_V)
-            guard let snapshot else { return }
-            // 目标 App 收到 ⌘V 后才去读剪贴板，等一会儿再还原
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-                MainActor.assumeIsolated {
-                    let general = NSPasteboard.general
-                    snapshot.restore(to: general)
-                    PasteboardGuard.shared.end(changeCount: general.changeCount)
-                }
-            }
-        }
+    }
+
+    /// 稍等浮窗收起、键盘焦点回到原来的 App，再按 ⌘V
+    private nonisolated static func pressPaste() {
+        Thread.sleep(forTimeInterval: 0.05)
+        KeySimulator.waitForModifierRelease(ignoring: .maskCommand, timeout: 0.5)
+        KeySimulator.pressCommand(kVK_ANSI_V)
     }
 }

@@ -17,6 +17,23 @@ enum TextRecognizer {
         return CGImageSourceCreateImageAtIndex(source, 0, nil)
     }
 
+    /// 在后台读选中的图片文件并解开：iCloud 里没下载下来的要先下载，网络上的文件夹要等，大图解开也要一会儿；
+    /// 解开的留在图里，之后在主线程上画不用再解
+    static func decodedImage(contentsOf url: URL) async -> CGImage? {
+        await runInBackground {
+            guard let source = CGImageSourceCreateWithURL(url as CFURL, nil) else { return nil }
+            return CGImageSourceCreateImageAtIndex(source, 0, [kCGImageSourceShouldCacheImmediately: true] as CFDictionary)
+        }
+    }
+
+    /// 在后台解开图片数据（同上）
+    static func decodedImage(from data: Data) async -> CGImage? {
+        await runInBackground {
+            guard let source = CGImageSourceCreateWithData(data as CFData, nil) else { return nil }
+            return CGImageSourceCreateImageAtIndex(source, 0, [kCGImageSourceShouldCacheImmediately: true] as CFDictionary)
+        }
+    }
+
     /// 用 Vision 离线识别图片里的文字（中英日韩），按行返回。
     static func recognize(_ image: CGImage) async -> Result<String, PluginRunError> {
         await runInBackground {
@@ -60,7 +77,7 @@ struct OCRPlugin: PopPlugin {
         if case .image(let data) = content.selection {
             image = TextRecognizer.cgImage(from: data)
         } else if let url = content.files.first {
-            image = TextRecognizer.cgImage(contentsOf: url)
+            image = await TextRecognizer.decodedImage(contentsOf: url)
         } else {
             image = nil
         }
@@ -167,10 +184,11 @@ struct AnnotatePlugin: PopPlugin {
         if case .image(let image) = content.selection {
             data = image
         } else if content.kinds.contains(.imageFile), let url = content.files.first {
-            data = try? Data(contentsOf: url)
+            // 读文件放在后台：iCloud 里没下载下来的要先下载
+            data = await runInBackground { try? Data(contentsOf: url) }
         }
         if let data {
-            guard let image = TextRecognizer.cgImage(from: data) else { return .failure(String(localized: "无法读取图片")) }
+            guard let image = await TextRecognizer.decodedImage(from: data) else { return .failure(String(localized: "无法读取图片")) }
             AnnotationWindowController.present(ScreenCapture.Capture(image: image, png: data), near: anchor)
             return .done(toast: nil)
         }
@@ -200,12 +218,13 @@ struct PinPlugin: PopPlugin {
             return board.pin(imageData: data, around: anchor) ? .done(toast: nil) : .failure(String(localized: "无法读取图片"))
         }
         if content.kinds.contains(.imageFile) {
-            // 选中了几张图片：错开一点依次贴出来
+            // 选中了几张图片：错开一点依次贴出来。读文件放在后台：iCloud 里没下载下来的要先下载
+            let files = Array(content.files.prefix(5))
+            let images = await runInBackground { files.map { try? Data(contentsOf: $0) } }
             var pinned = 0
-            for (index, url) in content.files.prefix(5).enumerated() {
+            for (index, data) in images.enumerated() {
                 let offset = CGFloat(index) * 28
-                if let data = try? Data(contentsOf: url),
-                   board.pin(imageData: data, around: CGPoint(x: anchor.x + offset, y: anchor.y - offset)) {
+                if let data, board.pin(imageData: data, around: CGPoint(x: anchor.x + offset, y: anchor.y - offset)) {
                     pinned += 1
                 }
             }

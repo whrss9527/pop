@@ -22,6 +22,9 @@ final class QuitAppsModel: ObservableObject {
         case stuck
     }
 
+    /// 列表里图标的大小（点）
+    nonisolated static let iconSize: CGFloat = 24
+
     /// 退出或强制退出这个进程；返回 false 表示没能发出去（比如已经退出了）
     typealias Terminate = @MainActor (_ pid: pid_t, _ force: Bool) -> Bool
     typealias IsRunning = @MainActor (_ pid: pid_t) -> Bool
@@ -222,7 +225,7 @@ struct QuitAppsView: View {
                         .foregroundStyle(.secondary)
                 }
             }
-            .frame(width: 24, height: 24)
+            .frame(width: QuitAppsModel.iconSize, height: QuitAppsModel.iconSize)
             Text(row.entry.name)
                 .lineLimit(1)
                 .truncationMode(.tail)

@@ -11,6 +11,7 @@ final class EmojiSymbolsEntry: NSObject, PopPluginBundle {
     @MainActor static func didLoad(_ host: PluginHost.Registrar) {
         // CI 截图：搜「笑」，选中第一个
         host.addDemoScene(PluginHost.DemoScene(name: "emojiSymbols", after: "pdfPages", order: 20, delay: 1.4, hold: 0, show: { demo in
+            await EmojiSymbols.prepare(query: EmojiSymbolsPlugin.demoQuery, scales: EmojiSymbolsPlugin.screenScales())
             demo.overlay.showCard(EmojiSymbolsView(model: EmojiSymbolsPlugin.demoModel(), onClose: {}), anchor: demo.center)
             return demo.cardRegion
         }))
@@ -26,7 +27,9 @@ struct EmojiSymbolsPlugin: PopPlugin {
     static let maxQueryLength = 20
 
     @MainActor func run(_ content: ClassifiedContent, context: PluginContext) async -> PluginOutcome {
-        let model = EmojiSymbolsModel(query: Self.query(from: content.text))
+        let query = Self.query(from: content.text)
+        await EmojiSymbols.prepare(query: query, scales: Self.screenScales())
+        let model = EmojiSymbolsModel(query: query)
         model.keepsSelection = Self.keepsSelection(content.text)
         return .present(PluginPresentation { session in
             model.onInsert = { session.perform(.replace($0)) }
@@ -43,18 +46,26 @@ struct EmojiSymbolsPlugin: PopPlugin {
         return text
     }
 
+    /// 连着的几块屏幕各是几倍屏（1 倍屏、2 倍屏用的是表情字体里不同大小的图）
+    @MainActor static func screenScales() -> [CGFloat] {
+        let scales = Set(NSScreen.screens.map(\.backingScaleFactor))
+        return scales.isEmpty ? [2] : scales.sorted()
+    }
+
     /// 选中了一大段文字（没拿来搜）：插入会把它整个换掉，所以只复制
     static func keepsSelection(_ text: String?) -> Bool {
         let selected = text?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
         return !selected.isEmpty && query(from: text).isEmpty
     }
 
+    /// 演示里搜的（演示的示例内容不翻译）
+    static let demoQuery = "笑"
+
     /// 演示用：搜「笑」
     @MainActor static func demoModel() -> EmojiSymbolsModel {
         let suite = "PopEmojiSymbolsDemo"
         let defaults = UserDefaults(suiteName: suite) ?? .standard
         defaults.removePersistentDomain(forName: suite)
-        // 演示的示例内容不翻译
-        return EmojiSymbolsModel(query: "笑", defaults: defaults)
+        return EmojiSymbolsModel(query: demoQuery, defaults: defaults)
     }
 }

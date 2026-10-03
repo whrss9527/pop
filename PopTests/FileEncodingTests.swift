@@ -87,10 +87,15 @@ final class FileEncodingTests: XCTestCase {
         XCTAssertEqual(rows.map(\.lineEnding), [.crlf, .lf])
         XCTAssertEqual(rows[0].text.map { TextEncodingTools.firstLine($0, limit: 8) }, "这是一个用记事本…")
         let model = FileEncodingModel(rows: rows, target: .utf8, lines: .keep)
+        // 要转哪些在后台算，算好以前这么说
+        XCTAssertEqual(model.summary, "正在看哪些文件要转…")
+        await model.refreshed()
+        XCTAssertFalse(model.isRefreshing)
         // UTF-8 的那个不用转
         XCTAssertEqual(model.pending, [gbkFile])
         XCTAssertEqual(model.summary, "会把 1 个文件转成 UTF-8，原来的内容记着，转完可以撤销")
         model.target = .utf8BOM
+        await model.refreshed()
         XCTAssertEqual(model.pending, [gbkFile, utf8File])
         XCTAssertTrue(model.summary.hasPrefix("带 BOM 的 UTF-8 用 Excel 打开 CSV 不会乱码；"))
         model.target = .utf8
@@ -112,18 +117,21 @@ final class FileEncodingTests: XCTestCase {
     }
 
     @MainActor
-    func testReadingWithAnotherEncoding() throws {
+    func testReadingWithAnotherEncoding() async throws {
         let gbk = try XCTUnwrap(TextEncodingTools.encode(chinese, as: .gb18030))
         let row = FileEncodingModel.Row(url: folder.appending(path: "a.txt"), original: gbk, source: .gb18030)
         let model = FileEncodingModel(rows: [row], target: .utf8, lines: .keep)
+        await model.refreshed()
         XCTAssertEqual(model.pending.count, 1)
         // 按 UTF-8 读不出来：这一行不转
         model.setSource(.utf8, for: row)
         XCTAssertEqual(model.rows[0].problem, "按 UTF-8 读不出来")
+        await model.refreshed()
         XCTAssertEqual(model.pending, [])
         XCTAssertEqual(model.summary, "选中的文件已经是这种编码和换行了")
         model.setSource(.gb18030, for: row)
         XCTAssertNil(model.rows[0].problem)
+        await model.refreshed()
         XCTAssertEqual(model.pending.count, 1)
         // 认不出编码的文件
         XCTAssertEqual(FileEncodingModel.Row(url: folder.appending(path: "b.txt"), original: Data(), source: nil).problem, "认不出是什么编码")
