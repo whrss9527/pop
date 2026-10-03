@@ -27,6 +27,29 @@ final class HangWatchdogTests: XCTestCase {
         XCTAssertEqual(Double(longest[1]) ?? 0, stalledAt, accuracy: 0.2)
     }
 
+    /// 卡了 1 秒还没缓过来时先写一行「stall 开始的时间戳」，缓过来以后照样写 hang 行
+    func testNoticesALongStallWhileItLasts() async throws {
+        let path = FileManager.default.temporaryDirectory.appending(path: "pop-stall-\(UUID().uuidString).log").path(percentEncoded: false)
+        addTeardownBlock { try? FileManager.default.removeItem(atPath: path) }
+        let watchdog = HangWatchdog(path: path)
+        watchdog.start()
+        defer { watchdog.stop() }
+        try await Task.sleep(for: .milliseconds(200))
+
+        // 比 1 秒多留些余量：机器忙的时候，检测的线程发空任务、看等了多久都会晚一点
+        blockMainThread(for: 1.5)
+        try await Task.sleep(for: .milliseconds(300))
+
+        let lines = try String(contentsOfFile: path, encoding: .utf8).split(separator: "\n").map { $0.split(separator: " ") }
+        let stalls = lines.filter { $0.first == "stall" }
+        let hangs = lines.filter { $0.first == "hang" }
+        XCTAssertEqual(stalls.count, 1)
+        let longest = try XCTUnwrap(hangs.max { (Double($0[2]) ?? 0) < (Double($1[2]) ?? 0) })
+        XCTAssertGreaterThanOrEqual(Double(longest[2]) ?? 0, 1.2)
+        // stall 行记的是同一次卡住开始的时间
+        XCTAssertEqual(Double(stalls[0][1]) ?? 0, Double(longest[1]) ?? -1, accuracy: 0.001)
+    }
+
     /// 同步地卡住主线程（在 async 的测试里不能直接调用 Thread.sleep）
     private func blockMainThread(for seconds: TimeInterval) {
         Thread.sleep(forTimeInterval: seconds)

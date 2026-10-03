@@ -4,10 +4,13 @@ import Foundation
 ///
 /// 后台每 50 毫秒往主线程放一个空任务，看主线程多久才做到：超过 0.25 秒就算卡了一次。卡完以后写一行
 /// 「hang 开始的时间戳 卡了几秒」：演示模式写进 POP_DEMO_LOG（和演示步骤在一起，截图脚本按步骤列出来），
-/// 否则写进 POP_HANG_LOG。平时不开，菜单栏 App 不该一秒醒来二十次。
+/// 否则写进 POP_HANG_LOG。卡了 1 秒还没缓过来时先写一行「stall 开始的时间戳」，截图脚本看到就去采样主线程在忙什么。
+/// 平时不开，菜单栏 App 不该一秒醒来二十次。
 final class HangWatchdog: @unchecked Sendable {
     /// 主线程超过这么久没空就记下来
     static let threshold: TimeInterval = 0.25
+    /// 卡了这么久还没缓过来就先说一声（stall 行）
+    static let stallNotice: TimeInterval = 1.0
     private static let interval: DispatchTimeInterval = .milliseconds(50)
 
     private let path: String
@@ -18,6 +21,8 @@ final class HangWatchdog: @unchecked Sendable {
     private var activity: NSObjectProtocol?
     /// 发出去还没做到的那个空任务：什么时候发的（单调时钟、墙上时间）。只在 queue 上读写
     private var pending: (sent: UInt64, wall: TimeInterval)?
+    /// 这一次卡住已经写过 stall 行了。只在 queue 上读写
+    private var noticed = false
 
     init(path: String) {
         self.path = path
@@ -67,9 +72,16 @@ final class HangWatchdog: @unchecked Sendable {
         }
     }
 
-    /// 上一个空任务已经做到了就再发一个；还没做到就接着等（卡多久只记一次）
+    /// 上一个空任务已经做到了就再发一个；还没做到就接着等（卡多久只记一次），卡了 1 秒时先写一行 stall
     private func tick() {
-        guard pending == nil else { return }
+        if let pending {
+            let waited = TimeInterval(DispatchTime.now().uptimeNanoseconds &- pending.sent) / 1_000_000_000
+            if waited >= Self.stallNotice, !noticed {
+                noticed = true
+                LineLog.append(String(format: "stall %.3f", pending.wall), to: path)
+            }
+            return
+        }
         pending = (DispatchTime.now().uptimeNanoseconds, Date().timeIntervalSince1970)
         DispatchQueue.main.async { [weak self] in
             let arrived = DispatchTime.now().uptimeNanoseconds
@@ -82,6 +94,7 @@ final class HangWatchdog: @unchecked Sendable {
     private func answered(arrived: UInt64) {
         guard let pending else { return }
         self.pending = nil
+        noticed = false
         let waited = TimeInterval(arrived &- pending.sent) / 1_000_000_000
         guard waited >= Self.threshold else { return }
         LineLog.append(String(format: "hang %.3f %.3f", pending.wall, waited), to: path)
