@@ -64,6 +64,10 @@ final class FileEncodingModel: ObservableObject {
     @Published private(set) var phase = Phase.choosing
     /// 要转的（转出来和原来不一样的）；换选项时重新算一次，不在每次刷新界面时算
     @Published private(set) var pending: [URL] = []
+    /// 正在算要转哪些：每个文件都要整个重新编码一遍比一比，几十 MB 的文件要好一会儿，放在后台算；算好以前不能转
+    @Published private(set) var isRefreshing = false
+    private var refreshTask: Task<Void, Never>?
+    private var refreshGeneration = 0
 
     init(rows: [Row], target: TextEncodingTools.Encoding? = nil, lines: TextEncodingTools.LineTarget? = nil) {
         self.rows = rows
@@ -79,9 +83,28 @@ final class FileEncodingModel: ObservableObject {
     }
 
     private func refresh() {
-        pending = rows.filter { row in
-            Self.converted(row, to: target, lines: lines).map { $0 != row.original } ?? false
-        }.map(\.url)
+        refreshGeneration += 1
+        let generation = refreshGeneration
+        let rows = rows
+        let target = target
+        let lines = lines
+        isRefreshing = true
+        refreshTask = Task {
+            let changed = await runInBackground {
+                rows.filter { row in
+                    Self.converted(row, to: target, lines: lines).map { $0 != row.original } ?? false
+                }.map(\.url)
+            }
+            // 算的时候又换了选项：用后来那一次的
+            guard generation == refreshGeneration else { return }
+            pending = changed
+            isRefreshing = false
+        }
+    }
+
+    /// 等这次算完（测试用）
+    func refreshed() async {
+        await refreshTask?.value
     }
 
     /// 读文件、认编码（在后台调用）
@@ -103,6 +126,7 @@ final class FileEncodingModel: ObservableObject {
     }
 
     var summary: String {
+        guard !isRefreshing else { return String(localized: "正在看哪些文件要转…") }
         let count = pending.count
         guard count > 0 else { return String(localized: "选中的文件已经是这种编码和换行了") }
         let note = target == .utf8BOM ? String(localized: "带 BOM 的 UTF-8 用 Excel 打开 CSV 不会乱码；") : ""
@@ -269,7 +293,7 @@ struct FileEncodingView: View {
             }
             Button("转换") { model.convert() }
                 .keyboardShortcut(.defaultAction)
-                .disabled(model.pending.isEmpty || model.phase == .working)
+                .disabled(model.pending.isEmpty || model.phase == .working || model.isRefreshing)
         }
     }
 
