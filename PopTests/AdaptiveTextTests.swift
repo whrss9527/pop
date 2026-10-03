@@ -17,4 +17,15 @@ final class AdaptiveTextTests: XCTestCase {
         XCTAssertTrue(shown.hasSuffix("（太长了，这里只显示前面一部分；复制、替换原文用的是全部）"))
         XCTAssertLessThan(shown.count, AdaptiveText.displayLimit + 100)
     }
+
+    /// 长文字放进滚动区域：字多、行多都算长；很长的不用一个个数
+    func testLongTextScrolls() {
+        XCTAssertFalse(AdaptiveText.isLong("一行字"))
+        XCTAssertTrue(AdaptiveText.isLong(String(repeating: "字", count: 601)))
+        XCTAssertFalse(AdaptiveText.isLong(String(repeating: "字", count: 600)))
+        XCTAssertTrue(AdaptiveText.isLong(String(repeating: "一行\n", count: 15)))
+        XCTAssertFalse(AdaptiveText.isLong(String(repeating: "一行\n", count: 14)))
+        XCTAssertTrue(AdaptiveText.isLong(String(repeating: "一行\n", count: 7), compact: true))
+        XCTAssertTrue(AdaptiveText.isLong(String(repeating: "{\"a\": 1}\n", count: 500_000)))
+    }
 }

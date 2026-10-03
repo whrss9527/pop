@@ -76,11 +76,10 @@ struct AdaptiveText: View {
     }
 
     static func isLong(_ text: String, compact: Bool = false) -> Bool {
-        let lines = text.filter { $0 == "\n" }.count
-        if compact {
-            return text.count > 240 || lines > 6
-        }
-        return text.count > 600 || lines > 14
+        let (characters, lines) = compact ? (240, 6) : (600, 14)
+        // 字节数是现成的：一个字最多 4 个字节，字节多到这个份上一定算长，几 MB 的文字不用一个个数
+        if text.utf8.count > characters * 4 { return true }
+        return text.count > characters || text.utf8.lazy.filter { $0 == 10 }.count > lines
     }
 }
 
