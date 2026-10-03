@@ -186,7 +186,9 @@ stop_sampling = threading.Event()
 
 def sample_stalls():
     """Pop 写了 stall 行（主线程卡了半秒还没缓过来）就用 sample 采样 3 秒：一次只采一个，每遍最多 16 个。
-    GitHub 的 runner 上用 sudo（不用输密码），本机 sudo 要密码时直接采（Pop 是同一个用户开的）"""
+    GitHub 的 runner 上用 sudo（不用输密码），本机 sudo 要密码时直接采（Pop 是同一个用户开的）。
+    sample 刚接上时要读几百个库的符号，很费 CPU：按 utility 的优先级跑，不和 Pop 抢；
+    第一个演示步骤之前（Pop 正在启动、装载一百多个插件包）不采，那时一抢，启动就要多卡一两秒"""
     use_sudo = shutil.which("sudo") is not None and subprocess.run(["sudo", "-n", "true"], capture_output=True).returncode == 0
     seen, running, taken = set(), None, 0
     while not stop_sampling.is_set():
@@ -198,13 +200,13 @@ def sample_stalls():
             if len(parts) < 2 or parts[0] != "stall" or parts[1] in seen:
                 continue
             seen.add(parts[1])
-            if running or taken >= 16:
+            if running or taken >= 16 or not any(l.startswith("ring ") for l in lines):
                 continue
             pid = subprocess.run(["pgrep", "-nx", "Pop"], capture_output=True, text=True).stdout.strip()
             if not pid:
                 continue
             base = os.path.join(samples, parts[1])
-            command = ["/usr/bin/sample", pid, "3", "10", "-mayDie", "-file", base + ".txt"]
+            command = ["/usr/sbin/taskpolicy", "-c", "utility", "/usr/bin/sample", pid, "3", "10", "-mayDie", "-file", base + ".txt"]
             with open(base + ".log", "w") as output:
                 running = subprocess.Popen((["sudo", "-n"] if use_sudo else []) + command, stdout=output, stderr=subprocess.STDOUT)
             taken += 1

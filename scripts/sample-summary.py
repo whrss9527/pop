@@ -77,10 +77,11 @@ def contains(frame, name):
 
 
 def main_thread(lines):
-    """主线程：线程那一行写着 com.apple.main-thread 的；主线程正在同步等别的队列时写的是那个队列，这时认 NSApplicationMain"""
+    """主线程：线程那一行写着 com.apple.main-thread 或者 Main Thread（macOS 26）的；
+    主线程正在同步做别的队列的事时写的是那个队列，这时认 -[NSApplication run]（Pop 自己调它，没有 NSApplicationMain）"""
     roots = threads(lines)
-    return (next((root for root in roots if "com.apple.main-thread" in root.title), None)
-            or next((root for root in roots if contains(root, "NSApplicationMain")), None))
+    return (next((root for root in roots if "com.apple.main-thread" in root.title or "Main Thread" in root.title), None)
+            or next((root for root in roots if contains(root, "-[NSApplication run]") or contains(root, "NSApplicationMain")), None))
 
 
 def mark_idle(frame, loops=0):
@@ -114,7 +115,7 @@ def summarize(text, depth=30):
         return ["报告里找不到主线程的调用图：" + ("调用图开头" if graph is not None else "报告最后几行")] + ["  " + line[:WIDTH] for line in shown]
     mark_idle(root)
     lines = []
-    if "com.apple.main-thread" not in root.title:
+    if "com.apple.main-thread" not in root.title and "Main Thread" not in root.title:
         lines.append(f"主线程这时在别的队列上：{root.title[:WIDTH]}")
     if root.busy <= 0:
         return lines + [f"采样 {root.count} 次，主线程都空着（开始采样时已经缓过来了）"]
