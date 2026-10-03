@@ -258,11 +258,14 @@ struct FormatJSONPlugin: PopPlugin {
                           summary: String(localized: "格式化或压缩选中的 JSON"), accepts: [.json])
 
     @MainActor func run(_ content: ClassifiedContent, context: PluginContext) async -> PluginOutcome {
-        guard let text = content.text, let pretty = JSONFormatter.prettyPrinted(text) else {
+        guard let text = content.text else { return .failure(String(localized: "不是合法的 JSON")) }
+        // 几 MB 的 JSON 格式化、压缩要好一会儿，放在后台
+        let (formatted, compact) = await runInBackground { (JSONFormatter.prettyPrinted(text), JSONFormatter.minified(text)) }
+        guard let pretty = formatted else {
             return .failure(String(localized: "不是合法的 JSON"))
         }
         var buttons: [CardButton] = []
-        if let minified = JSONFormatter.minified(text) {
+        if let minified = compact {
             buttons.append(CardButton(title: String(localized: "复制压缩版"), action: .copy(minified)))
         }
         return .card(ResultCard(title: String(localized: "JSON 格式化"), body: pretty, monospaced: true,

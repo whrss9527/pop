@@ -49,8 +49,19 @@ struct AdaptiveText: View {
     /// 几段排在一起时（翻译对比），长文本的滚动区域矮一些
     var compact = false
 
+    /// 最多显示这么多字：几 MB 的文字（格式化好的大 JSON、XML）放进一个 Text 里，排版要好几秒，Pop 跟着卡住。
+    /// 卡片上的复制、替换原文用的还是全部
+    static let displayLimit = 100_000
+
+    /// 显示的文字：太长时只留前面的，后面说一句
+    static func displayed(_ text: String) -> String {
+        // UTF-8 的字节数是现成的，先用它粗看一下，短的不用数字数
+        guard text.utf8.count > displayLimit, text.count > displayLimit else { return text }
+        return String(text.prefix(displayLimit)) + "\n…\n" + String(localized: "（太长了，这里只显示前面一部分；复制、替换原文用的是全部）")
+    }
+
     var body: some View {
-        let content = Text(text)
+        let content = Text(Self.displayed(text))
             .font(monospaced ? .system(size: 12, design: .monospaced) : .body)
             .textSelection(.enabled)
             .frame(maxWidth: .infinity, alignment: .leading)

@@ -15,9 +15,12 @@ struct FormatXMLPlugin: PopPlugin {
                           maxLength: 2_000_000, check: .xml)
 
     @MainActor func run(_ content: ClassifiedContent, context: PluginContext) async -> PluginOutcome {
-        guard let text = content.text, let pretty = XMLFormatter.prettyPrinted(text) else { return .failure(String(localized: "不是合法的 XML")) }
+        guard let text = content.text else { return .failure(String(localized: "不是合法的 XML")) }
+        // 最多 2 MB 的 XML 格式化、压缩要好一会儿，放在后台
+        let (formatted, compact) = await runInBackground { (XMLFormatter.prettyPrinted(text), XMLFormatter.minified(text)) }
+        guard let pretty = formatted else { return .failure(String(localized: "不是合法的 XML")) }
         var buttons: [CardButton] = []
-        if let minified = XMLFormatter.minified(text) {
+        if let minified = compact {
             buttons.append(CardButton(title: String(localized: "复制压缩版"), action: .copy(minified)))
         }
         return .card(ResultCard(title: String(localized: "XML 格式化"), body: pretty, monospaced: true, copyText: pretty, replaceText: pretty,
