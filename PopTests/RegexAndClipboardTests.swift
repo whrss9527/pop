@@ -127,6 +127,39 @@ final class ClipboardHistoryModelTests: XCTestCase {
         model.toggleMark(first)
         XCTAssertTrue(model.marked.isEmpty)
     }
+
+    /// 打字搜索在数据库的队列上查，查好了再换列表；连着打字时用最后一次的结果
+    func testSearchUpdatesTheListWhenDone() async throws {
+        let store = ClipboardStore(directory: directory)
+        let start = Date(timeIntervalSince1970: 1_000_000)
+        XCTAssertNotNil(store.add(ClipboardCapture(kind: .text, text: "第一条"), at: start))
+        XCTAssertNotNil(store.add(ClipboardCapture(kind: .text, text: "第二条"), at: start + 1))
+        XCTAssertNotNil(store.add(ClipboardCapture(kind: .files, text: "/tmp/第二.txt"), at: start + 2))
+        let model = ClipboardHistoryModel(service: ClipboardService(store: store))
+        XCTAssertEqual(model.items.count, 3)
+
+        model.query = "第"
+        model.query = "第二"
+        try await waitUntil { model.items.count == 2 }
+        XCTAssertEqual(model.items.map(\.text), ["/tmp/第二.txt", "第二条"])
+        // 按类型筛不用再查
+        model.filter = .text
+        XCTAssertEqual(model.items.map(\.text), ["第二条"])
+        model.filter = .all
+        model.query = ""
+        try await waitUntil { model.items.count == 3 }
+    }
+
+    private func waitUntil(timeout: TimeInterval = 5, _ condition: () -> Bool) async throws {
+        let deadline = Date().addingTimeInterval(timeout)
+        while !condition() {
+            guard Date() < deadline else {
+                XCTFail("等了 \(timeout) 秒还没查好")
+                return
+            }
+            try await Task.sleep(for: .milliseconds(20))
+        }
+    }
 }
 
 final class LinkCleaningTests: XCTestCase {
