@@ -105,6 +105,9 @@ final class SettingsWindowController: NSObject, NSWindowDelegate {
 
     private func makeWindow() -> NSWindow {
         let controller = NSHostingController(rootView: makeContent(navigation))
+        // 窗口大小是固定的（SettingsRootView.size），不让 SwiftUI 跟着内容算窗口的最小、最大尺寸：
+        // 算一次要把整页排一遍，「功能」页一百多行，每换一页都要等一秒多
+        controller.sizingOptions = []
         let window = NSWindow(contentViewController: controller)
         window.title = String(localized: "Pop 设置")
         window.styleMask = [.titled, .closable, .miniaturizable]
