@@ -615,8 +615,8 @@ struct DirectRule: Codable, Equatable, Identifiable {
 }
 
 struct TranslationSettings: Codable, Equatable {
-    /// 外文译为
-    var foreignTarget = "zh-Hans"
+    /// 外文译为：默认是界面语言，中文界面译成简体中文，英文界面译成英文
+    var foreignTarget = TranslationSettings.interfaceLanguage
     /// 中文译为
     var chineseTarget = "en"
     /// 翻译卡片默认用的引擎
@@ -630,6 +630,11 @@ struct TranslationSettings: Codable, Equatable {
         foreignTarget = c.lenient(.foreignTarget, default: d.foreignTarget)
         chineseTarget = c.lenient(.chineseTarget, default: d.chineseTarget)
         engine = c.lenient(.engine, default: d.engine)
+    }
+
+    /// 界面用的语言对应的翻译目标：只有中文和英文两套界面
+    static var interfaceLanguage: String {
+        Bundle.main.preferredLocalizations.first?.hasPrefix("zh") == true ? "zh-Hans" : "en"
     }
 }
 

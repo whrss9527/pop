@@ -192,7 +192,8 @@ class SyncTestCase(unittest.TestCase):
         self.tmp = Path(tempfile.mkdtemp())
         self.addCleanup(shutil.rmtree, self.tmp)
         self.root = self.tmp / "listing"
-        shutil.copytree(asc.LISTING, self.root)
+        # 仓库里的截图不算进来：要截图的测试自己用 screenshot_dir 做
+        shutil.copytree(asc.LISTING, self.root, ignore=shutil.ignore_patterns("screenshots"))
         # 仓库里各个版本的“此版本的新增内容”不算进来：测试自己决定有没有。
         for whats_new in self.root.glob("*/whats_new"):
             shutil.rmtree(whats_new)

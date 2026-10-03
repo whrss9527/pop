@@ -926,12 +926,23 @@ struct LanguagePackView: View {
         }
         .translationTask(configuration) { session in
             do {
+                // 用户同意下载以后就返回了，语言包（几百 MB）要在系统后台下完；
+                // 下完以前状态还是「未下载」，所以接着查，装好了才说已就绪
                 try await session.prepareTranslation()
-                await MainActor.run { message = String(localized: "语言包已就绪") }
+                await refresh()
+                if status != .installed {
+                    await MainActor.run { message = String(localized: "正在下载语言包，下完就能翻译（可能要几分钟）") }
+                    await waitUntilInstalled()
+                }
+                await MainActor.run {
+                    message = status == .installed
+                        ? String(localized: "语言包已就绪")
+                        : String(localized: "还没下完，系统会在后台接着下，下完就能翻译")
+                }
             } catch {
                 await MainActor.run { message = String(localized: "下载没有完成：\(error.localizedDescription)") }
+                await refresh()
             }
-            await refresh()
         }
         .onAppear(perform: startPendingDownload)
         .onChange(of: request.pendingAutoStart) { _, _ in
@@ -953,6 +964,16 @@ struct LanguagePackView: View {
         let source = Locale.Language(identifier: request.source)
         let target = Locale.Language(identifier: request.target)
         status = await LanguageAvailability().status(from: source, to: target)
+    }
+
+    /// 等系统在后台把语言包下完：每 3 秒查一次，最多等 15 分钟；关掉设置页时这个任务会被取消
+    private func waitUntilInstalled() async {
+        for _ in 0..<300 {
+            try? await Task.sleep(for: .seconds(3))
+            if Task.isCancelled { return }
+            await refresh()
+            if status == .installed { return }
+        }
     }
 
     private func startPendingDownload() {

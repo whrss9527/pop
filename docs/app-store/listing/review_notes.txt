@@ -1,10 +1,10 @@
-Pop is a free, open-source right-click toolbox for the Mac (github.com/whrss9527/pop). It has no Dock icon and no main window; it lives in the menu bar (the ◎ icon). No account or login, no in-app purchase, no user-generated content shared with others.
+Pop is a free, open-source right-click toolbox for the Mac (github.com/whrss9527/pop). It has no Dock icon and no main window; it lives in the menu bar (the ◎ icon). No account, no in-app purchase, no user content shared with others.
 
 1. SCREEN RECORDING
-A recording made on a Mac running the latest macOS is attached. It starts by launching Pop, shows granting Accessibility and folder access, then follows the steps in section 3.
+A recording made on macOS 26 is attached. It starts by launching Pop, shows granting Accessibility and folder access, then follows the steps in section 3.
 
 2. PURPOSE AND AUDIENCE
-For Mac users who do small tasks on selected text, images and files many times a day (translate, calculate, convert units or colors, read text in an image, convert an image). Instead of opening a separate app for each, they hold the right mouse button and move toward an action in a ring next to the pointer.
+For Mac users who do small tasks on selected text, images and files many times a day (translate, calculate, convert units or colors, read text in an image, convert an image). Instead of opening a separate app for each, they hold the right mouse button and pick an action from a ring next to the pointer.
 
 3. HOW TO TRY IT (no login or sample files needed)
 1) Launch Pop. Settings opens on General with a short guide.
@@ -12,9 +12,9 @@ For Mac users who do small tasks on selected text, images and files many times a
 3) Select text in any app and hold the right mouse button for about a quarter second. A ring of actions appears; keep holding, move toward an action and release. A short right click still opens the normal context menu.
 4) Select text in another language and hold the right button: Pop shows a translation (Apple's Translation framework; macOS may first download the language).
 5) Select "12*(3+4)" and hold the right button: Pop shows the result.
-6) Hold the right button over an empty area: tools such as screenshot text recognition, color picker and clipboard history (also Command-Shift-V).
-7) Select an image in Finder and hold the right button. The first time, Pop asks for access to the folder (the home folder is enough). Then Recognize Text reads the image and Image Convert saves a converted copy next to it.
-8) Settings → Features lists optional plugins; Install turns one on (all are inside the app).
+6) Hold the right button over an empty area: tools such as Screen OCR, Pick Color and Clipboard (history; also Command-Shift-V).
+7) Select an image in Finder and hold the right button. The first time, Pop asks for access to the folder (the home folder is enough). Then All Actions → Recognize Text reads the text in the image.
+8) Settings → Actions, or All Actions search, lists optional plugins, all inside the app; Install turns one on. Install Convert Images, then choose it for a selected image to save a converted copy next to it.
 
 4. EXTERNAL SERVICES
 None by default. Only when the user picks an action that needs one:

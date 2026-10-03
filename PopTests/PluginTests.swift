@@ -24,6 +24,21 @@ final class RouterTests: XCTestCase {
         XCTAssertEqual(decide("5 km"), .direct(pluginID: BuiltinPluginID.unitConvert))
     }
 
+    func testTextAlreadyInTargetLanguageShowsRing() {
+        var settings = AppSettings()
+        settings.translation.foreignTarget = "en"
+        // 英文界面选中英文：不用翻译，弹圆盘；别的外文照样直接翻译成英文
+        XCTAssertEqual(decide("Pop puts the tools you need right next to your pointer.", settings: settings), .ring)
+        XCTAssertEqual(decide("Le musée ouvre à neuf heures et ferme à dix-huit heures.", settings: settings),
+                       .direct(pluginID: BuiltinPluginID.translate))
+        settings.translation.foreignTarget = "en-GB"
+        XCTAssertEqual(decide("Pop puts the tools you need right next to your pointer.", settings: settings), .ring)
+        // 外文译成中文时英文还是外文
+        settings.translation.foreignTarget = "zh-Hans"
+        XCTAssertEqual(decide("Pop puts the tools you need right next to your pointer.", settings: settings),
+                       .direct(pluginID: BuiltinPluginID.translate))
+    }
+
     func testImageGoesToOCR() {
         let content = ContentClassifier.classify(.image(Data([0x89, 0x50])))
         XCTAssertEqual(Router.decide(content, settings: AppSettings(), catalog: catalog), .direct(pluginID: BuiltinPluginID.ocr))
