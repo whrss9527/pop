@@ -1,12 +1,13 @@
 name: CI
 
-# 推送代码和合并请求时：编译、单元测试、启动测试、一键更新的端到端测试，并给浮窗截图。
+# 每次推送（任何分支）：编译、单元测试、启动测试、一键更新的端到端测试，并给浮窗截图。
 # 推到 main 并且测试都通过后，CHANGELOG.md 最上面的版本还没有标签的话，
 # 就自动打标签、打包并发布正式版（调用 release.yml），已安装的 Pop 会提示更新。
+# 不用 pull_request 触发：合并请求显示的就是它分支上这次推送的结果；两个都开的话同一个提交要跑两遍，
+# macOS runner 排队的时间也翻倍。
 on:
   push:
     branches: ["**"]
-  pull_request:
   workflow_dispatch:
 
 concurrency:
