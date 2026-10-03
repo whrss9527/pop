@@ -355,11 +355,20 @@ enum Router {
         for rule in settings.rules where rule.enabled {
             guard let pluginID = rule.pluginID,
                   content.kinds.contains(rule.condition.kind),
+                  // 选中的外文本来就是要译成的语言（英文界面选中英文）：不直接翻译，弹圆盘
+                  !(rule.condition == .foreignText && isWritten(content, in: settings.translation.foreignTarget)),
                   settings.isInstalled(pluginID),
                   let info = catalog.first(where: { $0.id == pluginID }),
                   info.canHandle(content) else { continue }
             return .direct(pluginID: pluginID)
         }
         return .ring
+    }
+
+    /// 识别出的语种和 language 是同一种语言（只比语言，不管地区和文字写法）
+    static func isWritten(_ content: ClassifiedContent, in language: String) -> Bool {
+        guard let detected = content.language,
+              let code = Locale.Language(identifier: detected).languageCode else { return false }
+        return code == Locale.Language(identifier: language).languageCode
     }
 }
