@@ -11,6 +11,7 @@ final class EmojiSymbolsEntry: NSObject, PopPluginBundle {
     @MainActor static func didLoad(_ host: PluginHost.Registrar) {
         // CI 截图：搜「笑」，选中第一个
         host.addDemoScene(PluginHost.DemoScene(name: "emojiSymbols", after: "pdfPages", order: 20, delay: 1.4, hold: 0, show: { demo in
+            await EmojiSymbols.prepare()
             demo.overlay.showCard(EmojiSymbolsView(model: EmojiSymbolsPlugin.demoModel(), onClose: {}), anchor: demo.center)
             return demo.cardRegion
         }))
@@ -26,6 +27,7 @@ struct EmojiSymbolsPlugin: PopPlugin {
     static let maxQueryLength = 20
 
     @MainActor func run(_ content: ClassifiedContent, context: PluginContext) async -> PluginOutcome {
+        await EmojiSymbols.prepare()
         let model = EmojiSymbolsModel(query: Self.query(from: content.text))
         model.keepsSelection = Self.keepsSelection(content.text)
         return .present(PluginPresentation { session in

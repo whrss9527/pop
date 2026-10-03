@@ -134,6 +134,9 @@ final class AppController {
         MainMenu.install()
         // 老用户迁移到插件包，装上设置里要的、缺着的插件包（Pop 更新后换成对应的版本）
         pluginManager.start()
+        // 功能名、插件名的拼音在后台先算好：「全部功能」、设置里搜索第一次打开时不用等着转拼音
+        let names = registry.catalog.map(\.name) + PluginCatalog.all.map(\.name)
+        Task { await SearchText.prepare(names) }
 
         coordinator.openSettings = { [weak self] tab in
             self?.settingsWindow.show(tab: tab)

@@ -200,7 +200,10 @@ enum OverlayDemo {
             FileShelf.shared.hide()
             FileShelf.shared.clear()
             if let note = files.first(where: { $0.pathExtension == "txt" }) {
-                let request = OpenWithRequest(targets: [note], apps: OpenWith.applications(for: note))
+                // 和插件一样，在后台找能打开的 App、取好图标
+                let apps = await runInBackground { OpenWith.applications(for: note) }
+                await FileIcons.preload(apps.map { $0.path(percentEncoded: false) }, size: AppTile.iconSize)
+                let request = OpenWithRequest(targets: [note], apps: apps)
                 overlay.showCard(OpenWithCardView(request: request, onChoose: { _ in }, onClose: {}), anchor: center)
             }
             step("openWith")
@@ -696,6 +699,9 @@ enum OverlayDemo {
             await pause(min(scene.delay * unit, wait))
             let sceneUnit = quickSteps.contains(scene.name) ? min(unit, quickScale) : unit
             Motion.timeScale = sceneUnit
+            // 开始准备这一步：主线程卡在「X.start → X」之间的是这一步自己准备、弹出来的时候，
+            // 卡在「X → 下一步.start」之间的是它停在屏幕上、收起来的时候
+            Self.step(scene.name + ".start")
             if let region = await scene.show(context) {
                 logRegion(region == context.cardRegion ? region : region.insetBy(dx: -24, dy: -24), screen: context.screen)
             }

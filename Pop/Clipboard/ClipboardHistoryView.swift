@@ -39,6 +39,8 @@ final class ClipboardHistoryModel: ObservableObject {
         didSet { applyFilter(keepSelection: false) }
     }
     @Published private(set) var items: [ClipboardItem] = []
+    /// 来源 App 的图标（在后台取好的）
+    @Published private(set) var appIcons: [String: NSImage] = [:]
     /// 按 query 从数据库里查到的（还没按 filter 筛）
     private var found: [ClipboardItem] = []
     private var searchTask: Task<Void, Never>?
@@ -102,6 +104,18 @@ final class ClipboardHistoryModel: ObservableObject {
             selection = index
         } else {
             selection = min(keepSelection ? selection : 0, max(items.count - 1, 0))
+        }
+        loadAppIcons()
+    }
+
+    /// 列表里出现的来源 App 的图标在后台取好，取好了再画上
+    private func loadAppIcons() {
+        let needed = Set(items.compactMap(\.sourceApp)).subtracting(appIcons.keys)
+        guard !needed.isEmpty else { return }
+        Task { [weak self] in
+            let loaded = await AppIconCache.icons(for: needed)
+            guard let self, !loaded.isEmpty else { return }
+            self.appIcons.merge(loaded) { current, _ in current }
         }
     }
 
@@ -266,7 +280,8 @@ struct ClipboardHistoryView: View {
                 LazyVStack(spacing: 2) {
                     ForEach(Array(model.items.enumerated()), id: \.element.id) { index, item in
                         ClipboardRow(item: item, index: index, imageURL: model.service.store.imageURL(for: item),
-                                     markNumber: model.markNumber(of: item), matchedText: model.matchedImageText(for: item))
+                                     markNumber: model.markNumber(of: item), matchedText: model.matchedImageText(for: item),
+                                     appIcon: item.sourceApp.flatMap { model.appIcons[$0] })
                             .selectionHighlight(index == model.selection, in: selectionSpace)
                             .id(item.id)
                             .onTapGesture {
@@ -324,6 +339,8 @@ struct ClipboardRow: View {
     var markNumber: Int? = nil
     /// 搜索时在图片里找到的那段文字
     var matchedText: String? = nil
+    /// 从哪个 App 复制的（图标在后台取好以前是 nil）
+    var appIcon: NSImage? = nil
 
     var body: some View {
         HStack(alignment: .center, spacing: 10) {
@@ -343,10 +360,10 @@ struct ClipboardRow: View {
                         Image(systemName: "pin.fill")
                             .foregroundStyle(Color.orange)
                     }
-                    if let icon = item.sourceApp.flatMap(AppIconCache.icon(for:)) {
-                        Image(nsImage: icon)
+                    if let appIcon {
+                        Image(nsImage: appIcon)
                             .resizable()
-                            .frame(width: 14, height: 14)
+                            .frame(width: AppIconCache.size, height: AppIconCache.size)
                     }
                 }
                 Text(item.usedAt.formatted(.relative(presentation: .named)))
@@ -447,17 +464,20 @@ struct ClipboardThumbnail: View {
     }
 }
 
-/// App 图标查起来不算快，列表滚动时缓存一下。
-@MainActor
+/// 来源 App 的图标查起来不算快（要找到 App、读它包里的图标），在后台取好、按列表上的大小画好
 enum AppIconCache {
-    private static var icons: [String: NSImage] = [:]
+    static let size: CGFloat = 14
 
-    static func icon(for bundleID: String) -> NSImage? {
-        if let cached = icons[bundleID] {
-            return cached
+    /// 在后台取这些 App 的图标（取过的直接给）
+    static func icons(for bundleIDs: Set<String>) async -> [String: NSImage] {
+        await runInBackground {
+            var result: [String: NSImage] = [:]
+            for id in bundleIDs {
+                if let url = AppInfo.url(for: id) {
+                    result[id] = FileIcons.icon(forFile: url.path(percentEncoded: false), size: size)
+                }
+            }
+            return result
         }
-        guard let icon = AppInfo.icon(for: bundleID) else { return nil }
-        icons[bundleID] = icon
-        return icon
     }
 }

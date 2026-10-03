@@ -1,3 +1,4 @@
+import CoreText
 import Foundation
 @testable import Pop
 
@@ -201,6 +202,26 @@ enum EmojiSymbols {
         let syllables = latin.split(whereSeparator: { !$0.isLetter && !$0.isNumber }).map(String.init)
         guard !syllables.isEmpty else { return [] }
         return [syllables.joined(), String(syllables.compactMap(\.first))]
+    }
+
+    /// 打开卡片前在后台先把数据拆开（两千多个表情），再画一次表情把表情字体读进来（字体很大，第一次画表情时才读）：
+    /// 放在主线程上，第一次打开卡片要顿好一会儿
+    static func prepare() async {
+        await runInBackground {
+            _ = items.count
+            warmUpEmojiFont()
+        }
+    }
+
+    private static func warmUpEmojiFont() {
+        let font = CTFontCreateWithName("AppleColorEmoji" as CFString, 24, nil)
+        let text = NSAttributedString(string: "😀😂👋🐱🍎", attributes: [NSAttributedString.Key(kCTFontAttributeName as String): font])
+        let line = CTLineCreateWithAttributedString(text as CFAttributedString)
+        guard let context = CGContext(data: nil, width: 160, height: 32, bitsPerComponent: 8, bytesPerRow: 0,
+                                      space: CGColorSpaceCreateDeviceRGB(),
+                                      bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue) else { return }
+        context.textPosition = CGPoint(x: 0, y: 6)
+        CTLineDraw(line, context)
     }
 
     /// 在后台先把数据拆开、把拼音算好，打字时不用等

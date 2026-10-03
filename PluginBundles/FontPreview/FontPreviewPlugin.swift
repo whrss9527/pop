@@ -12,7 +12,9 @@ final class FontPreviewEntry: NSObject, PopPluginBundle {
     @MainActor static func didLoad(_ host: PluginHost.Registrar) {
         // CI 截图：一句诗用这台 Mac 上的中文字体显示
         host.addDemoScene(PluginHost.DemoScene(name: "fontPreview", after: "pdfPages", order: 9, delay: 1.4, hold: 0, show: { demo in
-            let model = FontPreviewModel(text: "落霞与孤鹜齐飞，秋水共长天一色", families: FontCatalog.installed())
+            // 和插件一样在后台列字体
+            let families = await runInBackground { FontCatalog.installed() }
+            let model = FontPreviewModel(text: "落霞与孤鹜齐飞，秋水共长天一色", families: families)
             model.size = 22
             demo.overlay.showCard(FontPreviewView(model: model, onCopy: { _ in }, onCopyImage: { _ in }, onReveal: { _ in }, onClose: {}),
                                   anchor: demo.center)
