@@ -156,6 +156,7 @@ if [ ${#PLUGINS[@]} -gt 0 ]; then
     exit 1
   fi
   echo "插件包都装载上了：${PLUGINS[*]}"
+  echo "启动时装载插件包用了：$(grep -oE 'loaded [0-9]+ plugins in [0-9]+ ms' <<< "$PLUGIN_LOG" | tail -1 || true)"
 fi
 
 pkill -x Pop || true

@@ -152,18 +152,37 @@ final class PluginBundles {
         return URL(fileURLWithPath: path, isDirectory: true)
     }
 
-    /// 启动时装载装好的插件包；只做一次
+    /// 启动时装载装好的插件包；只做一次。
+    /// 签名先在几个线程上一起查完（每个插件包都要把代码整个算一遍校验和，一个个查，插件包多的时候主线程要等挺久），
+    /// 再在主线程上依次装载。装载用了多久写进日志
     func loadInstalled() {
         guard !didLoadInstalled else { return }
         didLoadInstalled = true
+        let started = Date()
+        var urls: [(url: URL, external: Bool)] = []
         if let extra = Self.extraDirectory {
-            for url in Self.bundles(in: extra) {
-                _ = load(url, external: true)
-            }
+            urls += Self.bundles(in: extra).map { (url: $0, external: true) }
         }
-        for url in Self.bundles(in: Self.directory) {
-            _ = load(url)
+        urls += Self.bundles(in: Self.directory).map { (url: $0, external: false) }
+        checkedSignatures = Self.checkSignatures(urls.map { $0.url })
+        for item in urls {
+            _ = load(item.url, external: item.external)
         }
+        checkedSignatures = [:]
+        let milliseconds = Int(Date().timeIntervalSince(started) * 1000)
+        Self.log.notice("loaded \(self.loaded.count, privacy: .public) plugins in \(milliseconds, privacy: .public) ms")
+    }
+
+    /// 启动时一起查好的签名（插件包的位置 → 能不能装载），只在 loadInstalled 里用
+    private var checkedSignatures: [URL: Bool] = [:]
+
+    /// 在几个线程上一起查这些插件包的签名
+    nonisolated static func checkSignatures(_ urls: [URL]) -> [URL: Bool] {
+        let results = SignatureResults(count: urls.count)
+        DispatchQueue.concurrentPerform(iterations: urls.count) { index in
+            results.set(index, CodeSignature.isTrustedPlugin(urls[index]))
+        }
+        return Dictionary(zip(urls, results.values), uniquingKeysWith: { first, _ in first })
     }
 
     func isLoaded(_ id: String) -> Bool {
@@ -233,7 +252,7 @@ final class PluginBundles {
         }
         let build = Self.buildID(of: url)
         guard build == Self.appBuildID else { return .failure(.wrongBuild(build)) }
-        guard CodeSignature.isTrustedPlugin(url) else { return .failure(.untrusted) }
+        guard checkedSignatures[url] ?? CodeSignature.isTrustedPlugin(url) else { return .failure(.untrusted) }
         guard let bundle = Bundle(url: url) else { return .failure(.notAPlugin) }
         do {
             try bundle.loadAndReturnError()
@@ -245,5 +264,27 @@ final class PluginBundles {
         entry.didLoad(PluginHost.Registrar(owner: id))
         loaded.append(item)
         return .success(item)
+    }
+}
+
+/// 几个线程一起查签名时放结果的地方
+private final class SignatureResults: @unchecked Sendable {
+    private let lock = NSLock()
+    private var storage: [Bool]
+
+    init(count: Int) {
+        storage = Array(repeating: false, count: count)
+    }
+
+    func set(_ index: Int, _ trusted: Bool) {
+        lock.lock()
+        storage[index] = trusted
+        lock.unlock()
+    }
+
+    var values: [Bool] {
+        lock.lock()
+        defer { lock.unlock() }
+        return storage
     }
 }
