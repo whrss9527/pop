@@ -65,12 +65,12 @@ struct MenuShortcutsPlugin: PopPlugin {
             model.onRun = { item in Self.press(item, pid: pid, session: session) }
             Task { @MainActor [weak model] in
                 let nodes = await runInBackground { () -> [MenuShortcuts.Node] in
-                    let nodes = MenuShortcuts.read(pid: pid)
+                    let menus = MenuShortcuts.read(pid: pid)
                     // 搜索用的拼音也在后台算好：大的 App 有几百个菜单项，列出来时不用在主线程上一项项转
-                    for item in MenuShortcuts.flatten(nodes) {
+                    for item in MenuShortcuts.flatten(menus) {
                         _ = MenuShortcuts.searchKeys(for: item)
                     }
-                    return nodes
+                    return menus
                 }
                 guard let model, session.isCurrent else { return }
                 model.load(nodes)
