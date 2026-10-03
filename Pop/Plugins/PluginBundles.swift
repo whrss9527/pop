@@ -173,7 +173,7 @@ final class PluginBundles {
         Self.log.notice("loaded \(self.loaded.count, privacy: .public) plugins in \(milliseconds, privacy: .public) ms")
     }
 
-    /// 启动时一起查好的签名（插件包的位置 → 能不能装载），只在 loadInstalled 里用
+    /// 先查好的签名（插件包的位置 → 能不能装载）：启动时一起查的、装插件包时在后台查的
     private var checkedSignatures: [URL: Bool] = [:]
 
     /// 在几个线程上一起查这些插件包的签名
@@ -229,6 +229,14 @@ final class PluginBundles {
     /// 直接读 Info.plist，不经过 Bundle：Bundle 会按路径一直缓存着，同一个位置换成新的插件包后读到的还是旧的
     private nonisolated static func info(of url: URL) -> [String: Any] {
         NSDictionary(contentsOf: url.appendingPathComponent("Contents/Info.plist")) as? [String: Any] ?? [:]
+    }
+
+    /// 装一个刚下载（或者从 App 里拿）的插件包：签名先在后台查好（要把代码整个算一遍校验和），再在主线程上装载
+    func loadCheckingInBackground(_ url: URL) async -> Result<Loaded, LoadError> {
+        let trusted = await runInBackground { CodeSignature.isTrustedPlugin(url) }
+        checkedSignatures[url] = trusted
+        defer { checkedSignatures[url] = nil }
+        return load(url)
     }
 
     /// 检查并装载一个插件包。同一个 ID 已经装载过时直接返回那一个。
