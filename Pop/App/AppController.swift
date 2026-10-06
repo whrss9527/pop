@@ -134,6 +134,12 @@ final class AppController {
         MainMenu.install()
         // 老用户迁移到插件包，装上设置里要的、缺着的插件包（Pop 更新后换成对应的版本）
         pluginManager.start()
+        if ProcessInfo.processInfo.environment["POP_PLUGIN_DATA_DIR"] != nil {
+            let ring = RingViewModel(layout: settingsStore.settings.ring, catalog: registry.catalog,
+                                     installed: Set(settingsStore.settings.installedPlugins), content: nil)
+            let pending = ring.slots.filter { $0.pendingPackage != nil }.count
+            UpdateLog.info("插件回归 version=\(UpdateChecker.currentVersion) zip_loaded=\(PluginBundles.shared.isLoaded("zip")) pending=\(pending)")
+        }
         // 功能名、插件名的拼音在后台先算好：「全部功能」、设置里搜索第一次打开时不用等着转拼音
         let names = registry.catalog.map(\.name) + PluginCatalog.all.map(\.name)
         Task { await SearchText.prepare(names) }
@@ -237,6 +243,9 @@ final class AppController {
 
         updater.notify = { release in
             Notifier.shared.showUpdate(version: release.version)
+        }
+        updater.preparePlugins = { [weak manager = pluginManager] app, version in
+            try await manager?.prepareForUpdate(app: app, version: version)
         }
         updater.onRelaunch = {
             NSApp.terminate(nil)

@@ -3,6 +3,30 @@ import XCTest
 @testable import Pop
 
 final class PluginBundleTests: XCTestCase {
+    func testRetriesUseBoundedExponentialBackoff() {
+        XCTAssertEqual(PluginManager.retryDelay(attempt: 1), 5)
+        XCTAssertEqual(PluginManager.retryDelay(attempt: 2), 10)
+        XCTAssertEqual(PluginManager.retryDelay(attempt: 7), 300)
+        XCTAssertEqual(PluginManager.retryDelay(attempt: Int.max), 300)
+        for name in ["", ".", "..", "../plugin.bundle", "folder/plugin.bundle", "folder\\plugin.bundle"] {
+            XCTAssertFalse(PluginManager.safeFilename(name))
+        }
+        XCTAssertTrue(PluginManager.safeFilename("PopExample.bundle"))
+    }
+
+    @MainActor
+    func testPendingPackageKeepsItsRingSlotButCannotExecute() {
+        let package = PluginCatalog.packages[0]
+        let function = package.functions[0]
+        let ring = RingViewModel(layout: RingLayout(slots: [function, nil]), catalog: [], installed: [function], content: ContentClassifier.classify(.text("hello")))
+        XCTAssertEqual(ring.slots[0].pendingPackage, package.name)
+        XCTAssertNil(ring.slots[1].pendingPackage)
+        ring.setHovered(0)
+        XCTAssertEqual(ring.center.title, package.name)
+        XCTAssertFalse(ring.center.enabled)
+        XCTAssertNil(ring.selectablePlugin(at: 0))
+    }
+
     /// 插件包目录里的功能和插件包自己提供的功能对得上；Pop 自带的功能里不再有它们
     func testCatalogMatchesTheBundles() {
         let provided = Set(TestCatalog.bundles.flatMap { $0.makePlugins() }.map(\.info.id))

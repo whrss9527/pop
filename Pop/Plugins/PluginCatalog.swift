@@ -22,7 +22,10 @@ struct PluginPackage: Identifiable, Hashable {
 
     /// 插件的数据文件夹放在这里
     static var dataDirectory: URL {
-        FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0].appending(path: "Pop", directoryHint: .isDirectory)
+        if let path = ProcessInfo.processInfo.environment["POP_PLUGIN_DATA_DIR"], path.hasPrefix("/") {
+            return URL(fileURLWithPath: path, isDirectory: true)
+        }
+        return FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0].appending(path: "Pop", directoryHint: .isDirectory)
     }
 
     /// 插件包在钥匙串里用的 service：<Pop 的 bundle ID>.plugin.<插件包 ID>

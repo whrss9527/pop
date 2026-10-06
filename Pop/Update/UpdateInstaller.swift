@@ -349,7 +349,11 @@ enum UpdateInstaller {
     /// 等当前进程退出后再打开新程序：起一个独立的 sh 等着，Pop 自己退出时它不受影响。
     static func relaunch(_ app: URL) {
         let pid = ProcessInfo.processInfo.processIdentifier
-        let script = "n=0; while /bin/kill -0 \(pid) 2>/dev/null && [ $n -lt 300 ]; do /bin/sleep 0.2; n=$((n+1)); done; /usr/bin/open \(shellQuote(app.path))"
+        let testEnvironment = ["POP_PLUGIN_SOURCE", "POP_PLUGIN_DATA_DIR"].compactMap { key -> String? in
+            guard let value = ProcessInfo.processInfo.environment[key] else { return nil }
+            return " --env " + shellQuote(key + "=" + value)
+        }.joined()
+        let script = "n=0; while /bin/kill -0 \(pid) 2>/dev/null && [ $n -lt 300 ]; do /bin/sleep 0.2; n=$((n+1)); done; /usr/bin/open\(testEnvironment) \(shellQuote(app.path))"
         let process = Process()
         process.executableURL = URL(fileURLWithPath: "/bin/sh")
         process.arguments = ["-c", script]

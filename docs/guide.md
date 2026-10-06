@@ -76,6 +76,8 @@ These actions are plugins now (they're also listed in the Built-in actions table
 
 When you upgrade from an older version, the ones you use (on the ring, with a shortcut, or used recently) are installed automatically; install the others when you need them. After Pop updates, installed plugins are replaced with the matching new versions automatically. Recognize Table in the clipboard history's image menu needs the Recognize Table plugin.
 
+Before updating, Pop downloads matching versions of installed plugins and uses the verified bundles on restart. If the network is unavailable, their ring slots show Updating. Failed downloads retry with increasing delays and when the network returns.
+
 ### Built-in actions
 
 | Category | Actions |
