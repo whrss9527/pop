@@ -343,7 +343,8 @@ final class PluginManager: ObservableObject {
 
     /// 同一父目录中的 UUID 名称不受 /var 与 /private/var、符号链接路径别名影响。
     nonisolated static func discardOtherStages(keeping stage: URL) {
-        let previous = (try? FileManager.default.contentsOfDirectory(at: stage.deletingLastPathComponent(), includingPropertiesForKeys: nil)) ?? []
+        let parent = stage.deletingLastPathComponent().resolvingSymlinksInPath()
+        let previous = (try? FileManager.default.contentsOfDirectory(at: parent, includingPropertiesForKeys: nil)) ?? []
         for directory in previous where directory.lastPathComponent != stage.lastPathComponent {
             try? FileManager.default.removeItem(at: directory)
         }
