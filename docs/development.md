@@ -115,17 +115,14 @@ Pop's features are moving into plugin bundles one by one. Each plugin bundle bui
 
 ### Releasing a new version
 
-Releases are driven by `CHANGELOG.md`; you don't tag by hand:
+Changes accumulate under `## Unreleased` (or `## 未发布`) at the top of `CHANGELOG.md`. Set `MARKETING_VERSION` in `project.yml` to the next stable version when starting a new cycle. Every main push that passes the full CI publishes `<version>-beta.<CI run number>`; new installations receive stable versions by default.
 
-1. Add a section for the new version at the top of `CHANGELOG.md`, titled with the version and date, e.g. `## 0.4.0（2026-09-29）`. Its content goes into the release notes as is.
-2. Push (or merge) the change to main. Once CI passes and there's no `v0.4.0` tag yet, it builds a universal app (Apple silicon / Intel), runs the launch test, packages `Pop-<version>.zip`, generates `SHA256SUMS.txt`, tags the commit and publishes the release. The release is created as a draft and made public only after the assets are uploaded.
-3. Macs with Pop installed get the version on their next check and are offered a one-click update.
+To publish a stable version, rename the top section to that version and date, matching `MARKETING_VERSION`. CI publishes at most one stable release per weekday in Asia/Shanghai. If today's allowance is used or it is a weekend, weekday CI retries. Manual stable releases use the same rules; rebuilding an existing tag does not count as a new release. Drafts become public only after all assets are uploaded. Release notes also list changed plugin bundles and their versions relative to the previous stable release.
 
-If you only change CI, docs or tests and don't want a release, don't add a new version to `CHANGELOG.md`. To try a beta with a few people first, run the Release workflow manually on the Actions page and check “as a beta”, or use the GitHub CLI on your Mac (`brew install gh && gh auth login`):
+Plugin-only updates keep using the Plugins workflow on the latest stable tag. They do not need a new Pop stable version. To publish a beta manually:
 
 ```bash
-make release VERSION=0.4.0          # publish a release manually
-make release VERSION=0.4.0 BETA=1   # publish a beta (pre-release) manually
+make release VERSION=0.69.0-beta.1 BETA=1
 ```
 
 - The workflow fails if the version was already released; when running it manually, check overwrite to rebuild from the tagged code, replace the assets and update the notes.

@@ -1,17 +1,18 @@
 name: CI
 
 # 每次推送（任何分支）：编译、单元测试、启动测试、一键更新的端到端测试，并给浮窗截图。
-# 推到 main 并且测试都通过后，CHANGELOG.md 最上面的版本还没有标签的话，
-# 就自动打标签、打包并发布正式版（调用 release.yml），已安装的 Pop 会提示更新。
+# main 的已验证改动发布测试版；正式版须先提升未发布章节，每个上海工作日最多一次。
 # 不用 pull_request 触发：合并请求显示的就是它分支上这次推送的结果；两个都开的话同一个提交要跑两遍，
 # macOS runner 排队的时间也翻倍。
 on:
   push:
     branches: ["**"]
   workflow_dispatch:
+  schedule:
+    - cron: "0 1 * * 1-5"
 
 concurrency:
-  group: ci-${{ github.ref }}
+  group: ci-${{ github.ref == 'refs/heads/main' && github.sha || github.ref }}
   # main 上的运行可能正在发布新版本，不能被下一次推送取消
   cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
 
@@ -66,6 +67,9 @@ jobs:
 
       # 编译时抽出来的界面文字（.stringsdata）和 en.lproj 对一遍：带中文的每一条都要有英文翻译，
       # 两种语言的 key 和占位符一致。缺的 key 会按 .strings 的格式列在日志里
+      - name: Check release planning
+        run: python3 -m unittest discover -s scripts -p 'test_release_*.py'
+
       - name: Check translations
         if: always()
         run: python3 scripts/check-localization.py --stringsdata ~/Library/Developer/Xcode/DerivedData --list-missing
@@ -187,24 +191,21 @@ jobs:
     name: 看要不要发版
     needs: [build-and-test, launch-smoke]
     # 推到 main 并且测试都通过了
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     outputs:
       version: ${{ steps.plan.outputs.version }}
+      beta: ${{ steps.plan.outputs.beta }}
       sha: ${{ steps.plan.outputs.sha }}
     steps:
       - uses: actions/checkout@v5
-      - name: 读 CHANGELOG.md 最上面的版本
+      - name: 计算稳定版和测试版
         id: plan
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
-          version=$(sed -n 's/^## \([0-9][0-9.]*[0-9]\).*/\1/p' CHANGELOG.md | head -1)
-          [ -n "$version" ] || { echo "::error::CHANGELOG.md 里找不到版本号（格式是「## 0.4.0（2026-09-29）」）"; exit 1; }
-          if git ls-remote --exit-code --tags origin "refs/tags/v${version}" > /dev/null; then
-            echo "v${version} 已经发布过，这次不发版。要发版就在 CHANGELOG.md 最上面加一节新版本。"
-            exit 0
-          fi
-          echo "发布 v${version}，提交 $(git rev-parse HEAD)"
-          echo "version=${version}" >> "$GITHUB_OUTPUT"
+          gh api --paginate --slurp "repos/$GITHUB_REPOSITORY/releases?per_page=100" > "$RUNNER_TEMP/releases.json"
+          python3 scripts/release-plan.py plan --event "$GITHUB_EVENT_NAME" --run-number "$GITHUB_RUN_NUMBER" < "$RUNNER_TEMP/releases.json" >> "$GITHUB_OUTPUT"
           echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
 
   release:
@@ -218,4 +219,17 @@ jobs:
       version: ${{ needs.plan-release.outputs.version }}
       ref: ${{ needs.plan-release.outputs.sha }}
       prerelease: false
+    secrets: inherit
+
+  release-beta:
+    name: 发布测试版
+    needs: plan-release
+    if: needs.plan-release.outputs.beta != ''
+    permissions:
+      contents: write
+    uses: ./.github/workflows/release.yml
+    with:
+      version: ${{ needs.plan-release.outputs.beta }}
+      ref: ${{ needs.plan-release.outputs.sha }}
+      prerelease: true
     secrets: inherit

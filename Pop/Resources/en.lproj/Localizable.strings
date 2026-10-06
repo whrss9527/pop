@@ -3211,3 +3211,5 @@
 
 "正在更新" = "Updating";
 "正在更新，联网后会自动重试" = "Updating; retries automatically when online";
+
+"稳定版每个工作日最多发布一次；测试版包含每次通过检查的改动，可能不稳定，默认关闭。更新通知每天最多一条，完整更新内容仍可在这里查看。" = "Stable releases are published at most once per weekday. Beta releases include every verified change and may be unstable; they are off by default. Update notifications appear at most once a day; full changes remain available here.";

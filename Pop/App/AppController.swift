@@ -268,7 +268,8 @@ final class AppController {
         }
         // 刚更新过：发一条通知说这一版新增了什么（界面演示时不发）
         if !OverlayDemo.isEnabled,
-           let summary = Changelog.whatsNew(current: UpdateChecker.currentVersion, releases: Changelog.bundled) {
+           let summary = Changelog.whatsNew(current: UpdateChecker.currentVersion, releases: Changelog.bundled),
+           UpdateNotificationGate.claim() {
             Notifier.shared.showWhatsNew(version: UpdateChecker.currentVersion, summary: summary)
         }
         statusItem.onTogglePause = { [weak self] in

@@ -33,7 +33,7 @@ final class Updater: ObservableObject {
         didSet { defaults.set(includePrereleases, forKey: Self.includePrereleasesKey) }
     }
 
-    /// 自动检查发现新版本时调用（每个版本只提醒一次）
+    /// 自动检查发现新版本时调用（每版一次，和更新后的通知共用每天一次的额度）
     var notify: ((ReleaseInfo) -> Void)?
     /// 新程序已经换好、该退出了
     var onRelaunch: (() -> Void)?
@@ -55,8 +55,8 @@ final class Updater: ObservableObject {
     init(defaults: UserDefaults = .standard) {
         self.defaults = defaults
         automaticChecks = defaults.object(forKey: Self.automaticChecksKey) as? Bool ?? true
-        // 现在发布的都是测试版，默认要能收到
-        includePrereleases = defaults.object(forKey: Self.includePrereleasesKey) as? Bool ?? true
+        // 新安装默认走稳定版；用户已选的测试通道保留。
+        includePrereleases = defaults.object(forKey: Self.includePrereleasesKey) as? Bool ?? false
         lastChecked = defaults.object(forKey: Self.lastCheckedKey) as? Date
     }
 
@@ -171,7 +171,9 @@ final class Updater: ObservableObject {
             phase = .available(latest)
             if !manual, defaults.string(forKey: Self.notifiedKey) != latest.version {
                 defaults.set(latest.version, forKey: Self.notifiedKey)
-                notify?(latest)
+                if let notify, UpdateNotificationGate.claim(defaults: defaults) {
+                    notify(latest)
+                }
             }
             return latest
         } catch {

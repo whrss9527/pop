@@ -4,7 +4,7 @@
   <p><strong>长按右键，一划即达</strong></p>
   <p>住在 macOS 菜单栏里的右键工具箱。原生 Swift，玻璃质感，开源免费。</p>
   <p>
-    <a href="https://github.com/whrss9527/pop/releases"><img alt="最新版本" src="https://img.shields.io/github/v/release/whrss9527/pop?include_prereleases&label=release&color=5B7BFF"></a>
+    <a href="https://github.com/whrss9527/pop/releases"><img alt="最新版本" src="https://img.shields.io/github/v/release/whrss9527/pop?label=release&color=5B7BFF"></a>
     <img alt="macOS 15+" src="https://img.shields.io/badge/macOS-15%2B-111827?logo=apple&logoColor=white">
     <img alt="Liquid Glass" src="https://img.shields.io/badge/UI-Liquid%20Glass-7C6CFF">
     <a href="LICENSE"><img alt="GPL-3.0" src="https://img.shields.io/badge/license-GPL--3.0-2563EB"></a>

@@ -3,15 +3,16 @@
 ## 改完怎么合并、怎么发版
 
 - 在自己的分支上改，推上去开合并请求。合并进 main 之前 CI 要全部通过：两个版本的 Xcode 编译和单元测试，macOS 15、macOS 26 上的启动测试、一键更新的端到端测试、签名流程自测和浮窗截图。
-- 要发版本，就在 CHANGELOG.md 最上面加一节新版本，格式：`## 0.4.0（2026-09-29）`。推到 main、CI 通过后，CI 发现这个版本还没有标签，就自动打标签、打包并发布正式版，已安装的 Pop 会提示更新。用户能感觉到的改动都要写进去；只改 CI、文档或测试的可以不加，不加就只合并、不发版。
-- 版本号：新功能升次版本号（0.3.1 升到 0.4.0），只修问题升修订号（0.4.0 升到 0.4.1）。先看 main 上最新的版本和标签，别和别的分支撞号；`project.yml` 里的 `MARKETING_VERSION` 跟着改。
-- 想先给少数人试用：在 Actions 页面手动运行 Release 工作流，勾选「作为测试版」，或者 `make release VERSION=0.4.0 BETA=1`。
+- 用户能感觉到的改动先写入 CHANGELOG.md 顶部的 `## 未发布`，累积到准备发稳定版时才改成版本号和日期，比如 `## 0.69.0（2026-10-07）`。稳定版按上海时区每个工作日最多一个；当天已发布或逢周末时，工作日定时 CI 会重试。不要为每个小改动发布一个稳定版。
+- main 每次合并且完整 CI 通过后自动发布 `MARKETING_VERSION-beta.<CI 运行序号>` 测试版。新安装默认只接收稳定版，已有通道选择保留。正式版和测试版都先上传全部附件再公开。
+- 版本号：新功能升次版本号，只修问题升修订号。开始下一轮未发布改动时，把 `project.yml` 的 `MARKETING_VERSION` 设成下一个稳定版版本号；提升未发布章节时必须与它一致。只改单独发布的插件包走 Plugins 工作流，不提升 Pop 版本。
+- 手动发布稳定版也遵守上述节奏，并要求顶部章节对应版本号；覆盖旧标签仅重建原版本。测试版可以手动使用 `make release VERSION=0.69.0-beta.1 BETA=1`。
 
 ## 插件包单独发布
 
 - 插件包可以不跟着 Pop 发版：插件包文件夹里放 `plugin.json`（`id`、`version`，名字和介绍的 `zh-Hans`、`en`，`symbol`、`category`、`functions`，卸载时要删的 `defaultsKeys`、`keychainAccounts`、`dataFolders`），界面文字放在它自己的 `en.lproj/Localizable.strings` 里（代码里用 `bundle:` 查，跑 `scripts/check-localization.py --sync-zh-hans` 生成 `zh-Hans` 那份），功能 ID 用它自己的常量，不往 Pop 的 `BuiltinPluginID`、`PluginCatalog` 里加。
 - 合并进 main 以后，Plugins 工作流（`scripts/publish-plugins.sh`）在最新正式版的标签上构建这些插件包，用发布出去的 Pop 装载检查，再传到那个版本的发布页、合进插件包列表；PR 里只检查不上传。改了已经发布的插件包，要把 `plugin.json` 的 `version` 往上加才会再发布。
-- 单独发布的插件包只能用最新正式版里已经有的 Pop 代码；要改 Pop 本身的，先发 Pop 新版本。只改单独发布的插件包时不加 CHANGELOG.md 的版本（加了就会发 Pop 新版本），改了什么写在 PR 里。
+- 单独发布的插件包只能用最新正式版里已经有的 Pop 代码；要改 Pop 本身的，先发 Pop 新版本。只改单独发布的插件包时不加 CHANGELOG.md 的版本（提升版本号才会发稳定版），改了什么写在 PR 里。
 
 ## 写法
 

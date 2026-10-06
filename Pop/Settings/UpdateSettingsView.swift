@@ -49,6 +49,10 @@ struct UpdateSettingsView: View {
                 Section {
                     Toggle("自动检查更新", isOn: $updater.automaticChecks)
                     Toggle("也接收测试版（预发布版本）", isOn: $updater.includePrereleases)
+                    Text("稳定版每个工作日最多发布一次；测试版包含每次通过检查的改动，可能不稳定，默认关闭。更新通知每天最多一条，完整更新内容仍可在这里查看。")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
                     if let date = updater.lastChecked {
                         LabeledContent("上次检查") {
                             Text(date.formatted(date: .abbreviated, time: .shortened))

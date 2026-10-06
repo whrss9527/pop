@@ -2,6 +2,14 @@ import XCTest
 @testable import Pop
 
 final class ChangelogTests: XCTestCase {
+    func testBetaBuildShowsAccumulatedChangesAndIntermediateStableVersions() {
+        let text = "# 更新记录\n\n## 未发布\n- new\n## 0.68.1\n- fixed"
+        let releases = Changelog.forBuild(text, current: "0.69.0-beta.10")
+        XCTAssertEqual(releases.map(\.version), ["0.69.0-beta.10", "0.68.1"])
+        XCTAssertEqual(Changelog.releases(releases, after: "0.68.0", upTo: "0.69.0-beta.10").count, 2)
+        XCTAssertEqual(Changelog.forBuild(text, current: "0.69.0").map(\.version), ["0.69.0", "0.68.1"])
+    }
+
     private let sample = """
     # 更新记录
 
@@ -33,6 +41,18 @@ final class ChangelogTests: XCTestCase {
 
     - **不算**：修复里的加粗不是新增。
     """
+
+    func testConsecutiveSameDayUpdatesKeepTheOriginalBaseline() {
+        let name = "changelog-daily-test-\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: name)!
+        defer { defaults.removePersistentDomain(forName: name) }
+        defaults.set("0.29.0", forKey: Changelog.lastVersionKey)
+        _ = Changelog.whatsNew(current: "0.29.1", releases: Changelog.parse(sample), defaults: defaults)
+        XCTAssertTrue(UpdateNotificationGate.claim(defaults: defaults))
+        _ = Changelog.whatsNew(current: "0.30.0", releases: Changelog.parse(sample), defaults: defaults)
+        XCTAssertEqual(defaults.string(forKey: Changelog.updatedFromKey), "0.29.0")
+        XCTAssertEqual(Changelog.recent(current: "0.30.0", releases: Changelog.parse(sample), defaults: defaults).map(\.version), ["0.30.0", "0.29.1"])
+    }
 
     func testParsesEachRelease() {
         let releases = Changelog.parse(sample)
@@ -95,7 +115,13 @@ final class ChangelogTests: XCTestCase {
         XCTAssertGreaterThan(bundled.count, 10)
         XCTAssertEqual(bundled.first?.version, UpdateChecker.currentVersion)
         // 早期的几版没写日期
-        XCTAssertNotNil(bundled.first?.date)
+        let resource = try XCTUnwrap(Bundle.main.url(forResource: "CHANGELOG", withExtension: "md"))
+        let text = try String(contentsOf: resource, encoding: .utf8)
+        if text.contains("## 未发布") || text.contains("## Unreleased") || UpdateChecker.currentVersion.contains("-") {
+            XCTAssertNil(bundled.first?.date)
+        } else {
+            XCTAssertNotNil(bundled.first?.date)
+        }
         for release in bundled {
             XCTAssertFalse(release.notes.isEmpty, release.version)
         }
