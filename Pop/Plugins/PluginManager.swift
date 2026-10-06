@@ -331,14 +331,21 @@ final class PluginManager: ObservableObject {
                 } catch is CancellationError { throw CancellationError() }
                 catch { UpdateLog.info("插件包 \(package.id) 暂时无法预取，重启后重试：\(error.localizedDescription)") }
             }
-            let previous = (try? FileManager.default.contentsOfDirectory(at: PluginBundles.pendingDirectory, includingPropertiesForKeys: nil)) ?? []
-            for directory in previous where directory != stage { try? FileManager.default.removeItem(at: directory) }
+            Self.discardOtherStages(keeping: stage)
         } catch {
             if error is CancellationError || (error as? URLError)?.code == .cancelled {
                 try? FileManager.default.removeItem(at: stage)
                 throw error
             }
             UpdateLog.info("插件包暂时无法预取，重启后重试：\(error.localizedDescription)")
+        }
+    }
+
+    /// 同一父目录中的 UUID 名称不受 /var 与 /private/var、符号链接路径别名影响。
+    nonisolated static func discardOtherStages(keeping stage: URL) {
+        let previous = (try? FileManager.default.contentsOfDirectory(at: stage.deletingLastPathComponent(), includingPropertiesForKeys: nil)) ?? []
+        for directory in previous where directory.lastPathComponent != stage.lastPathComponent {
+            try? FileManager.default.removeItem(at: directory)
         }
     }
 

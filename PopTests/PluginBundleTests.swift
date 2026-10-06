@@ -3,6 +3,24 @@ import XCTest
 @testable import Pop
 
 final class PluginBundleTests: XCTestCase {
+
+    func testStagingCleanupKeepsTheCurrentDirectoryThroughAnAlias() throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString, isDirectory: true)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let actual = root.appendingPathComponent("actual", isDirectory: true)
+        try FileManager.default.createDirectory(at: actual, withIntermediateDirectories: true)
+        let alias = root.appendingPathComponent("alias", isDirectory: true)
+        try FileManager.default.createSymbolicLink(at: alias, withDestinationURL: actual)
+        let stage = alias.appendingPathComponent("current", isDirectory: true)
+        let stale = alias.appendingPathComponent("stale", isDirectory: true)
+        for directory in [stage, stale] {
+            try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+            try Data("verified bundle".utf8).write(to: directory.appendingPathComponent("index.json"))
+        }
+        PluginManager.discardOtherStages(keeping: stage)
+        XCTAssertTrue(FileManager.default.fileExists(atPath: stage.appendingPathComponent("index.json").path))
+        XCTAssertFalse(FileManager.default.fileExists(atPath: stale.path))
+    }
     func testRetriesUseBoundedExponentialBackoff() {
         XCTAssertEqual(PluginManager.retryDelay(attempt: 1), 5)
         XCTAssertEqual(PluginManager.retryDelay(attempt: 2), 10)
