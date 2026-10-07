@@ -16,7 +16,8 @@ struct PluginsSettingsView: View {
     @State private var query = ""
 
     var body: some View {
-        Form {
+        // 功能页有上百行，List 只创建可见控件，避免首次打开时一次性布局全部内容。
+        List {
             Section {
                 // 不显示标签：表单里的标签会占掉左半边，框里反而是空的
                 TextField("搜索插件和内置功能", text: $query, prompt: Text("搜索插件和内置功能，支持拼音首字母"))
@@ -129,7 +130,8 @@ struct PluginsSettingsView: View {
                 }
             }
         }
-        .formStyle(.grouped)
+        .listStyle(.inset)
+        .toggleStyle(.switch)
         .sheet(isPresented: $showsLibrary) {
             PluginLibraryView(store: store, pluginStore: pluginStore, onClose: { showsLibrary = false })
         }
