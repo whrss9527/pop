@@ -35,8 +35,7 @@ final class AppController {
         pluginStore = PluginStore()
         // App Store 版：先打开允许访问的文件夹，选中的文件才读得了
         FolderAccess.shared.start()
-        // 先装载装好的插件包，功能列表里才有它们提供的功能
-        PluginBundles.shared.loadInstalled()
+        // AppDelegate 已异步装载完插件，再组装完整功能列表。
         registry = PluginRegistry()
         pluginManager = PluginManager(settingsStore: settingsStore, registry: registry)
         permissions = PermissionMonitor()

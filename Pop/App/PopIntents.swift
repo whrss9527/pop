@@ -26,18 +26,18 @@ struct PopFunctionEntity: AppEntity {
 struct PopFunctionQuery: EntityStringQuery {
     @MainActor
     func entities(for identifiers: [String]) async throws -> [PopFunctionEntity] {
-        let functions = PopIntentSupport.functions()
+        let functions = await PopIntentSupport.functions()
         return identifiers.compactMap { id in functions.first { $0.id == id } }.map(PopFunctionEntity.init)
     }
 
     @MainActor
     func suggestedEntities() async throws -> [PopFunctionEntity] {
-        PopIntentSupport.functions().map(PopFunctionEntity.init)
+        (await PopIntentSupport.functions()).map(PopFunctionEntity.init)
     }
 
     @MainActor
     func entities(matching string: String) async throws -> [PopFunctionEntity] {
-        PopIntentSupport.functions()
+        (await PopIntentSupport.functions())
             .filter { SearchText.matches(string, keys: SearchText.keys(for: $0.name) + [$0.summary.lowercased()]) }
             .map(PopFunctionEntity.init)
     }
@@ -46,8 +46,8 @@ struct PopFunctionQuery: EntityStringQuery {
 /// 快捷指令在 Pop 没打开设置窗口、甚至刚被叫起来时也要能用：设置和插件每次从磁盘读
 @MainActor
 enum PopIntentSupport {
-    static func registry() -> PluginRegistry {
-        PluginBundles.shared.loadInstalled()
+    static func registry() async -> PluginRegistry {
+        await PluginBundles.shared.loadInstalled()
         let registry = PluginRegistry()
         registry.setUserManifests(PluginStore.readAll(in: PluginStore.defaultDirectory).manifests)
         return registry
@@ -57,8 +57,8 @@ enum PopIntentSupport {
         SettingsStore().settings
     }
 
-    static func functions() -> [PluginInfo] {
-        HeadlessRunner.textFunctions(in: registry().catalog)
+    static func functions() async -> [PluginInfo] {
+        HeadlessRunner.textFunctions(in: await registry().catalog)
     }
 }
 
@@ -79,7 +79,7 @@ struct ProcessTextIntent: AppIntent {
     @MainActor
     func perform() async throws -> some IntentResult & ReturnsValue<String> {
         let settings = PopIntentSupport.settings
-        let result = await HeadlessRunner.run(pluginID: function.id, text: text, registry: PopIntentSupport.registry(),
+        let result = await HeadlessRunner.run(pluginID: function.id, text: text, registry: await PopIntentSupport.registry(),
                                               settings: settings, services: .live(ai: settings.ai))
         return .result(value: try result.get())
     }

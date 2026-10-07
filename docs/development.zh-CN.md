@@ -158,3 +158,7 @@ make signing-certificate    # 即 scripts/create-signing-certificate.sh，文件
 | `NOTARY_APPLE_ID`、`NOTARY_PASSWORD`、`NOTARY_TEAM_ID` | Apple ID、App 专用密码（在 appleid.apple.com 生成）、Team ID |
 
 从本地签名换成证书签名后，第一次更新仍然需要重新授权一次辅助功能，之后就不用了。
+
+### 插件启动
+
+`PluginBundles.loadInstalled()` 是异步入口。签名检查在后台队列执行，代码装载和注册仍在主线程，各个插件之间处理已经排队的主线程任务；并发启动请求等待同一任务。`AppDelegate` 等装载完成后才组装 `AppController`，期间收到的 URL 和重新打开请求保留到控制器就绪。快捷指令也等待同一入口后再读取功能列表。构建号和签名仍须通过验证，启动与截图检查保留两秒响应门槛。

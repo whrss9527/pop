@@ -158,3 +158,7 @@ Following the instructions the script prints at the end, put the contents of `ce
 | `NOTARY_APPLE_ID`, `NOTARY_PASSWORD`, `NOTARY_TEAM_ID` | Apple ID, app-specific password (generated at appleid.apple.com) and Team ID |
 
 After switching from ad-hoc to certificate signing, the first update still needs Accessibility permission granted once more; after that it doesn't.
+
+### Plugin startup
+
+`PluginBundles.loadInstalled()` is asynchronous. Signature checks run on a background queue; bundle code and registration stay on the main actor, with queued main-thread work processed between bundles. Concurrent startup requests await the same task. `AppDelegate` awaits completion before constructing `AppController`, retaining incoming URLs and reopen requests until it is ready. Shortcuts await the same loader before reading their function catalog. Build and signature validation remain mandatory; startup and screenshot checks retain their two-second responsiveness limit.
