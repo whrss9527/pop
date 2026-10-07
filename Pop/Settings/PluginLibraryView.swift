@@ -83,17 +83,23 @@ struct PluginLibraryView: View {
                     .foregroundStyle(.secondary)
             } else {
                 let installedIDs = Set(pluginStore.manifests.map(\.id))
-                Form {
-                    Section {
+                ScrollView {
+                    LazyVStack(spacing: 0) {
                         ForEach(entries) { entry in
                             let state = model.state(of: entry, installedIDs: installedIDs)
                             PluginLibraryRow(entry: entry, state: state, isInstalling: model.installing.contains(entry.id)) {
                                 install(entry, isUpdate: state == .updateAvailable)
                             }
+                            .padding(12)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            if entry.id != entries.last?.id {
+                                Divider().padding(.horizontal, 12)
+                            }
                         }
                     }
+                    .background(Color(nsColor: .controlBackgroundColor), in: RoundedRectangle(cornerRadius: 10))
+                    .padding(20)
                 }
-                .formStyle(.grouped)
             }
         }
     }
