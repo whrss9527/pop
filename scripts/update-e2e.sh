@@ -80,7 +80,7 @@ make_release() {
   local size
   size="$(stat -f %z "$FEED/Pop-9.9.9.zip")"
   cat > "$FEED/releases.json" <<JSON
-[{"tag_name": "v9.9.9", "name": "Pop 9.9.9（测试版）", "draft": false, "prerelease": true,
+[{"tag_name": "v9.9.9", "name": "Pop 9.9.9", "draft": false, "prerelease": false,
   "html_url": "http://127.0.0.1:${PORT}/releases.json", "published_at": "2026-01-01T00:00:00Z",
   "body": "### 新增\n\n- CI 用来测试一键更新的假版本",
   "assets": [
