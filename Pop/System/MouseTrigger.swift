@@ -1,5 +1,6 @@
 import AppKit
 import CoreGraphics
+import os
 
 @MainActor
 protocol MouseTriggerDelegate: AnyObject {
@@ -11,6 +12,8 @@ protocol MouseTriggerDelegate: AnyObject {
     func mouseTriggerDidDrag(to location: CGPoint)
     /// 唤起后松开
     func mouseTriggerDidRelease(at location: CGPoint)
+    /// 拦截停用、配置变化或停止：取消本次手势，不执行指向的功能。
+    func mouseTriggerDidCancel()
 }
 
 /// 用 CGEventTap 拦截鼠标事件实现「长按右键 / 修饰键+右键 / 中键」唤起。
@@ -88,6 +91,7 @@ final class MouseTrigger {
         case .activate(let location): delegate?.mouseTriggerDidActivate(at: location)
         case .drag(let location): delegate?.mouseTriggerDidDrag(to: location)
         case .release(let location): delegate?.mouseTriggerDidRelease(at: location)
+        case .cancel: delegate?.mouseTriggerDidCancel()
         }
     }
 }
@@ -104,6 +108,7 @@ enum MouseTriggerSignal: Equatable {
     case activate(CGPoint)
     case drag(CGPoint)
     case release(CGPoint)
+    case cancel
 }
 
 /// 长按、修饰键+右键、中键的判定，在拦截的线程上跑（长按计时到了在计时的队列上）。
@@ -114,6 +119,7 @@ final class MouseTriggerCore: @unchecked Sendable {
     static let replayMarker: Int64 = 0x504F_5021
     static let eventTypes: [CGEventType] = [.rightMouseDown, .rightMouseUp, .rightMouseDragged,
                                             .otherMouseDown, .otherMouseUp, .otherMouseDragged]
+    private static let log = Logger(subsystem: "io.github.whrss9527.pop", category: "gesture")
     private static let dragTolerance: CGFloat = 6
     private static let timerQueue = DispatchQueue(label: "io.github.whrss9527.pop.mouse-trigger", qos: .userInteractive)
 
@@ -131,6 +137,10 @@ final class MouseTriggerCore: @unchecked Sendable {
     private var state: State = .idle
     private var current: MouseTriggerConfiguration
     private var nextTimerID = 0
+    private var recoveryID = 0
+    private var recoveryCancel: (() -> Void)?
+    private var lastLocation = CGPoint.zero
+    private(set) var disabledCount = 0
     /// 停下来以后不再接手，也不再交事给主线程（拦截的线程上可能还有一个事件在判定）
     private var isStopped = false
 
@@ -142,17 +152,23 @@ final class MouseTriggerCore: @unchecked Sendable {
     private let post: ([CGEvent]) -> Void
     /// 长按计时：过多久调用 fire，返回取消计时的闭包
     private let startTimer: (TimeInterval, @escaping () -> Void) -> () -> Void
+    private let startRecoveryTimer: (TimeInterval, @escaping () -> Void) -> () -> Void
+    private let isPressed: (CGMouseButton) -> Bool
 
     init(configuration: MouseTriggerConfiguration,
          shouldBegin: @escaping () -> Bool,
          deliver: @escaping (MouseTriggerSignal) -> Void,
          post: @escaping ([CGEvent]) -> Void = MouseTriggerCore.replay,
-         startTimer: @escaping (TimeInterval, @escaping () -> Void) -> () -> Void = MouseTriggerCore.dispatchTimer(after:fire:)) {
+         startTimer: @escaping (TimeInterval, @escaping () -> Void) -> () -> Void = MouseTriggerCore.dispatchTimer(after:fire:),
+         startRecoveryTimer: @escaping (TimeInterval, @escaping () -> Void) -> () -> Void = MouseTriggerCore.dispatchTimer(after:fire:),
+         isPressed: @escaping (CGMouseButton) -> Bool = { CGEventSource.buttonState(.combinedSessionState, button: $0) }) {
         current = configuration
         self.shouldBegin = shouldBegin
         self.deliver = deliver
         self.post = post
         self.startTimer = startTimer
+        self.startRecoveryTimer = startRecoveryTimer
+        self.isPressed = isPressed
     }
 
     private func withLock<T>(_ body: () -> T) -> T {
@@ -188,8 +204,13 @@ final class MouseTriggerCore: @unchecked Sendable {
     /// 拦截的线程上：返回 true 表示吞掉这个事件。
     func handle(type: CGEventType, event: CGEvent) -> Bool {
         if type == .tapDisabledByTimeout || type == .tapDisabledByUserInput {
-            // 回调太慢或系统原因被停用过（EventTapThread 已经重新打开）：扣住的按下事件还给系统
-            reset()
+            // EventTapThread 已重新启用拦截；取消已唤起的手势，不能静默留下按住状态。
+            let count = withLock { () -> Int in
+                disabledCount += 1
+                resetLocked(replayPending: true)
+                return disabledCount
+            }
+            Self.log.notice("鼠标拦截被停用，累计 \(count, privacy: .public) 次，原因 \(String(describing: type), privacy: .public)")
             return false
         }
         let (configuration, isStopped) = withLock { (current, self.isStopped) }
@@ -239,6 +260,7 @@ final class MouseTriggerCore: @unchecked Sendable {
                 return true
 
             case (.rightMouseDragged, .active):
+                lastLocation = event.location
                 deliver(.drag(event.location))
                 return true
 
@@ -249,6 +271,7 @@ final class MouseTriggerCore: @unchecked Sendable {
                 return true
 
             case (.rightMouseUp, .active):
+                resetRecoveryLocked()
                 state = .idle
                 deliver(.release(event.location))
                 return true
@@ -265,7 +288,7 @@ final class MouseTriggerCore: @unchecked Sendable {
 
     private func handleModifierClick(type: CGEventType, event: CGEvent, modifier: TriggerModifier) -> Bool {
         if type == .rightMouseDown {
-            withLock { state = .idle }
+            reset()
             // 没按着修饰键的右键不问主线程，马上放过
             guard event.flags.contains(modifier.eventFlag), shouldBegin() else { return false }
             return activate(at: event.location)
@@ -273,9 +296,11 @@ final class MouseTriggerCore: @unchecked Sendable {
         return withLock {
             switch (type, state) {
             case (.rightMouseDragged, .active):
+                lastLocation = event.location
                 deliver(.drag(event.location))
                 return true
             case (.rightMouseUp, .active):
+                resetRecoveryLocked()
                 state = .idle
                 deliver(.release(event.location))
                 return true
@@ -288,16 +313,18 @@ final class MouseTriggerCore: @unchecked Sendable {
     private func handleMiddleClick(type: CGEventType, event: CGEvent) -> Bool {
         guard event.getIntegerValueField(.mouseEventButtonNumber) == 2 else { return false }
         if type == .otherMouseDown {
-            withLock { state = .idle }
+            reset()
             guard shouldBegin() else { return false }
             return activate(at: event.location)
         }
         return withLock {
             switch (type, state) {
             case (.otherMouseDragged, .active):
+                lastLocation = event.location
                 deliver(.drag(event.location))
                 return true
             case (.otherMouseUp, .active):
+                resetRecoveryLocked()
                 state = .idle
                 deliver(.release(event.location))
                 return true
@@ -312,6 +339,8 @@ final class MouseTriggerCore: @unchecked Sendable {
         withLock {
             guard !isStopped else { return false }
             state = .active
+            lastLocation = location
+            startRecoveryLocked()
             deliver(.activate(location))
             return true
         }
@@ -321,9 +350,18 @@ final class MouseTriggerCore: @unchecked Sendable {
     private func holdTimerFired(id: Int, at location: CGPoint) {
         withLock {
             // 计时到之前已经松开、拖开、重新开始或者停下来了
-            guard !isStopped, case .pending(_, let pendingID, _) = state, pendingID == id else { return }
+            guard !isStopped, case .pending(let down, let pendingID, _) = state, pendingID == id else { return }
+            // 松开事件丢失时不误唤起，也不能只补按下让目标 App 一直按住。
+            guard isPressed(.right) else {
+                state = .idle
+                if let up = down.copy() { up.type = .rightMouseUp; post([down, up]) }
+                else { post([down]) }
+                return
+            }
             // 扣住的按下事件不再补发：目标 App 完全感知不到这次按压，选区也不会被右键改变。
             state = .active
+            lastLocation = location
+            startRecoveryLocked()
             deliver(.activate(location))
         }
     }
@@ -333,10 +371,42 @@ final class MouseTriggerCore: @unchecked Sendable {
         if case .pending(let down, _, let cancel) = state {
             cancel()
             if replayPending {
-                post([down])
+                if !isPressed(.right), let up = down.copy() {
+                    up.type = .rightMouseUp
+                    post([down, up])
+                } else {
+                    post([down])
+                }
             }
         }
+        if case .active = state { deliver(.cancel) }
+        resetRecoveryLocked()
         state = .idle
+    }
+
+    private func resetRecoveryLocked() {
+        recoveryID += 1
+        recoveryCancel?()
+        recoveryCancel = nil
+    }
+
+    /// 只在本次手势已唤起且按住时检查，不增加常驻轮询。
+    private func startRecoveryLocked() {
+        let id = recoveryID
+        recoveryCancel = startRecoveryTimer(0.5) { [weak self] in
+            guard let self else { return }
+            self.withLock {
+                guard !self.isStopped, self.recoveryID == id, case .active = self.state else { return }
+                let button: CGMouseButton = self.current.mode == .middleClick ? .center : .right
+                if self.isPressed(button) {
+                    self.startRecoveryLocked()
+                } else {
+                    self.resetRecoveryLocked()
+                    self.state = .idle
+                    self.deliver(.release(self.lastLocation))
+                }
+            }
+        }
     }
 
     /// 补发扣住的事件：带上标记，回到这里时直接放行
