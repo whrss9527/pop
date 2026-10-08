@@ -225,8 +225,8 @@ final class GeometryTests: XCTestCase {
     func testEmptyGeometryAndInvalidPointerDoNotSelect() {
         XCTAssertNil(RingGeometry(slotCount: 0).slot(at: CGVector(dx: 100, dy: 100)))
         XCTAssertNil(RingGeometry(slotCount: 3, arcSweepDegrees: 0).slot(at: CGVector(dx: 100, dy: 100)))
-        XCTAssertNil(ring.slot(at: CGVector(dx: .infinity, dy: 100)))
-        XCTAssertNil(ring.slot(at: CGVector(dx: .nan, dy: 100)))
+        XCTAssertNil(ring.slot(at: CGVector(dx: CGFloat.infinity, dy: 100)))
+        XCTAssertNil(ring.slot(at: CGVector(dx: CGFloat.nan, dy: 100)))
     }
 
     private func edgeAnchors(in frame: CGRect) -> [CGPoint] {
