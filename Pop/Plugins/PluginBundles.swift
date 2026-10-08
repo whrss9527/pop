@@ -123,6 +123,7 @@ final class PluginBundles {
     /// 没装载上的插件包：路径 → 原因
     private(set) var failures: [URL: LoadError] = [:]
     private var didLoadInstalled = false
+    private var installedLoadTask: Task<Void, Never>?
 
     /// 装载好的插件包提供的功能
     var plugins: [any PopPlugin] {
@@ -152,25 +153,40 @@ final class PluginBundles {
         return URL(fileURLWithPath: path, isDirectory: true)
     }
 
-    /// 启动时装载装好的插件包；只做一次。
-    /// 签名先在几个线程上一起查完（每个插件包都要把代码整个算一遍校验和，一个个查，插件包多的时候主线程要等挺久），
-    /// 再在主线程上依次装载。装载用了多久写进日志
-    func loadInstalled() {
+    /// 签名校验异步等待，代码仍在主线程逐个装载；并发启动入口等待同一任务。
+    /// 注入点用于验证主线程响应，不启动实际插件或改用户设置。
+    func loadInstalled(urls override: [(url: URL, external: Bool)]? = nil,
+                       checkSignatures: @escaping @Sendable ([URL]) -> [URL: Bool] = PluginBundles.checkSignatures,
+                       loadBundle: ((URL, Bool) -> Void)? = nil) async {
+        if let task = installedLoadTask { await task.value; return }
         guard !didLoadInstalled else { return }
-        didLoadInstalled = true
-        let started = Date()
-        var urls: [(url: URL, external: Bool)] = []
-        if let extra = Self.extraDirectory {
-            urls += Self.bundles(in: extra).map { (url: $0, external: true) }
+        let task = Task { @MainActor in
+            let started = Date()
+            var urls = override ?? []
+            if override == nil {
+                if let extra = Self.extraDirectory {
+                    urls += Self.bundles(in: extra).map { (url: $0, external: true) }
+                }
+                urls += Self.bundles(in: Self.directory).map { (url: $0, external: false) }
+            }
+            let paths = urls.map(\.url)
+            checkedSignatures = await runInBackground { checkSignatures(paths) }
+            for item in urls {
+                if let loadBundle { loadBundle(item.url, item.external) }
+                else { _ = load(item.url, external: item.external) }
+                // 即使有很多插件，也让主线程已排队的事件在下一次装载前得到处理。
+                await withCheckedContinuation { continuation in
+                    DispatchQueue.main.async { continuation.resume() }
+                }
+            }
+            checkedSignatures = [:]
+            didLoadInstalled = true
+            let milliseconds = Int(Date().timeIntervalSince(started) * 1000)
+            Self.log.notice("loaded \(self.loaded.count, privacy: .public) plugins in \(milliseconds, privacy: .public) ms")
         }
-        urls += Self.bundles(in: Self.directory).map { (url: $0, external: false) }
-        checkedSignatures = Self.checkSignatures(urls.map { $0.url })
-        for item in urls {
-            _ = load(item.url, external: item.external)
-        }
-        checkedSignatures = [:]
-        let milliseconds = Int(Date().timeIntervalSince(started) * 1000)
-        Self.log.notice("loaded \(self.loaded.count, privacy: .public) plugins in \(milliseconds, privacy: .public) ms")
+        installedLoadTask = task
+        await task.value
+        installedLoadTask = nil
     }
 
     /// 先查好的签名（插件包的位置 → 能不能装载）：启动时一起查的、装插件包时在后台查的
