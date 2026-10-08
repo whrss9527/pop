@@ -6,11 +6,12 @@ import AppKit
 /// 指向一格、滑到另一格、选中后弹出结果卡片、提示、「全部功能」列表、再展开一次圆盘并取消；
 /// 再按真实的手势流程走一遍：按住右键唤起、拖到上面一格、再拖到「剪贴板」、松开执行
 /// （直接调用鼠标拦截的回调，拖动位置和真实使用时一样由拦截送来，不看系统的指针位置）；
+/// 再用示例内容直接展示四条屏幕边缘、四个角落的圆盘和「更多」列表（不移动真实指针、不执行插件）；
 /// 最后是单位换算的卡片、贴图、AI 卡片、窗口布局卡片、翻译卡片、常用短语、文本对比、图片配色、暂存架、打开方式、
 /// Markdown 预览、截图标注窗口、设置窗口里新加的几页和插件库。
 /// 配合 POP_ANIMATION_SCALE 放慢动画，截图脚本就能拍到动画的中间帧；POP_APPEARANCE=dark 时用深色外观。
 /// 每一步开始时往 POP_DEMO_LOG 指定的文件里写一行「步骤名 时间戳 这一步的动画放慢倍数」；region 行是截图区域在屏幕上的位置
-/// （点，AppKit 坐标：x y 宽 高）和屏幕大小，脚本按拍照时最新的那一行裁图。
+/// （点，AppKit 坐标：x y 宽 高）、屏幕大小与原点、主屏高度，脚本按拍照时最新的那一行裁图。
 /// 主线程卡住超过 0.25 秒时，HangWatchdog 也往这个文件里写一行「hang 开始的时间戳 卡了几秒」，截图脚本按步骤列出来。
 /// POP_DEMO_QUICK_STEPS（逗号隔开）是截图脚本列出的只拍停下来之后的样子的步骤：插件包的这些步骤不用放慢那么多，
 /// 按 quickScale 走（和深色那一遍一样），动画和停留都短一些，省下截图的时间。
@@ -112,10 +113,14 @@ enum OverlayDemo {
             step("release")
             coordinator.mouseTriggerDidRelease(at: quartz(target))
 
-            // 单位换算的结果卡片
+            // 边缘圆盘只展示示例内容，不调用真实手势或插件；截图完恢复普通卡片的区域和速度
             await pause(1.4 * unit)
-            step("unit")
             coordinator.endSession()
+            await playEdgeRings(overlay: overlay, screen: screen, catalog: catalog, content: text, unit: unit)
+            logRegion(cardRegion, screen: screen)
+
+            // 单位换算的结果卡片
+            step("unit")
             let measurement = ContentClassifier.classify(.text("5 km"))
             let converted = await UnitConvertPlugin().run(measurement, context: PluginContext(settings: settings, openSettings: {}))
             if case .card(let unitCard) = converted {
@@ -509,6 +514,67 @@ enum OverlayDemo {
         }
     }
 
+    /// 真实可用屏幕的四边和四角，坐标全用 AppKit 点，不按截图像素或屏幕倍率换算。
+    /// 这里只驱动展示模型：先冻结落点再加载内容，分别拍加载后和悬停的状态，不移动指针、不运行插件。
+    private static func playEdgeRings(overlay: OverlayController, screen: NSScreen, catalog: [PluginInfo],
+                                      content: ClassifiedContent, unit: Double) async {
+        let visible = screen.visibleFrame
+        let cases: [(name: String, anchor: CGPoint, count: Int)] = [
+            ("edge-top-8", CGPoint(x: visible.midX, y: visible.maxY), 8),
+            ("edge-right-8", CGPoint(x: visible.maxX, y: visible.midY), 8),
+            ("edge-bottom-8", CGPoint(x: visible.midX, y: visible.minY), 8),
+            ("edge-left-8", CGPoint(x: visible.minX, y: visible.midY), 8),
+            ("corner-top-left-8", CGPoint(x: visible.minX, y: visible.maxY), 8),
+            ("corner-top-right-8", CGPoint(x: visible.maxX, y: visible.maxY), 8),
+            ("corner-bottom-right-8", CGPoint(x: visible.maxX, y: visible.minY), 8),
+            ("corner-bottom-left-8", CGPoint(x: visible.minX, y: visible.minY), 8),
+            ("corner-top-left-12", CGPoint(x: visible.minX, y: visible.maxY), 12),
+        ]
+        let sampleSlots = RingLayout.default.slots + [BuiltinPluginID.textStats, BuiltinPluginID.copyPlain,
+                                                    BuiltinPluginID.changeCase, BuiltinPluginID.textCleanup]
+        let installed = Set(sampleSlots.compactMap { $0 })
+        // 这组只拍停下来的样子，两倍速度就够；两遍加起来不到一分钟半
+        let sceneUnit = min(unit, quickScale)
+        Motion.timeScale = sceneUnit
+        defer { Motion.timeScale = unit }
+
+        for scene in cases {
+            overlay.hide(animated: false)
+            let layout = RingLayout(slots: Array(sampleSlots.prefix(scene.count)))
+            let model = RingViewModel(layout: layout, catalog: catalog, installed: installed, content: nil)
+            overlay.showRing(model, center: scene.anchor)
+            if let placement = model.placement {
+                logRegion(placement.frame.insetBy(dx: -24, dy: -24), screen: screen)
+            }
+            model.update(content: content)
+            step(scene.name + "-loaded")
+            await pause(hold(sceneUnit))
+
+            // 角落有溢出时指向最后一格「更多」，否则指向第一个能用的格子；用逻辑 ID，不把显示序号当 ID
+            let hovered = model.visibleSlots.first(where: { model.isOverflow($0.id) })
+                ?? model.visibleSlots.first(where: { $0.enabled })
+                ?? model.visibleSlots.first
+            model.setHovered(hovered?.id)
+            step(scene.name + "-hover")
+            await pause(hold(sceneUnit))
+
+            if scene.count == 12 {
+                // 紧凑列表直接使用同一模型；回调为空，演示绝不执行列表里的功能
+                overlay.hide(animated: false)
+                overlay.showCard(RingOverflowView(model: model, onSelect: { _ in }, onBack: {}, onCancel: {},
+                                                  maxHeight: max(120, visible.height - 20)), anchor: scene.anchor)
+                // 等布局回传实际大小，按真正的窗口裁图，长列表的滚动区域也完整保留
+                await pause(0.5 * sceneUnit)
+                if let panel = NSApp.windows.first(where: { $0 is OverlayPanel && $0.isVisible }) {
+                    logRegion(panel.frame.insetBy(dx: -24, dy: -24), screen: screen)
+                }
+                step("corner-top-left-12-overflow")
+                await pause(hold(sceneUnit))
+            }
+        }
+        overlay.hide(animated: false)
+    }
+
     /// 翻译对比演示用的引擎：AI 和 DeepL 直接给出写好的译文，不联网
     private static var demoTranslation: TranslationServices {
         TranslationServices(
@@ -714,10 +780,12 @@ enum OverlayDemo {
         Motion.timeScale = unit
     }
 
-    /// 截图区域（点，AppKit 坐标）和屏幕大小，截图脚本按它裁图
+    /// 截图区域（点，AppKit 全局坐标）、屏幕大小与原点、主屏高度；副屏不一定从 (0, 0) 开始
     private static func logRegion(_ region: CGRect, screen: NSScreen) {
+        let region = region.integral
         log("region \(Int(region.minX)) \(Int(region.minY)) \(Int(region.width)) \(Int(region.height)) "
-            + "\(Int(screen.frame.width)) \(Int(screen.frame.height))")
+            + "\(Int(screen.frame.width)) \(Int(screen.frame.height)) "
+            + "\(Int(screen.frame.minX)) \(Int(screen.frame.minY)) \(Int(OverlayController.primaryScreenHeight))")
     }
 
     /// 圆盘上第 slot 格方向、离圆心 95 点的位置（AppKit 坐标）

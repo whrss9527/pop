@@ -1,3 +1,4 @@
+import AppKit
 import SwiftUI
 import XCTest
 @testable import Pop
@@ -120,4 +121,133 @@ final class RingInteractionTests: XCTestCase {
         XCTAssertEqual(OverlayController.growAnchor(frame: CGRect(x: 506, y: 506, width: 400, height: 194), from: anchor), .bottomLeading)
         XCTAssertEqual(OverlayController.growAnchor(frame: CGRect(x: 90, y: 506, width: 404, height: 194), from: anchor), .bottomTrailing)
     }
+
+    func testMoreNavigationDoesNotBecomeAPendingPluginOrCloseWhileLoading() {
+        for loading in [true, false] {
+            for closes in [true, false] {
+                XCTAssertEqual(RingReleaseAction.decide(hovered: nil, selectable: nil, isLoading: loading,
+                                                       closesOnRelease: closes, isOverflow: true), .showOverflow)
+            }
+        }
+    }
+
+    @MainActor
+    func testEdgeLayoutAndOriginalSlotIDsStayFrozenWhenContentArrives() {
+        let layout = RingLayout.default
+        let ring = RingViewModel(layout: layout, catalog: BuiltinPlugins.make().map(\.info),
+                                 installed: Set(layout.slots.compactMap { $0 }), content: nil)
+        let anchor = CGPoint(x: -1280, y: 880)
+        ring.freezePlacement(anchor: anchor, safeFrame: CGRect(x: -1280, y: 0, width: 1280, height: 880))
+        let before = ring.placement
+        let ids = ring.visibleSlots.map(\.id)
+        XCTAssertEqual(before?.anchor, anchor)
+        XCTAssertFalse(ring.geometry.isFullCircle)
+        ring.setHovered(ids[0])
+        let angle = ring.highlightAngle
+        ring.update(content: ContentClassifier.classify(.text("Good morning")))
+        XCTAssertEqual(ring.placement, before)
+        XCTAssertEqual(ring.visibleSlots.map(\.id), ids)
+        XCTAssertEqual(ring.slots.map(\.id), Array(0..<layout.slots.count))
+        XCTAssertEqual(ring.hovered, ids[0])
+        XCTAssertEqual(ring.highlightAngle, angle)
+        // 返回原菜单也不能用新指针或新屏幕重新排版。
+        ring.freezePlacement(anchor: CGPoint(x: 400, y: 400), safeFrame: CGRect(x: 0, y: 0, width: 1920, height: 1080))
+        XCTAssertEqual(ring.placement, before)
+    }
+
+    @MainActor
+    func testOverflowKeepsEveryOriginalSlotAndKeyboardVisitsMore() {
+        let layout = RingLayout(slots: Array(repeating: BuiltinPluginID.clipboardHistory, count: 12))
+        let ring = RingViewModel(layout: layout, catalog: BuiltinPlugins.make().map(\.info),
+                                 installed: [BuiltinPluginID.clipboardHistory], content: nil)
+        ring.freezePlacement(anchor: CGPoint(x: 0, y: 600), safeFrame: CGRect(x: 0, y: 0, width: 800, height: 600))
+        XCTAssertTrue(ring.placement?.hasOverflow == true)
+        XCTAssertEqual(ring.visibleSlots.last?.id, ring.overflowID)
+        XCTAssertEqual(ring.slots.count, 12)
+        var visited: [Int] = []
+        for _ in ring.visibleSlots {
+            let next = ring.nextVisibleSlot(by: 1)
+            visited.append(next)
+            ring.setHovered(next)
+        }
+        XCTAssertEqual(visited, ring.visibleSlots.map(\.id))
+        XCTAssertTrue(ring.isOverflow(ring.hovered))
+        XCTAssertNil(ring.pluginSlot(ring.overflowID))
+        XCTAssertNil(ring.selectablePlugin(at: ring.overflowID))
+        XCTAssertEqual(ring.nextVisibleSlot(by: 1), 0)
+        ring.update(content: .empty)
+        for id in 0..<12 {
+            XCTAssertEqual(ring.selectablePlugin(at: id)?.id, BuiltinPluginID.clipboardHistory,
+                           "隐藏在更多里的原始功能仍能执行")
+        }
+    }
+
+    @MainActor
+    func testAdaptiveRenderedPositionsMatchHoverAndDragContinuation() {
+        let layout = RingLayout.default
+        let ring = RingViewModel(layout: layout, catalog: BuiltinPlugins.make().map(\.info),
+                                 installed: Set(layout.slots.compactMap { $0 }), content: .empty)
+        ring.freezePlacement(anchor: CGPoint(x: 0, y: 450), safeFrame: CGRect(x: 0, y: 0, width: 1440, height: 900))
+        for (position, slot) in ring.visibleSlots.enumerated() {
+            let offset = ring.geometry.slotCenterOffset(position)
+            ring.updateHover(offset: offset)
+            XCTAssertEqual(ring.hovered, slot.id)
+            ring.updateHover(offset: CGVector(dx: offset.dx * 3, dy: offset.dy * 3))
+            XCTAssertEqual(ring.hovered, slot.id, "按住划出圆弧后仍沿同一方向选择")
+        }
+        ring.updateHover(offset: .zero)
+        XCTAssertNil(ring.hovered)
+        ring.updateHover(offset: CGVector(dx: -200, dy: 0))
+        XCTAssertNil(ring.hovered, "朝弧外划动不选中")
+    }
+
+
+    func testExplicitMoreNavigationCancelsOldPendingSelectionAndSurvivesBack() {
+        var intent = RingLoadingIntent()
+        XCTAssertFalse(intent.preservesMenu)
+        intent.waitForSlot(3)
+        XCTAssertEqual(intent.pendingSlot, 3)
+        intent.navigateMenu()
+        XCTAssertNil(intent.pendingSlot, "打开更多不能再执行先前等待读取的选择")
+        XCTAssertTrue(intent.preservesMenu, "返回圆盘后仍只更新内容，不走直达规则")
+        intent.waitForSlot(1)
+        XCTAssertEqual(intent.pendingSlot, 1, "返回后明确选择一个新功能仍可以等待执行")
+        intent.clearPendingSlot()
+        XCTAssertNil(intent.pendingSlot)
+        XCTAssertTrue(intent.preservesMenu)
+    }
+
+
+    @MainActor
+    func testNativeOverlayKeepsAnchorAndCancelsRingWhenDisplaysChange() {
+        let overlay = OverlayController()
+        let safeFrame = OverlayController.visibleFrame(containing: .zero)
+        let anchor = CGPoint(x: safeFrame.minX + 1, y: safeFrame.maxY - 1)
+        let ring = RingViewModel(layout: .default, catalog: [], installed: [], content: .empty)
+        var dismissed = false
+        overlay.onDismiss = { dismissed = true }
+        overlay.showRing(ring, center: anchor)
+        XCTAssertEqual(overlay.mode, .ring)
+        XCTAssertEqual(overlay.ringCenter, anchor)
+        XCTAssertEqual(ring.placement?.anchor, anchor)
+        NotificationCenter.default.post(name: NSApplication.didChangeScreenParametersNotification, object: nil)
+        XCTAssertTrue(dismissed)
+        XCTAssertEqual(overlay.mode, .hidden)
+        XCTAssertNil(overlay.ringCenter)
+        overlay.hide(animated: false)
+    }
+
+    @MainActor
+    func testNativeOverflowCardCancelsInsteadOfMovingWhenDisplaysChange() {
+        let overlay = OverlayController()
+        var dismissed = false
+        overlay.onDismiss = { dismissed = true }
+        overlay.showCard(Text("读取中…"), anchor: CGPoint(x: 100, y: 100), cancelsOnScreenChange: true)
+        XCTAssertEqual(overlay.mode, .card)
+        NotificationCenter.default.post(name: NSApplication.didChangeScreenParametersNotification, object: nil)
+        XCTAssertTrue(dismissed)
+        XCTAssertEqual(overlay.mode, .hidden)
+        overlay.hide(animated: false)
+    }
+
 }

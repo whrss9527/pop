@@ -3,6 +3,8 @@
 # 按 Pop 写出的步骤时间在固定的时刻截下浮窗那一块，最后一起转成 JPEG。
 # 圆盘展开、指向、滑动、选中、结果卡片、提示、列表、取消、贴图、常用短语、文本对比、图片配色、暂存架、打开方式、
 # Markdown 预览、截图标注都会拍到，包括动画的中间帧。
+# 四条边和四个角的圆盘额外拍已加载、悬停的状态，12 格角落还拍「更多」列表。
+# 边缘步骤直接驱动示例模型，不移动真实指针、不执行插件；它们是展示回归证据，不是手势端到端测试。
 # 之后用深色外观再拍一组停下来之后的样子（文件名以 dark- 开头），POP_SKIP_DARK=1 时不拍。
 # 只拍停下来之后的样子的插件包步骤不用放慢那么多：Pop 在这些步骤上按 2 倍走（POP_DEMO_QUICK_STEPS），省下时间。
 # 两遍演示里主线程卡住超过 0.25 秒的地方最后都列出来，卡了 2 秒以上（POP_HANG_LIMIT）的算失败。
@@ -50,6 +52,13 @@ import os, shutil, subprocess, sys, threading, time
 
 log_path, work, out, scale_text, appearance, prefix, app, plugin_index, scripts = sys.argv[1:10]
 scale = float(scale_text)
+
+# 边缘圆盘只拍停稳后的状态。OverlayDemo 对这些步骤固定用至多两倍动画速度。
+edge_cases = ["edge-top-8", "edge-right-8", "edge-bottom-8", "edge-left-8",
+              "corner-top-left-8", "corner-top-right-8", "corner-bottom-right-8", "corner-bottom-left-8",
+              "corner-top-left-12"]
+edge_plan = [(name + "-" + state, [3.0]) for name in edge_cases for state in ("loaded", "hover")]
+edge_plan.append(("corner-top-left-12-overflow", [3.0]))
 
 # 每一步开始后第几秒截图（按放慢 6 倍设计，别的倍数按比例换算）
 plan = [
@@ -180,6 +189,11 @@ if appearance == "dark":
             ("settings-ring", [0.5]), ("settings-plugins", [0.5]), ("settings-ai", [0.5]), ("settings-hotKeys", [0.5]),
             ("settings-pluginLibrary", [0.8])]
 
+# 两种外观使用同一组边缘用例，放在真实手势结束之后、单位换算之前。
+edge_index = next(i for i, (name, _) in enumerate(plan) if name == "unit")
+plan[edge_index:edge_index] = edge_plan
+print("边缘圆盘截图使用示例内容和模型悬停状态；不移动真实指针、不执行插件。")
+
 samples = os.path.join(work, f"samples-{appearance}")
 os.makedirs(samples, exist_ok=True)
 stop_sampling = threading.Event()
@@ -236,7 +250,7 @@ def markers():
             if not parts:
                 continue
             if parts[0] == "region" and len(parts) >= 7:
-                region = [int(p) for p in parts[1:7]]
+                region = [int(p) for p in parts[1:10]]
             elif parts[0] in ("hang", "stall"):
                 continue
             elif len(parts) >= 2:
@@ -257,11 +271,13 @@ def wait_for(name, timeout=120):
 
 def screen_rect(region):
     """截图区域换成 screencapture -R 用的矩形：AppKit 坐标 y 向上，-R 的 y 向下；超出屏幕的部分去掉"""
-    x, y, w, h, screen_w, screen_h = region
-    left = max(0, x)
-    top = max(0, screen_h - y - h)
-    right = min(screen_w, x + w)
-    bottom = min(screen_h, screen_h - y)
+    x, y, w, h, screen_w, screen_h = region[:6]
+    # 新版日志保留副屏的全局原点；旧版只有六项时，仍按主屏处理
+    screen_x, screen_y, primary_h = region[6:9] if len(region) >= 9 else (0, 0, screen_h)
+    left = max(screen_x, x)
+    top = max(primary_h - screen_y - screen_h, primary_h - y - h)
+    right = min(screen_x + screen_w, x + w)
+    bottom = min(primary_h - screen_y, primary_h - y)
     return left, top, max(1, right - left), max(1, bottom - top)
 
 shots = []
