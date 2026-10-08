@@ -170,6 +170,8 @@ struct RingPlacement: Equatable {
             let labelBounds = safeFrame.insetBy(dx: safeLabelSize.width / 2 + 0.5,
                                                dy: max(safeLabelSize.height / 2, candidate.highlightRadius + 1) + 0.5)
             let labelArcs = allowedArcs(radius: radius, anchor: anchor, bounds: labelBounds)
+            // 每个可选方向都必须在标签圆周上落进可用区域，不能只检查标签中心。
+            let sectorArcs = allowedArcs(radius: radius, anchor: anchor, bounds: safeFrame)
             // 外圈描边宽 3 点，阴影半径 5 点，合计向边缘预留 7 点。
             let rimArcs = allowedArcs(radius: candidate.outerRadius - 5, anchor: anchor,
                                       bounds: safeFrame.insetBy(dx: 7.5, dy: 7.5))
@@ -179,16 +181,22 @@ struct RingPlacement: Equatable {
             for labels in labelArcs {
                 for rim in rimArcs {
                     for turn in -1...1 {
-                        let start = max(labels.start, rim.start + Double(turn) * 360 + rimHalfSpan)
-                        let end = min(labels.end, rim.end + Double(turn) * 360 - rimHalfSpan)
-                        guard end - start >= centerSpan else { continue }
-                        let low = start + centerSpan / 2
-                        let high = end - centerSpan / 2
-                        let desired = RingGeometry.continuousAngle(inward, near: (low + high) / 2)
-                        let angle = min(max(desired, low), high)
-                        let distance = abs(angle - desired)
-                        if best == nil || distance < best!.distance {
-                            best = (angle, distance)
+                        let labelAndRimStart = max(labels.start, rim.start + Double(turn) * 360 + rimHalfSpan)
+                        let labelAndRimEnd = min(labels.end, rim.end + Double(turn) * 360 - rimHalfSpan)
+                        for sector in sectorArcs {
+                            for sectorTurn in -1...1 {
+                                let start = max(labelAndRimStart, sector.start + Double(sectorTurn) * 360 + step / 2)
+                                let end = min(labelAndRimEnd, sector.end + Double(sectorTurn) * 360 - step / 2)
+                                guard end - start >= centerSpan else { continue }
+                                let low = start + centerSpan / 2
+                                let high = end - centerSpan / 2
+                                let desired = RingGeometry.continuousAngle(inward, near: (low + high) / 2)
+                                let angle = min(max(desired, low), high)
+                                let distance = abs(angle - desired)
+                                if best == nil || distance < best!.distance {
+                                    best = (angle, distance)
+                                }
+                            }
                         }
                     }
                 }

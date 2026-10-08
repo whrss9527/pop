@@ -103,6 +103,38 @@ final class GeometryTests: XCTestCase {
         }
     }
 
+    func testExactCornersKeepEverySelectableDirectionInsideSafeFrame() {
+        let safeFrame = CGRect(x: 0, y: 80, width: 1440, height: 794)
+        let corners: [(anchor: CGPoint, start: Double)] = [
+            (CGPoint(x: safeFrame.minX, y: safeFrame.maxY), 0),
+            (CGPoint(x: safeFrame.maxX, y: safeFrame.maxY), 90),
+            (CGPoint(x: safeFrame.maxX, y: safeFrame.minY), 180),
+            (CGPoint(x: safeFrame.minX, y: safeFrame.minY), 270),
+        ]
+        for count in [4, 6, 8, 10, 12] {
+            for corner in corners {
+                let placement = RingPlacement(slotCount: count, anchor: corner.anchor, safeFrame: safeFrame)
+                XCTAssertEqual(placement.anchor, corner.anchor)
+                XCTAssertEqual(placement.visibleSlotCount, 4)
+                XCTAssertEqual(placement.hasOverflow, count > 4)
+                XCTAssertNil(placement.geometry.slot(at: offset(angle: corner.start - 1, radius: 10_000)))
+                XCTAssertNil(placement.geometry.slot(at: offset(angle: corner.start + 91, radius: 10_000)))
+                assertSafeAdaptivePlacement(placement)
+            }
+        }
+    }
+
+    func testHeldDragTowardMenuBarAtExactTopLeftDoesNotSelect() {
+        let safeFrame = CGRect(x: 0, y: 80, width: 1440, height: 794)
+        let placement = RingPlacement(slotCount: 4, anchor: CGPoint(x: safeFrame.minX, y: safeFrame.maxY),
+                                      safeFrame: safeFrame)
+        // -1° 朝向菜单栏，即使只比可见扇形向外偏一点，也不能选中第一格。
+        XCTAssertNil(placement.geometry.slot(at: offset(angle: -1, radius: placement.geometry.labelRadius)))
+        XCTAssertNil(placement.geometry.slot(at: offset(angle: -1, radius: 10_000)))
+        XCTAssertEqual(placement.geometry.slot(at: placement.geometry.slotCenterOffset(0, radius: 10_000)), 0)
+        assertSafeAdaptivePlacement(placement)
+    }
+
     func testCornerOverflowDoesNotShrinkTargetsOrExceedRadiusLimit() {
         let placement = RingPlacement(slotCount: 12, anchor: CGPoint(x: 2, y: 2),
                                       safeFrame: CGRect(x: 0, y: 0, width: 1440, height: 900))
@@ -256,6 +288,18 @@ final class GeometryTests: XCTestCase {
         let opposite = geometry.startDegrees + geometry.sweepDegrees / 2 + 180
         XCTAssertNil(geometry.slot(at: offset(angle: opposite, radius: 10_000)), file: file, line: line)
         for index in 0..<placement.visibleSlotCount {
+            let sector = geometry.sectorDegrees(index)
+            for sample in 0...40 {
+                let angle = sector.start + (sector.end - sector.start) * Double(sample) / 40
+                let vector = offset(angle: angle, radius: geometry.labelRadius)
+                let point = CGPoint(x: placement.anchor.x + vector.dx, y: placement.anchor.y + vector.dy)
+                XCTAssertTrue(safe.contains(point), "可选方向不能越过可见扇形的屏幕边界", file: file, line: line)
+                XCTAssertTrue(frame.contains(point), "可选方向不能越过可见扇形的窗口边界", file: file, line: line)
+                if sample > 0 && sample < 40 {
+                    XCTAssertEqual(geometry.slot(at: vector), index, file: file, line: line)
+                    XCTAssertEqual(geometry.slot(at: offset(angle: angle, radius: 10_000)), index, file: file, line: line)
+                }
+            }
             let label = placement.labelFrame(index)
             XCTAssertTrue(safe.contains(label), "标签越过屏幕：\(label)", file: file, line: line)
             XCTAssertTrue(frame.contains(label), "标签越过窗口：\(label)", file: file, line: line)

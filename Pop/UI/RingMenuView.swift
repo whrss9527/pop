@@ -266,7 +266,7 @@ struct RingMenuView: View {
                 .overlay(Circle().strokeBorder(Color.primary.opacity(0.12), lineWidth: 1))
             if let hovered = model.hovered {
                 // 圆心边上的小点指着当前的格子，跟着高亮一起转
-                let enabled = model.slots.indices.contains(hovered) && model.slots[hovered].enabled
+                let enabled = model.isOverflow(hovered) || (model.slots.indices.contains(hovered) && model.slots[hovered].enabled)
                 PolarDot(angle: model.highlightAngle, distance: diameter / 2 - 6, radius: 2.5)
                     .fill(enabled ? Color.accentColor : Color.primary.opacity(0.4))
                     .id(model.highlightID)
