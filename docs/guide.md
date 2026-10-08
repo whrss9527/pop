@@ -16,8 +16,8 @@ Builds made on GitHub don't include iCloud sync (it needs signing with your own 
 
 Pop checks for updates directly on this repository's GitHub Releases; there's no separate update server:
 
-- With “Check for updates automatically” on (the default), Pop checks at launch and every 6 hours after that. You can also check any time in Settings → Update or from the menu bar icon. Beta versions (pre-releases) are included by default; you can turn that off in Settings.
-- When there's a new version, Pop sends a notification and the menu bar icon turns into a download arrow. Settings → Update shows the release notes; you can update right away or skip that version.
+- With “Check for updates automatically” on (the default), Pop checks at launch and every 6 hours after that. You can also check any time in Settings → Update or from the menu bar icon. New installations use the stable channel. Enable beta versions in Settings to try verified main changes; an existing choice is preserved. Stable releases ship at most once per weekday.
+- When there's a new version, The menu bar icon turns into a download arrow. New-version and post-update notifications share a limit of one per local calendar day; Settings still shows all intermediate release notes. Settings → Update shows the release notes; you can update right away or skip that version.
 - When you click Update Now, Pop:
   1. downloads `Pop-<version>.zip` and `SHA256SUMS.txt` and verifies the SHA-256 checksum;
   2. unzips it and checks the bundle ID, the version and that the code signature is intact;

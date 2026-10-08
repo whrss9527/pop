@@ -159,16 +159,28 @@ enum UpdateChecker {
             let y = index < b.numbers.count ? b.numbers[index] : 0
             if x != y { return x > y }
         }
-        return !a.prerelease && b.prerelease
+        if a.prerelease.isEmpty || b.prerelease.isEmpty {
+            return a.prerelease.isEmpty && !b.prerelease.isEmpty
+        }
+        for (x, y) in zip(a.prerelease, b.prerelease) where x != y {
+            switch (Int(x), Int(y)) {
+            case (let lhs?, let rhs?): return lhs > rhs
+            case (_?, nil): return false
+            case (nil, _?): return true
+            case (nil, nil): return x > y
+            }
+        }
+        return a.prerelease.count > b.prerelease.count
     }
 
-    private static func components(_ version: String) -> (numbers: [Int], prerelease: Bool) {
+    private static func components(_ version: String) -> (numbers: [Int], prerelease: [String]) {
         var text = version.trimmingCharacters(in: .whitespaces)
         if text.hasPrefix("v") || text.hasPrefix("V") {
             text.removeFirst()
         }
+        text = String(text.split(separator: "+", maxSplits: 1).first ?? "")
         let parts = text.split(separator: "-", maxSplits: 1)
         let numbers = (parts.first ?? "").split(separator: ".").map { Int($0) ?? 0 }
-        return (numbers, parts.count > 1)
+        return (numbers, parts.count > 1 ? parts[1].split(separator: ".").map(String.init) : [])
     }
 }

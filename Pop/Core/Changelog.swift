@@ -99,8 +99,13 @@ enum Changelog {
         let previous = defaults.string(forKey: lastVersionKey)
         defaults.set(current, forKey: lastVersionKey)
         guard let previous, UpdateChecker.isNewer(current, than: previous) else { return nil }
-        defaults.set(previous, forKey: updatedFromKey)
-        return summary(releases(all, after: previous, upTo: current))
+        let baseline = defaults.string(forKey: updatedFromKey)
+        // 同一天连着升级，说明从第一次升级前算起，即使没有再发通知也能看到全部改动。
+        let from = UpdateNotificationGate.alreadySentToday(defaults: defaults)
+            ? baseline.map { UpdateChecker.isNewer(previous, than: $0) ? $0 : previous } ?? previous
+            : previous
+        defaults.set(from, forKey: updatedFromKey)
+        return summary(releases(all, after: from, upTo: current))
     }
 
     /// 「更新」页上列出的：从上次更新前的版本到现在的每一版；不知道从哪版更新上来的就只列这一版
@@ -114,10 +119,19 @@ enum Changelog {
         return all.filter { $0.version == current }
     }
 
+    /// 未发布开发构建和测试版把累积章节映射到实际构建版本，保留下面的中间稳定版说明。
+    static func forBuild(_ text: String, current: String) -> [Release] {
+        guard let range = text.range(of: "(?m)^## [^\n]+", options: .regularExpression) else { return parse(text) }
+        let first = String(text[range])
+        let base = current.split(separator: "-", maxSplits: 1).first.map(String.init)
+        guard first == "## 未发布" || first == "## Unreleased" || (current.contains("-") && heading(first)?.version == base) else { return parse(text) }
+        return parse(text.replacingCharacters(in: range, with: "## \(current)"))
+    }
+
     /// App 里带着的更新记录
     static let bundled: [Release] = {
         guard let url = Bundle.main.url(forResource: "CHANGELOG", withExtension: "md"),
               let text = try? String(contentsOf: url, encoding: .utf8) else { return [] }
-        return parse(text)
+        return forBuild(text, current: UpdateChecker.currentVersion)
     }()
 }

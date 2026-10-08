@@ -72,8 +72,35 @@ final class UpdateCheckerTests: XCTestCase {
         XCTAssertNil(UpdateChecker.newest([], includePrereleases: true))
     }
 
+    @MainActor
+    func testStableChannelDefaultAndExistingBetaPreference() {
+        let name = "update-channel-test-\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: name)!
+        defer { defaults.removePersistentDomain(forName: name) }
+        XCTAssertFalse(Updater(defaults: defaults).includePrereleases)
+        defaults.set(true, forKey: "pop.update.includePrereleases")
+        XCTAssertTrue(Updater(defaults: defaults).includePrereleases)
+    }
+
+    func testUpdateNotificationsShareADailyLimitAcrossRestarts() {
+        let name = "update-notification-test-\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: name)!
+        defer { defaults.removePersistentDomain(forName: name) }
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = TimeZone(secondsFromGMT: 8 * 3600)!
+        let first = ISO8601DateFormatter().date(from: "2026-10-06T15:00:00Z")!
+        XCTAssertTrue(UpdateNotificationGate.claim(defaults: defaults, now: first, calendar: calendar))
+        let restartedDefaults = UserDefaults(suiteName: name)!
+        XCTAssertFalse(UpdateNotificationGate.claim(defaults: restartedDefaults, now: first.addingTimeInterval(60), calendar: calendar))
+        XCTAssertTrue(UpdateNotificationGate.claim(defaults: restartedDefaults, now: first.addingTimeInterval(3600), calendar: calendar))
+    }
+
     func testVersionComparison() {
         XCTAssertTrue(UpdateChecker.isNewer("0.3.0", than: "0.2.9"))
+        XCTAssertTrue(UpdateChecker.isNewer("0.69.0-beta.10", than: "0.69.0-beta.2"))
+        XCTAssertFalse(UpdateChecker.isNewer("0.69.0-beta.2", than: "0.69.0-beta.10"))
+        XCTAssertTrue(UpdateChecker.isNewer("0.69.0-rc.1", than: "0.69.0-beta.100"))
+        XCTAssertFalse(UpdateChecker.isNewer("0.69.0-beta.1+build.2", than: "0.69.0-beta.1+build.1"))
         XCTAssertTrue(UpdateChecker.isNewer("0.10.0", than: "0.9.0"))
         XCTAssertTrue(UpdateChecker.isNewer("v1.0", than: "0.9.9"))
         XCTAssertTrue(UpdateChecker.isNewer("1.0.0", than: "1.0.0-beta"))
