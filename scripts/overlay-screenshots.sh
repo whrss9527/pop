@@ -3,7 +3,7 @@
 # 按 Pop 写出的步骤时间在固定的时刻截下浮窗那一块，最后一起转成 JPEG。
 # 圆盘展开、指向、滑动、选中、结果卡片、提示、列表、取消、贴图、常用短语、文本对比、图片配色、暂存架、打开方式、
 # Markdown 预览、截图标注都会拍到，包括动画的中间帧。
-# 四条边和四个角的圆盘额外拍已加载、悬停的状态，12 格角落还拍「更多」列表。
+# 四条边和四个角的圆盘额外拍已加载、悬停的状态，12 格角落还拍「更多」列表和等待插件更新的占位。
 # 边缘步骤直接驱动示例模型，不移动真实指针、不执行插件；它们是展示回归证据，不是手势端到端测试。
 # 之后用深色外观再拍一组停下来之后的样子（文件名以 dark- 开头），POP_SKIP_DARK=1 时不拍。
 # 只拍停下来之后的样子的插件包步骤不用放慢那么多：Pop 在这些步骤上按 2 倍走（POP_DEMO_QUICK_STEPS），省下时间。
@@ -58,7 +58,8 @@ edge_cases = ["edge-top-8", "edge-right-8", "edge-bottom-8", "edge-left-8",
               "corner-top-left-8", "corner-top-right-8", "corner-bottom-right-8", "corner-bottom-left-8",
               "corner-top-left-12"]
 edge_plan = [(name + "-" + state, [3.0]) for name in edge_cases for state in ("loaded", "hover")]
-edge_plan.append(("corner-top-left-12-overflow", [3.0]))
+edge_plan.extend([("corner-top-left-12-overflow", [3.0]),
+                  ("corner-pending-loaded", [3.0]), ("corner-pending-overflow", [3.0])])
 
 # 每一步开始后第几秒截图（按放慢 6 倍设计，别的倍数按比例换算）
 plan = [

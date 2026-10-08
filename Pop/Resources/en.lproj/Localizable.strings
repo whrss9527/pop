@@ -3210,3 +3210,5 @@
 "正在看哪些文件要转…" = "Checking which files need converting…";
 
 "返回圆盘" = "Back to menu";
+"正在更新" = "Updating";
+"正在更新，联网后会自动重试" = "Updating; retries automatically when online";

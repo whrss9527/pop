@@ -254,4 +254,41 @@ final class RingInteractionTests: XCTestCase {
         overlay.hide(animated: false)
     }
 
+
+    @MainActor
+    func testPendingPackagesKeepNamesAndDisabledStateInEdgeAndOverflowSlots() {
+        let package = PluginCatalog.packages[0]
+        let function = package.functions[0]
+        let layout = RingLayout(slots: Array(repeating: function, count: 12))
+        let ring = RingViewModel(layout: layout, catalog: [], installed: [function], content: nil)
+        ring.freezePlacement(anchor: CGPoint(x: 0, y: 600), safeFrame: CGRect(x: 0, y: 0, width: 800, height: 600))
+        let placement = ring.placement
+        let visibleIDs = ring.visibleSlots.map(\.id)
+        XCTAssertTrue(placement?.hasOverflow == true)
+        for slot in ring.slots {
+            XCTAssertEqual(slot.pendingPackage, package.name)
+            XCTAssertEqual(slot.displayName, package.name, "更多里不能把等待更新的功能显示成空格子")
+            XCTAssertEqual(slot.displaySymbol, "arrow.clockwise")
+            XCTAssertEqual(slot.updateHint, "正在更新，联网后会自动重试")
+            XCTAssertFalse(slot.enabled)
+            XCTAssertNil(ring.pluginSlot(slot.id))
+            XCTAssertNil(ring.selectablePlugin(at: slot.id))
+        }
+        XCTAssertTrue(ring.visibleSlots.last?.isOverflow == true)
+        XCTAssertTrue(ring.visibleSlots.last?.enabled == true)
+        XCTAssertNil(ring.visibleSlots.last?.pendingPackage)
+        ring.update(content: ContentClassifier.classify(.text("hello")))
+        XCTAssertEqual(ring.placement, placement)
+        XCTAssertEqual(ring.visibleSlots.map(\.id), visibleIDs)
+        for slot in ring.slots {
+            XCTAssertEqual(slot.pendingPackage, package.name)
+            XCTAssertFalse(slot.enabled)
+            XCTAssertNil(ring.selectablePlugin(at: slot.id))
+        }
+        ring.setHovered(0)
+        XCTAssertEqual(ring.center.title, package.name)
+        XCTAssertEqual(ring.center.detail, "正在更新，联网后会自动重试")
+        XCTAssertFalse(ring.center.enabled)
+    }
+
 }

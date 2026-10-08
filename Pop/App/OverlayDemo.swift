@@ -570,6 +570,36 @@ enum OverlayDemo {
                 }
                 step("corner-top-left-12-overflow")
                 await pause(hold(sceneUnit))
+
+                // 只在演示目录里移除一个已安装插件的实现：第一格在扇形里，最后一格藏在「更多」里。
+                // 其他格子的内容和可用状态照旧，不真的卸载、更新或执行插件。
+                let pendingFunction = PluginCatalog.packages[0].functions[0]
+                var pendingSlots = sampleSlots
+                pendingSlots[0] = pendingFunction
+                pendingSlots[pendingSlots.count - 1] = pendingFunction
+                let pending = RingViewModel(layout: RingLayout(slots: pendingSlots),
+                                            catalog: catalog.filter { $0.id != pendingFunction },
+                                            installed: installed.union([pendingFunction]), content: nil)
+                overlay.hide(animated: false)
+                overlay.showRing(pending, center: scene.anchor)
+                if let placement = pending.placement {
+                    logRegion(placement.frame.insetBy(dx: -24, dy: -24), screen: screen)
+                }
+                pending.update(content: content)
+                step("corner-pending-loaded")
+                await pause(hold(sceneUnit))
+
+                overlay.hide(animated: false)
+                overlay.showCard(RingOverflowView(model: pending, onSelect: { _ in }, onBack: {}, onCancel: {},
+                                                  maxHeight: max(120, visible.height - 20)), anchor: scene.anchor)
+                await pause(0.5 * sceneUnit)
+                // 小屏幕上也让最后一格的插件名和自动重试提示出现在截图里；仅滚动，不触发操作。
+                pending.overflowSelection = pending.slots.count - 1
+                if let panel = NSApp.windows.first(where: { $0 is OverlayPanel && $0.isVisible }) {
+                    logRegion(panel.frame.insetBy(dx: -24, dy: -24), screen: screen)
+                }
+                step("corner-pending-overflow")
+                await pause(hold(sceneUnit))
             }
         }
         overlay.hide(animated: false)

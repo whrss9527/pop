@@ -137,9 +137,47 @@ final class PluginBundles {
 
     /// 装好的插件包放在这里（自定义插件的 JSON 在旁边的 Plugins 文件夹里，分开放）
     nonisolated static var directory: URL {
-        FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
-            .appendingPathComponent("Pop", isDirectory: true)
-            .appendingPathComponent("PluginBundles", isDirectory: true)
+        PluginPackage.dataDirectory.appendingPathComponent("PluginBundles", isDirectory: true)
+    }
+
+    nonisolated static var pendingDirectory: URL {
+        directory.deletingLastPathComponent().appendingPathComponent("PendingPlugins", isDirectory: true)
+    }
+
+    /// 新版本先接收预取的插件包，再按原来的构建与签名规则装载；旧版或回滚的实例不碰新构建暂存。
+    private func adoptPendingPlugins() async {
+        let manager = FileManager.default
+        let stages = (try? manager.contentsOfDirectory(at: Self.pendingDirectory, includingPropertiesForKeys: nil)) ?? []
+        for stage in stages {
+            guard let data = try? Data(contentsOf: stage.appendingPathComponent("index.json")),
+                  let index = try? JSONDecoder().decode(PluginReleaseIndex.self, from: data),
+                  index.build == Self.appBuildID, index.version == UpdateChecker.currentVersion else { continue }
+            var complete = true
+            for entry in index.plugins where PluginManager.safeFilename(entry.bundle) {
+                let bundle = stage.appendingPathComponent(entry.bundle)
+                guard manager.fileExists(atPath: bundle.path) else { continue }
+                guard Self.pluginID(of: bundle) == entry.id, Self.buildID(of: bundle) == Self.appBuildID else { complete = false; continue }
+                let trusted = await runInBackground { CodeSignature.isTrustedPlugin(bundle) }
+                guard trusted else { complete = false; continue }
+                let target = Self.directory.appendingPathComponent(entry.bundle)
+                let backup = stage.appendingPathComponent("previous-" + entry.bundle)
+                do {
+                    try manager.createDirectory(at: Self.directory, withIntermediateDirectories: true)
+                    if manager.fileExists(atPath: target.path) { try manager.moveItem(at: target, to: backup) }
+                    do { try manager.moveItem(at: bundle, to: target) }
+                    catch {
+                        if manager.fileExists(atPath: backup.path) { try? manager.moveItem(at: backup, to: target) }
+                        throw error
+                    }
+                    try? manager.removeItem(at: backup)
+                    UpdateLog.info("已接收预取插件包 \(entry.id)")
+                } catch { complete = false }
+            }
+            if complete {
+                if let cache = PluginManager.indexCacheURL { try? data.write(to: cache, options: .atomic) }
+                try? manager.removeItem(at: stage)
+            }
+        }
     }
 
     /// App Store 版：插件包都打在 Pop.app/Contents/PlugIns 里，装上就是从那里装载，不从网上下载（审核指南 2.5.2）
@@ -164,6 +202,7 @@ final class PluginBundles {
             let started = Date()
             var urls = override ?? []
             if override == nil {
+                await adoptPendingPlugins()
                 if let extra = Self.extraDirectory {
                     urls += Self.bundles(in: extra).map { (url: $0, external: true) }
                 }

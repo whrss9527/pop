@@ -8,6 +8,14 @@ final class RingViewModel: ObservableObject {
         let info: PluginInfo?
         var enabled: Bool
         var isOverflow = false
+        var pendingPackage: String? = nil
+
+        /// 更多列表也保留等待更新的功能名称、图标和不可执行状态。
+        var displayName: String { info?.name ?? pendingPackage ?? String(localized: "空格子") }
+        var displaySymbol: String { info?.symbol ?? (pendingPackage == nil ? "circle.dotted" : "arrow.clockwise") }
+        var updateHint: String? {
+            pendingPackage == nil ? nil : String(localized: "正在更新，联网后会自动重试")
+        }
     }
 
     private let baseGeometry: RingGeometry
@@ -64,7 +72,10 @@ final class RingViewModel: ObservableObject {
         baseGeometry = RingGeometry(slotCount: count, outerRadius: RingGeometry.outerRadius(forSlotCount: count))
         slots = layout.slots.enumerated().map { index, pluginID in
             let info = pluginID.flatMap { id in installed.contains(id) ? catalog.first(where: { $0.id == id }) : nil }
-            return Slot(id: index, info: info, enabled: false)
+            let pending = pluginID.flatMap { id in
+                installed.contains(id) && info == nil ? PluginCatalog.all.first(where: { $0.functions.contains(id) })?.name : nil
+            }
+            return Slot(id: index, info: info, enabled: false, pendingPackage: pending)
         }
         centerText = String(localized: "读取中…")
         isLoading = true
@@ -95,6 +106,9 @@ final class RingViewModel: ObservableObject {
         if isOverflow(hovered) { return Center(title: String(localized: "更多功能"), isFunction: true) }
         guard let hovered, slots.indices.contains(hovered) else { return Center(title: centerText) }
         let slot = slots[hovered]
+        if let package = slot.pendingPackage {
+            return Center(title: package, detail: String(localized: "正在更新，联网后会自动重试"), isFunction: true, enabled: false)
+        }
         guard let info = slot.info else {
             return Center(title: String(localized: "空格子"), detail: String(localized: "可以在设置里放上功能"), isFunction: true, enabled: false)
         }
@@ -246,6 +260,7 @@ struct RingMenuView: View {
 
     private func slotHint(_ slot: RingViewModel.Slot) -> String {
         if slot.isOverflow { return String(localized: "更多功能") }
+        if let hint = slot.updateHint { return slot.displayName + "\n" + hint }
         guard let info = slot.info else { return String(localized: "空格子") }
         if model.isLoading { return info.name + "\n" + String(localized: "读取中…") }
         return slot.enabled ? info.name : info.name + "\n" + RingViewModel.unavailableHint(for: info, content: model.content)
@@ -428,6 +443,12 @@ private struct RingSlotLabel: View {
                     .lineLimit(1)
                     .minimumScaleFactor(0.8)
                     .allowsTightening(true)
+            } else if slot.pendingPackage != nil {
+                Image(systemName: "arrow.clockwise")
+                    .font(.system(size: 19))
+                    .frame(height: 22)
+                Text("正在更新")
+                    .font(.system(size: 10.5))
             } else {
                 Circle()
                     .fill(Color.secondary.opacity(0.35))
@@ -436,7 +457,7 @@ private struct RingSlotLabel: View {
         }
         .frame(width: 66)
         .foregroundStyle(active ? Color.accentColor : Color.primary)
-        .opacity(isLoading && !slot.isOverflow ? 0.45 : (slot.enabled ? 1 : 0.3))
+        .opacity(isLoading && !slot.isOverflow ? 0.45 : (slot.enabled ? 1 : (slot.pendingPackage != nil ? 0.65 : 0.3)))
         .opacity(dimmed ? 0.35 : 1)
         .scaleEffect(isCommitted ? 1.2 : (active ? 1.12 : 1))
         .animation(Motion.hover, value: active)
@@ -499,11 +520,13 @@ struct RingOverflowView: View {
                                     Text("\(slot.id + 1)")
                                         .foregroundStyle(.secondary)
                                         .frame(width: 22)
-                                    Image(systemName: slot.info?.symbol ?? "circle.dotted")
+                                    Image(systemName: slot.displaySymbol)
                                         .frame(width: 22)
                                     VStack(alignment: .leading, spacing: 2) {
-                                        Text(slot.info?.name ?? String(localized: "空格子"))
-                                        if model.isLoading {
+                                        Text(slot.displayName)
+                                        if let hint = slot.updateHint {
+                                            Text(hint).font(.caption).foregroundStyle(.secondary).lineLimit(2)
+                                        } else if model.isLoading {
                                             Text("读取中…").font(.caption).foregroundStyle(.secondary)
                                         } else if let info = slot.info, !slot.enabled {
                                             Text(RingViewModel.unavailableHint(for: info, content: model.content))

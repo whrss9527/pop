@@ -221,6 +221,8 @@ final class Updater: ObservableObject {
         }
     }
 
+    var preparePlugins: ((URL, String) async throws -> Void)?
+
     func cancel() {
         installTask?.cancel()
     }
@@ -275,6 +277,8 @@ final class Updater: ObservableObject {
         UpdateLog.info("签名检查通过")
         try Task.checkCancellation()
 
+        try await preparePlugins?(app, release.version)
+        try Task.checkCancellation()
         phase = .installing(release)
         try await UpdateInstaller.install(newApp: app, replacing: plan.target)
         if let old = plan.trashAfter {
