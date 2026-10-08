@@ -136,7 +136,7 @@ final class OverlayController {
     /// 圆盘模式下点击了面板
     var onRingClick: (() -> Void)?
 
-    /// 圆盘实际显示的圆心（靠近屏幕边缘时会和唤起点不同）
+    /// 圆盘的逻辑圆心始终是原唤起点，与窗口中心无关。
     private(set) var ringCenter: CGPoint?
 
     private let panel = OverlayPanel()
@@ -154,6 +154,7 @@ final class OverlayController {
     private var resignObserver: NSObjectProtocol?
     private var screensObserver: NSObjectProtocol?
     private var toastTimer: Timer?
+    private var cancelsOnScreenChange = false
 
     /// 给圆盘阴影和弹开时的回弹留的边距
     static let ringPadding: CGFloat = 22
@@ -179,7 +180,13 @@ final class OverlayController {
         screensObserver = NotificationCenter.default.addObserver(forName: NSApplication.didChangeScreenParametersNotification,
                                                                  object: nil, queue: .main) { [weak self] _ in
             MainActor.assumeIsolated {
-                self?.keepCardOnScreen()
+                guard let self else { return }
+                if self.cancelsOnScreenChange {
+                    // 手势中途换屏、改缩放或改变 Dock 安全区时，取消而不是重排到别的功能。
+                    self.dismissByUser()
+                } else {
+                    self.keepCardOnScreen()
+                }
             }
         }
     }
@@ -187,15 +194,18 @@ final class OverlayController {
     // MARK: - 显示
 
     func showRing(_ model: RingViewModel, center: CGPoint) {
-        let size = model.geometry.diameter + Self.ringPadding * 2
-        let frame = ScreenGeometry.ringFrame(center: center, diameter: size, within: Self.visibleFrame(containing: center))
+        model.freezePlacement(anchor: center, safeFrame: Self.visibleFrame(containing: center))
+        guard let placement = model.placement else { return }
         let presentation = OverlayPresentation()
-        present(RingMenuView(model: model, presentation: presentation), frame: frame, mode: .ring, presentation: presentation)
-        ringCenter = CGPoint(x: frame.midX, y: frame.midY)
+        present(RingMenuView(model: model, presentation: presentation), frame: placement.frame,
+                mode: .ring, presentation: presentation)
+        ringCenter = placement.anchor
+        cancelsOnScreenChange = true
     }
 
     /// keyHandler 在输入框之前拿到按键，列表类的卡片（剪贴板历史、全部功能）用它处理上下选择和回车。
-    func showCard<Content: View>(_ content: Content, anchor: CGPoint, keyHandler: ((NSEvent) -> Bool)? = nil) {
+    func showCard<Content: View>(_ content: Content, anchor: CGPoint, cancelsOnScreenChange: Bool = false,
+                                 keyHandler: ((NSEvent) -> Bool)? = nil) {
         cardAnchor = anchor
         let initial = CGSize(width: 404, height: 160)
         let frame = ScreenGeometry.cardFrame(anchor: anchor, size: initial, within: Self.visibleFrame(containing: anchor),
@@ -213,6 +223,7 @@ final class OverlayController {
         }
         present(hosted, frame: frame, mode: .card, presentation: presentation)
         cardKeyHandler = keyHandler
+        self.cancelsOnScreenChange = cancelsOnScreenChange
     }
 
     /// 卡片四周留了阴影的边距，窗口离指针近一点，看起来卡片和指针的距离才合适
@@ -260,6 +271,7 @@ final class OverlayController {
         removeMonitors()
         retireContent(animated: animated)
         mode = .hidden
+        cancelsOnScreenChange = false
         ringCenter = nil
         panel.orderOut(nil)
         panel.contentView = nil
@@ -271,6 +283,7 @@ final class OverlayController {
         toastTimer?.invalidate()
         toastTimer = nil
         ringCenter = nil
+        cancelsOnScreenChange = false
         cardKeyHandler = nil
         // 正在显示的内容挪去退场，和新内容的进场同时进行
         retireContent(animated: true)
