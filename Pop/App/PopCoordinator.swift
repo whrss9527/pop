@@ -45,8 +45,8 @@ final class PopCoordinator: MouseTriggerDelegate {
 
     private struct Session {
         let id = UUID()
-        /// 唤起点（AppKit 屏幕坐标）；圆盘靠边挪开时改成圆盘中心（见 followRingWithPointer）
-        var anchor: CGPoint
+        /// 原唤起点（AppKit 屏幕坐标）；整次手势保持不变。
+        let anchor: CGPoint
         let pid: pid_t?
         /// 唤起时前台 App 的名字（收集箱记录来源用）
         let sourceAppName: String?
@@ -56,8 +56,8 @@ final class PopCoordinator: MouseTriggerDelegate {
         var buttonHeld: Bool
         /// 松开鼠标键时关闭圆盘（长按右键唤起、没打开「保持圆盘打开」时）
         var closesOnRelease = false
-        /// 内容还在读取时就在这一格上松开了：读到后执行它
-        var pendingSlot: Int?
+        /// 异步读取期间的选择意图，显式导航会作废之前等待执行的格子。
+        var loadingIntent = RingLoadingIntent()
         /// 按住鼠标键拖动时，事件拦截送来的最新指针位置（AppKit 屏幕坐标）
         var dragPoint: CGPoint?
         /// 这次按住期间收到的拖动事件数（写进日志，排查手势问题用）
@@ -145,12 +145,15 @@ final class PopCoordinator: MouseTriggerDelegate {
         let action = RingReleaseAction.decide(hovered: ring.pluginSlot(ring.hovered),
                                               selectable: ring.selectablePlugin(at: ring.hovered)?.id,
                                               isLoading: ring.isLoading,
-                                              closesOnRelease: current.closesOnRelease)
+                                              closesOnRelease: current.closesOnRelease,
+                                              isOverflow: ring.isOverflow(ring.hovered))
         let dragCount = session?.dragCount ?? 0
         let offset = session?.dragPoint.map { "\(Int($0.x - current.anchor.x)), \(Int($0.y - current.anchor.y))" } ?? "没有拖动"
         let hovered = ring.hovered.map { "\($0)" } ?? "无"
         Self.log.notice("松开：拖动事件 \(dragCount, privacy: .public) 个，偏移 \(offset, privacy: .public)，指向第 \(hovered, privacy: .public) 格，\(String(describing: action), privacy: .public)")
         switch action {
+        case .showOverflow:
+            showRingOverflow()
         case .run(let pluginID):
             if let slot = ring.hovered {
                 ring.commit(slot)
@@ -160,7 +163,7 @@ final class PopCoordinator: MouseTriggerDelegate {
             // 高亮停在这一格上，内容读到后执行
             stopPointerTracking()
             ring.setHovered(slot)
-            session?.pendingSlot = slot
+            session?.loadingIntent.waitForSlot(slot)
         case .close:
             if ring.isLoading {
                 // 先收起圆盘；读到的内容命中直达规则（比如选中了外文）的话仍然直接出结果
@@ -475,14 +478,24 @@ final class PopCoordinator: MouseTriggerDelegate {
     private func route(_ content: ClassifiedContent) {
         guard let current = session else { return }
         // 读取期间就在某一格上松开了：那一格能处理读到的内容就直接执行
-        if let slot = current.pendingSlot, let ring = current.ring {
-            session?.pendingSlot = nil
+        if let slot = current.loadingIntent.pendingSlot, let ring = current.ring {
+            session?.loadingIntent.clearPendingSlot()
             ring.update(content: content)
             if let plugin = ring.selectablePlugin(at: slot) {
                 ring.commit(slot)
                 run(plugin.id)
                 return
             }
+        }
+        // 已主动打开「更多」后，读完只更新原菜单；不能被直达规则切走或因松键关掉。
+        if current.loadingIntent.preservesMenu {
+            current.ring?.update(content: content)
+            if overlay.mode == .ring, !current.buttonHeld {
+                // 内容变化不能覆盖返回后用键盘选中的格子；只有指针真的移动才接手。
+                startPointerTracking()
+                updatePointer()
+            }
+            return
         }
         switch Router.decide(content, settings: settingsStore.settings, catalog: registry.catalog) {
         case .direct(let pluginID):
@@ -507,13 +520,25 @@ final class PopCoordinator: MouseTriggerDelegate {
 
     private func showRing(content: ClassifiedContent?) {
         guard let current = session else { return }
-        let settings = settingsStore.settings
-        let ring = RingViewModel(layout: settings.ring(for: current.bundleID), catalog: registry.catalog,
+        let ring: RingViewModel
+        if let existing = current.ring {
+            // 结果卡片的「更多功能」也回到本次原布局；屏幕已变则安全取消。
+            if let placement = existing.placement,
+               placement.safeFrame != OverlayController.visibleFrame(containing: current.anchor) {
+                endSession()
+                return
+            }
+            existing.resetSelection()
+            if let content { existing.update(content: content) }
+            ring = existing
+        } else {
+            let settings = settingsStore.settings
+            ring = RingViewModel(layout: settings.ring(for: current.bundleID), catalog: registry.catalog,
                                  installed: Set(settings.installedPlugins), content: content)
+        }
         session?.ring = ring
         session?.panel = nil
         overlay.showRing(ring, center: current.anchor)
-        followRingWithPointer()
         lastPointer = nil
         startPointerTracking()
         // 圆盘出来之前可能已经拖动过了
@@ -1714,30 +1739,12 @@ final class PopCoordinator: MouseTriggerDelegate {
         lastPointer = nil
     }
 
-    /// 按住鼠标键时指向哪一格：看拖动位置相对按下点的方向（marking menu），圆盘因为靠近屏幕边缘被挪开也不受影响。
+    /// 按住鼠标键时按原锚点和冻结的弧形选格，圆盘显示前已有的拖动继续算。
     /// 位置只用事件拦截送来的：拖动事件被 Pop 吞掉了，系统报告的指针位置（NSEvent.mouseLocation）不会跟着更新。
     private func updateHeldHover() {
         guard let current = session, current.buttonHeld, let ring = current.ring, overlay.mode == .ring,
               let point = current.dragPoint else { return }
         ring.updateHover(offset: CGVector(dx: point.x - current.anchor.x, dy: point.y - current.anchor.y))
-    }
-
-    /// 靠近屏幕边缘时圆盘整体往里挪了：鼠标键还按着的话，把指针也挪到圆盘中心。
-    /// 按住时按「相对按下点的方向」选格子，指针不在圆心的话，朝看到的一格划过去，选中的却是旁边那格；
-    /// 指针贴着屏幕边缘时，往边外那几格也划不过去。圆盘出来之前已经拖过的那一段接着算
-    private func followRingWithPointer() {
-        guard let current = session, current.buttonHeld, let center = overlay.ringCenter,
-              let shift = ScreenGeometry.ringShift(anchor: current.anchor, center: center) else { return }
-        let moved = current.dragPoint.map { CGVector(dx: $0.x - current.anchor.x, dy: $0.y - current.anchor.y) } ?? CGVector(dx: 0, dy: 0)
-        let target = CGPoint(x: center.x + moved.dx, y: center.y + moved.dy)
-        CGWarpMouseCursorPosition(CGPoint(x: target.x, y: OverlayController.primaryScreenHeight - target.y))
-        // 挪完马上恢复指针跟手，不然指针会停顿一小会儿
-        CGAssociateMouseAndMouseCursorPosition(1)
-        session?.anchor = center
-        if current.dragPoint != nil {
-            session?.dragPoint = target
-        }
-        Self.log.notice("圆盘靠边挪了 \(Int(shift.dx), privacy: .public), \(Int(shift.dy), privacy: .public)，指针跟着挪到圆心")
     }
 
     /// 松开鼠标键之后（点击模式）：看指针在圆盘上的位置。按住时由 updateHeldHover 处理。
@@ -1762,7 +1769,9 @@ final class PopCoordinator: MouseTriggerDelegate {
         lastPointer = nil
         updatePointer()
         guard let ring = session?.ring else { return }
-        if let slot = ring.hovered, let plugin = ring.selectablePlugin(at: slot) {
+        if ring.isOverflow(ring.hovered) {
+            showRingOverflow()
+        } else if let slot = ring.hovered, let plugin = ring.selectablePlugin(at: slot) {
             ring.commit(slot)
             run(plugin.id)
         } else if ring.hovered == nil {
@@ -1776,7 +1785,9 @@ final class PopCoordinator: MouseTriggerDelegate {
         guard let ring = session?.ring else { return false }
         switch event.keyCode {
         case 36, 76: // Return / Enter
-            if let slot = ring.hovered, let plugin = ring.selectablePlugin(at: slot) {
+            if ring.isOverflow(ring.hovered) {
+                showRingOverflow()
+            } else if let slot = ring.hovered, let plugin = ring.selectablePlugin(at: slot) {
                 ring.commit(slot)
                 run(plugin.id)
             }
@@ -1802,14 +1813,67 @@ final class PopCoordinator: MouseTriggerDelegate {
     }
 
     private func step(_ ring: RingViewModel, by delta: Int) -> Int {
-        let count = max(ring.slots.count, 1)
-        let start = ring.hovered ?? (delta > 0 ? -1 : 0)
-        return ((start + delta) % count + count) % count
+        ring.nextVisibleSlot(by: delta)
     }
+
+    /// 「更多」是菜单导航，不执行插件；松键后在原会话里继续点击或用键盘选择。
+    private func showRingOverflow() {
+        guard let current = session, let ring = current.ring, let placement = ring.placement else { return }
+        stopPointerTracking()
+        session?.buttonHeld = false
+        session?.closesOnRelease = false
+        session?.loadingIntent.navigateMenu()
+        ring.setHovered(nil)
+        overlay.showCard(RingOverflowView(model: ring,
+                                         onSelect: { [weak self] in self?.selectOverflowSlot($0) },
+                                         onBack: { [weak self] in self?.returnToRing() },
+                                         onCancel: { [weak self] in self?.endSession() },
+                                         maxHeight: placement.safeFrame.height - 20),
+                         anchor: current.anchor, cancelsOnScreenChange: true,
+                         keyHandler: { [weak self] in self?.handleOverflowKey($0) ?? false })
+    }
+
+    private func returnToRing() {
+        guard let current = session, let ring = current.ring else { return }
+        ring.setHovered(nil)
+        overlay.showRing(ring, center: current.anchor)
+        // 返回时不把仍停在原「更多」处的鼠标立即当成新选择；移动后再接手。
+        lastPointer = NSEvent.mouseLocation
+        startPointerTracking()
+    }
+
+    private func selectOverflowSlot(_ slot: Int) {
+        guard let ring = session?.ring, let plugin = ring.selectablePlugin(at: slot) else { return }
+        run(plugin.id)
+    }
+
+    private func handleOverflowKey(_ event: NSEvent) -> Bool {
+        guard let ring = session?.ring else { return false }
+        switch event.keyCode {
+        case 123, 51: // ←、退格返回原圆盘；Esc 仍取消整次唤起。
+            returnToRing()
+        case 126:
+            ring.overflowSelection = max(0, ring.overflowSelection - 1)
+        case 125:
+            ring.overflowSelection = min(max(ring.slots.count - 1, 0), ring.overflowSelection + 1)
+        case 36, 76:
+            selectOverflowSlot(ring.overflowSelection)
+        default:
+            if let characters = event.charactersIgnoringModifiers, characters.count == 1, let digit = Int(characters) {
+                selectOverflowSlot(digit == 0 ? 9 : digit - 1)
+            } else {
+                return false
+            }
+        }
+        return true
+    }
+
 }
 
 /// 按住鼠标键唤起圆盘后松开时怎么办。纯逻辑，便于测试。
 enum RingReleaseAction: Equatable {
+    /// 打开当前圆盘的完整列表，加载中也允许导航。
+    case showOverflow
     /// 执行指向的那一格
     case run(String)
     /// 内容还在读取时就指向了某一格：读到后执行这一格
@@ -1820,7 +1884,9 @@ enum RingReleaseAction: Equatable {
     case keepOpen
 
     /// hovered：指向的、放了插件的格子；selectable：那一格现在能执行的话是它的插件 ID
-    static func decide(hovered: Int?, selectable: String?, isLoading: Bool, closesOnRelease: Bool) -> RingReleaseAction {
+    static func decide(hovered: Int?, selectable: String?, isLoading: Bool, closesOnRelease: Bool,
+                       isOverflow: Bool = false) -> RingReleaseAction {
+        if isOverflow { return .showOverflow }
         if let selectable {
             return .run(selectable)
         }
@@ -1828,5 +1894,19 @@ enum RingReleaseAction: Equatable {
             return .runWhenLoaded(hovered)
         }
         return closesOnRelease ? .close : .keepOpen
+    }
+}
+
+
+/// 加载期间的导航优先于旧的松键选择；返回圆盘也不能突然被直达规则切走。
+struct RingLoadingIntent: Equatable {
+    private(set) var pendingSlot: Int?
+    private(set) var preservesMenu = false
+
+    mutating func waitForSlot(_ slot: Int) { pendingSlot = slot }
+    mutating func clearPendingSlot() { pendingSlot = nil }
+    mutating func navigateMenu() {
+        pendingSlot = nil
+        preservesMenu = true
     }
 }
