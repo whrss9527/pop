@@ -7,10 +7,43 @@ final class RingViewModel: ObservableObject {
         let id: Int
         let info: PluginInfo?
         var enabled: Bool
+        var isOverflow = false
         var pendingPackage: String? = nil
+
+        /// 更多列表也保留等待更新的功能名称、图标和不可执行状态。
+        var displayName: String { info?.name ?? pendingPackage ?? String(localized: "空格子") }
+        var displaySymbol: String { info?.symbol ?? (pendingPackage == nil ? "circle.dotted" : "arrow.clockwise") }
+        var updateHint: String? {
+            pendingPackage == nil ? nil : String(localized: "正在更新，联网后会自动重试")
+        }
     }
 
-    let geometry: RingGeometry
+    private let baseGeometry: RingGeometry
+    /// 一次唤起只算一次；异步内容、返回圆盘都不改变位置和编号。
+    private(set) var placement: RingPlacement?
+    var geometry: RingGeometry { placement?.geometry ?? baseGeometry }
+    var overflowID: Int { slots.count }
+    var visibleSlots: [Slot] {
+        guard let placement, placement.hasOverflow else { return slots }
+        return Array(slots.prefix(max(placement.visibleSlotCount - 1, 0))) +
+            [Slot(id: overflowID, info: nil, enabled: true, isOverflow: true)]
+    }
+    func isOverflow(_ index: Int?) -> Bool { placement?.hasOverflow == true && index == overflowID }
+    func displayIndex(for id: Int) -> Int? { visibleSlots.firstIndex { $0.id == id } }
+
+    func freezePlacement(anchor: CGPoint, safeFrame: CGRect) {
+        guard placement == nil else { return }
+        placement = RingPlacement(slotCount: slots.count, anchor: anchor, safeFrame: safeFrame)
+    }
+
+    func nextVisibleSlot(by delta: Int) -> Int {
+        let ids = visibleSlots.map(\.id)
+        guard !ids.isEmpty else { return 0 }
+        let start = hovered.flatMap { ids.firstIndex(of: $0) } ?? (delta > 0 ? -1 : 0)
+        return ids[((start + delta) % ids.count + ids.count) % ids.count]
+    }
+
+    @Published var overflowSelection = 0
     @Published private(set) var slots: [Slot]
     @Published private(set) var hovered: Int? = nil
     /// 高亮所在的角度（度，SwiftUI 坐标系）。跨过 0° 时继续累加，滑到下一格时总是走近的那一边
@@ -36,7 +69,7 @@ final class RingViewModel: ObservableObject {
 
     init(layout: RingLayout, catalog: [PluginInfo], installed: Set<String>, content: ClassifiedContent?) {
         let count = max(layout.slotCount, 1)
-        geometry = RingGeometry(slotCount: count, outerRadius: RingGeometry.outerRadius(forSlotCount: count))
+        baseGeometry = RingGeometry(slotCount: count, outerRadius: RingGeometry.outerRadius(forSlotCount: count))
         slots = layout.slots.enumerated().map { index, pluginID in
             let info = pluginID.flatMap { id in installed.contains(id) ? catalog.first(where: { $0.id == id }) : nil }
             let pending = pluginID.flatMap { id in
@@ -70,6 +103,7 @@ final class RingViewModel: ObservableObject {
 
     /// 指着一格时显示这一格的功能名（用不了时下面说明原因），指着空格子时说明是空的；没指着任何一格时显示读到的内容
     var center: Center {
+        if isOverflow(hovered) { return Center(title: String(localized: "更多功能"), isFunction: true) }
         guard let hovered, slots.indices.contains(hovered) else { return Center(title: centerText) }
         let slot = slots[hovered]
         if let package = slot.pendingPackage {
@@ -101,17 +135,18 @@ final class RingViewModel: ObservableObject {
 
     /// offset 是指针相对圆心（或按下点）的偏移，y 轴向上；nil 表示不指向任何格子。
     func updateHover(offset: CGVector?) {
-        setHovered(offset.flatMap { geometry.slot(at: $0) })
+        let index = offset.flatMap { geometry.slot(at: $0) }
+        setHovered(index.flatMap { visibleSlots.indices.contains($0) ? visibleSlots[$0].id : nil })
     }
 
     func setHovered(_ index: Int?) {
         guard index != hovered, committed == nil else { return }
         withAnimation(Motion.hover) {
-            if let index {
+            if let index, let position = displayIndex(for: index) {
                 if hovered == nil {
                     highlightID += 1
                 }
-                highlightAngle = RingGeometry.continuousAngle(geometry.slotCenterDegrees(index), near: highlightAngle)
+                highlightAngle = RingGeometry.continuousAngle(geometry.slotCenterDegrees(position), near: highlightAngle)
             }
             hovered = index
         }
@@ -119,6 +154,12 @@ final class RingViewModel: ObservableObject {
         if let index, slots.indices.contains(index), slots[index].enabled {
             NSHapticFeedbackManager.defaultPerformer.perform(.alignment, performanceTime: .now)
         }
+    }
+
+    /// 从结果或更多列表返回时复用原来的位置，只重置本次高亮和按下动画。
+    func resetSelection() {
+        committed = nil
+        setHovered(nil)
     }
 
     /// 选中了这一格，马上就要执行
@@ -160,49 +201,76 @@ struct RingMenuView: View {
         let geometry = model.geometry
         let size = geometry.diameter
         let phase = presentation.phase
-        ZStack {
+        let placement = model.placement
+        let canvas = placement?.frame.size ?? CGSize(width: size + OverlayController.ringPadding * 2,
+                                                     height: size + OverlayController.ringPadding * 2)
+        let origin = placement.map { CGPoint(x: $0.anchor.x - $0.frame.minX, y: $0.frame.maxY - $0.anchor.y) }
+            ?? CGPoint(x: canvas.width / 2, y: canvas.height / 2)
+        ZStack(alignment: .topLeading) {
             Color.clear
-                .frame(width: size, height: size)
-                .glassSurface(Circle())
-                .scaleEffect(discScale(phase))
-                .opacity(phase == .shown ? 1 : 0)
-                .animation(phase == .shown ? Motion.ringOpen : Motion.exit, value: phase)
+            ZStack {
+                Color.clear
+                    .frame(width: size, height: size)
+                    .glassSurface(RingDisc(geometry: geometry))
+                    .scaleEffect(discScale(phase))
+                    .opacity(phase == .shown ? 1 : 0)
+                    .animation(phase == .shown ? Motion.ringOpen : Motion.exit, value: phase)
 
-            highlight
-                .opacity(phase == .shown ? 1 : 0)
-                .animation(phase == .shown ? Motion.ringOpen : Motion.exit, value: phase)
+                highlight
+                    .opacity(phase == .shown ? 1 : 0)
+                    .animation(phase == .shown ? Motion.ringOpen : Motion.exit, value: phase)
 
-            ForEach(model.slots) { slot in
-                slotView(slot, phase: phase)
+                ForEach(model.visibleSlots) { slot in
+                    slotView(slot, phase: phase)
+                }
+                hub(phase: phase)
             }
-
-            hub(phase: phase)
+            .frame(width: size, height: size)
+            .position(origin)
         }
-        .frame(width: size, height: size)
-        .padding(OverlayController.ringPadding)
+        .frame(width: canvas.width, height: canvas.height)
+        .clipped()
     }
 
     @ViewBuilder
     private var highlight: some View {
-        if let hovered = model.hovered, model.slots.indices.contains(hovered) {
+        if let hovered = model.hovered, model.displayIndex(for: hovered) != nil {
             RingHighlight(angle: model.highlightAngle, geometry: model.geometry,
-                          enabled: model.slots[hovered].enabled, committed: model.committed != nil)
+                          enabled: model.isOverflow(hovered) || (model.slots.indices.contains(hovered) && model.slots[hovered].enabled),
+                          committed: model.committed != nil)
                 .id(model.highlightID)
                 .transition(.opacity)
         }
     }
 
     private func slotView(_ slot: RingViewModel.Slot, phase: OverlayPresentation.Phase) -> some View {
-        let offset = model.geometry.slotCenterOffset(slot.id)
+        let position = model.displayIndex(for: slot.id) ?? 0
+        let offset = model.geometry.slotCenterOffset(position)
         let reach = slotReach(phase)
         return RingSlotLabel(slot: slot, isHovered: model.hovered == slot.id, committed: model.committed,
                              isLoading: model.isLoading)
+            .help(slotHint(slot))
             .scaleEffect(reduceMotion || phase != .entering ? 1 : 0.55)
             .opacity(phase == .shown ? 1 : 0)
             .offset(x: offset.dx * reach, y: -offset.dy * reach)
-            .animation(phase == .shown ? Motion.ringOpen.delay(reduceMotion ? 0 : Double(slot.id) * Motion.slotStagger)
+            .animation(phase == .shown ? Motion.ringOpen.delay(reduceMotion ? 0 : Double(position) * Motion.slotStagger)
                                        : Motion.exit,
                        value: phase)
+    }
+
+    private func slotHint(_ slot: RingViewModel.Slot) -> String {
+        if slot.isOverflow { return String(localized: "更多功能") }
+        if let hint = slot.updateHint { return slot.displayName + "\n" + hint }
+        guard let info = slot.info else { return String(localized: "空格子") }
+        if model.isLoading { return info.name + "\n" + String(localized: "读取中…") }
+        return slot.enabled ? info.name : info.name + "\n" + RingViewModel.unavailableHint(for: info, content: model.content)
+    }
+
+    private var hubHasRoom: Bool {
+        guard let placement = model.placement else { return true }
+        let radius = model.geometry.innerRadius
+        return placement.safeFrame.contains(CGRect(x: placement.anchor.x - radius, y: placement.anchor.y - radius,
+                                                   width: radius * 2, height: radius * 2))
     }
 
     private func hub(phase: OverlayPresentation.Phase) -> some View {
@@ -213,25 +281,28 @@ struct RingMenuView: View {
                 .overlay(Circle().strokeBorder(Color.primary.opacity(0.12), lineWidth: 1))
             if let hovered = model.hovered {
                 // 圆心边上的小点指着当前的格子，跟着高亮一起转
-                let enabled = model.slots.indices.contains(hovered) && model.slots[hovered].enabled
+                let enabled = model.isOverflow(hovered) || (model.slots.indices.contains(hovered) && model.slots[hovered].enabled)
                 PolarDot(angle: model.highlightAngle, distance: diameter / 2 - 6, radius: 2.5)
                     .fill(enabled ? Color.accentColor : Color.primary.opacity(0.4))
                     .id(model.highlightID)
                     .transition(.opacity)
             }
-            ZStack {
-                if model.isLoading {
-                    ProgressView()
-                        .controlSize(.small)
-                        .transition(.opacity)
-                } else {
-                    centerLabel(model.center)
-                        .frame(width: diameter - 10)
-                        .transition(.opacity)
+            // 靠边时圆心的一部分在安全区域外，仍在原锚点画取消区；不把说明文字挤进半个圆心。
+            if hubHasRoom {
+                ZStack {
+                    if model.isLoading {
+                        ProgressView()
+                            .controlSize(.small)
+                            .transition(.opacity)
+                    } else {
+                        centerLabel(model.center)
+                            .frame(width: diameter - 10)
+                            .transition(.opacity)
+                    }
                 }
+                .animation(Motion.content, value: model.isLoading)
+                .animation(Motion.hover, value: model.center)
             }
-            .animation(Motion.content, value: model.isLoading)
-            .animation(Motion.hover, value: model.center)
         }
         .frame(width: diameter, height: diameter)
         .scaleEffect(reduceMotion || phase != .entering ? 1 : 0.5)
@@ -290,7 +361,7 @@ private struct RingHighlight: View {
 
     var body: some View {
         let radius = geometry.highlightRadius
-        let arcSpan = min(360.0 / Double(max(geometry.slotCount, 1)) * 0.62, 42)
+        let arcSpan = geometry.highlightArcSpanDegrees
         let tint = enabled ? Color.accentColor : Color.primary
         ZStack {
             PolarDot(angle: angle, distance: geometry.labelRadius, radius: radius)
@@ -355,7 +426,13 @@ private struct RingSlotLabel: View {
         let active = (isHovered && slot.enabled) || isCommitted
         let dimmed = committed != nil && !isCommitted
         VStack(spacing: 3) {
-            if let info = slot.info {
+            if slot.isOverflow {
+                Image(systemName: "ellipsis")
+                    .font(.system(size: 19, weight: .medium))
+                    .frame(height: 22)
+                Text("更多")
+                    .font(.system(size: 10.5, weight: active ? .semibold : .regular))
+            } else if let info = slot.info {
                 Image(systemName: info.symbol)
                     .font(.system(size: 19, weight: .medium))
                     .symbolEffect(.bounce, value: isCommitted)
@@ -380,12 +457,105 @@ private struct RingSlotLabel: View {
         }
         .frame(width: 66)
         .foregroundStyle(active ? Color.accentColor : Color.primary)
-        .opacity(isLoading ? 0.45 : (slot.enabled ? 1 : (slot.pendingPackage != nil ? 0.65 : 0.3)))
+        .opacity(isLoading && !slot.isOverflow ? 0.45 : (slot.enabled ? 1 : (slot.pendingPackage != nil ? 0.65 : 0.3)))
         .opacity(dimmed ? 0.35 : 1)
         .scaleEffect(isCommitted ? 1.2 : (active ? 1.12 : 1))
         .animation(Motion.hover, value: active)
         .animation(Motion.commit, value: isCommitted)
         .animation(Motion.content, value: slot.enabled)
         .animation(Motion.content, value: isLoading)
+    }
+}
+
+/// 扇形的绘制角度和命中角度共用同一份几何，弧外没有可选项。
+private struct RingDisc: InsettableShape {
+    let geometry: RingGeometry
+    var insetAmount: CGFloat = 0
+
+    func inset(by amount: CGFloat) -> RingDisc {
+        var copy = self
+        copy.insetAmount += amount
+        return copy
+    }
+
+    func path(in rect: CGRect) -> Path {
+        guard !geometry.isFullCircle else { return Path(ellipseIn: rect.insetBy(dx: insetAmount, dy: insetAmount)) }
+        let first = geometry.sectorDegrees(0)
+        let last = geometry.sectorDegrees(max(geometry.slotCount - 1, 0))
+        let center = CGPoint(x: rect.midX, y: rect.midY)
+        var path = Path()
+        path.move(to: center)
+        path.addArc(center: center, radius: max(0, geometry.outerRadius - insetAmount),
+                    startAngle: .degrees(first.start), endAngle: .degrees(last.end), clockwise: false)
+        path.closeSubpath()
+        return path
+    }
+}
+
+/// 空间不够时保留所有原格子及编号，读取内容只更新可用状态，不重排。
+struct RingOverflowView: View {
+    @ObservedObject var model: RingViewModel
+    let onSelect: (Int) -> Void
+    let onBack: () -> Void
+    let onCancel: () -> Void
+    let maxHeight: CGFloat
+
+    var body: some View {
+        VStack(spacing: 0) {
+            HStack {
+                Button(action: onBack) { Label("返回圆盘", systemImage: "chevron.left") }
+                Spacer()
+                Button(action: onCancel) { Image(systemName: "xmark") }
+                    .accessibilityLabel(Text("关闭"))
+            }
+            .buttonStyle(.plain)
+            .padding(14)
+            Divider()
+            ScrollViewReader { proxy in
+                ScrollView {
+                    VStack(spacing: 2) {
+                        ForEach(model.slots) { slot in
+                            Button { onSelect(slot.id) } label: {
+                                HStack(spacing: 10) {
+                                    Text("\(slot.id + 1)")
+                                        .foregroundStyle(.secondary)
+                                        .frame(width: 22)
+                                    Image(systemName: slot.displaySymbol)
+                                        .frame(width: 22)
+                                    VStack(alignment: .leading, spacing: 2) {
+                                        Text(slot.displayName)
+                                        if let hint = slot.updateHint {
+                                            Text(hint).font(.caption).foregroundStyle(.secondary).lineLimit(2)
+                                        } else if model.isLoading {
+                                            Text("读取中…").font(.caption).foregroundStyle(.secondary)
+                                        } else if let info = slot.info, !slot.enabled {
+                                            Text(RingViewModel.unavailableHint(for: info, content: model.content))
+                                                .font(.caption).foregroundStyle(.secondary)
+                                        }
+                                    }
+                                    Spacer(minLength: 0)
+                                }
+                                .padding(.horizontal, 10)
+                                .frame(minHeight: 44)
+                                .contentShape(Rectangle())
+                                .background(model.overflowSelection == slot.id ? Color.accentColor.opacity(0.16) : .clear,
+                                            in: RoundedRectangle(cornerRadius: 8))
+                            }
+                            .buttonStyle(.plain)
+                            .disabled(model.isLoading || !slot.enabled)
+                            .id(slot.id)
+                        }
+                    }
+                    .padding(6)
+                }
+                .frame(height: min(CGFloat(model.slots.count) * 46 + 12, max(44, maxHeight - 70)))
+                .onChange(of: model.overflowSelection) { _, selected in
+                    proxy.scrollTo(selected, anchor: .center)
+                }
+            }
+        }
+        .frame(width: 292)
+        .glassSurface(RoundedRectangle(cornerRadius: 16))
+        .padding(10)
     }
 }
