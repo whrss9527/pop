@@ -38,6 +38,8 @@ final class MouseTriggerTests: XCTestCase {
         var posted: [(type: CGEventType, location: CGPoint)] = []
         var asked = 0
         var accepts = true
+        var pressed = true
+        var recovery: [(fire: () -> Void, cancelled: Bool)] = []
         var timers: [(seconds: TimeInterval, fire: () -> Void, cancelled: Bool)] = []
 
         func fireTimer(_ index: Int = 0) {
@@ -57,7 +59,11 @@ final class MouseTriggerTests: XCTestCase {
                              let index = recorder.timers.count
                              recorder.timers.append((seconds, fire, false))
                              return { recorder.timers[index].cancelled = true }
-                         })
+                         }, startRecoveryTimer: { _, fire in
+                             let index = recorder.recovery.count
+                             recorder.recovery.append((fire, false))
+                             return { recorder.recovery[index].cancelled = true }
+                         }, isPressed: { _ in recorder.pressed })
     }
 
     private func mouse(_ type: CGEventType, _ x: CGFloat, _ y: CGFloat, button: CGMouseButton = .right,
@@ -198,6 +204,87 @@ final class MouseTriggerTests: XCTestCase {
         XCTAssertTrue(core.handle(type: .otherMouseDown, event: try mouse(.otherMouseDown, 10, 10, button: .center)))
         XCTAssertTrue(core.handle(type: .otherMouseUp, event: try mouse(.otherMouseUp, 12, 10, button: .center)))
         XCTAssertEqual(recorder.signals, [.activate(CGPoint(x: 10, y: 10)), .release(CGPoint(x: 12, y: 10))])
+    }
+
+    func testActiveGestureCancelsExactlyOnceWhenTapIsDisabledOrSettingsChange() throws {
+        for reason in [CGEventType.tapDisabledByTimeout, .tapDisabledByUserInput] {
+            let recorder = Recorder() // 每种原因用独立实例，旧计时回调也不能再次通知。
+            let active = makeCore(recorder: recorder)
+            XCTAssertTrue(active.handle(type: .rightMouseDown, event: try mouse(.rightMouseDown, 10, 20)))
+            recorder.fireTimer()
+            XCTAssertFalse(active.handle(type: reason, event: try mouse(.rightMouseDown, 0, 0)))
+            XCTAssertFalse(active.handle(type: reason, event: try mouse(.rightMouseDown, 0, 0)))
+            recorder.recovery[0].fire()
+            XCTAssertEqual(recorder.signals, [.activate(CGPoint(x: 10, y: 20)), .cancel])
+            XCTAssertEqual(active.disabledCount, 2)
+        }
+        let recorder = Recorder()
+        let active = makeCore(recorder: recorder)
+        XCTAssertTrue(active.handle(type: .rightMouseDown, event: try mouse(.rightMouseDown, 10, 20)))
+        recorder.fireTimer()
+        active.configuration = .init(mode: .disabled)
+        active.stop()
+        XCTAssertEqual(recorder.signals.last, .cancel)
+        XCTAssertEqual(recorder.signals.count, 2)
+    }
+
+    func testNextPressCancelsOrphanedGestureBeforeStartingAnother() throws {
+        for mode in [TriggerMode.longPressRight, .modifierRightClick, .middleClick] {
+            let recorder = Recorder()
+            let core = makeCore(.init(mode: mode), recorder: recorder)
+            let middle = mode == .middleClick
+            let down: CGEventType = middle ? .otherMouseDown : .rightMouseDown
+            let button: CGMouseButton = middle ? .center : .right
+            for point in [CGPoint(x: 10, y: 20), CGPoint(x: 30, y: 40)] {
+                XCTAssertTrue(core.handle(type: down, event: try mouse(down, point.x, point.y, button: button, flags: .maskAlternate)))
+                if mode == .longPressRight { recorder.fireTimer(recorder.timers.count - 1) }
+            }
+            XCTAssertEqual(recorder.signals, [.activate(CGPoint(x: 10, y: 20)), .cancel, .activate(CGPoint(x: 30, y: 40))])
+            core.stop()
+            XCTAssertEqual(recorder.signals.last, .cancel)
+        }
+    }
+
+    func testDisabledPendingPressWithLostMouseUpReplaysBalancedClick() throws {
+        let recorder = Recorder()
+        let core = makeCore(recorder: recorder)
+        XCTAssertTrue(core.handle(type: .rightMouseDown, event: try mouse(.rightMouseDown, 10, 20)))
+        recorder.pressed = false
+        XCTAssertFalse(core.handle(type: .tapDisabledByTimeout, event: try mouse(.rightMouseDown, 0, 0)))
+        recorder.fireTimer()
+        XCTAssertTrue(recorder.signals.isEmpty)
+        XCTAssertEqual(recorder.posted.map { $0.type }, [.rightMouseDown, .rightMouseUp])
+    }
+
+    func testLostMouseUpBeforeActivationReplaysBalancedClick() throws {
+        let recorder = Recorder()
+        let pending = makeCore(recorder: recorder)
+        XCTAssertTrue(pending.handle(type: .rightMouseDown, event: try mouse(.rightMouseDown, 10, 20)))
+        recorder.pressed = false
+        recorder.fireTimer()
+        XCTAssertTrue(recorder.signals.isEmpty)
+        XCTAssertEqual(recorder.posted.map { $0.type }, [.rightMouseDown, .rightMouseUp])
+    }
+
+    func testLostMouseUpAfterActivationUsesLastDragAndStopsRecovery() throws {
+        for mode in [TriggerMode.longPressRight, .modifierRightClick, .middleClick] {
+            let recorder = Recorder()
+            let core = makeCore(.init(mode: mode), recorder: recorder)
+            let middle = mode == .middleClick
+            let down: CGEventType = middle ? .otherMouseDown : .rightMouseDown
+            let drag: CGEventType = middle ? .otherMouseDragged : .rightMouseDragged
+            let button: CGMouseButton = middle ? .center : .right
+            XCTAssertTrue(core.handle(type: down, event: try mouse(down, 10, 20, button: button, flags: .maskAlternate)))
+            if mode == .longPressRight { recorder.fireTimer() }
+            XCTAssertTrue(core.handle(type: drag, event: try mouse(drag, 30, 40, button: button)))
+            recorder.recovery[0].fire() // 仍按着：继续等，不提前松开。
+            XCTAssertEqual(recorder.recovery.count, 2)
+            recorder.pressed = false
+            recorder.recovery[1].fire()
+            recorder.recovery[1].fire()
+            XCTAssertEqual(recorder.signals.last, .release(CGPoint(x: 30, y: 40)))
+            XCTAssertEqual(recorder.signals.count, 3)
+        }
     }
 
     func testDisabledModeTakesNothing() throws {

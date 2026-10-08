@@ -179,6 +179,12 @@ final class PopCoordinator: MouseTriggerDelegate {
         }
     }
 
+    func mouseTriggerDidCancel() {
+        guard session?.buttonHeld == true else { return }
+        Self.log.notice("鼠标手势取消：收起圆盘，不执行当前指向的功能")
+        endSession()
+    }
+
     /// 键盘快捷键唤起：再按一次关闭
     func activateFromHotKey() {
         if overlay.isVisible || session != nil {
