@@ -219,7 +219,7 @@ final class RingInteractionTests: XCTestCase {
 
 
     @MainActor
-    func testNativeOverlayKeepsAnchorAndCancelsRingWhenDisplaysChange() {
+    func testNativeOverlayKeepsAnchorAndCancelsRingWhenDisplaysChange() async throws {
         let overlay = OverlayController()
         let safeFrame = OverlayController.visibleFrame(containing: .zero)
         let anchor = CGPoint(x: safeFrame.minX + 1, y: safeFrame.maxY - 1)
@@ -234,11 +234,13 @@ final class RingInteractionTests: XCTestCase {
         XCTAssertTrue(dismissed)
         XCTAssertEqual(overlay.mode, .hidden)
         XCTAssertNil(overlay.ringCenter)
+        // 保持控制器存活并让主循环清掉退场窗口，避免影响下一项原生测试。
+        try await Task.sleep(for: .seconds(Motion.exitDuration + 0.1))
         overlay.hide(animated: false)
     }
 
     @MainActor
-    func testNativeOverflowCardCancelsInsteadOfMovingWhenDisplaysChange() {
+    func testNativeOverflowCardCancelsInsteadOfMovingWhenDisplaysChange() async throws {
         let overlay = OverlayController()
         var dismissed = false
         overlay.onDismiss = { dismissed = true }
@@ -247,6 +249,8 @@ final class RingInteractionTests: XCTestCase {
         NotificationCenter.default.post(name: NSApplication.didChangeScreenParametersNotification, object: nil)
         XCTAssertTrue(dismissed)
         XCTAssertEqual(overlay.mode, .hidden)
+        // 保持控制器存活并让主循环清掉退场窗口，避免影响下一项原生测试。
+        try await Task.sleep(for: .seconds(Motion.exitDuration + 0.1))
         overlay.hide(animated: false)
     }
 
