@@ -18,9 +18,20 @@ FEED="$WORK/feed"
 mkdir -p "$FEED"
 SERVER_PID=""
 START=""
+DOMAIN="io.github.whrss9527.pop.update-test.$(uuidgen)"
+PLUGIN_DATA="$WORK/plugin-data"
+PLUGIN_SOURCE="http://127.0.0.1:${PORT}/"
+BASE="$WORK/original/Pop.app"
+# 独立的偏好域和插件数据，不碰已安装 Pop 的设置。
+/usr/libexec/PlistBuddy -c "Set :CFBundleIdentifier $DOMAIN" "$APP/Contents/Info.plist"
+"$ROOT/scripts/sign-app.sh" "$APP"
+ditto "$APP" "$BASE"
+
 
 cleanup() {
   stop_pop
+  defaults delete "$DOMAIN" 2>/dev/null || true
+  rm -rf "$WORK"
   if [ -n "$SERVER_PID" ]; then
     kill "$SERVER_PID" 2>/dev/null || true
   fi
@@ -57,6 +68,7 @@ make_release() {
   rm -rf "$dir" && mkdir -p "$dir"
   ditto "$APP" "$dir/Pop.app"
   /usr/libexec/PlistBuddy -c "Set :CFBundleShortVersionString 9.9.9" "$dir/Pop.app/Contents/Info.plist"
+  /usr/libexec/PlistBuddy -c "Set :PopBuildID update-e2e-new" "$dir/Pop.app/Contents/Info.plist"
   if [ "$1" = "adhoc" ]; then
     CODESIGN_IDENTITY="" "$ROOT/scripts/sign-app.sh" "$dir/Pop.app"
   else
@@ -92,7 +104,7 @@ stop_pop() {
 launch_pop() {
   stop_pop
   START="$(date '+%Y-%m-%d %H:%M:%S')"
-  open -n --env "POP_UPDATE_URL=http://127.0.0.1:${PORT}/releases.json" --env POP_UPDATE_AUTO_INSTALL=1 "$APP"
+  open -n --env "POP_PLUGIN_DATA_DIR=$PLUGIN_DATA" --env "POP_PLUGIN_SOURCE=$PLUGIN_SOURCE" --env "POP_UPDATE_URL=http://127.0.0.1:${PORT}/releases.json" --env POP_UPDATE_AUTO_INSTALL=1 "$APP"
 }
 
 wait_for_log() {
@@ -137,7 +149,25 @@ if [ -n "${CODESIGN_IDENTITY:-}" ]; then
   echo "✅ 拒绝了别的证书签名的包"
 fi
 
-echo "==> 3. 正常更新"
+# 从本次构建的插件包复制一个真实插件，用新的构建标识重签并发布。
+BUNDLES="${POP_E2E_PLUGIN_BUNDLES:-$ROOT/build/ci/DerivedData/Build/Products/Release}"
+[ -d "$BUNDLES/PopZip.bundle" ] || fail "没有构建 PopZip.bundle"
+mkdir -p "$WORK/new-plugins" "$PLUGIN_DATA/PluginBundles"
+ditto "$BUNDLES/PopZip.bundle" "$PLUGIN_DATA/PluginBundles/PopZip.bundle"
+"$ROOT/scripts/sign-plugins.sh" "$PLUGIN_DATA/PluginBundles"
+ditto "$BUNDLES/PopZip.bundle" "$WORK/new-plugins/PopZip.bundle"
+/usr/libexec/PlistBuddy -c 'Set :PopBuildID update-e2e-new' "$WORK/new-plugins/PopZip.bundle/Contents/Info.plist"
+"$ROOT/scripts/sign-plugins.sh" "$WORK/new-plugins"
+"$ROOT/scripts/package-plugins.sh" "$WORK/new-plugins" "$FEED" 9.9.9
+# 把插件放在圆盘上；settings.v1 存的是 JSON Data。
+SETTINGS_HEX="$(python3 - <<'PYSETTINGS'
+import json
+print(json.dumps({'installedPlugins':['zip','unzip'],'movedToPlugins':['zip','unzip'],'ring':{'slots':['zip',None,None,None,None,None,None,None]}}).encode().hex())
+PYSETTINGS
+)"
+defaults write "$DOMAIN" pop.settings.v1 -data "$SETTINGS_HEX"
+
+echo "==> 3. 装着插件包的正常更新"
 make_release identity
 launch_pop
 for _ in $(seq 1 90); do
@@ -149,9 +179,25 @@ done
 pop_log | grep -E "Pop 更新|Pop 已启动" | tail -20 || true
 [ "$(version_of "$APP")" = "9.9.9" ] || fail "程序没有被替换成 9.9.9"
 pop_log | grep -q "Pop 已启动，版本 9.9.9" || fail "新版本没有重新启动"
+wait_for_log '插件回归 version=9.9.9 zip_loaded=true pending=0' 20 || fail "更新后插件包没有立即可用"
+pop_log | grep -q '已接收预取插件包 zip' || fail "新版本没有使用预取插件包"
 pgrep -x Pop > /dev/null || fail "更新后 Pop 没有在运行"
 codesign --verify --deep --strict "$APP" || fail "新程序的签名不完整"
 if xattr "$APP" | grep -q com.apple.quarantine; then
   fail "新程序还带着隔离标记"
 fi
-echo "✅ 一键更新：下载、校验、替换、重新启动都正常"
+echo "✅ 一键更新后插件包立即可用"
+
+echo "==> 4. 插件包源不可达时保留圆盘位置"
+stop_pop
+rm -rf "$APP" "$PLUGIN_DATA"
+ditto "$BASE" "$APP"
+mkdir -p "$PLUGIN_DATA/PluginBundles"
+ditto "$BUNDLES/PopZip.bundle" "$PLUGIN_DATA/PluginBundles/PopZip.bundle"
+"$ROOT/scripts/sign-plugins.sh" "$PLUGIN_DATA/PluginBundles"
+PLUGIN_SOURCE="http://127.0.0.1:${PORT}/unavailable/"
+make_release identity
+launch_pop
+wait_for_log '插件回归 version=9.9.9 zip_loaded=false pending=1' 100 || fail "插件下载失败时圆盘位置没有保留"
+[ "$(version_of "$APP")" = "9.9.9" ] || fail "插件下载失败阻止了 App 更新"
+echo "✅ 下载失败时保留正在更新的格子"

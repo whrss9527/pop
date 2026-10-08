@@ -3208,3 +3208,6 @@
 "新插件" = "New plugin";
 "（太长了，这里只显示前面一部分；复制、替换原文用的是全部）" = "(Too long to show in full. Copy and Replace use all of it.)";
 "正在看哪些文件要转…" = "Checking which files need converting…";
+
+"正在更新" = "Updating";
+"正在更新，联网后会自动重试" = "Updating; retries automatically when online";

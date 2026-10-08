@@ -7,6 +7,7 @@ final class RingViewModel: ObservableObject {
         let id: Int
         let info: PluginInfo?
         var enabled: Bool
+        var pendingPackage: String? = nil
     }
 
     let geometry: RingGeometry
@@ -38,7 +39,10 @@ final class RingViewModel: ObservableObject {
         geometry = RingGeometry(slotCount: count, outerRadius: RingGeometry.outerRadius(forSlotCount: count))
         slots = layout.slots.enumerated().map { index, pluginID in
             let info = pluginID.flatMap { id in installed.contains(id) ? catalog.first(where: { $0.id == id }) : nil }
-            return Slot(id: index, info: info, enabled: false)
+            let pending = pluginID.flatMap { id in
+                installed.contains(id) && info == nil ? PluginCatalog.all.first(where: { $0.functions.contains(id) })?.name : nil
+            }
+            return Slot(id: index, info: info, enabled: false, pendingPackage: pending)
         }
         centerText = String(localized: "读取中…")
         isLoading = true
@@ -68,6 +72,9 @@ final class RingViewModel: ObservableObject {
     var center: Center {
         guard let hovered, slots.indices.contains(hovered) else { return Center(title: centerText) }
         let slot = slots[hovered]
+        if let package = slot.pendingPackage {
+            return Center(title: package, detail: String(localized: "正在更新，联网后会自动重试"), isFunction: true, enabled: false)
+        }
         guard let info = slot.info else {
             return Center(title: String(localized: "空格子"), detail: String(localized: "可以在设置里放上功能"), isFunction: true, enabled: false)
         }
@@ -359,6 +366,12 @@ private struct RingSlotLabel: View {
                     .lineLimit(1)
                     .minimumScaleFactor(0.8)
                     .allowsTightening(true)
+            } else if slot.pendingPackage != nil {
+                Image(systemName: "arrow.clockwise")
+                    .font(.system(size: 19))
+                    .frame(height: 22)
+                Text("正在更新")
+                    .font(.system(size: 10.5))
             } else {
                 Circle()
                     .fill(Color.secondary.opacity(0.35))
@@ -367,7 +380,7 @@ private struct RingSlotLabel: View {
         }
         .frame(width: 66)
         .foregroundStyle(active ? Color.accentColor : Color.primary)
-        .opacity(isLoading ? 0.45 : (slot.enabled ? 1 : 0.3))
+        .opacity(isLoading ? 0.45 : (slot.enabled ? 1 : (slot.pendingPackage != nil ? 0.65 : 0.3)))
         .opacity(dimmed ? 0.35 : 1)
         .scaleEffect(isCommitted ? 1.2 : (active ? 1.12 : 1))
         .animation(Motion.hover, value: active)
