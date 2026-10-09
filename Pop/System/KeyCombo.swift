@@ -85,6 +85,12 @@ struct KeyCombo: Codable, Equatable, Hashable {
     ]
 }
 
+enum ShortcutTarget: Equatable {
+    case ring
+    case clipboard
+    case plugin(String)
+}
+
 /// 给某个功能设置的全局快捷键
 struct PluginHotKey: Codable, Equatable, Identifiable {
     var pluginID: String

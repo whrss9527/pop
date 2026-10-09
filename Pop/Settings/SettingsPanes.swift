@@ -96,15 +96,14 @@ struct GeneralSettingsView: View {
                         }
                     }
                 }
-                Picker("键盘快捷键", selection: store.binding(\.trigger.hotKey)) {
-                    ForEach(HotKeyPreset.available(keeping: store.settings.trigger.hotKey)) { preset in
-                        Text(preset.title).tag(preset)
-                    }
-                }
+                ShortcutSettingsRow(title: String(localized: "键盘快捷键"), target: .ring)
                 Toggle("拖着文件左右晃几下，打开暂存架", isOn: store.binding(\.trigger.shakeToOpenShelf))
             } header: {
                 Text("唤起方式")
             } footer: {
+                Text("点快捷键按钮后直接按下组合键，按 Esc 取消，按 ⌫ 清除。普通按键至少带 ⌘、⌥、⌃ 中的一个，F1–F20 可以单独使用。")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
                 Text(triggerFooter)
                     .font(.caption)
                     .foregroundStyle(.secondary)
@@ -234,7 +233,10 @@ extension GeneralSettingsView {
         case .middleClick:
             return String(localized: "点击鼠标中键唤起 Pop。")
         case .disabled:
-            return trigger.hotKey == .none ? String(localized: "鼠标唤起已关闭，可以在下面设置一个键盘快捷键。") : String(localized: "用键盘快捷键 \(trigger.hotKey.title) 唤起 Pop。")
+            guard let shortcut = trigger.shortcut else {
+                return String(localized: "鼠标唤起已关闭，可以在下面设置一个键盘快捷键。")
+            }
+            return String(localized: "用键盘快捷键 \(shortcut.display) 唤起 Pop。")
         }
     }
 }

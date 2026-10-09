@@ -84,13 +84,95 @@ final class KeyComboTests: XCTestCase {
         let custom = KeyCombo(keyCode: UInt32(kVK_ANSI_H), modifiers: UInt32(cmdKey | controlKey))
         var settings = AppSettings()
         settings.trigger.hotKey = .commandShiftSpace
-        XCTAssertNotNil(settings.clipboardShortcutConflict(for: settings.trigger.hotKey.keyCombo))
-        XCTAssertNil(settings.clipboardShortcutConflict(for: custom))
+        XCTAssertNotNil(settings.shortcutIssue(for: settings.trigger.shortcut, target: .clipboard))
+        XCTAssertNil(settings.shortcutIssue(for: custom, target: .clipboard))
         settings.setHotKey(custom, for: BuiltinPluginID.translate)
-        XCTAssertNotNil(settings.clipboardShortcutConflict(for: custom))
+        XCTAssertNotNil(settings.shortcutIssue(for: custom, target: .clipboard))
         settings.setHotKey(nil, for: BuiltinPluginID.translate)
-        XCTAssertNil(settings.clipboardShortcutConflict(for: custom))
-        XCTAssertNil(settings.clipboardShortcutConflict(for: nil))
+        XCTAssertNil(settings.shortcutIssue(for: custom, target: .clipboard))
+        XCTAssertNil(settings.shortcutIssue(for: nil, target: .clipboard))
+    }
+
+    func testRingShortcutKeepsLegacySettingsAndPersistsRecording() throws {
+        let decoder = JSONDecoder()
+        XCTAssertNil(try decoder.decode(TriggerSettings.self, from: Data("{}".utf8)).shortcut)
+        let legacy = try decoder.decode(TriggerSettings.self, from: Data(#"{"hotKey":"optionSpace"}"#.utf8))
+        XCTAssertEqual(legacy.shortcut, HotKeyPreset.optionSpace.keyCombo)
+        let damaged = try decoder.decode(TriggerSettings.self, from: Data(#"{"hotKey":"optionSpace","customHotKey":{"keyCode":"bad"}}"#.utf8))
+        XCTAssertEqual(damaged.shortcut, legacy.shortcut)
+
+        let custom = KeyCombo(keyCode: UInt32(kVK_ANSI_H), modifiers: UInt32(cmdKey | controlKey))
+        var settings = AppSettings()
+        settings.trigger.mode = .disabled
+        XCTAssertNil(settings.recordShortcut(custom, for: .ring))
+        var decoded = try decoder.decode(AppSettings.self, from: JSONEncoder().encode(settings))
+        XCTAssertEqual(decoded.trigger.shortcut, custom)
+        XCTAssertEqual(decoded.trigger.hotKey, .none)
+        XCTAssertEqual(decoded.trigger.mode, .disabled)
+        XCTAssertNil(decoded.recordShortcut(HotKeyPreset.commandShiftSpace.keyCombo, for: .ring))
+        XCTAssertEqual(decoded.trigger.hotKey, .commandShiftSpace)
+        XCTAssertNil(decoded.trigger.customHotKey)
+        XCTAssertNil(decoded.recordShortcut(nil, for: .ring))
+        let cleared = try decoder.decode(AppSettings.self, from: JSONEncoder().encode(decoded))
+        XCTAssertNil(cleared.trigger.shortcut)
+    }
+
+    func testEveryShortcutEntryRejectsConflictsWithoutChangingExistingBindings() throws {
+        let targets: [ShortcutTarget] = [.ring, .clipboard, .plugin(BuiltinPluginID.translate), .plugin(BuiltinPluginID.search)]
+        let occupied = KeyCombo(keyCode: UInt32(kVK_ANSI_H), modifiers: UInt32(cmdKey | controlKey))
+        let previous = KeyCombo(keyCode: UInt32(kVK_ANSI_J), modifiers: UInt32(cmdKey | controlKey))
+        for owner in targets {
+            var settings = AppSettings()
+            XCTAssertNil(settings.recordShortcut(occupied, for: owner))
+            // 再次录入自身的组合不算冲突。
+            XCTAssertNil(settings.recordShortcut(occupied, for: owner))
+            for target in targets where target != owner {
+                var candidate = settings
+                XCTAssertNil(candidate.recordShortcut(previous, for: target))
+                let before = candidate
+                XCTAssertNotNil(candidate.recordShortcut(occupied, for: target))
+                XCTAssertEqual(candidate, before)
+                // 原拥有者清除后，其他入口才能使用这个组合。
+                XCTAssertNil(candidate.recordShortcut(nil, for: owner))
+                XCTAssertNil(candidate.recordShortcut(occupied, for: target))
+                XCTAssertEqual(candidate.shortcut(for: target), occupied)
+            }
+        }
+    }
+
+    func testDisabledClipboardKeepsItsShortcutReserved() throws {
+        var settings = AppSettings()
+        settings.clipboard.enabled = false
+        let key = try XCTUnwrap(settings.clipboard.shortcut)
+        XCTAssertNotNil(settings.recordShortcut(key, for: .ring))
+        XCTAssertNotNil(settings.recordShortcut(key, for: .plugin(BuiltinPluginID.translate)))
+        XCTAssertNil(settings.recordShortcut(nil, for: .clipboard))
+        XCTAssertNil(settings.recordShortcut(key, for: .ring))
+    }
+
+    func testAppStoreShortcutRestrictionAppliesToEveryEntry() throws {
+        let targets: [ShortcutTarget] = [.ring, .clipboard, .plugin(BuiltinPluginID.translate)]
+        for target in targets {
+            var settings = AppSettings()
+            let before = settings
+            for modifiers in [optionKey, optionKey | shiftKey] {
+                let key = KeyCombo(keyCode: UInt32(kVK_ANSI_T), modifiers: UInt32(modifiers))
+                XCTAssertNotNil(settings.recordShortcut(key, for: target, isAppStore: true))
+                XCTAssertEqual(settings, before)
+            }
+            let allowed = KeyCombo(keyCode: UInt32(kVK_ANSI_T), modifiers: UInt32(optionKey | cmdKey))
+            XCTAssertNil(settings.recordShortcut(allowed, for: target, isAppStore: true))
+            XCTAssertEqual(settings.shortcut(for: target), allowed)
+            let function = try XCTUnwrap(KeyCombo(keyCode: UInt32(kVK_F5), flags: []))
+            XCTAssertNil(settings.recordShortcut(function, for: target, isAppStore: true))
+            XCTAssertNil(settings.recordShortcut(nil, for: target, isAppStore: true))
+        }
+        // 从其他发行版导入的旧预设仍显示真实组合，并能说明不可用原因。
+        let legacy = try JSONDecoder().decode(AppSettings.self, from: Data(#"{"trigger":{"hotKey":"optionSpace"},"clipboard":{"hotKey":"optionV"}}"#.utf8))
+        for target: ShortcutTarget in [.ring, .clipboard] {
+            let key = try XCTUnwrap(legacy.shortcut(for: target))
+            XCTAssertNotNil(legacy.shortcutIssue(for: key, target: target, isAppStore: true))
+        }
     }
 
     @MainActor

@@ -4,19 +4,13 @@ import SwiftUI
 struct ClipboardSettingsView: View {
     @EnvironmentObject private var store: SettingsStore
     @EnvironmentObject private var clipboard: ClipboardService
-    @State private var shortcutError: String?
 
     var body: some View {
         Form {
             Section {
                 Toggle("记录剪贴板历史", isOn: store.binding(\.clipboard.enabled))
-                LabeledContent("打开历史的快捷键") {
-                    ShortcutRecorder(combo: shortcutBinding)
-                }
-                .disabled(!store.settings.clipboard.enabled)
-                if let warning = shortcutError ?? store.settings.clipboardShortcutConflict(for: store.settings.clipboard.shortcut) {
-                    Text(warning).font(.caption).foregroundStyle(.orange)
-                }
+                ShortcutSettingsRow(title: String(localized: "打开历史的快捷键"), target: .clipboard)
+                    .disabled(!store.settings.clipboard.enabled)
             } footer: {
                 Text("点快捷键按钮后直接按下组合键，按 Esc 取消，按 ⌫ 清除。普通按键至少带 ⌘、⌥、⌃ 中的一个，F1–F20 可以单独使用。")
                     .font(.caption)
@@ -86,24 +80,6 @@ struct ClipboardSettingsView: View {
         .onAppear {
             clipboard.refreshStatistics()
         }
-    }
-
-    private var shortcutBinding: Binding<KeyCombo?> {
-        Binding(
-            get: { store.settings.clipboard.shortcut },
-            set: { key in
-                if Distribution.isAppStore, key?.isOptionOnly == true {
-                    shortcutError = String(localized: "App Store 版不支持仅使用 ⌥ 或 ⌥⇧ 的组合键，请加入 ⌘ 或 ⌃")
-                    return
-                }
-                if let warning = store.settings.clipboardShortcutConflict(for: key) {
-                    shortcutError = warning
-                    return
-                }
-                shortcutError = nil
-                store.update { $0.clipboard.shortcut = key }
-            }
-        )
     }
 
     private func confirmClear() {

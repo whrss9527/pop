@@ -382,6 +382,20 @@ struct TriggerSettings: Codable, Equatable {
     var holdDuration: Double = 0.25
     var modifier: TriggerModifier = .option
     var hotKey: HotKeyPreset = .none
+    /// 保留旧预设字段，兼容已有设置；非预设组合单独保存。
+    var customHotKey: KeyCombo?
+    var shortcut: KeyCombo? {
+        get { customHotKey ?? hotKey.keyCombo }
+        set {
+            if let preset = HotKeyPreset.allCases.first(where: { $0.keyCombo == newValue }) {
+                hotKey = preset
+                customHotKey = nil
+            } else {
+                hotKey = .none
+                customHotKey = newValue
+            }
+        }
+    }
     /// 不响应鼠标唤起的 App（Bundle ID），比如游戏、远程桌面
     var excludedBundleIDs: [String] = []
     /// 长按右键唤起的圆盘，在圆心松开后保持打开、改用点击选择；默认松开右键就关闭圆盘
@@ -400,6 +414,7 @@ struct TriggerSettings: Codable, Equatable {
         holdDuration = min(max(c.lenient(.holdDuration, default: d.holdDuration), Self.holdDurationRange.lowerBound), Self.holdDurationRange.upperBound)
         modifier = c.lenient(.modifier, default: d.modifier)
         hotKey = c.lenient(.hotKey, default: d.hotKey)
+        customHotKey = try? c.decodeIfPresent(KeyCombo.self, forKey: .customHotKey)
         excludedBundleIDs = c.lenient(.excludedBundleIDs, default: d.excludedBundleIDs)
         keepsRingOpen = c.lenient(.keepsRingOpen, default: d.keepsRingOpen)
         shakeToOpenShelf = c.lenient(.shakeToOpenShelf, default: d.shakeToOpenShelf)
@@ -951,13 +966,41 @@ struct AppSettings: Codable, Equatable {
         pluginHotKeys.first { $0.pluginID == pluginID }?.key
     }
 
-    func clipboardShortcutConflict(for key: KeyCombo?) -> String? {
+    func shortcut(for target: ShortcutTarget) -> KeyCombo? {
+        switch target {
+        case .ring: return trigger.shortcut
+        case .clipboard: return clipboard.shortcut
+        case .plugin(let id): return hotKey(for: id)
+        }
+    }
+
+    /// 所有录入入口使用同一套规则；暂时关闭的剪贴板也保留其组合，避免重新开启时冲突。
+    func shortcutIssue(for key: KeyCombo?, target: ShortcutTarget,
+                       isAppStore: Bool = Distribution.isAppStore) -> String? {
         guard let key else { return nil }
-        if trigger.hotKey.keyCombo == key {
+        if isAppStore && key.isOptionOnly {
+            return String(localized: "App Store 版不支持仅使用 ⌥ 或 ⌥⇧ 的组合键，请加入 ⌘ 或 ⌃")
+        }
+        if target != .ring, trigger.shortcut == key {
             return String(localized: "和唤起圆盘的快捷键重复了")
         }
-        if pluginHotKeys.contains(where: { $0.key == key }) {
+        if target != .clipboard, clipboard.shortcut == key {
+            return String(localized: "和剪贴板历史的快捷键重复了")
+        }
+        if pluginHotKeys.contains(where: { $0.key == key && target != .plugin($0.pluginID) }) {
             return String(localized: "和功能快捷键重复了，请先在「快捷键」中修改")
+        }
+        return nil
+    }
+
+    /// 校验失败时保留全部旧设置，不抢占其他功能已经使用的组合。
+    mutating func recordShortcut(_ key: KeyCombo?, for target: ShortcutTarget,
+                                 isAppStore: Bool = Distribution.isAppStore) -> String? {
+        if let issue = shortcutIssue(for: key, target: target, isAppStore: isAppStore) { return issue }
+        switch target {
+        case .ring: trigger.shortcut = key
+        case .clipboard: clipboard.shortcut = key
+        case .plugin(let id): setHotKey(key, for: id)
         }
         return nil
     }

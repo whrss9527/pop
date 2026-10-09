@@ -77,6 +77,11 @@ final class HotKeyManager {
         guard !hotKeys.isEmpty else { return }
         installHandlerIfNeeded()
         for (index, hotKey) in hotKeys.enumerated() {
+            // 和圆盘、剪贴板使用同样的限制，也覆盖从其他发行版同步来的设置。
+            guard !Distribution.isAppStore || !hotKey.key.isOptionOnly else {
+                failedPluginIDs.insert(hotKey.pluginID)
+                continue
+            }
             let id = Self.pluginIDBase + UInt32(index)
             var ref: EventHotKeyRef?
             let status = RegisterEventHotKey(hotKey.key.keyCode, hotKey.key.modifiers,
@@ -119,14 +124,12 @@ final class HotKeyManager {
 }
 
 extension HotKeyPreset {
-    /// 和功能快捷键比较是否重复
+    /// 保留真实组合用于显示和冲突检查；当前发行版是否允许注册由 HotKeyManager 判断。
     var keyCombo: KeyCombo? {
         carbonKey.map { KeyCombo(keyCode: $0.code, modifiers: $0.modifiers) }
     }
 
     var carbonKey: (code: UInt32, modifiers: UInt32)? {
-        // App Store 版注册不了只带 ⌥ 的全局快捷键（见 HotKeyPreset.isOptionOnly），当作没设
-        if Distribution.isAppStore && isOptionOnly { return nil }
         switch self {
         case .none: return nil
         case .optionSpace: return (UInt32(kVK_Space), UInt32(optionKey))

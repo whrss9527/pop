@@ -382,7 +382,7 @@ final class AppController {
 
     private func applyHotKeys(_ settings: AppSettings) {
         guard !isRecordingShortcut else { return }
-        hotKeys.register(.ring, preset: settings.trigger.hotKey) { [weak self] in
+        hotKeys.register(.ring, combo: settings.trigger.shortcut) { [weak self] in
             self?.coordinator.activateFromHotKey()
         }
         let clipboardHotKey = settings.clipboard.enabled ? settings.clipboard.shortcut : nil

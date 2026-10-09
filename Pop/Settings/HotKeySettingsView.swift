@@ -13,21 +13,7 @@ struct HotKeySettingsView: View {
         Form {
             Section {
                 ForEach(installed) { info in
-                    HStack(spacing: 8) {
-                        Image(systemName: info.symbol)
-                            .frame(width: 20)
-                            .foregroundStyle(.secondary)
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text(info.name)
-                            if let note = warning(for: info.id, in: settings) {
-                                Text(note)
-                                    .font(.caption)
-                                    .foregroundStyle(.orange)
-                            }
-                        }
-                        Spacer()
-                        ShortcutRecorder(combo: binding(for: info.id))
-                    }
+                    ShortcutSettingsRow(title: info.name, target: .plugin(info.id), symbol: info.symbol)
                 }
             } header: {
                 Text("给常用的功能设置全局快捷键")
@@ -39,24 +25,47 @@ struct HotKeySettingsView: View {
         }
         .formStyle(.grouped)
     }
+}
 
-    private func binding(for pluginID: String) -> Binding<KeyCombo?> {
-        Binding(
-            get: { store.settings.hotKey(for: pluginID) },
-            set: { key in store.update { $0.setHotKey(key, for: pluginID) } }
-        )
+/// 圆盘、剪贴板和功能快捷键共用的设置行，录入失败时展示原因并保留原组合。
+struct ShortcutSettingsRow: View {
+    @EnvironmentObject private var store: SettingsStore
+    let title: String
+    let target: ShortcutTarget
+    var symbol: String? = nil
+    @State private var rejectedKey: KeyCombo?
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            HStack(spacing: 8) {
+                if let symbol {
+                    Image(systemName: symbol)
+                        .frame(width: 20)
+                        .foregroundStyle(.secondary)
+                }
+                Text(title)
+                Spacer()
+                ShortcutRecorder(combo: binding)
+                    .accessibilityLabel(Text(title))
+            }
+            if let warning = store.settings.shortcutIssue(for: rejectedKey ?? store.settings.shortcut(for: target), target: target) {
+                Text(warning).font(.caption).foregroundStyle(.orange)
+            }
+        }
     }
 
-    /// 和唤起圆盘、剪贴板历史的快捷键撞了时提醒一下
-    private func warning(for pluginID: String, in settings: AppSettings) -> String? {
-        guard let key = settings.hotKey(for: pluginID) else { return nil }
-        if settings.trigger.hotKey.keyCombo == key {
-            return String(localized: "和唤起圆盘的快捷键重复了")
-        }
-        if settings.clipboard.enabled, settings.clipboard.shortcut == key {
-            return String(localized: "和剪贴板历史的快捷键重复了")
-        }
-        return nil
+    private var binding: Binding<KeyCombo?> {
+        Binding(
+            get: { store.settings.shortcut(for: target) },
+            set: { key in
+                if store.settings.shortcutIssue(for: key, target: target) != nil {
+                    rejectedKey = key
+                    return
+                }
+                rejectedKey = nil
+                store.update { _ = $0.recordShortcut(key, for: target) }
+            }
+        )
     }
 }
 
