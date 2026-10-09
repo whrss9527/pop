@@ -254,6 +254,67 @@ final class GeometryTests: XCTestCase {
         XCTAssertNil(geometry.slot(at: offset(angle: 450.01, radius: 1000)))
     }
 
+    func testEdgeStatusFitsInsideOpeningWithoutCoveringCancelZoneOrSlots() {
+        let safeFrame = CGRect(x: 0, y: 80, width: 1440, height: 794)
+        var statusCount = 0
+        for count in [4, 6, 8, 10, 12] {
+            for anchor in edgeAnchors(in: safeFrame) {
+                let placement = RingPlacement(slotCount: count, anchor: anchor, safeFrame: safeFrame)
+                guard let status = placement.statusFrame else { continue }
+                statusCount += 1
+                XCTAssertTrue(safeFrame.contains(status))
+                XCTAssertTrue(placement.frame.contains(status))
+                let cancelZone = CGRect(x: anchor.x - 38, y: anchor.y - 38, width: 76, height: 76)
+                XCTAssertFalse(status.intersects(cancelZone))
+                for index in 0..<placement.visibleSlotCount {
+                    XCTAssertFalse(status.intersects(placement.labelFrame(index)))
+                }
+                for x in [status.minX, status.maxX] {
+                    for y in [status.minY, status.maxY] {
+                        XCTAssertLessThan(hypot(x - anchor.x, y - anchor.y),
+                                          placement.geometry.labelRadius - placement.geometry.bandHalfWidth)
+                    }
+                }
+            }
+        }
+        XCTAssertGreaterThan(statusCount, 0, "常见边缘布局应有可读的提示，不能全部省略")
+    }
+
+    func testRoundedBandKeepsItsEndsAndInnerAndOuterEdgesOnScreen() {
+        let safeFrame = CGRect(x: 0, y: 80, width: 1440, height: 794)
+        for count in [1, 2, 3, 4, 6, 8, 10, 12] {
+            for anchor in edgeAnchors(in: safeFrame) {
+                let placement = RingPlacement(slotCount: count, anchor: anchor, safeFrame: safeFrame)
+                let geometry = placement.geometry
+                for sample in 0...100 {
+                    let angle = geometry.bandStartDegrees + (geometry.bandEndDegrees - geometry.bandStartDegrees) * Double(sample) / 100
+                    for radius in [geometry.labelRadius - geometry.bandHalfWidth, geometry.labelRadius + geometry.bandHalfWidth] {
+                        let vector = offset(angle: angle, radius: radius)
+                        let point = CGPoint(x: anchor.x + vector.dx, y: anchor.y + vector.dy)
+                        XCTAssertTrue(safeFrame.contains(point), "弧带越过屏幕边界")
+                        XCTAssertTrue(placement.frame.contains(point), "弧带越过窗口边界")
+                    }
+                }
+                for index in [0, placement.visibleSlotCount - 1] {
+                    let center = geometry.slotCenterOffset(index)
+                    let cap = CGRect(x: anchor.x + center.dx - geometry.bandHalfWidth,
+                                     y: anchor.y + center.dy - geometry.bandHalfWidth,
+                                     width: geometry.bandHalfWidth * 2, height: geometry.bandHalfWidth * 2)
+                    XCTAssertTrue(safeFrame.contains(cap), "圆头不能被屏幕裁切")
+                    XCTAssertTrue(placement.frame.contains(cap))
+                }
+            }
+        }
+    }
+
+    func testStatusIsOmittedWhenOpeningIsTooSmallOrMenuIsFullCircle() {
+        let safeFrame = CGRect(x: 0, y: 0, width: 1440, height: 900)
+        XCTAssertNil(RingPlacement(slotCount: 8, anchor: CGPoint(x: 720, y: 450), safeFrame: safeFrame).statusFrame)
+        XCTAssertNil(RingPlacement(slotCount: 1, anchor: CGPoint(x: 2, y: 450), safeFrame: safeFrame).statusFrame)
+        XCTAssertNil(RingPlacement(slotCount: 12, anchor: CGPoint(x: 2, y: 2),
+                                   safeFrame: CGRect(x: 0, y: 0, width: 160, height: 120)).statusFrame)
+    }
+
     func testEmptyGeometryAndInvalidPointerDoNotSelect() {
         XCTAssertNil(RingGeometry(slotCount: 0).slot(at: CGVector(dx: 100, dy: 100)))
         XCTAssertNil(RingGeometry(slotCount: 3, arcSweepDegrees: 0).slot(at: CGVector(dx: 100, dy: 100)))
