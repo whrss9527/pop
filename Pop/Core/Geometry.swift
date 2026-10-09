@@ -11,15 +11,18 @@ struct RingGeometry: Equatable {
     var arcStartDegrees: Double?
     var arcSweepDegrees: Double?
     private var labelRadiusOverride: CGFloat?
+    private var labelAnglesOverride: [Double]?
 
     init(slotCount: Int, innerRadius: CGFloat = 38, outerRadius: CGFloat = 124,
-         arcStartDegrees: Double? = nil, arcSweepDegrees: Double? = nil, labelRadius: CGFloat? = nil) {
+         arcStartDegrees: Double? = nil, arcSweepDegrees: Double? = nil, labelRadius: CGFloat? = nil,
+         labelAngles: [Double]? = nil) {
         self.slotCount = slotCount
         self.innerRadius = innerRadius
         self.outerRadius = outerRadius
         self.arcStartDegrees = arcStartDegrees
         self.arcSweepDegrees = arcSweepDegrees
         labelRadiusOverride = labelRadius
+        labelAnglesOverride = labelAngles?.count == slotCount ? labelAngles : nil
     }
 
     /// 格子多于 8 个时加大半径，避免相邻格子的文字挤在一起。
@@ -31,7 +34,12 @@ struct RingGeometry: Equatable {
     var labelRadius: CGFloat { labelRadiusOverride ?? (innerRadius + outerRadius) / 2 }
     var sweepDegrees: Double { min(max(arcSweepDegrees ?? 360, 0), 360) }
     var isFullCircle: Bool { sweepDegrees >= 360 }
-    var slotStep: CGFloat { CGFloat(sweepDegrees) * .pi / 180 / CGFloat(max(slotCount, 1)) }
+    var slotStep: CGFloat {
+        if let angles = labelAnglesOverride, angles.count > 1 {
+            return CGFloat(angles[1] - angles[0]) * .pi / 180
+        }
+        return CGFloat(stepDegrees) * .pi / 180
+    }
     private var stepDegrees: Double { sweepDegrees / Double(max(slotCount, 1)) }
     var startDegrees: Double { arcStartDegrees ?? (-90 - stepDegrees / 2) }
 
@@ -51,18 +59,26 @@ struct RingGeometry: Equatable {
         let angle = Double(atan2(-offset.dy, offset.dx)) * 180 / .pi
         let relative = Self.normalizedDegrees(angle - startDegrees)
         guard isFullCircle || relative < sweepDegrees else { return nil }
+        if labelAnglesOverride != nil {
+            return (0..<slotCount).first { relative < sectorDegrees($0).end - startDegrees }
+        }
         return min(Int(relative / stepDegrees), slotCount - 1)
     }
 
     /// 第 index 格扇区在 SwiftUI 坐标系里的起止角度（度）。绘制和命中检测共用同一组边界。
     func sectorDegrees(_ index: Int) -> (start: Double, end: Double) {
+        if let angles = labelAnglesOverride {
+            let start = index == 0 ? startDegrees : (angles[index - 1] + angles[index]) / 2
+            let end = index == slotCount - 1 ? startDegrees + sweepDegrees : (angles[index] + angles[index + 1]) / 2
+            return (start, end)
+        }
         let start = startDegrees + Double(index) * stepDegrees
         return (start, start + stepDegrees)
     }
 
     /// 第 index 格中心的角度（度，SwiftUI 坐标系）。
     func slotCenterDegrees(_ index: Int) -> Double {
-        startDegrees + (Double(index) + 0.5) * stepDegrees
+        labelAnglesOverride?[index] ?? (startDegrees + (Double(index) + 0.5) * stepDegrees)
     }
 
     /// 完整圆盘保留原来的高亮；边缘扇形的高亮直径至少 44 点，避免目标缩小。
@@ -75,7 +91,10 @@ struct RingGeometry: Equatable {
     }
 
     /// 外圈高亮使用当前扇区的宽度，不能再按整圆平均分配。
-    var highlightArcSpanDegrees: Double { min(stepDegrees * 0.62, 42) }
+    var highlightArcSpanDegrees: Double {
+        let compact = labelAnglesOverride != nil
+        return min(Double(slotStep) * 180 / .pi * (compact ? 0.5 : 0.62), compact ? 32 : 42)
+    }
 
     /// 边缘菜单只在标签周围铺一条弧带，圆心和弧带之间留空。
     /// 端帽以首末标签为圆心，不改变原来的扇区命中边界。
@@ -187,6 +206,7 @@ struct RingPlacement: Equatable {
 
     private static func adaptiveGeometry(count: Int, anchor: CGPoint, safeFrame: CGRect) -> RingGeometry? {
         guard safeFrame.width >= safeLabelSize.width, safeFrame.height >= safeLabelSize.height else { return nil }
+        if let edge = edgeHuggingGeometry(count: count, anchor: anchor, safeFrame: safeFrame) { return edge }
         // 固定步长、固定优先级让同一个位置每次唤起都得到相同的排列。
         let radii = stride(from: minimumLabelRadius, through: maximumLabelRadius, by: CGFloat(4)).map { $0 }
             + [maximumLabelRadius]
@@ -239,6 +259,86 @@ struct RingPlacement: Equatable {
             }
         }
         return nil
+    }
+
+    /// 直边的首尾圆头贴近边界，取消首尾各半格的空白；角落仍由通用布局处理。
+    /// 标签中心不必等分整个命中弧，格子之间用相邻中心的角平分线划界。
+    private static func edgeHuggingGeometry(count: Int, anchor: CGPoint, safeFrame: CGRect) -> RingGeometry? {
+        guard count >= 3 else { return nil }
+        let edges: [(distance: CGFloat, inward: Double)] = [
+            (anchor.x - safeFrame.minX, 0), (safeFrame.maxY - anchor.y, 90),
+            (safeFrame.maxX - anchor.x, 180), (anchor.y - safeFrame.minY, 270)
+        ]
+        let bandWidth = RingGeometry(slotCount: count).bandHalfWidth
+        let clearance = max(bandWidth, safeLabelSize.width / 2) + 2
+        guard let edge = edges.min(by: { $0.distance < $1.distance }),
+              edge.distance >= 0, edge.distance <= bandWidth else { return nil }
+        // 首尾标签和端帽都要完整；左右边缘的横向文字比圆头稍宽。
+        let labelClearance = edge.inward == 0 || edge.inward == 180 ? clearance : bandWidth + 2
+        for radius in stride(from: minimumLabelRadius, through: maximumLabelRadius, by: CGFloat(2)) {
+            // 竖直边缘给横向文字的内侧角留出命中余量，仍优先采用最小半径。
+            let extra = edge.inward == 0 || edge.inward == 180 ? CGFloat(12) : 0
+            for inset in stride(from: labelClearance, through: labelClearance + extra, by: CGFloat(2)) {
+                let halfSpan = Double(acos((inset - edge.distance) / radius)) * 180 / .pi
+                let step = 2 * halfSpan / Double(count - 1)
+                let angles = (0..<count).map { edge.inward - halfSpan + Double($0) * step }
+                // 指针略在屏幕内时，首尾标签可以回到边缘；命中边界仍止于可见屏幕。
+                let edgeExtension = Double(asin(edge.distance / radius)) * 180 / .pi
+                let candidate = RingGeometry(slotCount: count, outerRadius: radius + 44,
+                                             arcStartDegrees: edge.inward - 90 - edgeExtension,
+                                             arcSweepDegrees: 180 + edgeExtension * 2,
+                                             labelRadius: radius, labelAngles: angles)
+                guard fitsEdgeLabels(candidate, anchor: anchor, safeFrame: safeFrame) else { continue }
+                return candidate
+            }
+        }
+        return nil
+    }
+
+    /// 以实际朝上的标签矩形检查间距，避免一律按矩形对角线留出过大的空白。
+    private static func fitsEdgeLabels(_ geometry: RingGeometry, anchor: CGPoint, safeFrame: CGRect) -> Bool {
+        // 弧带中段的最外点可能在两个标签之间，必须单独检查，不能只看标签和端帽。
+        let bandStart = geometry.bandStartDegrees
+        let bandEnd = geometry.bandEndDegrees
+        let bandExtrema = [bandStart, bandEnd] + (-4...8).map { Double($0) * 90 }
+            .filter { $0 > bandStart && $0 < bandEnd }
+        for angle in bandExtrema {
+            let radians = CGFloat(angle) * .pi / 180
+            for radius in [geometry.labelRadius - geometry.bandHalfWidth, geometry.labelRadius + geometry.bandHalfWidth] {
+                let point = CGPoint(x: anchor.x + cos(radians) * radius, y: anchor.y - sin(radians) * radius)
+                guard safeFrame.contains(point) else { return false }
+            }
+        }
+        var labels: [CGRect] = []
+        for index in 0..<geometry.slotCount {
+            let offset = geometry.slotCenterOffset(index)
+            let center = CGPoint(x: anchor.x + offset.dx, y: anchor.y + offset.dy)
+            let label = CGRect(x: center.x - safeLabelSize.width / 2, y: center.y - safeLabelSize.height / 2,
+                               width: safeLabelSize.width, height: safeLabelSize.height)
+            guard safeFrame.contains(label),
+                  labels.allSatisfy({ !$0.insetBy(dx: -4, dy: -4).intersects(label) }) else { return false }
+            for x in [label.minX, label.maxX] {
+                for y in [label.minY, label.maxY] {
+                    guard geometry.slot(at: CGVector(dx: x - anchor.x, dy: y - anchor.y)) == index else { return false }
+                }
+            }
+            labels.append(label)
+            let cap = CGRect(x: center.x - geometry.bandHalfWidth, y: center.y - geometry.bandHalfWidth,
+                             width: geometry.bandHalfWidth * 2, height: geometry.bandHalfWidth * 2)
+            guard safeFrame.contains(cap) else { return false }
+            // 保守地把完整弧段的极值也检查一遍，包含轮廓与阴影，不能只检查圆头。
+            let halfSpan = geometry.highlightArcSpanDegrees / 2
+            let start = geometry.slotCenterDegrees(index) - halfSpan
+            let end = geometry.slotCenterDegrees(index) + halfSpan
+            let extrema = [start, end] + (-4...8).map { Double($0) * 90 }.filter { $0 > start && $0 < end }
+            for angle in extrema {
+                let radians = CGFloat(angle) * .pi / 180
+                let radius = geometry.labelRadius + geometry.bandHalfWidth - 5
+                let point = CGPoint(x: anchor.x + cos(radians) * radius, y: anchor.y - sin(radians) * radius)
+                guard safeFrame.insetBy(dx: 4, dy: 4).contains(point) else { return false }
+            }
+        }
+        return true
     }
 
     private struct AngularInterval {
