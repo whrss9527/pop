@@ -188,21 +188,23 @@ final class RingInteractionTests: XCTestCase {
 
     @MainActor
     func testAdaptiveRenderedPositionsMatchHoverAndDragContinuation() {
-        let layout = RingLayout.default
-        let ring = RingViewModel(layout: layout, catalog: BuiltinPlugins.make().map(\.info),
-                                 installed: Set(layout.slots.compactMap { $0 }), content: .empty)
-        ring.freezePlacement(anchor: CGPoint(x: 0, y: 450), safeFrame: CGRect(x: 0, y: 0, width: 1440, height: 900))
-        for (position, slot) in ring.visibleSlots.enumerated() {
-            let offset = ring.geometry.slotCenterOffset(position)
-            ring.updateHover(offset: offset)
-            XCTAssertEqual(ring.hovered, slot.id)
-            ring.updateHover(offset: CGVector(dx: offset.dx * 3, dy: offset.dy * 3))
-            XCTAssertEqual(ring.hovered, slot.id, "按住划出圆弧后仍沿同一方向选择")
+        for anchor in [CGPoint(x: 0, y: 450), CGPoint(x: 24, y: 450)] {
+            let layout = RingLayout.default
+            let ring = RingViewModel(layout: layout, catalog: BuiltinPlugins.make().map(\.info),
+                                     installed: Set(layout.slots.compactMap { $0 }), content: .empty)
+            ring.freezePlacement(anchor: anchor, safeFrame: CGRect(x: 0, y: 0, width: 1440, height: 900))
+            for (position, slot) in ring.visibleSlots.enumerated() {
+                let offset = ring.geometry.slotCenterOffset(position)
+                ring.updateHover(offset: offset)
+                XCTAssertEqual(ring.hovered, slot.id)
+                ring.updateHover(offset: CGVector(dx: offset.dx * 3, dy: offset.dy * 3))
+                XCTAssertEqual(ring.hovered, slot.id, "按住划出圆弧后仍沿同一方向选择")
+            }
+            ring.updateHover(offset: .zero)
+            XCTAssertNil(ring.hovered)
+            ring.updateHover(offset: CGVector(dx: -200, dy: 0))
+            XCTAssertNil(ring.hovered, "朝弧外划动不选中")
         }
-        ring.updateHover(offset: .zero)
-        XCTAssertNil(ring.hovered)
-        ring.updateHover(offset: CGVector(dx: -200, dy: 0))
-        XCTAssertNil(ring.hovered, "朝弧外划动不选中")
     }
 
 

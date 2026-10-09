@@ -158,7 +158,7 @@ final class GeometryTests: XCTestCase {
                 XCTAssertEqual(placement.visibleSlotCount, min(count, 5))
                 XCTAssertEqual(placement.hasOverflow, count > 5)
                 if count <= 2 { XCTAssertLessThanOrEqual(placement.geometry.outerRadius, 150) }
-                if count >= 3 && count <= 5 {
+                if count >= 4 && count <= 5 {
                     XCTAssertGreaterThan(placement.geometry.outerRadius, previousRadius)
                 }
                 if count == 5 { capped = placement.geometry }
@@ -184,7 +184,7 @@ final class GeometryTests: XCTestCase {
         }
     }
 
-    func testTopEdgeEightSlotMenuUsesDenseBandAndCompactStatus() {
+    func testTopEdgeEightSlotMenuUsesDenseBandWithoutMakingRoomForStatus() {
         let safeFrame = CGRect(x: 0, y: 0, width: 1440, height: 900)
         let placement = RingPlacement(slotCount: 8, anchor: CGPoint(x: 720, y: 900), safeFrame: safeFrame)
         let geometry = placement.geometry
@@ -204,7 +204,7 @@ final class GeometryTests: XCTestCase {
         // 同样的 8 格配置，弧带总宽从约 443 点收紧到 340 点以内。
         XCTAssertLessThanOrEqual(maxX - minX, 340)
         XCTAssertLessThanOrEqual(geometry.bandHalfWidth * 2, 68)
-        XCTAssertEqual(placement.statusFrame?.size, CGSize(width: 96, height: 32))
+        XCTAssertNil(placement.statusFrame, "不应为了提示卡扩大紧凑布局")
         XCTAssertGreaterThanOrEqual(RingPlacement.safeLabelSize.height, 44)
         assertSafeAdaptivePlacement(placement)
     }
@@ -218,6 +218,76 @@ final class GeometryTests: XCTestCase {
                 XCTAssertEqual(placement.visibleSlotCount, min(count, isCorner ? 2 : 3))
                 XCTAssertEqual(placement.hasOverflow, isCorner && count > 2)
                 assertSafeAdaptivePlacement(placement)
+            }
+        }
+    }
+
+    func testFourSlotsHugEveryStraightEdgeWithoutMovingTheAnchor() {
+        let safe = CGRect(x: -1440, y: 80, width: 1440, height: 900)
+        for distance: CGFloat in [0, 2, 12, 24, 34] {
+            let anchors = [CGPoint(x: safe.midX, y: safe.maxY - distance),
+                           CGPoint(x: safe.midX, y: safe.minY + distance),
+                           CGPoint(x: safe.minX + distance, y: safe.midY),
+                           CGPoint(x: safe.maxX - distance, y: safe.midY)]
+            for (edge, anchor) in anchors.enumerated() {
+                let placement = RingPlacement(slotCount: 4, anchor: anchor, safeFrame: safe)
+                let geometry = placement.geometry
+                XCTAssertEqual(placement.anchor, anchor)
+                XCTAssertEqual(placement.visibleSlotCount, 4)
+                XCTAssertFalse(placement.hasOverflow)
+                XCTAssertLessThanOrEqual(geometry.labelRadius, edge < 2 ? 104 : 106)
+                for index in [0, 3] {
+                    let center = geometry.slotCenterOffset(index)
+                    let gaps = [safe.maxY - anchor.y - center.dy,
+                                anchor.y + center.dy - safe.minY,
+                                anchor.x + center.dx - safe.minX,
+                                safe.maxX - anchor.x - center.dx]
+                    let gap = gaps[edge] - geometry.bandHalfWidth
+                    XCTAssertGreaterThanOrEqual(gap, 2 - 0.000_001)
+                    XCTAssertLessThanOrEqual(gap, edge < 2 ? 2.000_001 : 10.000_001)
+                }
+                assertSafeAdaptivePlacement(placement)
+            }
+        }
+    }
+
+    func testEdgeHuggingSlotsKeepTheirDirectionsAcrossZeroDegrees() {
+        let placement = RingPlacement(slotCount: 4, anchor: CGPoint(x: 24, y: 450),
+                                      safeFrame: CGRect(x: 0, y: 0, width: 1440, height: 900))
+        let geometry = placement.geometry
+        XCTAssertLessThan(geometry.slotCenterDegrees(0), 0)
+        XCTAssertGreaterThan(geometry.slotCenterDegrees(3), 0)
+        for index in 0..<4 {
+            let sector = geometry.sectorDegrees(index)
+            XCTAssertEqual(geometry.slot(at: offset(angle: sector.start + 0.001, radius: 10_000)), index)
+            XCTAssertEqual(geometry.slot(at: offset(angle: sector.end - 0.001, radius: 10_000)), index)
+        }
+        XCTAssertNil(geometry.slot(at: offset(angle: geometry.startDegrees - 0.001, radius: 10_000)))
+        XCTAssertNil(geometry.slot(at: offset(angle: geometry.startDegrees + geometry.sweepDegrees + 0.001, radius: 10_000)))
+        XCTAssertNil(geometry.slot(at: .zero))
+        assertSafeAdaptivePlacement(placement)
+    }
+
+    func testNearEdgeLayoutsKeepAllSlotCountsOnScreen() {
+        let safe = CGRect(x: 1440.5, y: -900.25, width: 1440, height: 900)
+        for count in [3, 4, 5, 6, 8, 12] {
+            for distance: CGFloat in [0, 12, 24, 34] {
+                let anchors = [CGPoint(x: safe.midX, y: safe.maxY - distance),
+                               CGPoint(x: safe.midX, y: safe.minY + distance),
+                               CGPoint(x: safe.minX + distance, y: safe.midY),
+                               CGPoint(x: safe.maxX - distance, y: safe.midY)]
+                for anchor in anchors {
+                    let placement = RingPlacement(slotCount: count, anchor: anchor, safeFrame: safe)
+                    assertSafeAdaptivePlacement(placement)
+                    let geometry = placement.geometry
+                    for sample in 0...100 {
+                        let angle = geometry.bandStartDegrees + (geometry.bandEndDegrees - geometry.bandStartDegrees) * Double(sample) / 100
+                        for radius in [geometry.labelRadius - geometry.bandHalfWidth, geometry.labelRadius + geometry.bandHalfWidth] {
+                            let vector = offset(angle: angle, radius: radius)
+                            XCTAssertTrue(safe.contains(CGPoint(x: anchor.x + vector.dx, y: anchor.y + vector.dy)))
+                        }
+                    }
+                }
             }
         }
     }
@@ -322,7 +392,7 @@ final class GeometryTests: XCTestCase {
         let safeFrame = CGRect(x: 0, y: 80, width: 1440, height: 794)
         var statusCount = 0
         for count in [4, 6, 8, 10, 12] {
-            for anchor in edgeAnchors(in: safeFrame) {
+            for anchor in edgeAnchors(in: safeFrame) + [CGPoint(x: safeFrame.midX, y: safeFrame.maxY - 100)] {
                 let placement = RingPlacement(slotCount: count, anchor: anchor, safeFrame: safeFrame)
                 guard let status = placement.statusFrame else { continue }
                 statusCount += 1
@@ -445,9 +515,10 @@ final class GeometryTests: XCTestCase {
             for sample in 0...20 {
                 let angle = geometry.slotCenterDegrees(index) - geometry.highlightArcSpanDegrees / 2
                     + geometry.highlightArcSpanDegrees * Double(sample) / 20
-                let rim = offset(angle: angle, radius: geometry.outerRadius - 5)
-                let glow = CGRect(x: placement.anchor.x + rim.dx - 7, y: placement.anchor.y + rim.dy - 7,
-                                  width: 14, height: 14)
+                // 边缘高亮实际使用 2 点描边、3 点阴影，半径与 RingHighlight 保持一致。
+                let rim = offset(angle: angle, radius: geometry.labelRadius + geometry.bandHalfWidth - 5)
+                let glow = CGRect(x: placement.anchor.x + rim.dx - 4, y: placement.anchor.y + rim.dy - 4,
+                                  width: 8, height: 8)
                 XCTAssertTrue(safe.contains(glow), "外圈高亮越过屏幕", file: file, line: line)
                 XCTAssertTrue(frame.contains(glow), "外圈高亮越过窗口", file: file, line: line)
             }
