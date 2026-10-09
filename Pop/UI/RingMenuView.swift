@@ -323,7 +323,7 @@ struct RingMenuView: View {
 
     /// 靠边时把说明从被裁切的圆心移到弧带内侧，读取和不可用原因仍能看见。
     private func edgeStatus(phase: OverlayPresentation.Phase) -> some View {
-        VStack(spacing: 4) {
+        VStack(spacing: 2) {
             if model.isLoading {
                 HStack(spacing: 6) {
                     ProgressView().controlSize(.mini)
@@ -338,9 +338,9 @@ struct RingMenuView: View {
                 }
             }
         }
-        .padding(.horizontal, 10)
+        .padding(.horizontal, 8)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .glassSurface(RoundedRectangle(cornerRadius: 14, style: .continuous))
+        .glassSurface(RoundedRectangle(cornerRadius: 10, style: .continuous))
         .opacity(phase == .shown ? 1 : 0)
         .animation(Motion.content, value: model.isLoading)
         .animation(Motion.content, value: model.center)
@@ -358,12 +358,12 @@ struct RingMenuView: View {
             Text(center.title)
                 .font(.system(size: size, weight: weight))
                 .foregroundStyle(tint)
-                .lineLimit(isEdge && center.isFunction ? 1 : 2)
+                .lineLimit(isEdge ? 1 : 2)
             if let detail = center.detail {
                 Text(detail)
                     .font(.system(size: 9))
                     .foregroundStyle(.secondary)
-                    .lineLimit(2)
+                    .lineLimit(isEdge ? 1 : 2)
             }
         }
         .multilineTextAlignment(.center)
@@ -439,8 +439,8 @@ private struct PolarTile: Shape {
 
     func path(in rect: CGRect) -> Path {
         let radians = CGFloat(angle) * .pi / 180
-        let tile = CGRect(x: rect.midX + cos(radians) * distance - 38,
-                          y: rect.midY + sin(radians) * distance - 25, width: 76, height: 50)
+        let tile = CGRect(x: rect.midX + cos(radians) * distance - 36,
+                          y: rect.midY + sin(radians) * distance - 22, width: 72, height: 44)
         return RoundedRectangle(cornerRadius: 13, style: .continuous).path(in: tile)
     }
 }
@@ -495,7 +495,7 @@ private struct RingSlotLabel: View {
         let isCommitted = committed == slot.id
         let active = (isHovered && slot.enabled) || isCommitted
         let dimmed = committed != nil && !isCommitted
-        VStack(spacing: isEdge ? 4 : 3) {
+        VStack(spacing: 3) {
             if slot.isOverflow {
                 icon("ellipsis", active: active, isCommitted: isCommitted)
                 Text("更多")
@@ -534,7 +534,7 @@ private struct RingSlotLabel: View {
         Image(systemName: symbol)
             .font(.system(size: isEdge ? 18 : 19, weight: .medium))
             .symbolEffect(.bounce, value: isCommitted && !reduceMotion)
-            .frame(width: isEdge ? 28 : nil, height: isEdge ? 28 : 22)
+            .frame(width: isEdge ? 24 : nil, height: isEdge ? 24 : 22)
             .background {
                 if isEdge {
                     RoundedRectangle(cornerRadius: 8, style: .continuous)
