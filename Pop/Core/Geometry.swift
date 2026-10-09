@@ -77,6 +77,12 @@ struct RingGeometry: Equatable {
     /// 外圈高亮使用当前扇区的宽度，不能再按整圆平均分配。
     var highlightArcSpanDegrees: Double { min(stepDegrees * 0.62, 42) }
 
+    /// 边缘菜单只在标签周围铺一条弧带，圆心和弧带之间留空。
+    /// 端帽以首末标签为圆心，不改变原来的扇区命中边界。
+    var bandHalfWidth: CGFloat { 40 }
+    var bandStartDegrees: Double { slotCenterDegrees(0) }
+    var bandEndDegrees: Double { slotCenterDegrees(max(slotCount - 1, 0)) }
+
     /// 角度 angle 换成离 reference 最近的等价角度，高亮滑动时总走近的那一边。
     static func continuousAngle(_ angle: Double, near reference: Double) -> Double {
         angle + 360 * ((reference - angle) / 360).rounded()
@@ -146,6 +152,29 @@ struct RingPlacement: Equatable {
         let size = hoverSafe ? Self.safeLabelSize : Self.labelSize
         return CGRect(x: anchor.x + offset.dx - size.width / 2, y: anchor.y + offset.dy - size.height / 2,
                       width: size.width, height: size.height)
+    }
+
+    /// 提示放在弧带内侧的留白里。放不下完整卡片时省略，不能盖住功能或取消区。
+    var statusFrame: CGRect? {
+        guard !geometry.isFullCircle else { return nil }
+        let size = CGSize(width: 128, height: 52)
+        let angle = CGFloat(geometry.startDegrees + geometry.sweepDegrees / 2) * .pi / 180
+        let radius = geometry.labelRadius / 2
+        let center = CGPoint(x: anchor.x + cos(angle) * radius, y: anchor.y - sin(angle) * radius)
+        let rect = CGRect(x: center.x - size.width / 2, y: center.y - size.height / 2,
+                          width: size.width, height: size.height)
+        guard safeFrame.contains(rect), frame.contains(rect) else { return nil }
+        let nearest = CGPoint(x: min(max(anchor.x, rect.minX), rect.maxX),
+                              y: min(max(anchor.y, rect.minY), rect.maxY))
+        guard hypot(nearest.x - anchor.x, nearest.y - anchor.y) >= geometry.innerRadius + 8 else { return nil }
+        for x in [rect.minX, rect.maxX] {
+            for y in [rect.minY, rect.maxY] {
+                guard hypot(x - anchor.x, y - anchor.y) <= geometry.labelRadius - geometry.bandHalfWidth - 10 else {
+                    return nil
+                }
+            }
+        }
+        return rect
     }
 
     private static func windowFrame(anchor: CGPoint, radius: CGFloat) -> CGRect {
