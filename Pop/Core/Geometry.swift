@@ -71,7 +71,7 @@ struct RingGeometry: Equatable {
         if isFullCircle {
             return max(min(chord * 0.47, (outerRadius - innerRadius) / 2 - 4), 12)
         }
-        return max(min(chord * 0.47, 34), 22)
+        return max(min(chord * 0.47, 28), 22)
     }
 
     /// 外圈高亮使用当前扇区的宽度，不能再按整圆平均分配。
@@ -79,7 +79,7 @@ struct RingGeometry: Equatable {
 
     /// 边缘菜单只在标签周围铺一条弧带，圆心和弧带之间留空。
     /// 端帽以首末标签为圆心，不改变原来的扇区命中边界。
-    var bandHalfWidth: CGFloat { 40 }
+    var bandHalfWidth: CGFloat { 34 }
     var bandStartDegrees: Double { slotCenterDegrees(0) }
     var bandEndDegrees: Double { slotCenterDegrees(max(slotCount - 1, 0)) }
 
@@ -105,14 +105,14 @@ struct RingPlacement: Equatable {
 
     static let padding: CGFloat = 22
     static let labelSize = CGSize(width: 66, height: 40)
-    /// 预留文字悬停放大后的空间，不缩小图标、文字或点击目标。
-    static let safeLabelSize = CGSize(width: 80, height: 52)
-    private static let minimumLabelRadius: CGFloat = 88
-    /// 弧带外半径最多 240 点（标签中心 190 点 + 外侧留白 50 点）。
+    /// 保留 66 点标签宽度，预留 1.06 倍悬停/提交动画的空间，目标高度至少 44 点。
+    static let safeLabelSize = CGSize(width: 72, height: 44)
+    private static let minimumLabelRadius: CGFloat = 84
+    /// 弧带外半径最多 184 点（标签中心 140 点 + 外侧留白 44 点）。
     /// 格子多时使用「更多」，不再为了全部展开而扩大菜单。
-    static let maximumLabelRadius: CGFloat = 190
-    /// 96 点为 80×52 标签的对角线留出余量，每个标签完整落在自己的扇区内。
-    static let minimumCenterSpacing: CGFloat = 96
+    static let maximumLabelRadius: CGFloat = 140
+    /// 86 点为 72×44 标签的对角线留出余量，每个标签完整落在自己的扇区内。
+    static let minimumCenterSpacing: CGFloat = 86
 
     init(slotCount: Int, anchor: CGPoint, safeFrame: CGRect) {
         let count = max(slotCount, 1)
@@ -160,9 +160,9 @@ struct RingPlacement: Equatable {
     /// 提示放在弧带内侧的留白里。放不下完整卡片时省略，不能盖住功能或取消区。
     var statusFrame: CGRect? {
         guard !geometry.isFullCircle else { return nil }
-        let size = CGSize(width: 128, height: 52)
+        let size = CGSize(width: 96, height: 32)
         let angle = CGFloat(geometry.startDegrees + geometry.sweepDegrees / 2) * .pi / 180
-        let radius = geometry.labelRadius / 2
+        let radius = geometry.labelRadius / 2 - 4
         let center = CGPoint(x: anchor.x + cos(angle) * radius, y: anchor.y - sin(angle) * radius)
         let rect = CGRect(x: center.x - size.width / 2, y: center.y - size.height / 2,
                           width: size.width, height: size.height)
@@ -197,7 +197,7 @@ struct RingPlacement: Equatable {
             let sweep = step * Double(count)
             // 边缘布局只朝屏幕内展开，外侧的方向始终可以取消。
             guard sweep <= 180 else { continue }
-            var candidate = RingGeometry(slotCount: count, outerRadius: radius + 50,
+            var candidate = RingGeometry(slotCount: count, outerRadius: radius + 44,
                                          arcStartDegrees: 0, arcSweepDegrees: sweep, labelRadius: radius)
             let labelBounds = safeFrame.insetBy(dx: safeLabelSize.width / 2 + 0.5,
                                                dy: max(safeLabelSize.height / 2, candidate.highlightRadius + 1) + 0.5)
@@ -310,7 +310,7 @@ struct RingPlacement: Equatable {
         let point = CGPoint(x: nearest.x + dx * fraction, y: nearest.y + dy * fraction)
         let radius = min(maximumLabelRadius, hypot(point.x - anchor.x, point.y - anchor.y))
         let angle = Double(atan2(anchor.y - point.y, point.x - anchor.x)) * 180 / .pi
-        return RingGeometry(slotCount: 1, outerRadius: radius + 50, arcStartDegrees: angle - 30,
+        return RingGeometry(slotCount: 1, outerRadius: radius + 44, arcStartDegrees: angle - 30,
                             arcSweepDegrees: 60, labelRadius: radius)
     }
 }
