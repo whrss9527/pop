@@ -157,28 +157,32 @@ final class RingInteractionTests: XCTestCase {
 
     @MainActor
     func testOverflowKeepsEveryOriginalSlotAndKeyboardVisitsMore() {
-        let layout = RingLayout(slots: Array(repeating: BuiltinPluginID.clipboardHistory, count: 12))
-        let ring = RingViewModel(layout: layout, catalog: BuiltinPlugins.make().map(\.info),
-                                 installed: [BuiltinPluginID.clipboardHistory], content: nil)
-        ring.freezePlacement(anchor: CGPoint(x: 0, y: 600), safeFrame: CGRect(x: 0, y: 0, width: 800, height: 600))
-        XCTAssertTrue(ring.placement?.hasOverflow == true)
-        XCTAssertEqual(ring.visibleSlots.last?.id, ring.overflowID)
-        XCTAssertEqual(ring.slots.count, 12)
-        var visited: [Int] = []
-        for _ in ring.visibleSlots {
-            let next = ring.nextVisibleSlot(by: 1)
-            visited.append(next)
-            ring.setHovered(next)
-        }
-        XCTAssertEqual(visited, ring.visibleSlots.map(\.id))
-        XCTAssertTrue(ring.isOverflow(ring.hovered))
-        XCTAssertNil(ring.pluginSlot(ring.overflowID))
-        XCTAssertNil(ring.selectablePlugin(at: ring.overflowID))
-        XCTAssertEqual(ring.nextVisibleSlot(by: 1), 0)
-        ring.update(content: .empty)
-        for id in 0..<12 {
-            XCTAssertEqual(ring.selectablePlugin(at: id)?.id, BuiltinPluginID.clipboardHistory,
-                           "隐藏在更多里的原始功能仍能执行")
+        for anchor in [CGPoint(x: 0, y: 600), CGPoint(x: 0, y: 300)] {
+            let layout = RingLayout(slots: Array(repeating: BuiltinPluginID.clipboardHistory, count: 12))
+            let ring = RingViewModel(layout: layout, catalog: BuiltinPlugins.make().map(\.info),
+                                     installed: [BuiltinPluginID.clipboardHistory], content: nil)
+            ring.freezePlacement(anchor: anchor, safeFrame: CGRect(x: 0, y: 0, width: 800, height: 600))
+            XCTAssertTrue(ring.placement?.hasOverflow == true)
+            XCTAssertEqual(ring.visibleSlots.count, anchor.y == 600 ? 3 : 6)
+            XCTAssertLessThanOrEqual(ring.geometry.outerRadius, 240)
+            XCTAssertEqual(ring.visibleSlots.last?.id, ring.overflowID)
+            XCTAssertEqual(ring.slots.count, 12)
+            var visited: [Int] = []
+            for _ in ring.visibleSlots {
+                let next = ring.nextVisibleSlot(by: 1)
+                visited.append(next)
+                ring.setHovered(next)
+            }
+            XCTAssertEqual(visited, ring.visibleSlots.map(\.id))
+            XCTAssertTrue(ring.isOverflow(ring.hovered))
+            XCTAssertNil(ring.pluginSlot(ring.overflowID))
+            XCTAssertNil(ring.selectablePlugin(at: ring.overflowID))
+            XCTAssertEqual(ring.nextVisibleSlot(by: 1), 0)
+            ring.update(content: .empty)
+            for id in 0..<12 {
+                XCTAssertEqual(ring.selectablePlugin(at: id)?.id, BuiltinPluginID.clipboardHistory,
+                               "隐藏在更多里的原始功能仍能执行")
+            }
         }
     }
 

@@ -93,12 +93,12 @@ final class GeometryTests: XCTestCase {
         }
     }
 
-    func testCornerCanKeepFourSlotsWithoutOverflow() {
+    func testCornerMovesFourthSlotIntoMoreInsteadOfExpandingRadius() {
         let safeFrame = CGRect(x: 0, y: 0, width: 1440, height: 900)
         for anchor in Array(edgeAnchors(in: safeFrame).suffix(4)) {
             let placement = RingPlacement(slotCount: 4, anchor: anchor, safeFrame: safeFrame)
-            XCTAssertEqual(placement.visibleSlotCount, 4)
-            XCTAssertFalse(placement.hasOverflow)
+            XCTAssertEqual(placement.visibleSlotCount, 3)
+            XCTAssertTrue(placement.hasOverflow)
             assertSafeAdaptivePlacement(placement)
         }
     }
@@ -115,8 +115,8 @@ final class GeometryTests: XCTestCase {
             for corner in corners {
                 let placement = RingPlacement(slotCount: count, anchor: corner.anchor, safeFrame: safeFrame)
                 XCTAssertEqual(placement.anchor, corner.anchor)
-                XCTAssertEqual(placement.visibleSlotCount, 4)
-                XCTAssertEqual(placement.hasOverflow, count > 4)
+                XCTAssertEqual(placement.visibleSlotCount, 3)
+                XCTAssertTrue(placement.hasOverflow)
                 XCTAssertNil(placement.geometry.slot(at: offset(angle: corner.start - 1, radius: 10_000)))
                 XCTAssertNil(placement.geometry.slot(at: offset(angle: corner.start + 91, radius: 10_000)))
                 assertSafeAdaptivePlacement(placement)
@@ -144,6 +144,44 @@ final class GeometryTests: XCTestCase {
         XCTAssertEqual(placement.labelFrame(0, hoverSafe: false).size, CGSize(width: 66, height: 40))
         XCTAssertEqual(placement.labelFrame(0).size, CGSize(width: 80, height: 52))
         assertSafeAdaptivePlacement(placement)
+    }
+
+    func testEdgeRadiusGrowsWithSlotCountThenStopsAtMore() {
+        let safeFrame = CGRect(x: 0, y: 0, width: 1440, height: 900)
+        for anchor in Array(edgeAnchors(in: safeFrame).prefix(4)) {
+            var previousRadius: CGFloat = 0
+            var capped: RingGeometry?
+            for count in 1...12 {
+                let placement = RingPlacement(slotCount: count, anchor: anchor, safeFrame: safeFrame)
+                XCTAssertLessThanOrEqual(placement.geometry.outerRadius, 240)
+                XCTAssertGreaterThanOrEqual(placement.geometry.outerRadius, previousRadius)
+                XCTAssertEqual(placement.visibleSlotCount, min(count, 6))
+                XCTAssertEqual(placement.hasOverflow, count > 6)
+                if count <= 2 { XCTAssertLessThanOrEqual(placement.geometry.outerRadius, 150) }
+                if count >= 3 && count <= 6 {
+                    XCTAssertGreaterThan(placement.geometry.outerRadius, previousRadius)
+                }
+                if count == 6 { capped = placement.geometry }
+                if count > 6 { XCTAssertEqual(placement.geometry, capped) }
+                previousRadius = placement.geometry.outerRadius
+                assertSafeAdaptivePlacement(placement)
+            }
+        }
+    }
+
+    func testNarrowScreenFallbackKeepsSingleEntryCompactAndVisible() {
+        for safeFrame in [CGRect(x: 0, y: 0, width: 80, height: 900),
+                          CGRect(x: -1000, y: 40, width: 1440, height: 52)] {
+            let anchor = CGPoint(x: safeFrame.minX, y: safeFrame.midY)
+            let placement = RingPlacement(slotCount: 12, anchor: anchor, safeFrame: safeFrame)
+            XCTAssertEqual(placement.visibleSlotCount, 1)
+            XCTAssertTrue(placement.hasOverflow)
+            XCTAssertLessThanOrEqual(placement.geometry.outerRadius, 240)
+            // 极窄区域的标签恰好贴边，极坐标往返会产生浮点尾差。
+            XCTAssertTrue(safeFrame.insetBy(dx: -0.000_001, dy: -0.000_001).contains(placement.labelFrame(0)))
+            XCTAssertTrue(placement.frame.insetBy(dx: -0.000_001, dy: -0.000_001).contains(placement.labelFrame(0)))
+            XCTAssertGreaterThan(placement.geometry.labelRadius, placement.geometry.innerRadius)
+        }
     }
 
     func testOneTwoAndThreeSlotsAlsoUseSafeClockwiseArcs() {

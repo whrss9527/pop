@@ -107,7 +107,10 @@ struct RingPlacement: Equatable {
     static let labelSize = CGSize(width: 66, height: 40)
     /// 预留文字悬停放大后的空间，不缩小图标、文字或点击目标。
     static let safeLabelSize = CGSize(width: 80, height: 52)
-    static let maximumLabelRadius: CGFloat = 260
+    private static let minimumLabelRadius: CGFloat = 88
+    /// 弧带外半径最多 240 点（标签中心 190 点 + 外侧留白 50 点）。
+    /// 格子多时使用「更多」，不再为了全部展开而扩大菜单。
+    static let maximumLabelRadius: CGFloat = 190
     /// 96 点为 80×52 标签的对角线留出余量，每个标签完整落在自己的扇区内。
     static let minimumCenterSpacing: CGFloat = 96
 
@@ -136,7 +139,7 @@ struct RingPlacement: Equatable {
             }
         }
 
-        // 极小的可用区域只保留一个入口。只要区域能容纳标签，就把完整标签留在区域内。
+        // 极小的可用区域只保留一个入口。半径上限内能容纳标签时，把完整标签留在区域内。
         // 小于标签本身的区域无法同时满足不缩小和不裁切，由窗口的可用区域决定最终裁切。
         let compact = Self.compactGeometry(anchor: anchor, safeFrame: safeFrame)
         geometry = compact
@@ -185,7 +188,7 @@ struct RingPlacement: Equatable {
     private static func adaptiveGeometry(count: Int, anchor: CGPoint, safeFrame: CGRect) -> RingGeometry? {
         guard safeFrame.width >= safeLabelSize.width, safeFrame.height >= safeLabelSize.height else { return nil }
         // 固定步长、固定优先级让同一个位置每次唤起都得到相同的排列。
-        let radii = stride(from: CGFloat(88), through: maximumLabelRadius, by: CGFloat(4)).map { $0 }
+        let radii = stride(from: minimumLabelRadius, through: maximumLabelRadius, by: CGFloat(4)).map { $0 }
             + [maximumLabelRadius]
         let inward = RingGeometry.normalizedDegrees(Double(atan2(anchor.y - safeFrame.midY, safeFrame.midX - anchor.x)) * 180 / .pi)
         for radius in radii {
@@ -286,13 +289,26 @@ struct RingPlacement: Equatable {
         let insetX = min(safeLabelSize.width / 2, safeFrame.width / 2)
         let insetY = min(safeLabelSize.height / 2, safeFrame.height / 2)
         let bounds = safeFrame.insetBy(dx: insetX, dy: insetY)
-        // 选择离唤起点最远的可用标签中心，尽可能让唯一入口落在 38 点死区之外。
+        // 从最近的可用点朝最远的角延伸，让唯一入口尽量离开死区；
+        // 狭长区域也不能为了寻找空位而突破半径上限。
         let points = [CGPoint(x: bounds.minX, y: bounds.minY), CGPoint(x: bounds.maxX, y: bounds.minY),
                       CGPoint(x: bounds.maxX, y: bounds.maxY), CGPoint(x: bounds.minX, y: bounds.maxY)]
-        let point = points.max {
+        let farthest = points.max {
             hypot($0.x - anchor.x, $0.y - anchor.y) < hypot($1.x - anchor.x, $1.y - anchor.y)
         } ?? CGPoint(x: safeFrame.midX, y: safeFrame.midY)
-        let radius = hypot(point.x - anchor.x, point.y - anchor.y)
+        let nearest = CGPoint(x: min(max(anchor.x, bounds.minX), bounds.maxX),
+                              y: min(max(anchor.y, bounds.minY), bounds.maxY))
+        let distance = hypot(nearest.x - anchor.x, nearest.y - anchor.y)
+        let targetRadius = min(maximumLabelRadius, max(minimumLabelRadius, distance))
+        let dx = farthest.x - nearest.x
+        let dy = farthest.y - nearest.y
+        let lengthSquared = dx * dx + dy * dy
+        let projection = (nearest.x - anchor.x) * dx + (nearest.y - anchor.y) * dy
+        let discriminant = projection * projection + lengthSquared * (targetRadius * targetRadius - distance * distance)
+        let fraction = lengthSquared > 0 && distance < targetRadius
+            ? min(1, max(0, (sqrt(max(0, discriminant)) - projection) / lengthSquared)) : 0
+        let point = CGPoint(x: nearest.x + dx * fraction, y: nearest.y + dy * fraction)
+        let radius = min(maximumLabelRadius, hypot(point.x - anchor.x, point.y - anchor.y))
         let angle = Double(atan2(anchor.y - point.y, point.x - anchor.x)) * 180 / .pi
         return RingGeometry(slotCount: 1, outerRadius: radius + 50, arcStartDegrees: angle - 30,
                             arcSweepDegrees: 60, labelRadius: radius)
