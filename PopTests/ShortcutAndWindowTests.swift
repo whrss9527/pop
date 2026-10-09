@@ -1,5 +1,6 @@
 import AppKit
 import Carbon.HIToolbox
+import Combine
 import ImageIO
 import UniformTypeIdentifiers
 import XCTest
@@ -10,6 +11,9 @@ final class KeyComboTests: XCTestCase {
         let optionT = try XCTUnwrap(KeyCombo(keyCode: UInt32(kVK_ANSI_T), flags: [.option]))
         XCTAssertEqual(optionT.display, "⌥T")
         XCTAssertEqual(optionT.modifiers, UInt32(optionKey))
+        XCTAssertTrue(optionT.isOptionOnly)
+        XCTAssertTrue(KeyCombo(keyCode: UInt32(kVK_ANSI_T), modifiers: UInt32(optionKey | shiftKey)).isOptionOnly)
+        XCTAssertFalse(KeyCombo(keyCode: UInt32(kVK_ANSI_T), modifiers: UInt32(optionKey | cmdKey)).isOptionOnly)
         XCTAssertEqual(KeyCombo(keyCode: UInt32(kVK_ANSI_S), flags: [.command, .shift, .control])?.display, "⌃⇧⌘S")
         XCTAssertEqual(KeyCombo(keyCode: UInt32(kVK_Space), flags: [.option])?.display, "⌥Space")
         // 功能键可以单独用，普通按键至少要带 ⌘、⌥、⌃ 中的一个
@@ -43,6 +47,70 @@ final class KeyComboTests: XCTestCase {
         // 坏掉的一项跳过，其他照常读出来
         let lossy = try JSONDecoder().decode(AppSettings.self, from: Data(#"{"pluginHotKeys": [{"pluginID": "translate"}, {"pluginID": "search", "key": {"keyCode": 17, "modifiers": 2048}}]}"#.utf8))
         XCTAssertEqual(lossy.pluginHotKeys.map(\.pluginID), ["search"])
+    }
+
+    func testClipboardShortcutKeepsLegacySettings() throws {
+        let decoder = JSONDecoder()
+        let defaults = try decoder.decode(ClipboardSettings.self, from: Data("{}".utf8))
+        XCTAssertEqual(defaults.shortcut, HotKeyPreset.commandShiftV.keyCombo)
+        let legacy = try decoder.decode(ClipboardSettings.self, from: Data(#"{"hotKey":"commandOptionV"}"#.utf8))
+        XCTAssertEqual(legacy.shortcut, HotKeyPreset.commandOptionV.keyCombo)
+        XCTAssertNil(legacy.customHotKey)
+        let damaged = try decoder.decode(ClipboardSettings.self, from: Data(#"{"hotKey":"commandOptionV","customHotKey":{"keyCode":"bad"}}"#.utf8))
+        XCTAssertEqual(damaged.shortcut, legacy.shortcut)
+    }
+
+    func testClipboardRecordedShortcutPersistsAndClears() throws {
+        let custom = KeyCombo(keyCode: UInt32(kVK_ANSI_H), modifiers: UInt32(cmdKey | controlKey))
+        var settings = AppSettings()
+        settings.clipboard.shortcut = custom
+        settings.clipboard.enabled = false
+        var decoded = try JSONDecoder().decode(AppSettings.self, from: JSONEncoder().encode(settings))
+        XCTAssertEqual(decoded.clipboard.shortcut, custom)
+        XCTAssertEqual(decoded.clipboard.hotKey, .none)
+        decoded.clipboard.enabled = true
+        XCTAssertEqual(decoded.clipboard.shortcut, custom)
+
+        decoded.clipboard.shortcut = HotKeyPreset.commandOptionV.keyCombo
+        XCTAssertEqual(decoded.clipboard.hotKey, .commandOptionV)
+        XCTAssertNil(decoded.clipboard.customHotKey)
+        decoded.clipboard.shortcut = nil
+        let cleared = try JSONDecoder().decode(AppSettings.self, from: JSONEncoder().encode(decoded))
+        XCTAssertNil(cleared.clipboard.shortcut)
+        XCTAssertEqual(cleared.clipboard.hotKey, .none)
+    }
+
+    func testClipboardShortcutConflictsWithRingAndPlugins() throws {
+        let custom = KeyCombo(keyCode: UInt32(kVK_ANSI_H), modifiers: UInt32(cmdKey | controlKey))
+        var settings = AppSettings()
+        settings.trigger.hotKey = .commandShiftSpace
+        XCTAssertNotNil(settings.clipboardShortcutConflict(for: settings.trigger.hotKey.keyCombo))
+        XCTAssertNil(settings.clipboardShortcutConflict(for: custom))
+        settings.setHotKey(custom, for: BuiltinPluginID.translate)
+        XCTAssertNotNil(settings.clipboardShortcutConflict(for: custom))
+        settings.setHotKey(nil, for: BuiltinPluginID.translate)
+        XCTAssertNil(settings.clipboardShortcutConflict(for: custom))
+        XCTAssertNil(settings.clipboardShortcutConflict(for: nil))
+    }
+
+    @MainActor
+    func testSwitchingRecordersKeepsNewRecordingActive() {
+        let state = ShortcutRecordingState()
+        let first = UUID(), second = UUID()
+        var notifications: [UUID?] = []
+        let subscription = state.changes.sink { id in
+            XCTAssertEqual(state.activeID, id)
+            // 模拟旧控件收到新控件开始的通知后退出。
+            if id == second { state.end(first) }
+            notifications.append(id)
+        }
+        state.begin(first)
+        state.begin(second)
+        XCTAssertEqual(state.activeID, second)
+        state.end(second)
+        XCTAssertNil(state.activeID)
+        XCTAssertEqual(notifications, [first, second, nil])
+        withExtendedLifetime(subscription) {}
     }
 }
 

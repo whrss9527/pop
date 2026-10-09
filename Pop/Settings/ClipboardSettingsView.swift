@@ -4,18 +4,23 @@ import SwiftUI
 struct ClipboardSettingsView: View {
     @EnvironmentObject private var store: SettingsStore
     @EnvironmentObject private var clipboard: ClipboardService
+    @State private var shortcutError: String?
 
     var body: some View {
         Form {
             Section {
                 Toggle("记录剪贴板历史", isOn: store.binding(\.clipboard.enabled))
-                Picker("打开历史的快捷键", selection: store.binding(\.clipboard.hotKey)) {
-                    ForEach(HotKeyPreset.available(keeping: store.settings.clipboard.hotKey)) { preset in
-                        Text(preset.title).tag(preset)
-                    }
+                LabeledContent("打开历史的快捷键") {
+                    ShortcutRecorder(combo: shortcutBinding)
                 }
                 .disabled(!store.settings.clipboard.enabled)
+                if let warning = shortcutError ?? store.settings.clipboardShortcutConflict(for: store.settings.clipboard.shortcut) {
+                    Text(warning).font(.caption).foregroundStyle(.orange)
+                }
             } footer: {
+                Text("点快捷键按钮后直接按下组合键，按 Esc 取消，按 ⌫ 清除。普通按键至少带 ⌘、⌥、⌃ 中的一个，F1–F20 可以单独使用。")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
                 Text("在历史面板里输入文字搜索，↑↓ 选择，回车粘贴到当前 App，⌘1–9 直接粘贴前 9 条，⌘P 固定常用的内容。圆盘里的「剪贴板」格子和菜单栏图标也能打开它。⌘⇧V 在部分 App 里是「粘贴并匹配样式」，介意的话可以换一个快捷键。")
                     .font(.caption)
                     .foregroundStyle(.secondary)
@@ -81,6 +86,24 @@ struct ClipboardSettingsView: View {
         .onAppear {
             clipboard.refreshStatistics()
         }
+    }
+
+    private var shortcutBinding: Binding<KeyCombo?> {
+        Binding(
+            get: { store.settings.clipboard.shortcut },
+            set: { key in
+                if Distribution.isAppStore, key?.isOptionOnly == true {
+                    shortcutError = String(localized: "App Store 版不支持仅使用 ⌥ 或 ⌥⇧ 的组合键，请加入 ⌘ 或 ⌃")
+                    return
+                }
+                if let warning = store.settings.clipboardShortcutConflict(for: key) {
+                    shortcutError = warning
+                    return
+                }
+                shortcutError = nil
+                store.update { $0.clipboard.shortcut = key }
+            }
+        )
     }
 
     private func confirmClear() {

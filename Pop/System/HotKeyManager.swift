@@ -11,7 +11,7 @@ final class HotKeyManager {
     }
 
     private struct Registration {
-        var preset: HotKeyPreset
+        var combo: KeyCombo
         var ref: EventHotKeyRef?
         var handler: () -> Void
     }
@@ -29,22 +29,28 @@ final class HotKeyManager {
     /// 注册（或更换）某个位置的快捷键；preset 为 .none 时取消。返回 false 表示被其他 App 占用了。
     @discardableResult
     func register(_ slot: Slot, preset: HotKeyPreset, handler: @escaping () -> Void) -> Bool {
-        if var existing = registrations[slot], existing.preset == preset {
+        register(slot, combo: preset.keyCombo, handler: handler)
+    }
+
+    @discardableResult
+    func register(_ slot: Slot, combo: KeyCombo?, handler: @escaping () -> Void) -> Bool {
+        if var existing = registrations[slot], existing.combo == combo {
             existing.handler = handler
             registrations[slot] = existing
-            return existing.ref != nil || preset == .none
+            return existing.ref != nil
         }
         unregister(slot)
-        guard let key = preset.carbonKey else { return true }
+        guard let key = combo else { return true }
+        guard !Distribution.isAppStore || !key.isOptionOnly else { return false }
         installHandlerIfNeeded()
         var ref: EventHotKeyRef?
         let id = EventHotKeyID(signature: OSType(0x504F_5021), id: slot.rawValue)
-        let status = RegisterEventHotKey(key.code, key.modifiers, id, GetApplicationEventTarget(), 0, &ref)
+        let status = RegisterEventHotKey(key.keyCode, key.modifiers, id, GetApplicationEventTarget(), 0, &ref)
         if status != noErr {
-            NSLog("Pop: 注册快捷键 \(preset.title) 失败 (\(status))，可能已被其他 App 占用")
+            NSLog("Pop: 注册快捷键 \(key.display) 失败 (\(status))，可能已被其他 App 占用")
             ref = nil
         }
-        registrations[slot] = Registration(preset: preset, ref: ref, handler: handler)
+        registrations[slot] = Registration(combo: key, ref: ref, handler: handler)
         return ref != nil
     }
 

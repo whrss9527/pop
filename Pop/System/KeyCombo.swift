@@ -1,5 +1,6 @@
 import AppKit
 import Carbon.HIToolbox
+import Combine
 
 /// 一个全局快捷键：Carbon 键码 + 修饰键（cmdKey、optionKey、controlKey、shiftKey 的组合）。
 struct KeyCombo: Codable, Equatable, Hashable {
@@ -37,6 +38,10 @@ struct KeyCombo: Codable, Equatable, Hashable {
         if modifiers & UInt32(shiftKey) != 0 { result += "⇧" }
         if modifiers & UInt32(cmdKey) != 0 { result += "⌘" }
         return result + Self.keyName(keyCode)
+    }
+
+    var isOptionOnly: Bool {
+        modifiers & UInt32(cmdKey | optionKey | controlKey) == UInt32(optionKey)
     }
 
     static func keyName(_ keyCode: UInt32) -> String {
@@ -86,4 +91,23 @@ struct PluginHotKey: Codable, Equatable, Identifiable {
     var key: KeyCombo
 
     var id: String { pluginID }
+}
+
+/// 同时只允许一个控件录入；先更新所有者再通知，旧控件退出时不能结束新控件的录入。
+@MainActor
+final class ShortcutRecordingState {
+    static let shared = ShortcutRecordingState()
+    private(set) var activeID: UUID?
+    let changes = PassthroughSubject<UUID?, Never>()
+
+    func begin(_ id: UUID) {
+        activeID = id
+        changes.send(id)
+    }
+
+    func end(_ id: UUID) {
+        guard activeID == id else { return }
+        activeID = nil
+        changes.send(nil)
+    }
 }

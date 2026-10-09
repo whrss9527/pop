@@ -27,6 +27,7 @@ final class AppController {
     let selectionWatcher = SelectionWatcher()
 
     private var cancellables = Set<AnyCancellable>()
+    private var isRecordingShortcut = false
     /// 最近一个在前台的别的 App：打开 pop:// 链接时系统会把 Pop 带到前台，处理前先切回去
     private var lastExternalApp: NSRunningApplication?
 
@@ -279,6 +280,18 @@ final class AppController {
             self?.settingsWindow.show(tab: .general)
         }
 
+        ShortcutRecordingState.shared.changes
+            .sink { [weak self] id in
+                guard let self else { return }
+                isRecordingShortcut = id != nil
+                if isRecordingShortcut {
+                    hotKeys.unregisterAll()
+                } else {
+                    applyHotKeys(settingsStore.settings)
+                }
+            }
+            .store(in: &cancellables)
+
         // @Published 在赋值前发出通知，所以需要读取最新状态的地方都放到下一轮 RunLoop。
         settingsStore.$settings
             .receive(on: RunLoop.main)
@@ -352,16 +365,7 @@ final class AppController {
         trigger.configuration = MouseTrigger.Configuration(mode: settings.trigger.mode,
                                                            holdDuration: settings.trigger.holdDuration,
                                                            modifier: settings.trigger.modifier)
-        hotKeys.register(.ring, preset: settings.trigger.hotKey) { [weak self] in
-            self?.coordinator.activateFromHotKey()
-        }
-        let clipboardHotKey: HotKeyPreset = settings.clipboard.enabled ? settings.clipboard.hotKey : .none
-        hotKeys.register(.clipboard, preset: clipboardHotKey) { [weak self] in
-            self?.coordinator.showClipboardHistoryFromHotKey()
-        }
-        hotKeys.registerPluginHotKeys(settings.pluginHotKeys) { [weak self] pluginID in
-            self?.coordinator.runFromHotKey(pluginID: pluginID)
-        }
+        applyHotKeys(settings)
         clipboard.apply(settings.clipboard)
         if settings.trigger.shakeToOpenShelf {
             shakeDetector.start()
@@ -373,6 +377,20 @@ final class AppController {
         } else {
             selectionWatcher.stop()
             coordinator.hideToolbar()
+        }
+    }
+
+    private func applyHotKeys(_ settings: AppSettings) {
+        guard !isRecordingShortcut else { return }
+        hotKeys.register(.ring, preset: settings.trigger.hotKey) { [weak self] in
+            self?.coordinator.activateFromHotKey()
+        }
+        let clipboardHotKey = settings.clipboard.enabled ? settings.clipboard.shortcut : nil
+        hotKeys.register(.clipboard, combo: clipboardHotKey) { [weak self] in
+            self?.coordinator.showClipboardHistoryFromHotKey()
+        }
+        hotKeys.registerPluginHotKeys(settings.pluginHotKeys) { [weak self] pluginID in
+            self?.coordinator.runFromHotKey(pluginID: pluginID)
         }
     }
 

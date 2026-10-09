@@ -707,6 +707,20 @@ extension CharacterSet {
 struct ClipboardSettings: Codable, Equatable {
     var enabled = true
     var hotKey: HotKeyPreset = .commandShiftV
+    /// 保留旧预设字段以兼容已有设置；录入的非预设组合单独保存。
+    var customHotKey: KeyCombo?
+    var shortcut: KeyCombo? {
+        get { customHotKey ?? hotKey.keyCombo }
+        set {
+            if let preset = HotKeyPreset.allCases.first(where: { $0.keyCombo == newValue }) {
+                hotKey = preset
+                customHotKey = nil
+            } else {
+                hotKey = .none
+                customHotKey = newValue
+            }
+        }
+    }
     /// 保存天数，0 表示一直保存
     var retentionDays = 7
     var maxItems = 500
@@ -736,6 +750,7 @@ struct ClipboardSettings: Codable, Equatable {
         let d = ClipboardSettings()
         enabled = c.lenient(.enabled, default: d.enabled)
         hotKey = c.lenient(.hotKey, default: d.hotKey)
+        customHotKey = try? c.decodeIfPresent(KeyCombo.self, forKey: .customHotKey)
         retentionDays = max(c.lenient(.retentionDays, default: d.retentionDays), 0)
         maxItems = min(max(c.lenient(.maxItems, default: d.maxItems), 10), 100_000)
         recordImages = c.lenient(.recordImages, default: d.recordImages)
@@ -934,6 +949,17 @@ struct AppSettings: Codable, Equatable {
 
     func hotKey(for pluginID: String) -> KeyCombo? {
         pluginHotKeys.first { $0.pluginID == pluginID }?.key
+    }
+
+    func clipboardShortcutConflict(for key: KeyCombo?) -> String? {
+        guard let key else { return nil }
+        if trigger.hotKey.keyCombo == key {
+            return String(localized: "和唤起圆盘的快捷键重复了")
+        }
+        if pluginHotKeys.contains(where: { $0.key == key }) {
+            return String(localized: "和功能快捷键重复了，请先在「快捷键」中修改")
+        }
+        return nil
     }
 
     /// 设置某个功能的快捷键（nil 表示清除）。同一个组合键原来给了别的功能的话，从那个功能上拿掉。

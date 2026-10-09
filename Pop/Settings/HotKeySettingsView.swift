@@ -53,7 +53,7 @@ struct HotKeySettingsView: View {
         if settings.trigger.hotKey.keyCombo == key {
             return String(localized: "和唤起圆盘的快捷键重复了")
         }
-        if settings.clipboard.enabled, settings.clipboard.hotKey.keyCombo == key {
+        if settings.clipboard.enabled, settings.clipboard.shortcut == key {
             return String(localized: "和剪贴板历史的快捷键重复了")
         }
         return nil
@@ -63,6 +63,8 @@ struct HotKeySettingsView: View {
 /// 录制快捷键的按钮：点一下开始录，按下组合键就记下来；Esc 取消，⌫ 清除。
 struct ShortcutRecorder: View {
     @Binding var combo: KeyCombo?
+    @Environment(\.isEnabled) private var isEnabled
+    @State private var recordingID = UUID()
     @State private var recording = false
     @State private var monitor: Any?
 
@@ -74,6 +76,14 @@ struct ShortcutRecorder: View {
                 .frame(minWidth: 96)
         }
         .onDisappear(perform: stop)
+        .onReceive(ShortcutRecordingState.shared.changes) { id in
+            if recording, id != recordingID { stop() }
+        }
+        .onReceive(NotificationCenter.default.publisher(for: NSApplication.didResignActiveNotification)) { _ in stop() }
+        .onReceive(NotificationCenter.default.publisher(for: NSWindow.didResignKeyNotification)) { _ in stop() }
+        .onChange(of: isEnabled) { _, enabled in
+            if !enabled { stop() }
+        }
     }
 
     private func toggle() {
@@ -87,6 +97,7 @@ struct ShortcutRecorder: View {
     private func start() {
         stop()
         recording = true
+        ShortcutRecordingState.shared.begin(recordingID)
         monitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { event in
             MainActor.assumeIsolated {
                 record(event)
@@ -115,5 +126,6 @@ struct ShortcutRecorder: View {
             NSEvent.removeMonitor(monitor)
         }
         monitor = nil
+        ShortcutRecordingState.shared.end(recordingID)
     }
 }
