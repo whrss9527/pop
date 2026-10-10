@@ -52,4 +52,45 @@ final class PopLinkTests: XCTestCase {
             XCTAssertEqual(PopLink(url: PopLink.runURL(id)), .run(pluginID: id, text: nil, files: []), id)
         }
     }
+    @MainActor
+    func testLinkRunCancellationAndSelectedContent() {
+        let selected = ContentClassifier.classify(.text("当前选中的内容"))
+        for kind in [PluginManifest.Action.Kind.shell, .shortcut, .ai] {
+            var manifest = PluginManifest(id: "user-confirm", name: "确认测试")
+            manifest.action.type = kind
+            let plugin = ManifestPlugin(manifest: manifest)
+            var prompts = 0
+            let approved = PopCoordinator.authorizeLinkRun(plugin, content: selected) { name, input in
+                prompts += 1
+                XCTAssertEqual(name, "确认测试")
+                XCTAssertEqual(input, "当前选中的内容")
+                return false
+            }
+            XCTAssertFalse(approved)
+            XCTAssertEqual(prompts, 1)
+            XCTAssertTrue(PopCoordinator.authorizeLinkRun(plugin, content: selected) { _, _ in true })
+        }
+    }
+
+    @MainActor
+    func testLinkRunConfirmationIncludesFilesAndBuiltinAI() {
+        var manifest = PluginManifest(id: "user-confirm", name: "确认测试")
+        manifest.action.type = .shell
+        let files = ContentClassifier.classify(.files([URL(fileURLWithPath: "/tmp/a.txt")]))
+        XCTAssertFalse(PopCoordinator.authorizeLinkRun(ManifestPlugin(manifest: manifest), content: files) { _, input in
+            XCTAssertEqual(input, "/tmp/a.txt")
+            return false
+        })
+        for plugin in AIPlugin.all {
+            XCTAssertFalse(PopCoordinator.authorizeLinkRun(plugin, content: ContentClassifier.classify(.text("文字"))) { _, _ in false })
+        }
+        for kind in [PluginManifest.Action.Kind.url, .javascript] {
+            manifest.action.type = kind
+            XCTAssertTrue(PopCoordinator.authorizeLinkRun(ManifestPlugin(manifest: manifest), content: .empty) { _, _ in
+                XCTFail("本地普通功能不应弹出脚本确认")
+                return false
+            })
+        }
+    }
+
 }
