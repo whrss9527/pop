@@ -72,8 +72,16 @@ enum AppRelauncher {
     /// 退出后重新打开自己（等当前进程真正退出后由 shell 重新 open）。
     @MainActor
     static func relaunch() {
-        UpdateInstaller.relaunch(Bundle.main.bundleURL)
-        NSApp.terminate(nil)
+        do {
+            try UpdateInstaller.relaunch(Bundle.main.bundleURL)
+            NSApp.terminate(nil)
+        } catch {
+            let alert = NSAlert()
+            alert.messageText = String(localized: "无法重新启动 Pop")
+            alert.informativeText = error.localizedDescription
+            alert.addButton(withTitle: String(localized: "好"))
+            alert.runModal()
+        }
     }
 }
 
