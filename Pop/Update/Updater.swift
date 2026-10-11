@@ -293,7 +293,7 @@ final class Updater: ObservableObject {
         }
         UpdateLog.info("已安装 \(release.version)（\(plan.target.path)），重新启动")
         phase = .relaunching(release)
-        UpdateInstaller.relaunch(plan.target)
+        try UpdateInstaller.relaunch(plan.target)
         try? await Task.sleep(for: .milliseconds(600))
         onRelaunch?()
     }
