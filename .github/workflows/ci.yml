@@ -70,6 +70,9 @@ jobs:
       - name: Check release planning
         run: python3 -m unittest discover -s scripts -p 'test_release_*.py'
 
+      - name: Check notarization retries
+        run: python3 -m unittest discover -s scripts -p 'test_notarize.py'
+
       - name: Check update relaunch helper
         run: python3 -m unittest discover -s scripts -p 'test_update_relaunch.py'
 
