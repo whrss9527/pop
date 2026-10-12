@@ -113,6 +113,7 @@ jobs:
       - name: Build Release app
         run: |
           APP=$(scripts/build-app.sh 0.0.0-ci build/ci | tail -n 1)
+          bash scripts/check-widget-bundle.sh "$APP"
           echo "APP=$APP" >> "$GITHUB_ENV"
 
       # 演示模式下把圆盘、结果卡片、提示、列表依次展示一遍（动画放慢 6 倍），按时截图，

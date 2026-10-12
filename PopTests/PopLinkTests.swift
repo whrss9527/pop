@@ -41,6 +41,18 @@ final class PopLinkTests: XCTestCase {
         XCTAssertNil(link("https://example.com/run?plugin=translate"))
     }
 
+    func testWidgetLinksAllowOnlyExplicitInteractiveTools() {
+        for tool in WidgetAction.allCases {
+            XCTAssertEqual(PopLink(url: tool.url), .widget(tool))
+        }
+        for url in ["pop://widget", "pop://widget?tool=shell", "pop://widget?tool=translate",
+                    "pop://widget?tool=clipboard&tool=screenshotOCR", "pop://widget/run?tool=clipboard"] {
+            XCTAssertNil(link(url), url)
+        }
+        XCTAssertEqual(link("pop://widget?tool=screenshotOCR&text=secret&file=/tmp/private"), .widget(.screenshotOCR),
+                       "不把额外字段当作工具输入")
+    }
+
     func testCopiedLinkRoundTrips() {
         XCTAssertEqual(PopLink.runURL("translate").absoluteString, "pop://run?plugin=translate")
         let text = "a b&c=d+e #1 你好/?"

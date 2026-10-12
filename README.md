@@ -37,6 +37,8 @@ Pop's interface is available in English and Simplified Chinese and follows your 
 
 ## Install
 
+The [Quick tools widget](docs/widgets.md) opens clipboard history, screen OCR, screen translation or the plugin library from the desktop and Notification Center. Screen actions ask you to select a region.
+
 Pop needs macOS 15 or later.
 
 With [Homebrew](https://brew.sh):

@@ -15,6 +15,7 @@ enum PopLink: Equatable {
     case clipboard
     case settings(SettingsTab?)
     case pluginLibrary
+    case widget(WidgetAction)
 
     static let scheme = "pop"
 
@@ -33,6 +34,11 @@ enum PopLink: Equatable {
             items.first { $0.name.lowercased() == name }?.value
         }
         switch action {
+        case "widget":
+            let tools = items.filter { $0.name.lowercased() == "tool" }
+            guard segments.count == 1, tools.count == 1, let raw = tools.first?.value,
+                  let tool = WidgetAction(rawValue: raw) else { return nil }
+            self = .widget(tool)
         case "run":
             guard let pluginID = value("plugin") ?? segments.dropFirst().first, !pluginID.isEmpty else { return nil }
             let files = items.filter { $0.name.lowercased() == "file" }

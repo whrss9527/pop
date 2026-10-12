@@ -83,7 +83,7 @@ final class AppController {
             return
         }
         switch link {
-        case .settings, .pluginLibrary:
+        case .settings, .pluginLibrary, .widget:
             perform(link)
         case .run, .ring, .clipboard:
             // 系统打开链接时会把 Pop 带到前台。选中的内容、结果要贴回去的地方都在原来的 App 里，
@@ -118,6 +118,19 @@ final class AppController {
             settingsWindow.show(tab: tab)
         case .pluginLibrary:
             settingsWindow.showPluginLibrary()
+        case .widget(let action):
+            switch action {
+            case .clipboard: coordinator.showClipboardHistoryFromHotKey()
+            case .pluginLibrary: settingsWindow.showPluginLibrary()
+            case .screenshotOCR, .screenshotTranslate:
+                // 这两项自行交互式框选，明确空输入，避免读取之前 App 的选区。
+                Task { @MainActor [weak self] in
+                    await PluginBundles.shared.loadInstalled()
+                    guard let self else { return }
+                    self.registry.reloadBuiltins()
+                    self.coordinator.runFromLink(pluginID: action.rawValue, text: "", files: [])
+                }
+            }
         }
     }
 
