@@ -196,7 +196,8 @@ jobs:
               exit 0
             fi
           fi
-          previous=$(gh api --paginate --slurp "repos/$GITHUB_REPOSITORY/releases?per_page=100" --jq '[.[][] | select(.draft == false and .prerelease == false)] | sort_by(.published_at) | last | .tag_name // empty')
+          gh api --paginate "repos/$GITHUB_REPOSITORY/releases?per_page=100" > "$RUNNER_TEMP/previous-releases.json"
+          previous=$(jq -sr '[.[][] | select(.draft == false and .prerelease == false)] | sort_by(.published_at) | last | .tag_name // empty' "$RUNNER_TEMP/previous-releases.json")
           python3 "$RUNNER_TEMP/release-notes.py" --version "$VERSION" --previous "$previous" --index "dist/plugins/plugins-${VERSION}.json" > changes.md
 
           if [ "${NOTARIZED:-}" = "1" ]; then
