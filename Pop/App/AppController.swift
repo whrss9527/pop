@@ -124,7 +124,12 @@ final class AppController {
             case .pluginLibrary: settingsWindow.showPluginLibrary()
             case .screenshotOCR, .screenshotTranslate:
                 // 这两项自行交互式框选，明确空输入，避免读取之前 App 的选区。
-                coordinator.runFromLink(pluginID: action.rawValue, text: "", files: [])
+                Task { @MainActor [weak self] in
+                    await PluginBundles.shared.loadInstalled()
+                    guard let self else { return }
+                    self.registry.reloadBuiltins()
+                    self.coordinator.runFromLink(pluginID: action.rawValue, text: "", files: [])
+                }
             }
         }
     }
