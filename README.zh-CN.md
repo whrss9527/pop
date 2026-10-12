@@ -41,6 +41,8 @@
 
 用 [Homebrew](https://brew.sh) 安装：
 
+[常用工具小组件](docs/widgets.md)可以从桌面或通知中心打开剪贴板历史、截图识字、截图翻译或插件库；截图操作需要交互式框选。
+
 ```sh
 brew install --cask whrss9527/tap/pop
 ```

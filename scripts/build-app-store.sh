@@ -90,6 +90,27 @@ fi
 for bundle in "$APP"/Contents/PlugIns/*.bundle; do
   codesign --force --sign "$IDENTITY" ${KEYCHAIN_ARGS[@]+"${KEYCHAIN_ARGS[@]}"} "$bundle"
 done
+WIDGET_ENTITLEMENTS="$WORK/PopWidgets.entitlements"
+cp Widgets/PopWidgets.entitlements "$WIDGET_ENTITLEMENTS"
+for widget in "$APP"/Contents/PlugIns/*.appex; do
+  [[ -d "$widget" ]] || fail "App 中没有常用工具小组件"
+  if [[ "$IDENTITY" != "-" ]]; then
+    [[ -n "${WIDGET_PROVISIONING_PROFILE:-}" ]] || fail "正式小组件需要 WIDGET_PROVISIONING_PROFILE"
+    security cms -D -i "$WIDGET_PROVISIONING_PROFILE" > "$WORK/widget-profile.plist"
+    WIDGET_ID="$(plist_value "$widget/Contents/Info.plist" CFBundleIdentifier)"
+    WIDGET_TEAM="$(plist_value "$WORK/widget-profile.plist" Entitlements:com.apple.developer.team-identifier)"
+    [[ "$WIDGET_TEAM" == "$TEAM_ID" ]] || fail "小组件和主程序描述文件的团队不一致"
+    [[ "$(plist_value "$WORK/widget-profile.plist" Entitlements:com.apple.application-identifier)" == "$TEAM_ID.$WIDGET_ID" ]] \
+      || fail "小组件描述文件 App ID 不匹配"
+    if /usr/libexec/PlistBuddy -c 'Print :ProvisionedDevices' "$WORK/widget-profile.plist" >/dev/null 2>&1; then
+      fail "小组件需要发行描述文件"
+    fi
+    /usr/libexec/PlistBuddy -c "Add :com.apple.application-identifier string $TEAM_ID.$WIDGET_ID" "$WIDGET_ENTITLEMENTS"
+    /usr/libexec/PlistBuddy -c "Add :com.apple.developer.team-identifier string $TEAM_ID" "$WIDGET_ENTITLEMENTS"
+    cp "$WIDGET_PROVISIONING_PROFILE" "$widget/Contents/embedded.provisionprofile"
+  fi
+  codesign --force --sign "$IDENTITY" ${KEYCHAIN_ARGS[@]+"${KEYCHAIN_ARGS[@]}"} --entitlements "$WIDGET_ENTITLEMENTS" "$widget"
+done
 if [ -n "$PROFILE" ]; then
   cp "$PROFILE" "$APP/Contents/embedded.provisionprofile"
 fi
