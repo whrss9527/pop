@@ -76,6 +76,9 @@ jobs:
       - name: Check update relaunch helper
         run: python3 -m unittest discover -s scripts -p 'test_update_relaunch.py'
 
+      - name: Check overlay diagnostic preservation
+        run: python3 -m unittest discover -s scripts -p 'test_overlay_diagnostics.py'
+
       - name: Check translations
         if: always()
         run: python3 scripts/check-localization.py --stringsdata ~/Library/Developer/Xcode/DerivedData --list-missing
@@ -127,6 +130,15 @@ jobs:
       - name: Overlay screenshots
         run: scripts/overlay-screenshots.sh "$APP" build/screenshots 6
 
+      - name: Upload overlay diagnostic evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: overlay-diagnostics-${{ matrix.os }}-attempt-${{ github.run_attempt }}
+          path: build/screenshots/diagnostics
+          if-no-files-found: warn
+          retention-days: 14
+
       - name: Launch smoke test
         run: scripts/launch-smoke.sh "$APP"
 
@@ -138,7 +150,7 @@ jobs:
           OS_NAME: ${{ matrix.os }}
         run: |
           dir="$PWD/build/screenshots"
-          if [ -z "$(ls -A "$dir" 2>/dev/null)" ]; then
+          if ! compgen -G "$dir/*.jpg" > /dev/null; then
             echo "没有截图"
             exit 0
           fi

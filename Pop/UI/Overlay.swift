@@ -145,6 +145,7 @@ final class OverlayController {
     /// 正在播放退场动画的窗口：旧内容挪到这里淡出，主窗口马上可以显示下一个内容
     private var leavingPanels: [Int: OverlayPanel] = [:]
     private var leavingCounter = 0
+    private let diagnostics = OverlayDiagnostics()
     private var cardAnchor: CGPoint = .zero
     /// 卡片模式下的按键处理（列表的上下选择、回车等），返回 true 表示已处理
     private var cardKeyHandler: ((NSEvent) -> Bool)?
@@ -275,11 +276,13 @@ final class OverlayController {
         ringCenter = nil
         panel.orderOut(nil)
         panel.contentView = nil
+        diagnostics.record(.hidden, window: 0, frame: panel.frame, ghosts: leavingPanels.count)
     }
 
     // MARK: - 内部
 
     private func present<Content: View>(_ content: Content, frame: CGRect, mode: Mode, presentation: OverlayPresentation) {
+        diagnostics.record(.presentBegin, window: 0, frame: panel.frame, ghosts: leavingPanels.count)
         toastTimer?.invalidate()
         toastTimer = nil
         ringCenter = nil
@@ -293,12 +296,17 @@ final class OverlayController {
         let hosting = NSHostingView(rootView: content)
         hosting.sizingOptions = []
         panel.contentView = hosting
+        diagnostics.record(.hostingInstalled, window: 0, frame: panel.frame, ghosts: leavingPanels.count)
         panel.setFrame(frame, display: true)
+        diagnostics.record(.initialFrameApplied, window: 0, frame: panel.frame, ghosts: leavingPanels.count)
         // 先按「进场前」的样子画出第一帧，下一轮再切到显示状态，视图才有动画可做
-        DispatchQueue.main.async {
+        DispatchQueue.main.async { [weak self] in
             MainActor.assumeIsolated {
                 if presentation.phase == .entering {
                     presentation.phase = .shown
+                    if let self {
+                        self.diagnostics.record(.phaseShown, window: 0, frame: self.panel.frame, ghosts: self.leavingPanels.count)
+                    }
                 }
             }
         }
@@ -333,6 +341,7 @@ final class OverlayController {
         leavingCounter += 1
         let token = leavingCounter
         leavingPanels[token] = ghost
+        diagnostics.record(.ghostCreated, window: token, frame: ghost.frame, ghosts: leavingPanels.count)
         leaving.phase = .leaving
         DispatchQueue.main.asyncAfter(deadline: .now() + Motion.exitDuration + 0.05) { [weak self] in
             MainActor.assumeIsolated {
@@ -345,6 +354,7 @@ final class OverlayController {
         guard let ghost = leavingPanels.removeValue(forKey: token) else { return }
         ghost.orderOut(nil)
         ghost.contentView = nil
+        diagnostics.record(.ghostFinished, window: token, frame: ghost.frame, ghosts: leavingPanels.count)
     }
 
     /// 显示器的分辨率、排列变了（在卡片里换了分辨率、拔掉了显示器）：卡片挪回屏幕里，之后长大缩小也从挪过的位置算
@@ -364,11 +374,13 @@ final class OverlayController {
         let frame = ScreenGeometry.cardFrame(anchor: cardAnchor, size: size, within: Self.visibleFrame(containing: cardAnchor),
                                              gap: Self.cardGap)
         guard frame != panel.frame else { return }
+        diagnostics.record(.resizeRequested, window: 0, frame: frame, ghosts: leavingPanels.count)
         // 在 SwiftUI 布局回调里直接改窗口大小会重入布局，放到下一轮 RunLoop。
         DispatchQueue.main.async { [weak self] in
             MainActor.assumeIsolated {
                 guard let self, self.mode == .card, owner === self.presentation else { return }
                 self.panel.setFrame(frame, display: true)
+                self.diagnostics.record(.resizeApplied, window: 0, frame: self.panel.frame, ghosts: self.leavingPanels.count)
             }
         }
     }

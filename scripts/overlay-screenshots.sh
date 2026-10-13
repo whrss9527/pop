@@ -20,6 +20,13 @@ mkdir -p "$OUT"
 OUT="$(cd "$OUT" && pwd)"
 WORK="$(mktemp -d -t pop-screenshots)"
 SCRIPTS="$(cd "$(dirname "$0")" && pwd)"
+DIAGNOSTICS="$OUT/diagnostics"
+# 环境采集在 Pop 启动前完成；退出钩子保留失败时已有的原始资料。
+source "$SCRIPTS/overlay-diagnostics.sh"
+trap 'save_overlay_diagnostics "$?"' EXIT
+if ! python3 "$SCRIPTS/overlay-diagnostics.py" environment --output "$DIAGNOSTICS"; then
+  echo "环境资料未完整保存；继续原来的截图检查" >&2
+fi
 # 插件库读仓库里的索引，不联网
 PLUGIN_INDEX="file://$(cd "$(dirname "$0")/.." && pwd)/plugins/index.json"
 
@@ -238,6 +245,7 @@ sampler.start()
 # Pop.app 旁边的插件包一起装载，演示里也有插件包的步骤
 subprocess.run(["open", "-n", "--env", "POP_DEMO=1", "--env", f"POP_ANIMATION_SCALE={scale_text}",
                 "--env", f"POP_DEMO_LOG={log_path}", "--env", f"POP_APPEARANCE={appearance}",
+                "--env", f"POP_OVERLAY_DIAGNOSTICS_LOG={os.path.join(work, 'overlay-' + appearance + '.jsonl')}",
                 "--env", f"POP_PLUGIN_INDEX_URL={plugin_index}", "--env", f"POP_PLUGIN_DIR={os.path.dirname(os.path.abspath(app))}",
                 "--env", "POP_DEMO_QUICK_STEPS=" + ",".join(quick), app], check=True)
 
