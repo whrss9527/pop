@@ -19,7 +19,9 @@ state.setdefault("calls", []).append([tool] + args[:2])
 result = 0
 if tool == "xcrun" and args[0] == "notarytool":
     if args[1] == "submit": print('{"id":"test-only"}')
-    elif args[1] == "wait": print(json.dumps({"status":os.environ["FAKE_STATUS"]}))
+    elif args[1] == "wait":
+        print(json.dumps({"status":os.environ["FAKE_STATUS"]}))
+        result = int(os.environ["FAKE_WAIT_RESULT"])
     else: print('{}')
 elif tool == "xcrun" and args[0] == "stapler" and args[1] == "validate":
     count = state.get("validate", 0)
@@ -36,8 +38,12 @@ elif tool == "ditto":
         if os.environ["FAKE_HAS_APP"] == "1": (Path(args[-1]) / "Pop.app").mkdir()
     else: Path(args[-1]).write_bytes(b"repacked-test-only")
 elif tool == "spctl":
-    print("source=" + os.environ["FAKE_SOURCE"])
-    result = int(os.environ["FAKE_ASSESSMENT_RESULT"])
+    if args[0] == "--status":
+        print(os.environ["FAKE_POLICY"])
+        result = int(os.environ["FAKE_POLICY_RESULT"])
+    else:
+        print("source=" + os.environ["FAKE_SOURCE"])
+        result = int(os.environ["FAKE_ASSESSMENT_RESULT"])
 elif tool == "gh":
     state["published"] = True
 state_file.write_text(json.dumps(state))
@@ -66,9 +72,10 @@ class PublicSigningTests(unittest.TestCase):
                        NOTARY_KEY_P8="", NOTARY_KEY_ID="", NOTARY_ISSUER_ID="",
                        NOTARY_APPLE_ID="test@example.invalid", NOTARY_PASSWORD="test-only",
                        NOTARY_TEAM_ID="ABCDE12345", CODESIGN_IDENTITY=IDENTITY,
-                       CODESIGN_NAME=NAME, NOTARIZED="1", FAKE_STATUS="Accepted",
+                       CODESIGN_NAME=NAME, NOTARIZED="1", FAKE_STATUS="Accepted", FAKE_WAIT_RESULT="0",
                        FAKE_VALIDATE="[0]", FAKE_SIGNATURE_RESULT="0", FAKE_AUTHORITY=NAME,
                        FAKE_SOURCE="Notarized Developer ID", FAKE_ASSESSMENT_RESULT="0",
+                       FAKE_POLICY="assessments enabled", FAKE_POLICY_RESULT="0",
                        FAKE_HAS_APP="1")
             env.update(overrides or {})
             if pipeline:
@@ -129,6 +136,10 @@ class PublicSigningTests(unittest.TestCase):
                 _, state = self.assert_stopped({"FAKE_STATUS": status})
                 self.assertNotIn("validate", state)
 
+    def test_failed_apple_wait_with_accepted_output_stops_publication(self):
+        _, state = self.assert_stopped({"FAKE_WAIT_RESULT": "1"})
+        self.assertNotIn("validate", state)
+
     def test_final_archive_requires_successful_notarization(self):
         _, state = self.assert_stopped({"NOTARIZED": ""}, pipeline=False)
         self.assertNotIn("calls", state)
@@ -158,7 +169,14 @@ class PublicSigningTests(unittest.TestCase):
     def test_gatekeeper_rejection_disabled_or_unnotarized_stops_publication(self):
         for overrides in ({"FAKE_ASSESSMENT_RESULT": "3"}, {"FAKE_SOURCE": ""},
                           {"FAKE_SOURCE": "Unnotarized Developer ID"},
-                          {"FAKE_SOURCE": "assessments disabled"}):
+                          {"FAKE_SOURCE": "assessments disabled"},
+                          {"FAKE_SOURCE": "Notarized Developer ID\noverride=security disabled"}):
+            with self.subTest(overrides=overrides): self.assert_stopped(overrides)
+
+    def test_gatekeeper_status_must_succeed_and_be_enabled_without_override(self):
+        for overrides in ({"FAKE_POLICY": "assessments disabled"}, {"FAKE_POLICY": ""},
+                          {"FAKE_POLICY": "unknown"}, {"FAKE_POLICY_RESULT": "1"},
+                          {"FAKE_POLICY": "assessments enabled\noverride=security disabled"}):
             with self.subTest(overrides=overrides): self.assert_stopped(overrides)
 
     def test_accepted_final_archive_reaches_publication_and_checks_all_architectures(self):

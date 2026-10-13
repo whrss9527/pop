@@ -45,11 +45,22 @@ case "${1:-}" in
       echo "最终安装包票据网络查询未完成，5 秒后重试（${attempt}/3）"
       sleep 5
     done
+    if ! spctl --status > "$work/policy.txt" 2>&1; then
+      cat "$work/policy.txt"
+      fail "无法确认 Gatekeeper 策略状态"
+    fi
+    grep -Fxq 'assessments enabled' "$work/policy.txt" || fail "Gatekeeper 未启用或状态未知"
+    if grep -Eiq 'override|security.*disabled|assessments.*disabled' "$work/policy.txt"; then
+      fail "Gatekeeper 策略被覆盖或关闭"
+    fi
     if ! spctl --assess --type execute --verbose=2 "$app" > "$work/assessment.txt" 2>&1; then
       cat "$work/assessment.txt"
       fail "最终安装包未通过 Gatekeeper"
     fi
     cat "$work/assessment.txt"
+    if grep -Eiq 'override|security.*disabled|assessments.*disabled' "$work/assessment.txt"; then
+      fail "Gatekeeper 验收包含覆盖或关闭状态"
+    fi
     grep -Fxq 'source=Notarized Developer ID' "$work/assessment.txt" || fail "Gatekeeper 未明确认可公证后的 Developer ID"
     ;;
   *) fail "用法：check-public-signing.sh credentials | identity | archive Pop-版本.zip" ;;
