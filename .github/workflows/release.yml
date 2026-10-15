@@ -24,7 +24,7 @@ on:
         type: boolean
         default: false
       overwrite:
-        description: "版本已存在时覆盖：用原标签的代码重新构建，替换附件并更新标题和说明"
+        description: "仅重建原源码的草稿；公开发行保持不变"
         type: boolean
         default: false
       dry_run:
@@ -61,7 +61,7 @@ jobs:
       cancel-in-progress: false
     env:
       VERSION: ${{ inputs.version }}
-      OVERWRITE: ${{ inputs.overwrite || false }}
+      DRY_RUN: ${{ inputs.dry_run || false }}
       PRERELEASE: ${{ inputs.prerelease }}
       TARGET_REF: ${{ inputs.ref }}
     steps:
@@ -70,7 +70,7 @@ jobs:
         with:
           ref: ${{ github.workflow_sha }}
       - name: Keep release policy helpers
-        run: cp scripts/release-plan.py scripts/release-notes.py scripts/check-public-signing.sh scripts/notarize.sh "$RUNNER_TEMP/"
+        run: cp scripts/release-state.py scripts/release-integrity.py scripts/release-plan.py scripts/release-notes.py scripts/check-public-signing.sh scripts/notarize.sh "$RUNNER_TEMP/"
 
       # 注意：shell 变量后面紧跟中文或全角符号时一定要写成 ${VAR}，否则 bash 可能把多字节字符的一部分当成变量名。
       - name: Check version
@@ -79,22 +79,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           V="${VERSION#v}"
-          if [[ ! "$V" =~ ^[0-9]+\.[0-9]+\.[0-9]+([-.][0-9A-Za-z.]+)?$ ]]; then
-            echo "版本号格式不对：${VERSION}（应该像 0.3.0）"
-            exit 1
-          fi
-          if gh release view "v$V" --repo "$GITHUB_REPOSITORY" > /dev/null 2>&1; then
-            if [ "$OVERWRITE" != "true" ]; then
-              echo "v$V 已经发布过了：换一个版本号，或者勾选 overwrite 覆盖"
-              exit 1
-            fi
-            # 覆盖时仍然用原标签对应的代码构建，保证安装包和标签一致
-            echo "exists=true" >> "$GITHUB_OUTPUT"
-            echo "ref=v$V" >> "$GITHUB_OUTPUT"
-          else
-            echo "exists=false" >> "$GITHUB_OUTPUT"
-            echo "ref=${TARGET_REF:-$GITHUB_SHA}" >> "$GITHUB_OUTPUT"
-          fi
+          python3 "$RUNNER_TEMP/release-state.py" prepare "$V" >> "$GITHUB_OUTPUT"
           echo "VERSION=$V" >> "$GITHUB_ENV"
 
       - uses: actions/checkout@v5
@@ -107,12 +92,7 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          if [ "$PRERELEASE" = "true" ] || [ "$OVERWRITE" = "true" ]; then
-            echo "allowed=true" >> "$GITHUB_OUTPUT"
-          else
-            gh api --paginate --slurp "repos/$GITHUB_REPOSITORY/releases?per_page=100" > "$RUNNER_TEMP/releases.json"
-            python3 "$RUNNER_TEMP/release-plan.py" allowed --version "$VERSION" < "$RUNNER_TEMP/releases.json" >> "$GITHUB_OUTPUT"
-          fi
+          python3 "$RUNNER_TEMP/release-state.py" allowed "$VERSION" >> "$GITHUB_OUTPUT"
 
       - name: Select newest stable Xcode
         if: steps.policy.outputs.allowed == 'true'
@@ -190,26 +170,18 @@ jobs:
           echo "verified=true" >> "$GITHUB_OUTPUT"
 
       - name: Checksums
+        id: assets
         if: steps.policy.outputs.allowed == 'true'
         run: |
-          cd dist
-          shasum -a 256 "Pop-${VERSION}.zip" > SHA256SUMS.txt
-          cat SHA256SUMS.txt
+          python3 "$RUNNER_TEMP/release-state.py" checksums "$VERSION"
+          cat dist/SHA256SUMS.txt
+          echo "verified=true" >> "$GITHUB_OUTPUT"
 
       - name: Create GitHub release
-        if: steps.policy.outputs.allowed == 'true' && steps.distribution.outputs.verified == 'true' && !inputs.dry_run
+        if: steps.policy.outputs.allowed == 'true' && steps.distribution.outputs.verified == 'true' && steps.assets.outputs.verified == 'true' && !inputs.dry_run
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          # 构建期间可能跨日；稳定版公开前再核对一次，发布并发组保证检查与公开串行。
-          if [ "$PRERELEASE" != "true" ] && [ "$OVERWRITE" != "true" ]; then
-            gh api --paginate --slurp "repos/$GITHUB_REPOSITORY/releases?per_page=100" > "$RUNNER_TEMP/releases.json"
-            allowed=$(python3 "$RUNNER_TEMP/release-plan.py" allowed --version "$VERSION" < "$RUNNER_TEMP/releases.json")
-            if [ "$allowed" != "allowed=true" ]; then
-              echo "今天的稳定版额度已用完或不是工作日，下个工作日重新检查。"
-              exit 0
-            fi
-          fi
           gh api --paginate "repos/$GITHUB_REPOSITORY/releases?per_page=100" > "$RUNNER_TEMP/previous-releases.json"
           previous=$(jq -sr '[.[][] | select(.draft == false and .prerelease == false)] | sort_by(.published_at) | last | .tag_name // empty' "$RUNNER_TEMP/previous-releases.json")
           python3 "$RUNNER_TEMP/release-notes.py" --version "$VERSION" --previous "$previous" --index "dist/plugins/plugins-${VERSION}.json" > changes.md
@@ -239,39 +211,14 @@ jobs:
             echo "- CI 构建的包不带 iCloud 同步（需要付费开发者账号签名，见 README）。"
             echo "- 截图识字第一次使用时，系统会请求「录屏与系统录音」权限；授权后如果截到的只有桌面背景，重新打开 Pop 即可。"
             echo
-            echo "SHA-256：\`$(cut -d ' ' -f 1 dist/SHA256SUMS.txt)\`"
+            echo "SHA-256：\`$(awk -v file="Pop-${VERSION}.zip" '$2 == file { print $1 }' dist/SHA256SUMS.txt)\`"
           } > notes.md
           cat notes.md
 
-          if [ "$PRERELEASE" = "true" ]; then
-            TITLE="Pop ${VERSION}（测试版）"
-            FLAG="--prerelease"
-          else
-            TITLE="Pop ${VERSION}"
-            FLAG="--latest"
-          fi
-          # 插件包和插件包列表也传上去（列表里有每个插件包的校验和）
-          assets=("dist/Pop-${VERSION}.zip" dist/SHA256SUMS.txt)
-          for file in dist/plugins/plugin-*.zip "dist/plugins/plugins-${VERSION}.json"; do
-            [ -f "$file" ] && assets+=("$file")
-          done
-          if [ "${{ steps.check.outputs.exists }}" = "true" ]; then
-            gh release upload "v${VERSION}" "${assets[@]}" --repo "$GITHUB_REPOSITORY" --clobber
-            gh release edit "v${VERSION}" --repo "$GITHUB_REPOSITORY" --title "$TITLE" --notes-file notes.md --prerelease="$PRERELEASE"
-          else
-            # 先建草稿、传附件，都好了再公开：已安装的 Pop 不会看到一个没有安装包的新版本
-            gh release create "v${VERSION}" --draft \
-              --repo "$GITHUB_REPOSITORY" \
-              --target "$(git rev-parse HEAD)" \
-              --title "$TITLE" \
-              --notes-file notes.md
-            gh release upload "v${VERSION}" "${assets[@]}" --repo "$GITHUB_REPOSITORY"
-            gh release edit "v${VERSION}" --repo "$GITHUB_REPOSITORY" --draft=false "$FLAG"
-          fi
-          echo "已发布到 https://github.com/${GITHUB_REPOSITORY}/releases/tag/v${VERSION}"
+          python3 "$RUNNER_TEMP/release-state.py" publish "$VERSION"
 
       - name: Save verified signing dry-run
-        if: steps.distribution.outputs.verified == 'true' && inputs.dry_run
+        if: steps.distribution.outputs.verified == 'true' && steps.assets.outputs.verified == 'true' && inputs.dry_run
         uses: actions/upload-artifact@v4
         with:
           name: pop-signed-dry-run-${{ env.VERSION }}
@@ -282,8 +229,8 @@ jobs:
       - name: Summarize signing dry-run
         if: always() && inputs.dry_run
         run: |
-          if [ "${{ steps.distribution.outputs.verified }}" = "true" ]; then
-            echo "签名 dry-run 已验收最终安装包；只保存 artifact，没有创建标签或 Release。" >> "$GITHUB_STEP_SUMMARY"
+          if [ "${{ steps.distribution.outputs.verified }}" = "true" ] && [ "${{ steps.assets.outputs.verified }}" = "true" ]; then
+            echo "签名 dry-run 已验收最终安装包与完整插件附件；只保存 artifact，没有创建标签或 Release。" >> "$GITHUB_STEP_SUMMARY"
           else
             echo "发布额度不足或签名验收未完成；本次不是签名验收通过。" >> "$GITHUB_STEP_SUMMARY"
           fi

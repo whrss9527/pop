@@ -48,3 +48,26 @@ class ReleasePlanTests(unittest.TestCase):
         for text, version in [("## 说明", "0.69.0"), ("## 0.69.0", "0.68.0"), ("## 未发布", "bad")]:
             with self.assertRaises(ValueError):
                 module.plan(text, version, [], self.now, "push", 12)
+
+    def test_stable_draft_recovery_keeps_its_original_source(self):
+        draft = self.release(None, draft=True, tag="v0.69.0")
+        draft['target_commitish'] = 'a' * 40
+        result = module.plan("## 0.69.0", "0.69.0", [draft], self.now, "schedule", 15)
+        self.assertEqual(result, dict(version="0.69.0", beta="", source='a'*40))
+        # A new push's beta still belongs to the new push, not the old stable draft.
+        self.assertEqual(module.plan("## 0.69.0", "0.69.0", [draft], self.now, "push", 16)['beta'], "0.69.0-beta.16")
+
+    def test_recovery_does_not_bypass_weekend_or_used_daily_quota(self):
+        draft = self.release(None, draft=True, tag="v0.69.0")
+        draft['target_commitish'] = 'a' * 40
+        saturday = dt.datetime.fromisoformat("2026-10-10T03:00:00+00:00")
+        for now, releases in [(saturday, [draft]), (self.now, [draft, self.release("2026-10-06T01:00:00Z")])]:
+            self.assertEqual(module.plan("## 0.69.0", "0.69.0", releases, now, "schedule", 15), dict(version="", beta=""))
+
+    def test_unbound_or_duplicate_drafts_stop_recovery(self):
+        draft = self.release(None, draft=True, tag="v0.69.0")
+        for value in ['main', '', 'abc']:
+            draft['target_commitish'] = value
+            with self.assertRaises(ValueError): module.plan("## 0.69.0", "0.69.0", [draft], self.now, "schedule", 15)
+        draft['target_commitish'] = 'a' * 40
+        with self.assertRaises(ValueError): module.plan("## 0.69.0", "0.69.0", [draft, draft], self.now, "schedule", 15)
