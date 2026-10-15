@@ -550,11 +550,13 @@ enum OverlayDemo {
             step(scene.name + "-loaded")
             await pause(hold(sceneUnit))
 
-            // 角落有溢出时指向最后一格「更多」，否则指向第一个能用的格子；用逻辑 ID，不把显示序号当 ID
-            let hovered = model.visibleSlots.first(where: { model.isOverflow($0.id) })
-                ?? model.visibleSlots.first(where: { $0.enabled })
-                ?? model.visibleSlots.first
-            model.setHovered(hovered?.id)
+            // 首尾圆头分别取证，覆盖选区与玻璃轮廓相交的位置。
+            model.setHovered(model.visibleSlots.first?.id)
+            step(scene.name + "-hover-first")
+            await pause(hold(sceneUnit))
+
+            // 最后一格也可能是「更多」或不可用功能；按逻辑 ID 选中，不把显示序号当 ID。
+            model.setHovered(model.visibleSlots.last?.id)
             step(scene.name + "-hover")
             await pause(hold(sceneUnit))
 

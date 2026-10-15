@@ -287,6 +287,39 @@ final class MouseTriggerTests: XCTestCase {
         }
     }
 
+    func testNormalReleaseCancelsRecoveryAndIgnoresItsQueuedCallback() throws {
+        for mode in [TriggerMode.longPressRight, .modifierRightClick, .middleClick] {
+            let recorder = Recorder()
+            let core = makeCore(.init(mode: mode), recorder: recorder)
+            let middle = mode == .middleClick
+            let down: CGEventType = middle ? .otherMouseDown : .rightMouseDown
+            let up: CGEventType = middle ? .otherMouseUp : .rightMouseUp
+            let button: CGMouseButton = middle ? .center : .right
+            XCTAssertTrue(core.handle(type: down, event: try mouse(down, 10, 20, button: button, flags: .maskAlternate)))
+            if mode == .longPressRight { recorder.fireTimer() }
+            XCTAssertTrue(core.handle(type: up, event: try mouse(up, 30, 40, button: button)))
+            XCTAssertTrue(recorder.recovery[0].cancelled)
+            recorder.pressed = false
+            recorder.recovery[0].fire()
+            XCTAssertEqual(recorder.recovery.count, 1)
+            XCTAssertEqual(recorder.signals, [.activate(CGPoint(x: 10, y: 20)), .release(CGPoint(x: 30, y: 40))])
+        }
+    }
+
+    func testStaleRecoveryCannotReleaseTheNextGesture() throws {
+        let recorder = Recorder()
+        let core = makeCore(.init(mode: .modifierRightClick), recorder: recorder)
+        for point in [CGPoint(x: 10, y: 20), CGPoint(x: 30, y: 40)] {
+            XCTAssertTrue(core.handle(type: .rightMouseDown, event: try mouse(.rightMouseDown, point.x, point.y, flags: .maskAlternate)))
+        }
+        recorder.pressed = false
+        recorder.recovery[0].fire()
+        XCTAssertEqual(recorder.signals, [.activate(CGPoint(x: 10, y: 20)), .cancel, .activate(CGPoint(x: 30, y: 40))])
+        recorder.recovery[1].fire()
+        XCTAssertEqual(recorder.signals.last, .release(CGPoint(x: 30, y: 40)))
+        XCTAssertEqual(recorder.signals.count, 4)
+    }
+
     func testDisabledModeTakesNothing() throws {
         let recorder = Recorder()
         let core = makeCore(MouseTrigger.Configuration(mode: .disabled, holdDuration: 0.25, modifier: .option),

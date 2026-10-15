@@ -14,11 +14,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         // CI 的截图、启动测试里看主线程有没有卡住（从启动这一刻开始看）
         HangWatchdog.startIfRequested()
         launchTask = Task { @MainActor [weak self] in
+            let plugins = StartupTrace.begin("plugins.loadInstalled")
             await PluginBundles.shared.loadInstalled()
+            StartupTrace.end(plugins)
             guard let self, !Task.isCancelled else { return }
-            let controller = AppController()
+            let controller = StartupTrace.measure("controller.init") { AppController() }
             self.controller = controller
-            controller.start()
+            StartupTrace.measure("controller.start") { controller.start() }
             for url in pendingURLs { controller.open(url) }
             pendingURLs = []
             if pendingReopen { controller.showSettings(); pendingReopen = false }

@@ -1364,8 +1364,8 @@
 "Pop 已暂停" = "Pop is paused";
 "没有「%@」这个功能" = "There’s no action “%@”";
 "「%@」处理不了链接里的内容" = "“%@” can’t handle the content in the link";
-"用「%@」处理链接里的内容？" = "Use “%@” on the content in the link?";
-"一个 pop:// 链接要用这个插件处理下面的内容。它会运行你写的脚本或快捷指令，不认识这个链接的话点「取消」。\n\n%@" = "A pop:// link wants to use this plugin on the content below. It will run your script or shortcut. If you don’t recognize this link, click Cancel.\n\n%@";
+"用「%@」处理下面的内容？" = "Use “%@” on the content below?";
+"一个 pop:// 链接要用这个插件处理下面的内容。它可能运行脚本或快捷指令，或把内容发送到你设置的 AI 接口。不认识这个链接的话点「取消」。\n\n%@" = "A pop:// link wants to use this plugin on the content below. It may run a script or shortcut, or send the content to your configured AI service. If you don’t recognize this link, click Cancel.\n\n%@";
 "运行" = "Run";
 "取消" = "Cancel";
 "没有选中内容" = "Nothing selected";
@@ -3214,3 +3214,7 @@
 "正在更新，联网后会自动重试" = "Updating; retries automatically when online";
 
 "稳定版每个工作日最多发布一次；测试版包含每次通过检查的改动，可能不稳定，默认关闭。更新通知每天最多一条，完整更新内容仍可在这里查看。" = "Stable releases are published at most once per weekday. Beta releases include every verified change and may be unstable; they are off by default. Update notifications appear at most once a day; full changes remain available here.";
+
+"找不到重新启动辅助脚本" = "The relaunch helper script is missing";
+
+"无法重新启动 Pop" = "Unable to restart Pop";

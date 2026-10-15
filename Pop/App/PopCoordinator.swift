@@ -65,6 +65,8 @@ final class PopCoordinator: MouseTriggerDelegate {
         var content: ClassifiedContent?
         /// 内容是 pop:// 链接带来的，不是在前台 App 里选中的：没有原文可以替换
         var fromLink = false
+        /// 链接触发的执行在内容读取完成后确认，与原文替换能力分开记录。
+        var needsLinkConfirmation = false
         var ring: RingViewModel?
         /// 当前显示的列表面板
         var panel: Panel?
@@ -221,7 +223,7 @@ final class PopCoordinator: MouseTriggerDelegate {
             return
         }
         guard text != nil || !files.isEmpty else {
-            runReadingSelection(pluginID)
+            runReadingSelection(pluginID, fromLink: true)
             return
         }
         let raw: SelectionContent = files.isEmpty ? .text(text ?? "") : .files(files)
@@ -232,22 +234,30 @@ final class PopCoordinator: MouseTriggerDelegate {
         }
         // 问之前先记下前台 App：弹出确认框时 Pop 会到前台
         let app = NSWorkspace.shared.frontmostApplication
-        // 链接可能来自网页：用户自己写的 Shell 脚本、快捷指令插件先问一下再处理链接里的内容
-        if let manifestPlugin = plugin as? ManifestPlugin,
-           [.shell, .shortcut].contains(manifestPlugin.manifest.action.type),
-           !Self.confirmLinkRun(plugin.info.name, content: text ?? files.map { $0.path(percentEncoded: false) }.joined(separator: "\n")) {
-            return
-        }
         session = Session(anchor: anchor, pid: app?.processIdentifier, sourceAppName: app?.localizedName,
-                          bundleID: app?.bundleIdentifier, buttonHeld: false, content: content, fromLink: true)
+                          bundleID: app?.bundleIdentifier, buttonHeld: false, content: content, fromLink: true,
+                          needsLinkConfirmation: true)
         run(pluginID)
+    }
+
+    /// 确认内容来自最终读取结果，取消时不能执行插件。
+    static func authorizeLinkRun(_ plugin: any PopPlugin, content: ClassifiedContent,
+                                 confirm: (String, String) -> Bool) -> Bool {
+        let requiresConfirmation: Bool
+        if let manifest = plugin as? ManifestPlugin {
+            requiresConfirmation = [.shell, .shortcut, .ai].contains(manifest.manifest.action.type)
+        } else {
+            requiresConfirmation = plugin is AIPlugin
+        }
+        guard requiresConfirmation else { return true }
+        return confirm(plugin.info.name, ManifestRunner.Input(content).text)
     }
 
     private static func confirmLinkRun(_ name: String, content: String) -> Bool {
         let alert = NSAlert()
-        alert.messageText = String(localized: "用「\(name)」处理链接里的内容？")
+        alert.messageText = String(localized: "用「\(name)」处理下面的内容？")
         let excerpt = content.count > 300 ? String(content.prefix(300)) + "…" : content
-        alert.informativeText = String(localized: "一个 pop:// 链接要用这个插件处理下面的内容。它会运行你写的脚本或快捷指令，不认识这个链接的话点「取消」。\n\n\(excerpt)")
+        alert.informativeText = String(localized: "一个 pop:// 链接要用这个插件处理下面的内容。它可能运行脚本或快捷指令，或把内容发送到你设置的 AI 接口。不认识这个链接的话点「取消」。\n\n\(excerpt)")
         alert.alertStyle = .warning
         alert.addButton(withTitle: String(localized: "运行"))
         alert.addButton(withTitle: String(localized: "取消"))
@@ -256,12 +266,13 @@ final class PopCoordinator: MouseTriggerDelegate {
     }
 
     /// 读取选中的内容后执行（功能快捷键、不带内容的链接）
-    private func runReadingSelection(_ pluginID: String) {
+    private func runReadingSelection(_ pluginID: String, fromLink: Bool = false) {
         guard !isPaused, let plugin = registry.plugin(id: pluginID) else { return }
         let app = NSWorkspace.shared.frontmostApplication
         let pid = app?.processIdentifier
         let newSession = Session(anchor: NSEvent.mouseLocation, pid: pid, sourceAppName: app?.localizedName,
-                                 bundleID: app?.bundleIdentifier, buttonHeld: false)
+                                 bundleID: app?.bundleIdentifier, buttonHeld: false,
+                                 needsLinkConfirmation: fromLink)
         session = newSession
         if plugin.info.accepts.isEmpty && !plugin.info.optionalContent {
             session?.content = .empty
@@ -556,6 +567,16 @@ final class PopCoordinator: MouseTriggerDelegate {
         guard let current = session, let plugin = registry.plugin(id: pluginID) else { return }
         let content = current.content ?? .empty
         guard plugin.info.canHandle(content) else { return }
+        if current.needsLinkConfirmation {
+            let approved = Self.authorizeLinkRun(plugin, content: content, confirm: Self.confirmLinkRun)
+            // 模态确认期间可能收到新链接，不能结束或执行另一次会话。
+            guard session?.id == current.id else { return }
+            guard approved else {
+                endSession()
+                return
+            }
+            session?.needsLinkConfirmation = false
+        }
         stopPointerTracking()
         if pluginID != BuiltinPluginID.allPlugins {
             PluginUsage.shared.record(pluginID)
