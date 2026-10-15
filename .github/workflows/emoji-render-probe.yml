@@ -1,0 +1,42 @@
+name: Emoji rendering measurements
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: emoji-render-probe-${{ github.sha }}
+  cancel-in-progress: false
+jobs:
+  measure:
+    runs-on: macos-26
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v5
+      - name: Select Xcode 26
+        run: |
+          XCODE=$(ls -d /Applications/Xcode_26*.app | grep -iv -e beta -e release_candidate | sort -V | tail -1)
+          sudo xcode-select -s "$XCODE"
+          xcodebuild -version
+      - name: Install XcodeGen
+        run: brew install xcodegen
+      - name: Build one app for every condition
+        run: |
+          set -e
+          APP=$(scripts/build-app.sh 0.0.0-render-probe build/render-probe | tail -n 1)
+          echo "APP=$APP" >> "$GITHUB_ENV"
+      - name: Match normal screenshot accessibility preferences
+        run: |
+          set -e
+          defaults write com.apple.universalaccess reduceMotion -bool false
+          defaults write com.apple.universalaccess reduceTransparency -bool false
+          defaults read com.apple.universalaccess reduceMotion
+          defaults read com.apple.universalaccess reduceTransparency
+      - name: Measure without changing normal CI gates
+        run: python3 scripts/emoji-render-probe.py "$APP" build/render-measurements
+      - name: Preserve raw measurements
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: emoji-render-measurements
+          path: build/render-measurements/
+          if-no-files-found: error
