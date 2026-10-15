@@ -2,7 +2,7 @@ import Foundation
 import SQLite3
 
 struct ClipboardItem: Identifiable, Equatable {
-    enum Kind: String {
+    enum Kind: String, Sendable {
         case text
         case image
         case files
@@ -31,7 +31,7 @@ struct ClipboardItem: Identifiable, Equatable {
 }
 
 /// 一次复制的内容，还没写进数据库。
-struct ClipboardCapture: Equatable {
+struct ClipboardCapture: Equatable, Sendable {
     var kind: ClipboardItem.Kind
     var text: String
     var imagePNG: Data?
@@ -93,8 +93,10 @@ final class ClipboardStore: @unchecked Sendable {
 
     /// 记录一次复制。和已有记录内容相同时只更新时间（挪到最前面）。返回记录 ID。
     @discardableResult
-    func add(_ capture: ClipboardCapture, at date: Date = Date()) -> Int64? {
+    func add(_ capture: ClipboardCapture, at date: Date = Date(), shouldRecord: () -> Bool = { true }) -> Int64? {
         queue.sync { () -> Int64? in
+            // 在存储队列真正接纳写入前核验，排队期间撤销的采集不能落盘。
+            guard shouldRecord() else { return nil }
             let hash = capture.hash
             var existing: Int64?
             _ = run("SELECT id FROM items WHERE hash = ?", [.text(hash)]) { statement in

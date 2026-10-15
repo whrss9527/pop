@@ -1,11 +1,26 @@
 import AppKit
 import Combine
 
+/// 后台读取、转换和排队写入共享代次；偏好变化同步失效，不等待工作队列。
+private final class ClipboardCollectionEpoch: @unchecked Sendable {
+    private let lock = NSLock()
+    private var value: UInt64 = 0
+    @discardableResult func advance() -> UInt64 {
+        lock.lock(); defer { lock.unlock() }
+        value &+= 1
+        return value
+    }
+    func isCurrent(_ value: UInt64) -> Bool {
+        lock.lock(); defer { lock.unlock() }
+        return self.value == value
+    }
+}
+
 /// 定时检查剪贴板变化（macOS 没有剪贴板变化的通知），把新内容记进历史。
 @MainActor
 final class ClipboardMonitor {
     /// 从剪贴板读到的原始内容。图片转 PNG 比较慢，放到后台做。
-    enum Clip {
+    enum Clip: Sendable {
         case text(String)
         case files([URL])
         case image(Data, isPNG: Bool)
@@ -30,21 +45,46 @@ final class ClipboardMonitor {
     var onRecord: (() -> Void)?
 
     private let store: ClipboardStore
+    typealias Reader = @Sendable (NSPasteboard, Bool) -> Clip?
+    private let pasteboard: NSPasteboard
+    private let pasteboardGuard: PasteboardGuard
+    private let sourceApp: @MainActor () -> String?
+    private let reader: Reader
+    private let workQueue: DispatchQueue
+    private let pollsAutomatically: Bool
+    private let epoch = ClipboardCollectionEpoch()
     private var settings = ClipboardSettings()
     private var timer: Timer?
+    private var isStarted = false
     private var lastChangeCount: Int
     /// 正在后台读剪贴板：读完（去掉跟踪参数的链接写回去以后）再接着看
-    private var isReading = false
+    private(set) var isReading = false
     /// 在这里读剪贴板的内容：别的 App 复制的大图、表格是要读的时候才现做的，要等那个 App 给；
     /// 那个 App 卡住时会一直等下去，放在主线程上 Pop 就跟着卡住了
     private static let readQueue = DispatchQueue(label: "io.github.whrss9527.pop.clipboard-read", qos: .utility)
 
-    init(store: ClipboardStore) {
+    init(store: ClipboardStore, pasteboard: NSPasteboard? = nil,
+         pasteboardGuard: PasteboardGuard? = nil,
+         sourceApp: (@MainActor () -> String?)? = nil,
+         workQueue: DispatchQueue? = nil, pollsAutomatically: Bool = true,
+         reader: Reader? = nil) {
         self.store = store
-        lastChangeCount = NSPasteboard.general.changeCount
+        self.pasteboard = pasteboard ?? .general
+        self.pasteboardGuard = pasteboardGuard ?? .shared
+        self.sourceApp = sourceApp ?? { NSWorkspace.shared.frontmostApplication?.bundleIdentifier }
+        self.workQueue = workQueue ?? Self.readQueue
+        self.pollsAutomatically = pollsAutomatically
+        self.reader = reader ?? { Self.read($0, recordImages: $1) }
+        lastChangeCount = self.pasteboard.changeCount
     }
 
     func apply(_ settings: ClipboardSettings) {
+        let old = self.settings
+        if old.enabled != settings.enabled || old.cleanLinks != settings.cleanLinks ||
+            old.recordImages != settings.recordImages || old.ignoredBundleIDs != settings.ignoredBundleIDs ||
+            old.searchImageText != settings.searchImageText {
+            epoch.advance()
+        }
         self.settings = settings
         // 只开了「复制链接时去掉跟踪参数」时也要盯着剪贴板
         if settings.enabled || settings.cleanLinks {
@@ -55,9 +95,12 @@ final class ClipboardMonitor {
     }
 
     private func start() {
-        guard timer == nil else { return }
+        guard !isStarted else { return }
+        isStarted = true
+        epoch.advance()
         // 不记录开启之前就在剪贴板里的内容
-        lastChangeCount = NSPasteboard.general.changeCount
+        lastChangeCount = pasteboard.changeCount
+        guard pollsAutomatically else { return }
         let timer = Timer(timeInterval: 0.5, repeats: true) { [weak self] _ in
             MainActor.assumeIsolated {
                 self?.poll()
@@ -69,16 +112,18 @@ final class ClipboardMonitor {
     }
 
     private func stop() {
+        isStarted = false
+        epoch.advance()
         timer?.invalidate()
         timer = nil
     }
 
     func poll() {
-        guard !isReading else { return }
-        let pasteboard = NSPasteboard.general
+        guard isStarted, settings.enabled || settings.cleanLinks else { return }
+        let pasteboard = self.pasteboard
         let changeCount = pasteboard.changeCount
         guard changeCount != lastChangeCount else { return }
-        switch PasteboardGuard.shared.verdict(for: changeCount) {
+        switch pasteboardGuard.verdict(for: changeCount) {
         case .busy:
             // Pop 正在读写剪贴板，等它结束再看
             return
@@ -86,56 +131,73 @@ final class ClipboardMonitor {
             lastChangeCount = changeCount
             return
         case .record:
-            lastChangeCount = changeCount
+            break
         }
-        let sourceApp = NSWorkspace.shared.frontmostApplication?.bundleIdentifier
+        if isReading {
+            // 新复制使在途内容失效，但不把新 changeCount 标成已经读过。
+            epoch.advance()
+            return
+        }
+        lastChangeCount = changeCount
+        let sourceApp = self.sourceApp()
         if let sourceApp, settings.ignoredBundleIDs.contains(sourceApp) { return }
         let settings = settings
+        let token = epoch.advance()
+        let epoch = self.epoch
+        let reader = self.reader
+        let store = self.store
+        let pasteboardGuard = self.pasteboardGuard
+        let copiedAt = Date()
         isReading = true
-        Self.readQueue.async { [weak self] in
-            guard let copied = Self.read(pasteboard, recordImages: settings.enabled && settings.recordImages) else {
-                DispatchQueue.main.async { [weak self] in
-                    MainActor.assumeIsolated { self?.isReading = false }
-                }
-                return
-            }
-            var clip = copied
+        workQueue.async { [weak self] in
             var written: Int?
-            if settings.cleanLinks, case .text(let text) = copied, let cleaned = LinkInspector.cleanedLink(in: text) {
-                // 复制的是带跟踪参数的链接：换成去掉参数的，自己这次写入不再处理
-                pasteboard.clearContents()
-                pasteboard.setString(cleaned, forType: .string)
-                written = pasteboard.changeCount
-                clip = .text(cleaned)
+            var didRecord = false
+            func collect() {
+                guard epoch.isCurrent(token),
+                      let copied = reader(pasteboard, settings.enabled && settings.recordImages),
+                      epoch.isCurrent(token) else { return }
+                let cleaned: String?
+                if settings.cleanLinks, case .text(let text) = copied {
+                    cleaned = LinkInspector.cleanedLink(in: text)
+                } else { cleaned = nil }
+                let clip = cleaned.map { Clip.text($0) } ?? copied
+                // 图片转换和数据库 I/O 都留在后台；转换后再次核对实际粘贴板。
+                let capture = settings.enabled ? Self.capture(clip, sourceApp: sourceApp) : nil
+                guard epoch.isCurrent(token), pasteboard.changeCount == changeCount,
+                      pasteboardGuard.verdict(for: changeCount) == .record,
+                      !(pasteboard.types ?? []).contains(where: { Self.ignoredTypes.contains($0) }) else { return }
+                if let cleaned {
+                    pasteboardGuard.begin()
+                    let ownCount = pasteboard.clearContents()
+                    defer { pasteboardGuard.end(changeCount: ownCount) }
+                    guard pasteboard.changeCount == ownCount,
+                          pasteboard.setString(cleaned, forType: .string),
+                          pasteboard.changeCount == ownCount else { return }
+                    written = ownCount
+                }
+                guard let capture, settings.enabled,
+                      capture.kind != .image || settings.recordImages,
+                      let id = store.add(capture, at: copiedAt, shouldRecord: { epoch.isCurrent(token) }) else { return }
+                didRecord = true
+                if settings.searchImageText, capture.kind == .image, let png = capture.imagePNG {
+                    DispatchQueue.global(qos: .utility).async {
+                        guard epoch.isCurrent(token) else { return }
+                        ClipboardImageIndex.index(png: png, id: id, store: store)
+                    }
+                }
             }
+            collect()
+            let ownWrite = written
+            let recorded = didRecord
             DispatchQueue.main.async { [weak self] in
                 MainActor.assumeIsolated {
                     guard let self else { return }
                     self.isReading = false
-                    if let written {
+                    if let written = ownWrite, epoch.isCurrent(token), pasteboard.changeCount == written {
                         self.lastChangeCount = written
                     }
-                    if settings.enabled {
-                        self.record(clip, sourceApp: sourceApp)
-                    }
+                    if recorded { self.onRecord?() }
                 }
-            }
-        }
-    }
-
-    /// 记进历史：转 PNG、存数据库、认图片里的字都在后台
-    private func record(_ clip: Clip, sourceApp: String?) {
-        let store = self.store
-        let indexImages = settings.searchImageText
-        DispatchQueue.global(qos: .utility).async { [weak self] in
-            guard let capture = Self.capture(clip, sourceApp: sourceApp), let id = store.add(capture) else { return }
-            DispatchQueue.main.async {
-                MainActor.assumeIsolated {
-                    self?.onRecord?()
-                }
-            }
-            if indexImages, capture.kind == .image, let png = capture.imagePNG {
-                ClipboardImageIndex.index(png: png, id: id, store: store)
             }
         }
     }
