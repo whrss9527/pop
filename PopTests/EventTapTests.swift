@@ -38,6 +38,7 @@ final class MouseTriggerTests: XCTestCase {
         var posted: [(type: CGEventType, location: CGPoint)] = []
         var asked = 0
         var accepts = true
+        var onShouldBegin: (() -> Void)?
         var pressed = true
         var recovery: [(fire: () -> Void, cancelled: Bool)] = []
         var timers: [(seconds: TimeInterval, fire: () -> Void, cancelled: Bool)] = []
@@ -51,6 +52,7 @@ final class MouseTriggerTests: XCTestCase {
         MouseTriggerCore(configuration: configuration,
                          shouldBegin: {
                              recorder.asked += 1
+                             recorder.onShouldBegin?()
                              return recorder.accepts
                          },
                          deliver: { recorder.signals.append($0) },
@@ -318,6 +320,29 @@ final class MouseTriggerTests: XCTestCase {
         recorder.recovery[1].fire()
         XCTAssertEqual(recorder.signals.last, .release(CGPoint(x: 30, y: 40)))
         XCTAssertEqual(recorder.signals.count, 4)
+    }
+
+    func testConfigurationChangedAndRestoredWhileAskingMainCannotReviveTheOldPress() throws {
+        for mode in [TriggerMode.longPressRight, .modifierRightClick, .middleClick] {
+            let recorder = Recorder()
+            let configuration = MouseTrigger.Configuration(mode: mode)
+            let core = makeCore(configuration, recorder: recorder)
+            recorder.onShouldBegin = { [weak core] in
+                core?.configuration = .init(mode: .disabled)
+                core?.configuration = configuration
+            }
+            let middle = mode == .middleClick
+            let down: CGEventType = middle ? .otherMouseDown : .rightMouseDown
+            let button: CGMouseButton = middle ? .center : .right
+            XCTAssertFalse(core.handle(type: down, event: try mouse(down, 10, 20, button: button, flags: .maskAlternate)))
+            XCTAssertTrue(recorder.signals.isEmpty)
+            XCTAssertTrue(recorder.timers.isEmpty)
+            XCTAssertTrue(recorder.recovery.isEmpty)
+            recorder.onShouldBegin = nil
+            XCTAssertTrue(core.handle(type: down, event: try mouse(down, 30, 40, button: button, flags: .maskAlternate)))
+            if mode == .longPressRight { recorder.fireTimer() }
+            XCTAssertEqual(recorder.signals, [.activate(CGPoint(x: 30, y: 40))])
+        }
     }
 
     func testDisabledModeTakesNothing() throws {

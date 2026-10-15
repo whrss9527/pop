@@ -137,7 +137,7 @@ final class MouseTriggerCore: @unchecked Sendable {
     private var state: State = .idle
     private var current: MouseTriggerConfiguration
     private var nextTimerID = 0
-    private var recoveryID = 0
+    private var gestureGeneration = 0
     private var recoveryCancel: (() -> Void)?
     private var lastLocation = CGPoint.zero
     private(set) var disabledCount = 0
@@ -213,31 +213,40 @@ final class MouseTriggerCore: @unchecked Sendable {
             Self.log.notice("鼠标拦截被停用，累计 \(count, privacy: .public) 次，原因 \(String(describing: type), privacy: .public)")
             return false
         }
-        let (configuration, isStopped) = withLock { (current, self.isStopped) }
+        let (configuration, isStopped, generation) = withLock { (current, self.isStopped, gestureGeneration) }
         if isStopped || event.getIntegerValueField(.eventSourceUserData) == Self.replayMarker {
             return false
         }
         switch configuration.mode {
-        case .longPressRight: return handleLongPress(type: type, event: event, holdDuration: configuration.holdDuration)
-        case .modifierRightClick: return handleModifierClick(type: type, event: event, modifier: configuration.modifier)
-        case .middleClick: return handleMiddleClick(type: type, event: event)
+        case .longPressRight: return handleLongPress(type: type, event: event, holdDuration: configuration.holdDuration, generation: generation)
+        case .modifierRightClick: return handleModifierClick(type: type, event: event, modifier: configuration.modifier, generation: generation)
+        case .middleClick: return handleMiddleClick(type: type, event: event, generation: generation)
         case .disabled: return false
         }
     }
 
-    private func handleLongPress(type: CGEventType, event: CGEvent, holdDuration: TimeInterval) -> Bool {
+    /// 查询主线程前取消上一轮；查询期间任何重置都使这个代号失效。
+    private func beginPress(ifCurrent generation: Int) -> Int? {
+        withLock {
+            guard !isStopped, gestureGeneration == generation else { return nil }
+            resetLocked(replayPending: true)
+            return gestureGeneration
+        }
+    }
+
+    private func handleLongPress(type: CGEventType, event: CGEvent, holdDuration: TimeInterval, generation: Int) -> Bool {
         if type == .rightMouseDown {
             let pressedAt = ProcessInfo.processInfo.systemUptime
-            reset()
+            guard let generation = beginPress(ifCurrent: generation) else { return false }
             guard shouldBegin(), let down = event.copy() else {
-                withLock { state = .passthrough }
+                withLock { if gestureGeneration == generation { state = .passthrough } }
                 return false
             }
             let location = event.location
             // 问 delegate 用掉的时间也算在长按里
             let remaining = max(0, holdDuration - (ProcessInfo.processInfo.systemUptime - pressedAt))
             return withLock {
-                guard !isStopped else { return false }
+                guard !isStopped, gestureGeneration == generation else { return false }
                 nextTimerID += 1
                 let id = nextTimerID
                 let cancel = startTimer(remaining) { [weak self] in
@@ -286,12 +295,12 @@ final class MouseTriggerCore: @unchecked Sendable {
         }
     }
 
-    private func handleModifierClick(type: CGEventType, event: CGEvent, modifier: TriggerModifier) -> Bool {
+    private func handleModifierClick(type: CGEventType, event: CGEvent, modifier: TriggerModifier, generation: Int) -> Bool {
         if type == .rightMouseDown {
-            reset()
+            guard let generation = beginPress(ifCurrent: generation) else { return false }
             // 没按着修饰键的右键不问主线程，马上放过
             guard event.flags.contains(modifier.eventFlag), shouldBegin() else { return false }
-            return activate(at: event.location)
+            return activate(at: event.location, generation: generation)
         }
         return withLock {
             switch (type, state) {
@@ -310,12 +319,12 @@ final class MouseTriggerCore: @unchecked Sendable {
         }
     }
 
-    private func handleMiddleClick(type: CGEventType, event: CGEvent) -> Bool {
+    private func handleMiddleClick(type: CGEventType, event: CGEvent, generation: Int) -> Bool {
         guard event.getIntegerValueField(.mouseEventButtonNumber) == 2 else { return false }
         if type == .otherMouseDown {
-            reset()
+            guard let generation = beginPress(ifCurrent: generation) else { return false }
             guard shouldBegin() else { return false }
-            return activate(at: event.location)
+            return activate(at: event.location, generation: generation)
         }
         return withLock {
             switch (type, state) {
@@ -335,9 +344,9 @@ final class MouseTriggerCore: @unchecked Sendable {
     }
 
     /// 修饰键+右键、中键按下：马上唤起，这次按压归我们
-    private func activate(at location: CGPoint) -> Bool {
+    private func activate(at location: CGPoint, generation: Int) -> Bool {
         withLock {
-            guard !isStopped else { return false }
+            guard !isStopped, gestureGeneration == generation else { return false }
             state = .active
             lastLocation = location
             startRecoveryLocked()
@@ -385,18 +394,18 @@ final class MouseTriggerCore: @unchecked Sendable {
     }
 
     private func resetRecoveryLocked() {
-        recoveryID += 1
+        gestureGeneration += 1
         recoveryCancel?()
         recoveryCancel = nil
     }
 
     /// 只在本次手势已唤起且按住时检查，不增加常驻轮询。
     private func startRecoveryLocked() {
-        let id = recoveryID
+        let id = gestureGeneration
         recoveryCancel = startRecoveryTimer(0.5) { [weak self] in
             guard let self else { return }
             self.withLock {
-                guard !self.isStopped, self.recoveryID == id, case .active = self.state else { return }
+                guard !self.isStopped, self.gestureGeneration == id, case .active = self.state else { return }
                 let button: CGMouseButton = self.current.mode == .middleClick ? .center : .right
                 if self.isPressed(button) {
                     self.startRecoveryLocked()
