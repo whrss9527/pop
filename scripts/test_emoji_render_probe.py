@@ -24,6 +24,15 @@ class RenderingProbeTests(unittest.TestCase):
         self.assertEqual(result["emoji_max_hang"], 2.86)
         self.assertFalse(result["within_existing_two_second_limit"])
 
+    def testExistingWatchdogPauseAnnotationRetainsItsAdjustedHangDuration(self):
+        result = probe.parse_demo(VALID.replace("hang 13.2 2.86", "hang 13.2 2.86 paused 0.329"), "baseline")
+        self.assertEqual(result["emoji_max_hang"], 2.86)
+        self.assertFalse(result["within_existing_two_second_limit"])
+        self.assertEqual(result["hangs"][0]["process_paused_seconds"], 0.329)
+        for ending in ["pause 0.329", "paused", "paused nan", "paused -1"]:
+            with self.subTest(ending=ending), self.assertRaises(ValueError):
+                probe.parse_demo(VALID.replace("hang 13.2 2.86", "hang 13.2 2.86 " + ending), "baseline")
+
     def testIncompleteWrongOrNonfiniteRecordsCannotLookLikePassingMeasurements(self):
         samples = [VALID.replace("renderProbe.end 22 2", ""),
                    VALID.replace("baseline", "no-ghost"),

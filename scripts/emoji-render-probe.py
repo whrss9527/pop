@@ -29,12 +29,15 @@ def parse_demo(text, variant):
     for row in rows:
         if row[:1] != ["hang"]:
             continue
-        if len(row) != 3:
+        if len(row) not in (3, 5) or (len(row) == 5 and row[3] != "paused"):
             raise ValueError("卡顿记录不完整")
-        start, duration = map(float, row[1:])
+        start, duration = map(float, row[1:3])
+        paused = float(row[4]) if len(row) == 5 else 0
         if not math.isfinite(start) or start < 0 or not (0 <= duration < 120):
             raise ValueError("卡顿时长无效")
-        hangs.append({"start": start, "duration": duration})
+        if not math.isfinite(paused) or paused < 0:
+            raise ValueError("进程暂停时长无效")
+        hangs.append({"start": start, "duration": duration, "process_paused_seconds": paused})
     emoji = [r["duration"] for r in hangs if times[2] <= r["start"] <= times[-1]]
     maximum = max(emoji, default=0)
     return {"markers": dict(zip(names, times)), "hangs": hangs, "emoji_max_hang": maximum,
