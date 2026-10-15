@@ -39,6 +39,10 @@ enum OverlayDemo {
         logRegion(cardRegion, screen: screen)
         // 插件包的演示步骤用
         let demo = PluginHost.DemoContext(screen: screen, center: center, overlay: overlay, cardRegion: cardRegion)
+        if ProcessInfo.processInfo.environment["POP_RENDER_PROBE"] == "1" {
+            runRenderProbe(in: demo)
+            return
+        }
 
         let installed = Set(settings.installedPlugins)
         let text = ContentClassifier.classify(.text("Liquid glass"))
@@ -783,6 +787,35 @@ enum OverlayDemo {
 
     /// 一步停多久再换下一步：截图脚本在每一步开始后最多 3 秒（放慢 6 倍时，也就是 0.5 × 倍数）拍照，
     /// 拍完留一点余量就换，不多等
+    /// 固定相邻两张卡片；不同实验由独立进程执行，全部测量结束后退出。
+    private static func runRenderProbe(in context: PluginHost.DemoContext) {
+        let scenes = PluginHost.shared.demoScenes(after: "pdfPages")
+        guard let variant = OverlayRenderProbe.current,
+              let previous = scenes.first(where: { $0.name == "focusSounds" }),
+              let current = scenes.first(where: { $0.name == "emojiSymbols" }) else {
+            log("renderProbe.error missing-variant-or-scene")
+            NSApp.terminate(nil)
+            return
+        }
+        log("renderProbe.variant \(variant.rawValue)")
+        Task { @MainActor in
+            await pause(1.5)
+            Motion.timeScale = 2
+            step(previous.name + ".start")
+            _ = await previous.show(context)
+            step(previous.name)
+            await pause(2)
+            step(current.name + ".start")
+            _ = await current.show(context)
+            step(current.name)
+            await pause(6)
+            context.overlay.hide(animated: false)
+            await pause(1)
+            step("renderProbe.end")
+            NSApp.terminate(nil)
+        }
+    }
+
     private static func hold(_ unit: Double) -> Double {
         0.5 * unit + 1.0
     }

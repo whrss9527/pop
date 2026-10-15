@@ -332,7 +332,7 @@ final class OverlayController {
         let frame = panel.frame
         let leaving = presentation
         panel.contentView = nil
-        guard animated else { return }
+        guard animated, OverlayRenderProbe.current != .noGhost else { return }
         let ghost = OverlayPanel()
         ghost.ignoresMouseEvents = true
         ghost.setFrame(frame, display: false)
