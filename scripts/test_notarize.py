@@ -15,7 +15,9 @@ state_file = Path(os.environ["FAKE_STATE"])
 state = json.loads(state_file.read_text())
 if tool == "xcrun" and args[0] == "notarytool":
     if args[1] == "submit": print('{"id":"test"}')
-    elif args[1] == "wait": print(json.dumps({"status":os.environ["FAKE_NOTARY_STATUS"]}))
+    elif args[1] == "wait":
+        print(json.dumps({"status":os.environ["FAKE_NOTARY_STATUS"]}))
+        sys.exit(int(os.environ["FAKE_WAIT_RESULT"]))
     else: print('{}')
 elif tool == "xcrun" and args[0] == "stapler":
     action = args[1]
@@ -42,7 +44,7 @@ elif tool == "sleep":
 
 class NotarizationTests(unittest.TestCase):
     def run_notary(self, staple=(0,), validate=(0,), status="Accepted",
-                   plugin_only=False, assessment=0):
+                   plugin_only=False, assessment=0, wait_result=0):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             tools = root / "bin"
@@ -62,6 +64,7 @@ class NotarizationTests(unittest.TestCase):
                        NOTARY_TEAM_ID="ABCDE12345", FAKE_STATE=str(state),
                        FAKE_STAPLE_RESULTS=json.dumps(staple),
                        FAKE_VALIDATE_RESULTS=json.dumps(validate), FAKE_NOTARY_STATUS=status,
+                       FAKE_WAIT_RESULT=str(wait_result),
                        FAKE_PLUGIN_ONLY="1" if plugin_only else "0",
                        FAKE_SPCTL_RESULT=str(assessment))
             script = Path(__file__).resolve().parent / "notarize.sh"
@@ -105,6 +108,13 @@ class NotarizationTests(unittest.TestCase):
 
     def test_rejected_notarization_never_staples_or_repacks(self):
         result, state, archive = self.run_notary(status="Invalid")
+        self.assertNotEqual(result.returncode, 0)
+        self.assertNotIn("actions", state)
+        self.assertNotIn("assessments", state)
+        self.assertEqual(archive, b"original")
+
+    def test_failed_wait_with_accepted_output_never_staples_or_repacks(self):
+        result, state, archive = self.run_notary(status="Accepted", wait_result=1)
         self.assertNotEqual(result.returncode, 0)
         self.assertNotIn("actions", state)
         self.assertNotIn("assessments", state)

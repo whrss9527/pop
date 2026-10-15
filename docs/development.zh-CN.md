@@ -131,13 +131,13 @@ make release VERSION=0.69.0-beta.1 BETA=1
 
 ### 签名与公证
 
-发布流程默认用本地签名（ad-hoc），什么都不用配置。在仓库的 Settings → Secrets and variables → Actions 里加上证书后，之后发布的版本都会用证书签名：
+公开的正式版和测试版必须使用 Developer ID Application 证书，并通过苹果公证。发布流程检查凭据、证书身份和 Accepted 结果，再解压最终安装包验证所有架构的签名、公证票据与 Gatekeeper。任何一步缺项或失败都会停止，不创建发行标签。凭据配置在仓库的 Settings → Secrets and variables → Actions 中。
 
 | 签名方式 | 需要什么 | 一键更新后的辅助功能授权 | 第一次打开 |
 | --- | --- | --- | --- |
-| 本地签名（默认） | 什么都不用 | 每次更新都要重新授权 | 要先解除隔离 |
-| 自签名证书 | 用 `make signing-certificate` 生成一张 | 保留 | 要先解除隔离 |
-| Developer ID + 公证 | 付费开发者账号 | 保留 | 双击就能打开 |
+| 本地签名（本地构建、CI 默认） | 什么都不用 | 每次更新都要重新授权 | 本地测试 |
+| 自签名证书（本地测试、CI 自测） | 用 `make signing-certificate` 生成一张 | 保留 | 本地测试 |
+| Developer ID + 公证（公开发行） | 付费开发者账号 | 保留 | 双击就能打开 |
 
 **自签名证书**（免费）：
 
@@ -145,7 +145,7 @@ make release VERSION=0.69.0-beta.1 BETA=1
 make signing-certificate    # 即 scripts/create-signing-certificate.sh，文件放在 ~/.pop-signing
 ```
 
-按脚本最后打印的提示，把 `certificate.p12.base64` 的内容填进 Secret `MACOS_CERTIFICATE_P12`，把 `password.txt` 的内容填进 `MACOS_CERTIFICATE_PASSWORD`。**请备份这个文件夹**：用证书签名的 Pop 只接受同一张证书签名的更新，证书丢了只能换一张新的，已经安装的 Pop 就得手动下载一次新版本，并重新授权一次。
+本地测试时按脚本最后打印的提示导入证书，再设置 `CODESIGN_IDENTITY` 构建；自签名证书不用于公开发行。**请备份证书**：用证书签名的 Pop 只接受同一张证书签名的更新，证书丢了只能换一张新的，已经安装的 Pop 就得手动下载一次新版本，并重新授权一次。
 
 **Developer ID**：在「钥匙串访问」里把「Developer ID Application: …」证书连同私钥导出成 .p12，`base64 -i 证书.p12 | pbcopy` 后填进 `MACOS_CERTIFICATE_P12`，导出时设的密码填进 `MACOS_CERTIFICATE_PASSWORD`。再配上下面任意一组公证凭据，发布流程会自动提交苹果公证并钉上票据：
 
@@ -155,6 +155,8 @@ make signing-certificate    # 即 scripts/create-signing-certificate.sh，文件
 | `NOTARY_APPLE_ID`、`NOTARY_PASSWORD`、`NOTARY_TEAM_ID` | Apple ID、App 专用密码（在 appleid.apple.com 生成）、Team ID |
 
 从本地签名换成证书签名后，第一次更新仍然需要重新授权一次辅助功能，之后就不用了。
+
+在 Actions 的 Release 工作流勾选 `dry_run` 可以运行同样的签名、公证和最终包验收，只保存七天的 artifact，不创建标签或 Release。正常稳定版配额仍然生效；如果被配额跳过，不能视为签名验收通过。签名测试可勾选 `prerelease` 并使用独立测试版本号，例如 `0.70.1-beta.signing.1`，不会进入公开更新渠道。
 
 ### 插件启动
 

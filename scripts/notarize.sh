@@ -78,10 +78,14 @@ for zip in "$@"; do
   i=$((i + 1))
   name="$(basename "$zip")"
   out="$work/wait-$name.json"
-  xcrun notarytool wait "$id" "${auth[@]}" --output-format json > "$out" || true
+  if xcrun notarytool wait "$id" "${auth[@]}" --output-format json > "$out"; then
+    wait_result=0
+  else
+    wait_result=$?
+  fi
   status="$(json_field "$out" status)"
   echo "${name}：公证结果 ${status:-未知}"
-  if [ "$status" != "Accepted" ]; then
+  if [ "$wait_result" -ne 0 ] || [ "$status" != "Accepted" ]; then
     cat "$out" || true
     echo "===== 公证日志（为什么没通过） ====="
     xcrun notarytool log "$id" "${auth[@]}" || true
