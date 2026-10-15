@@ -117,7 +117,7 @@ Pop's features are moving into plugin bundles one by one. Each plugin bundle bui
 
 Changes accumulate under `## Unreleased` (or `## 未发布`) at the top of `CHANGELOG.md`. Set `MARKETING_VERSION` in `project.yml` to the next stable version when starting a new cycle. Every main push that passes the full CI publishes `<version>-beta.<CI run number>`; new installations receive stable versions by default.
 
-To publish a stable version, rename the top section to that version and date, matching `MARKETING_VERSION`. CI publishes at most one stable release per weekday in Asia/Shanghai. If today's allowance is used or it is a weekend, weekday CI retries. Manual stable releases use the same rules; rebuilding an existing tag does not count as a new release. Drafts become public only after all assets are uploaded. Release notes also list changed plugin bundles and their versions relative to the previous stable release.
+To publish a stable version, rename the top section to that version and date, matching `MARKETING_VERSION`. CI publishes at most one stable release per weekday in Asia/Shanghai. If today's allowance is used or it is a weekend, weekday CI retries. Manual releases and draft recovery use the same stable allowance. Recovery keeps the original full source SHA and tag, and requires that source’s four main CI gates. Drafts become public only after the complete App/plugin inventory, build identifiers, sizes and local/remote digests are verified. The App-only checksum sidecar and plugin-index protocol remain compatible with separate plugin updates. Release notes also list changed plugin bundles and their versions relative to the previous stable release.
 
 Plugin-only updates keep using the Plugins workflow on the latest stable tag. They do not need a new Pop stable version. To publish a beta manually:
 
@@ -125,7 +125,7 @@ Plugin-only updates keep using the Plugins workflow on the latest stable tag. Th
 make release VERSION=0.69.0-beta.1 BETA=1
 ```
 
-- The workflow fails if the version was already released; when running it manually, check overwrite to rebuild from the tagged code, replace the assets and update the notes.
+- The complete-App release workflow never overwrites a public release, including when `overwrite` is selected. Incomplete drafts resume from their recorded, validated source; unbound sources, changed tags or unexpected assets stop recovery. Plugin-only updates continue using the separate Plugins workflow.
 - `CFBundleShortVersionString` is the version you enter; `CFBundleVersion` is the Git commit count.
 - Versions are compared number by number, and a version with a suffix such as `-beta.1` is older than the same version without one.
 

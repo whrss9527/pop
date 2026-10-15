@@ -215,6 +215,7 @@ jobs:
       version: ${{ steps.plan.outputs.version }}
       beta: ${{ steps.plan.outputs.beta }}
       sha: ${{ steps.plan.outputs.sha }}
+      stable-sha: ${{ steps.plan.outputs.stable-sha }}
     steps:
       - uses: actions/checkout@v5
       - name: 计算稳定版和测试版
@@ -223,8 +224,12 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           gh api --paginate --slurp "repos/$GITHUB_REPOSITORY/releases?per_page=100" > "$RUNNER_TEMP/releases.json"
-          python3 scripts/release-plan.py plan --event "$GITHUB_EVENT_NAME" --run-number "$GITHUB_RUN_NUMBER" < "$RUNNER_TEMP/releases.json" >> "$GITHUB_OUTPUT"
-          echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+          python3 scripts/release-plan.py plan --event "$GITHUB_EVENT_NAME" --run-number "$GITHUB_RUN_NUMBER" < "$RUNNER_TEMP/releases.json" > "$RUNNER_TEMP/plan.txt"
+          cat "$RUNNER_TEMP/plan.txt" >> "$GITHUB_OUTPUT"
+          sha=$(git rev-parse HEAD)
+          recovery=$(awk -F= '$1 == "source" { print $2 }' "$RUNNER_TEMP/plan.txt")
+          echo "sha=$sha" >> "$GITHUB_OUTPUT"
+          echo "stable-sha=${recovery:-$sha}" >> "$GITHUB_OUTPUT"
 
   release:
     name: 发布新版本
@@ -232,10 +237,11 @@ jobs:
     if: needs.plan-release.outputs.version != ''
     permissions:
       contents: write
+      actions: read
     uses: ./.github/workflows/release.yml
     with:
       version: ${{ needs.plan-release.outputs.version }}
-      ref: ${{ needs.plan-release.outputs.sha }}
+      ref: ${{ needs.plan-release.outputs.stable-sha }}
       prerelease: false
     secrets: inherit
 
@@ -245,6 +251,7 @@ jobs:
     if: needs.plan-release.outputs.beta != ''
     permissions:
       contents: write
+      actions: read
     uses: ./.github/workflows/release.yml
     with:
       version: ${{ needs.plan-release.outputs.beta }}

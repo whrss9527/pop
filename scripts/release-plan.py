@@ -42,12 +42,21 @@ def plan(changelog, marketing_version, releases, now, event, run_number):
         raise ValueError("MARKETING_VERSION 必须是正式版本号")
     if heading not in ("未发布", "Unreleased") and heading != marketing_version:
         raise ValueError("顶部版本与 MARKETING_VERSION 不一致")
-    tags = {r["tag_name"] for r in releases}
+    tags = {r["tag_name"] for r in releases if not r.get("draft")}
     stable = heading if VERSION.fullmatch(heading) and "v" + heading not in tags and stable_allowed(releases, now) else ""
     beta = f"{marketing_version}-beta.{run_number}" if event == "push" else ""
     if beta and "v" + beta in tags:
         beta = ""
-    return {"version": stable, "beta": beta}
+    result = {"version": stable, "beta": beta}
+    drafts = [r for r in releases if r.get("draft") and r["tag_name"] == "v" + stable] if stable else []
+    if len(drafts) > 1:
+        raise ValueError("同版本草稿不唯一")
+    if drafts:
+        source = drafts[0].get("target_commitish", "")
+        if not re.fullmatch(r"[0-9a-f]{40}", source):
+            raise ValueError("草稿没有精确源码，停止自动恢复")
+        result["source"] = source
+    return result
 
 
 def main():
