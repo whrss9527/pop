@@ -6,7 +6,7 @@ preserve_startup_diagnostics() {
   {
     echo "$result" > "$DIAGNOSTICS/exit-status.txt"
     python3 "$ROOT/scripts/startup-diagnostics.py" collect --app "$APP" --output "$DIAGNOSTICS" \
-      --start "$DIAGNOSTIC_START"
+      --start "$DIAGNOSTIC_START" --pids-file "$DIAGNOSTICS/launch-pids.txt"
   } || echo '::warning::启动诊断归档未完整生成' >&2
   exit "$result"
 }

@@ -167,3 +167,5 @@ make signing-certificate    # 即 scripts/create-signing-certificate.sh，文件
 `launch-smoke.sh` 保留原先首次启动与下载安装的 2 秒主线程门槛。`build/startup-diagnostics` 保存各自原始 HangLog、完整 Pop 系统日志、源码 SHA、系统/架构和 App 签名信息，CI 与签名发行流程即使失败也上传 artifact。日志命令超时或失败会记在 metadata 中，不能把不完整证据当通过。
 
 测试额外设置 `POP_STARTUP_TRACE=1`，以单调时钟记录每个插件的装载、目录状态统计、控制器初始化及启动阶段；正常使用不启用。若首次启动门槛失败，原结果仍失败，再单独启动一次诊断：收到半秒 stall 信号时以 utility 优先级采样，一次一个、最多三次，整个观察窗口 12 秒。原始与诊断 HangLog、启动时间及采样 PID 分开保存。采样接入会影响时序，因此这次诊断不能用于重判首次门槛，也不能凭一次通过认定瓶颈已修复。
+
+启动验收在每次受控启动后记录唯一活跃 PID，以系统日志 JSON 的 `processID` 只选取该次进程的事件。读取回看十分钟日志，不以 shell 秒级墙钟作为下界，避免漏掉时间戳略早的真实安装事件；其他进程的旧记录不能使断言通过。采集失败或未知 PID 字段不会交出可用于成功断言的部分记录。诊断 artifact 保留 PID 清单、按 PID 筛选的原始 JSON 与可读日志；捕获 PID 前崩溃时的未归属回看只用于诊断，metadata 明确标记。安装、装载、磁盘及原两秒门槛保持。

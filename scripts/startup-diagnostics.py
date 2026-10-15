@@ -11,6 +11,35 @@ import subprocess
 import time
 
 
+def process_logs(pids, predicate='process == "Pop"', runner=subprocess.run):
+    if not pids or any(type(pid) is not int or pid <= 0 for pid in pids):
+        raise ValueError("启动日志需要明确的本次进程PID")
+    # 系统日志的墙钟可能早于shell的date；回看日志后按实际PID过滤，旧进程不能使断言通过。
+    result = runner(["log", "show", "--last", "10m", "--style", "json", "--predicate", predicate],
+                    capture_output=True, text=True, timeout=15)
+    if result.returncode != 0:
+        raise RuntimeError("系统日志读取失败：" + result.stderr)
+    records = json.loads(result.stdout)
+    if not isinstance(records, list) or any(not isinstance(item, dict) for item in records):
+        raise ValueError("系统日志JSON格式无效")
+    if records and not any(type(item.get("processID")) is int for item in records):
+        raise ValueError("系统日志缺少processID，不能确认本次进程")
+    return [item for item in records if type(item.get("processID")) is int and item["processID"] in pids]
+
+
+def render_logs(records):
+    return "\n".join(f'{item.get("timestamp", "")} Pop[{item["processID"]}:{item.get("threadID", 0)}] '
+                     f'[{item.get("subsystem", "")}:{item.get("category", "")}] {item.get("eventMessage", "")}'
+                     for item in records)
+
+
+def read_pids(path):
+    pids = [int(value) for value in path.read_text().split()]
+    if not pids or any(pid <= 0 for pid in pids):
+        raise ValueError("本次启动PID记录为空或无效")
+    return set(pids)
+
+
 def capture(command, destination, timeout=15, cwd=None):
     result = {"command": command}
     with destination.open("w") as output:
@@ -25,7 +54,7 @@ def capture(command, destination, timeout=15, cwd=None):
     return result
 
 
-def collect(app, output, start):
+def collect(app, output, start, pids_file=None):
     output.mkdir(parents=True, exist_ok=True)
     root = Path(__file__).resolve().parents[1]
     commands = {
@@ -34,16 +63,23 @@ def collect(app, output, start):
         "architecture": ["uname", "-m"],
         "signature": ["codesign", "--display", "--verbose=4", str(app)],
         "bundle": ["plutil", "-p", str(app / "Contents/Info.plist")],
-        "unified-log": ["log", "show", "--start", start, "--style", "compact",
-                        "--predicate", 'process == "Pop"'],
     }
+    scoped = bool(pids_file and pids_file.is_file() and pids_file.read_text().strip())
+    if scoped:
+        commands["unified-log"] = ["python3", str(Path(__file__).resolve()), "logs", "--pids-file", str(pids_file),
+                                   "--raw-json", str(output / "unified-log.json")]
+    else:
+        # 进程在捕获PID前已崩溃时仅保留未归属诊断；这些日志从不用于成功断言。
+        commands["unified-log"] = ["log", "show", "--last", "10m", "--style", "compact", "--predicate", 'process == "Pop"']
     results = {name: capture(command, output / (name + ".txt"), cwd=root)
                for name, command in commands.items()}
     reports = Path.home() / "Library/Logs/DiagnosticReports"
     for report in reports.glob("Pop*"):
         if report.is_file():
             shutil.copyfile(report, output / report.name)
-    metadata = {"commands": results, "actions": {key: os.environ.get(key) for key in
+    metadata = {"commands": results, "primary_wall_start": start,
+                "log_scope": "owned-pids" if scoped else "unscoped-no-captured-pids",
+                "pid_scope": str(pids_file) if pids_file else None, "actions": {key: os.environ.get(key) for key in
                 ("GITHUB_SHA", "GITHUB_RUN_ID", "GITHUB_RUN_ATTEMPT", "RUNNER_OS", "RUNNER_ARCH")}}
     (output / "metadata.json").write_text(json.dumps(metadata, indent=2) + "\n")
 
@@ -105,12 +141,25 @@ def main():
     collect_args.add_argument("--app", type=Path, required=True)
     collect_args.add_argument("--output", type=Path, required=True)
     collect_args.add_argument("--start", required=True)
+    collect_args.add_argument("--pids-file", type=Path)
+    log_args = commands.add_parser("logs")
+    source = log_args.add_mutually_exclusive_group(required=True)
+    source.add_argument("--pid", type=int)
+    source.add_argument("--pids-file", type=Path)
+    log_args.add_argument("--predicate", default='process == "Pop"')
+    log_args.add_argument("--raw-json", type=Path)
     watch_args = commands.add_parser("watch")
     watch_args.add_argument("--hang-log", type=Path, required=True)
     watch_args.add_argument("--output", type=Path, required=True)
     args = parser.parse_args()
     if args.command == "collect":
-        collect(args.app, args.output, args.start)
+        collect(args.app, args.output, args.start, args.pids_file)
+    elif args.command == "logs":
+        pids = read_pids(args.pids_file) if args.pids_file else {args.pid}
+        records = process_logs(pids, args.predicate)
+        if args.raw_json:
+            args.raw_json.write_text(json.dumps(records, ensure_ascii=False, indent=2) + "\n")
+        print(render_logs(records))
     else:
         watch(args.hang_log, args.output)
 
