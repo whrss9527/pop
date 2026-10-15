@@ -237,6 +237,7 @@ jobs:
     if: needs.plan-release.outputs.version != ''
     permissions:
       contents: write
+      actions: read
     uses: ./.github/workflows/release.yml
     with:
       version: ${{ needs.plan-release.outputs.version }}
@@ -250,6 +251,7 @@ jobs:
     if: needs.plan-release.outputs.beta != ''
     permissions:
       contents: write
+      actions: read
     uses: ./.github/workflows/release.yml
     with:
       version: ${{ needs.plan-release.outputs.beta }}
