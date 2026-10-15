@@ -345,6 +345,21 @@ final class MouseTriggerTests: XCTestCase {
         }
     }
 
+    func testNewPressBalancesThePreviousPendingClickEvenWhenTheButtonIsDownAgain() throws {
+        let recorder = Recorder()
+        let core = makeCore(recorder: recorder)
+        XCTAssertTrue(core.handle(type: .rightMouseDown, event: try mouse(.rightMouseDown, 10, 20)))
+        // 第一轮的松开丢失，第二轮按下时物理按键已经再次按住。
+        XCTAssertTrue(core.handle(type: .rightMouseDown, event: try mouse(.rightMouseDown, 30, 40)))
+        XCTAssertTrue(recorder.timers[0].cancelled)
+        XCTAssertEqual(recorder.posted.map { $0.type }, [.rightMouseDown, .rightMouseUp])
+        XCTAssertEqual(recorder.posted.map { $0.location }, [CGPoint(x: 10, y: 20), CGPoint(x: 10, y: 20)])
+        recorder.fireTimer(0)
+        XCTAssertTrue(recorder.signals.isEmpty)
+        recorder.fireTimer(1)
+        XCTAssertEqual(recorder.signals, [.activate(CGPoint(x: 30, y: 40))])
+    }
+
     func testDisabledModeTakesNothing() throws {
         let recorder = Recorder()
         let core = makeCore(MouseTrigger.Configuration(mode: .disabled, holdDuration: 0.25, modifier: .option),

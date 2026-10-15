@@ -229,7 +229,8 @@ final class MouseTriggerCore: @unchecked Sendable {
     private func beginPress(ifCurrent generation: Int) -> Int? {
         withLock {
             guard !isStopped, gestureGeneration == generation else { return nil }
-            resetLocked(replayPending: true)
+            // 新按下说明上一轮已结束；此时查询按键会读到新一轮的按住状态。
+            resetLocked(replayPending: true, pendingEnded: true)
             return gestureGeneration
         }
     }
@@ -376,11 +377,11 @@ final class MouseTriggerCore: @unchecked Sendable {
     }
 
     /// 拿着锁调用
-    private func resetLocked(replayPending: Bool) {
+    private func resetLocked(replayPending: Bool, pendingEnded: Bool = false) {
         if case .pending(let down, _, let cancel) = state {
             cancel()
             if replayPending {
-                if !isPressed(.right), let up = down.copy() {
+                if pendingEnded || !isPressed(.right), let up = down.copy() {
                     up.type = .rightMouseUp
                     post([down, up])
                 } else {
