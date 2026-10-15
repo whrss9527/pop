@@ -159,3 +159,9 @@ After switching from ad-hoc to certificate signing, the first update still needs
 ### Plugin startup
 
 `PluginBundles.loadInstalled()` is asynchronous. Signature checks run on a background queue; bundle code and registration stay on the main actor, with queued main-thread work processed between bundles. Concurrent startup requests await the same task. `AppDelegate` awaits completion before constructing `AppController`, retaining incoming URLs and reopen requests until it is ready. Shortcuts await the same loader before reading their function catalog. Build and signature validation remain mandatory; startup and screenshot checks retain their two-second responsiveness limit.
+
+## Startup stall diagnostics
+
+`launch-smoke.sh` keeps the existing two-second main-thread gate for the first launch and plugin installation. `build/startup-diagnostics` preserves separate raw HangLogs, the complete Pop unified log, source SHA, OS/architecture and App signing information. Both CI and signed release workflows upload these files on failure as well as success. Command failures and timeouts are recorded in metadata; incomplete evidence is not a passing result.
+
+Tests set `POP_STARTUP_TRACE=1` to record monotonic spans for each plugin load, directory-status refresh, controller initialization and start. Normal launches leave tracing disabled. A failed first-launch gate remains failed, then starts one separate diagnostic launch: existing half-second stall notices trigger utility-priority sampling, one at a time, at most three samples within a twelve-second observation window. Original and diagnostic HangLogs, start times and the sampled PID remain separate. Attaching a sampler changes timing, so this diagnostic launch never replaces the first gate or proves the underlying bottleneck fixed.

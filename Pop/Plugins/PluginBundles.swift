@@ -296,7 +296,9 @@ final class PluginBundles {
 
     /// 检查并装载一个插件包。同一个 ID 已经装载过时直接返回那一个。
     func load(_ url: URL, external: Bool = false) -> Result<Loaded, LoadError> {
-        let result = loadChecked(url, external: external)
+        let result = StartupTrace.measure("plugin.load.\(url.lastPathComponent)") {
+            loadChecked(url, external: external)
+        }
         switch result {
         case .success(let item):
             failures[url] = nil

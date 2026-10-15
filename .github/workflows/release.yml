@@ -138,6 +138,15 @@ jobs:
         if: steps.policy.outputs.allowed == 'true'
         run: scripts/launch-smoke.sh "$APP"
 
+      - name: Upload signed startup diagnostic evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: signed-startup-diagnostics-${{ inputs.version }}-attempt-${{ github.run_attempt }}
+          path: build/startup-diagnostics
+          if-no-files-found: warn
+          retention-days: 14
+
       - name: Package
         if: steps.policy.outputs.allowed == 'true'
         run: |
