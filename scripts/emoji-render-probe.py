@@ -85,7 +85,18 @@ def target_stalls(text):
     start = next((i for i, line in enumerate(rows) if line.startswith("emojiSymbols.start ")), None)
     if start is None:
         return []
-    return [line for line in rows[start + 1:] if line.startswith("stall ")]
+    began = float(rows[start].split()[1])
+    stalls = []
+    for line in rows[start + 1:]:
+        fields = line.split()
+        if len(fields) == 3 and fields[0] == "stall":
+            try:
+                timestamp = float(fields[1])
+            except ValueError:
+                continue
+            if math.isfinite(timestamp) and timestamp >= began:
+                stalls.append(line)
+    return stalls
 
 
 def stop_owned(process):

@@ -21,7 +21,7 @@ renderProbe.end 22 2
 class RenderingProbeTests(unittest.TestCase):
     def testDiagnosticSampleBudgetIsReservedForTheTargetPhase(self):
         self.assertEqual(probe.target_stalls("stall 1 0.5\nring 2 6\n"), [])
-        self.assertEqual(probe.target_stalls("stall 1 0.5\nemojiSymbols.start 10 2\nstall 11 0.5\n"), ["stall 11 0.5"])
+        self.assertEqual(probe.target_stalls("stall 1 0.5\nemojiSymbols.start 10 2\nstall 9 0.5\nstall 11 0.5\n"), ["stall 11 0.5"])
 
     def testOriginalFullPrefixAndQuickStepContract(self):
         quick, fixture = probe.full_prefix_configuration()
