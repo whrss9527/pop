@@ -79,6 +79,9 @@ jobs:
       - name: Check overlay diagnostic preservation
         run: python3 -m unittest discover -s scripts -p 'test_overlay_diagnostics.py'
 
+      - name: Check startup diagnostic preservation
+        run: python3 -m unittest discover -s scripts -p 'test_startup_diagnostics.py'
+
       - name: Check translations
         if: always()
         run: python3 scripts/check-localization.py --stringsdata ~/Library/Developer/Xcode/DerivedData --list-missing
@@ -141,6 +144,15 @@ jobs:
 
       - name: Launch smoke test
         run: scripts/launch-smoke.sh "$APP"
+
+      - name: Upload startup diagnostic evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: startup-diagnostics-${{ matrix.os }}-attempt-${{ github.run_attempt }}
+          path: build/startup-diagnostics
+          if-no-files-found: warn
+          retention-days: 14
 
       # 截图放到单独的 ci-screenshots/<系统> 分支（只有这一次的截图，每次覆盖），git 拉下来就能看
       - name: Publish screenshots

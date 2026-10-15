@@ -37,14 +37,21 @@ done
 
 # Pop 的主线程卡住超过 0.25 秒时往这个文件里写一行「hang 开始时间 秒数」（HangWatchdog）。
 # 旧版本的 Pop（比如「发布插件」用的正式版）不写这个文件
-HANG_LOG="$(mktemp -t pop-hangs)"
+DIAGNOSTICS="${POP_STARTUP_DIAGNOSTICS_DIR:-$ROOT/build/startup-diagnostics}"
+mkdir -p "$DIAGNOSTICS"
+HANG_LOG="$DIAGNOSTICS/startup-hangs.txt"
+: > "$HANG_LOG"
+DIAGNOSTIC_START="$(date '+%Y-%m-%d %H:%M:%S')"
+echo "$DIAGNOSTIC_START" > "$DIAGNOSTICS/primary-start.txt"
+source "$ROOT/scripts/startup-diagnostics.sh"
+trap preserve_startup_diagnostics EXIT
 
 START="$(date '+%Y-%m-%d %H:%M:%S')"
 if [ ${#PLUGINS[@]} -gt 0 ]; then
   echo "一起装载的插件包：${PLUGINS[*]}"
-  open --env "POP_PLUGIN_DIR=${PLUGIN_DIR}" --env "POP_HANG_LOG=${HANG_LOG}" "$APP"
+  open --env "POP_PLUGIN_DIR=${PLUGIN_DIR}" --env "POP_HANG_LOG=${HANG_LOG}" --env POP_STARTUP_TRACE=1 "$APP"
 else
-  open --env "POP_HANG_LOG=${HANG_LOG}" "$APP"
+  open --env "POP_HANG_LOG=${HANG_LOG}" --env POP_STARTUP_TRACE=1 "$APP"
 fi
 sleep 10
 
@@ -58,6 +65,30 @@ dump_logs() {
   done
 }
 
+# 采样接入会扰动启动，所以只另起一次诊断，不重判或覆盖首次失败。
+diagnose_startup_failure() {
+  local diagnostic_log="$DIAGNOSTICS/diagnostic-hangs.txt" sampler
+  for _ in $(seq 1 20); do
+    pgrep -x Pop > /dev/null || break
+    sleep 0.1
+  done
+  if pgrep -x Pop > /dev/null; then
+    echo '前次进程尚未退出，跳过独立诊断' > "$DIAGNOSTICS/diagnostic-skipped.txt"
+    return 0
+  fi
+  : > "$diagnostic_log"
+  date '+%Y-%m-%d %H:%M:%S' > "$DIAGNOSTICS/diagnostic-start.txt"
+  defaults delete "$BUNDLE_ID" 2>/dev/null || true
+  python3 "$ROOT/scripts/startup-diagnostics.py" watch --hang-log "$diagnostic_log" \
+    --output "$DIAGNOSTICS/sampled-reproduction" &
+  sampler=$!
+  echo '原始2秒门禁已失败；以下为独立采样启动，不用于重新判定门禁。'
+  open --env "POP_PLUGIN_DIR=${PLUGIN_DIR}" --env "POP_HANG_LOG=${diagnostic_log}" \
+    --env POP_STARTUP_TRACE=1 "$APP" || true
+  wait "$sampler" || true
+  pkill -x Pop 2>/dev/null || true
+}
+
 # 主线程卡住的地方都列出来，卡了 2 秒以上的算失败：用的时候会觉得 Pop 卡死了
 check_hangs() {
   local when="$1"
@@ -66,9 +97,9 @@ check_hangs() {
   if awk '$1 == "hang" && $3 + 0 >= 2 { bad = 1 } END { exit bad ? 0 : 1 }' "$HANG_LOG"; then
     echo "❌ ${when}时主线程卡了 2 秒以上"
     dump_logs
+    if [ "$when" = '启动' ]; then diagnose_startup_failure; fi
     exit 1
   fi
-  : > "$HANG_LOG"
 }
 
 if ! pgrep -x Pop > /dev/null; then
@@ -185,8 +216,10 @@ SETTINGS_HEX="$(python3 -c 'import json, sys; print(json.dumps({"ring": {"slots"
 defaults write "$BUNDLE_ID" pop.settings.v1 -data "$SETTINGS_HEX"
 
 START="$(date '+%Y-%m-%d %H:%M:%S')"
+HANG_LOG="$DIAGNOSTICS/install-hangs.txt"
+: > "$HANG_LOG"
 echo "从 ${SOURCE} 装插件包 ${INSTALL_ID}"
-open --env "POP_PLUGIN_SOURCE=${SOURCE}" --env "POP_HANG_LOG=${HANG_LOG}" "$APP"
+open --env "POP_PLUGIN_SOURCE=${SOURCE}" --env "POP_HANG_LOG=${HANG_LOG}" --env POP_STARTUP_TRACE=1 "$APP"
 installed=""
 for _ in $(seq 1 40); do
   if pop_log_has 'process == "Pop" AND category == "plugins"' "installed plugin ${INSTALL_ID}"; then

@@ -161,3 +161,9 @@ make signing-certificate    # 即 scripts/create-signing-certificate.sh，文件
 ### 插件启动
 
 `PluginBundles.loadInstalled()` 是异步入口。签名检查在后台队列执行，代码装载和注册仍在主线程，各个插件之间处理已经排队的主线程任务；并发启动请求等待同一任务。`AppDelegate` 等装载完成后才组装 `AppController`，期间收到的 URL 和重新打开请求保留到控制器就绪。快捷指令也等待同一入口后再读取功能列表。构建号和签名仍须通过验证，启动与截图检查保留两秒响应门槛。
+
+## 启动停顿诊断
+
+`launch-smoke.sh` 保留原先首次启动与下载安装的 2 秒主线程门槛。`build/startup-diagnostics` 保存各自原始 HangLog、完整 Pop 系统日志、源码 SHA、系统/架构和 App 签名信息，CI 与签名发行流程即使失败也上传 artifact。日志命令超时或失败会记在 metadata 中，不能把不完整证据当通过。
+
+测试额外设置 `POP_STARTUP_TRACE=1`，以单调时钟记录每个插件的装载、目录状态统计、控制器初始化及启动阶段；正常使用不启用。若首次启动门槛失败，原结果仍失败，再单独启动一次诊断：收到半秒 stall 信号时以 utility 优先级采样，一次一个、最多三次，整个观察窗口 12 秒。原始与诊断 HangLog、启动时间及采样 PID 分开保存。采样接入会影响时序，因此这次诊断不能用于重判首次门槛，也不能凭一次通过认定瓶颈已修复。

@@ -597,6 +597,8 @@ final class PluginManager: ObservableObject {
 
     /// 按装载情况重新算每个插件包的状态和大小；正在装的、装失败的保持原样
     private func refreshStatuses() {
+        let span = StartupTrace.begin("plugins.refreshStatuses")
+        defer { StartupTrace.end(span) }
         for package in PluginCatalog.all {
             if let loaded = PluginBundles.shared.loadedBundle(package.id) {
                 statuses[package.id] = .installed
