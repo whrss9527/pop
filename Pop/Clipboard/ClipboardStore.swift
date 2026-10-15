@@ -334,7 +334,12 @@ final class ClipboardStore: @unchecked Sendable {
             let position = Int32(index + 1)
             switch value {
             case .text(let text):
-                sqlite3_bind_text(statement, position, text, -1, sqliteTransient)
+                // 按完整UTF-8字节数保存，不能在内容中的零字符处结束。
+                let status = text.withCString { pointer in
+                    sqlite3_bind_text64(statement, position, pointer, UInt64(text.utf8.count),
+                                        sqliteTransient, UInt8(SQLITE_UTF8))
+                }
+                guard status == SQLITE_OK else { return false }
             case .int(let number):
                 sqlite3_bind_int64(statement, position, number)
             case .double(let number):

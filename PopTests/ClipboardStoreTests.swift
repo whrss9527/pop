@@ -46,6 +46,37 @@ final class ClipboardStoreTests: XCTestCase {
         XCTAssertEqual(ClipboardStore(directory: directory).items().map(\.id), items.map(\.id))
     }
 
+    func testTextWithZerosRoundTripsAndDeduplicatesAfterReopen() throws {
+        let values = ["", "\0", "\0leading", "middle\0suffix", "trailing\0", "\0\0",
+                      "same\0one", "same\0two", "中文🙂e\u{301}\0尾"]
+        func write() throws -> [Int64] {
+            let store = ClipboardStore(directory: directory)
+            return try values.map { try XCTUnwrap(store.add(text($0))) }
+        }
+        let ids = try write()
+        let reopened = ClipboardStore(directory: directory)
+        for (id, value) in zip(ids, values) {
+            let item = try XCTUnwrap(reopened.item(id: id))
+            XCTAssertEqual(Data(item.text.utf8), Data(value.utf8))
+            XCTAssertEqual(item.byteSize, value.utf8.count)
+            XCTAssertEqual(reopened.add(text(value)), id)
+        }
+        XCTAssertEqual(reopened.statistics().count, values.count)
+        XCTAssertEqual(reopened.statistics().bytes, values.reduce(0) { $0 + $1.utf8.count })
+    }
+
+    func testRecognizedTextWithZerosSurvivesReopen() throws {
+        let store = ClipboardStore(directory: directory)
+        let image = ClipboardCapture(kind: .image, text: "", imagePNG: Data([0x89, 0x50, 0x4E, 0x47]))
+        let id = try XCTUnwrap(store.add(image))
+        let recognized = "\0识别🙂\0结果\0"
+        store.setRecognizedText(recognized, id: id)
+        let reopened = ClipboardStore(directory: directory)
+        let read = try XCTUnwrap(reopened.item(id: id)?.recognizedText)
+        XCTAssertEqual(Data(read.utf8), Data(recognized.utf8))
+        XCTAssertTrue(reopened.imagesWithoutRecognizedText(limit: 10).isEmpty)
+    }
+
     func testCleanupKeepsPinnedItems() throws {
         let store = ClipboardStore(directory: directory)
         let start = Date(timeIntervalSince1970: 2_000_000)
