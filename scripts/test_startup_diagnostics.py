@@ -14,6 +14,44 @@ spec.loader.exec_module(diagnostics)
 
 
 class StartupDiagnosticsTests(unittest.TestCase):
+    def testClockBoundaryCannotHideAnInstalledEventFromTheOwnedProcess(self):
+        records = [
+            {"processID": 54, "timestamp": "2026-10-15 20:12:45.500", "eventMessage": "installed plugin old"},
+            {"processID": 55, "timestamp": "2026-10-15 20:12:44.893", "eventMessage": "installed plugin teleprompter"},
+        ]
+
+        def query(command, **kwargs):
+            available = records
+            if "--start" in command:
+                lower = command[command.index("--start") + 1]
+                available = [item for item in available if item["timestamp"] >= lower]
+            return subprocess.CompletedProcess(command, 0, json.dumps(available), "")
+
+        result = diagnostics.process_logs({55}, runner=query)
+        self.assertEqual([item["eventMessage"] for item in result], ["installed plugin teleprompter"])
+        self.assertIn("Pop[55:", diagnostics.render_logs(result))
+
+    def testOtherProcessCannotSatisfyTheCurrentInstallAssertion(self):
+        def query(command, **kwargs):
+            return subprocess.CompletedProcess(command, 0, json.dumps([
+                {"processID": 54, "eventMessage": "installed plugin teleprompter"}]), "")
+        self.assertEqual(diagnostics.process_logs({55}, runner=query), [])
+
+    def testFailedReadCannotReturnApparentlySuccessfulPartialLogs(self):
+        def query(command, **kwargs):
+            return subprocess.CompletedProcess(command, 7, json.dumps([
+                {"processID": 55, "eventMessage": "installed plugin teleprompter"}]), "log store unavailable")
+        with self.assertRaises(RuntimeError):
+            diagnostics.process_logs({55}, runner=query)
+
+    def testUnknownLogSchemaAndMissingProcessIdentityFailClosed(self):
+        for payload in ("not JSON", "{}", '[{"eventMessage":"installed plugin teleprompter"}]'):
+            with self.subTest(payload=payload), self.assertRaises(ValueError):
+                diagnostics.process_logs({55}, runner=lambda command, **kwargs:
+                                         subprocess.CompletedProcess(command, 0, payload, ""))
+        with self.assertRaises(ValueError):
+            diagnostics.process_logs(set())
+
     def invoke_exit_hook(self, root, status, broken_output=False):
         output = root / "out"
         if broken_output:
