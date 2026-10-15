@@ -1,6 +1,15 @@
 name: Emoji rendering measurements
 on:
   workflow_dispatch:
+  push:
+    branches: [codex/emoji-render-probe]
+    paths:
+      - .github/workflows/emoji-render-probe.yml
+      - scripts/emoji-render-probe.py
+      - Pop/UI/OverlayRenderProbe.swift
+      - Pop/UI/Glass.swift
+      - Pop/UI/Overlay.swift
+      - Pop/App/OverlayDemo.swift
 permissions:
   contents: read
 concurrency:
