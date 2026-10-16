@@ -19,6 +19,28 @@ renderProbe.end 22 2
 
 
 class RenderingProbeTests(unittest.TestCase):
+    def testDiagnosticSampleBudgetIsReservedForTheTargetPhase(self):
+        self.assertEqual(probe.target_stalls("stall 1 0.5\nring 2 6\n"), [])
+        self.assertEqual(probe.target_stalls("stall 1 0.5\nemojiSymbols.start 10 2\nstall 9 0.5\nstall 11 0.5\n"), ["stall 11 0.5"])
+
+    def testOriginalFullPrefixAndQuickStepContract(self):
+        quick, fixture = probe.full_prefix_configuration()
+        self.assertIn("emojiSymbols", quick)
+        self.assertIn("focusSounds", quick)
+        self.assertNotIn("ring", quick)
+        for appearance, steps in fixture["appearances"].items():
+            self.assertEqual(len(steps), 123)
+            text = "renderProbe.workload full-prefix\n" + "\n".join(
+                f"{name} {index + 1} {scale}" for index, (name, scale) in enumerate(steps))
+            self.assertEqual(probe.verify_full_prefix(text, appearance), 123)
+            for bad in [text.replace("loaded 2", "missing-step 2", 1),
+                        text.replace("emojiSymbols 123 2.0", "emojiSymbols 123 6.0"),
+                        text.replace("ring 1", "ring nan", 1),
+                        text + "\nrenderProbe.workload full-prefix"]:
+                with self.subTest(appearance=appearance, log=bad[:70]):
+                    with self.assertRaises(ValueError):
+                        probe.verify_full_prefix(bad, appearance)
+
     def testFailedPerformanceMeasurementRemainsFailed(self):
         result = probe.parse_demo(VALID, "baseline")
         self.assertEqual(result["emoji_max_hang"], 2.86)

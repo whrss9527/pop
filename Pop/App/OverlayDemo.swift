@@ -40,8 +40,17 @@ enum OverlayDemo {
         // 插件包的演示步骤用
         let demo = PluginHost.DemoContext(screen: screen, center: center, overlay: overlay, cardRegion: cardRegion)
         if ProcessInfo.processInfo.environment["POP_RENDER_PROBE"] == "1" {
-            runRenderProbe(in: demo)
-            return
+            guard let variant = OverlayRenderProbe.current, let workload = OverlayRenderProbe.workload else {
+                log("renderProbe.error invalid-configuration")
+                NSApp.terminate(nil)
+                return
+            }
+            if workload == .isolated {
+                runRenderProbe(in: demo)
+                return
+            }
+            log("renderProbe.variant \(variant.rawValue)")
+            log("renderProbe.workload full-prefix")
         }
 
         let installed = Set(settings.installedPlugins)
@@ -333,6 +342,7 @@ enum OverlayDemo {
 
             // 插件包的步骤：占用空间
             await playPluginScenes(after: "pdfPages", in: demo, unit: unit, holdTime: holdTime)
+            if OverlayRenderProbe.workload == .fullPrefix { return }
 
             // 给 PDF 加密码：两次输入的密码一样
             await pause(holdTime)
@@ -839,6 +849,15 @@ enum OverlayDemo {
             Self.step(scene.name)
             await pause(min(scene.hold * sceneUnit, hold(sceneUnit)))
             scene.hide()
+            if scene.name == "emojiSymbols", OverlayRenderProbe.workload == .fullPrefix {
+                // 到此之前仍沿完整演示的原步骤/动画执行；只在专用采集后退出。
+                await pause(6)
+                context.overlay.hide(animated: false)
+                await pause(1)
+                Self.step("renderProbe.end")
+                NSApp.terminate(nil)
+                return
+            }
             wait = scene.hold * sceneUnit >= hold(sceneUnit) ? 0.25 * sceneUnit : hold(sceneUnit)
         }
         // 主流程接下来的步骤照旧放慢

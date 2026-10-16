@@ -11,5 +11,13 @@ enum OverlayRenderProbe: String {
         return Self(rawValue: environment["POP_RENDER_PROBE_VARIANT"] ?? "")
     }
 
+    enum Workload: String { case isolated, fullPrefix = "full-prefix" }
+
+    static func workload(in environment: [String: String]) -> Workload? {
+        guard selected(in: environment) != nil else { return nil }
+        return Workload(rawValue: environment["POP_RENDER_PROBE_WORKLOAD"] ?? "isolated")
+    }
+
     static let current = selected(in: ProcessInfo.processInfo.environment)
+    static let workload = workload(in: ProcessInfo.processInfo.environment)
 }
