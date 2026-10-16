@@ -33,6 +33,7 @@ Pop's interface is available in English and Simplified Chinese and follows your 
 - **Add your own actions**: turn URLs, shell scripts, JavaScript or Shortcuts into plugins, or install one from the plugin library with a click.
 - **Install only what you use**: many actions are separate plugins. Install one when you need it and uninstall it when you don't; each shows how much space it takes.
 - **Handy tools**: clipboard history, pinning to the screen, screenshot annotation, color picker and screen ruler, plus AI polish, summary and explanations.
+- **Settings backup**: export settings and custom plugins in Settings → Backup, then import them on another Mac. GitHub and App Store builds do not provide automatic iCloud sync.
 - **Your data stays with you**: Pop has no servers. Clipboard history stays on your Mac and API keys stay in the keychain.
 
 ## Install

@@ -1671,11 +1671,10 @@
 "云端配置来自" = "Cloud settings from";
 "立即同步" = "Sync Now";
 "同步圆盘布局、已安装的功能、自己添加的插件、直达规则、唤起方式、翻译和剪贴板设置（剪贴板历史本身只留在本机）。数据存在你自己的 iCloud 账号里（iCloud 键值存储），Pop 没有任何服务器。多台 Mac 都改过时，以最后一次修改为准。" = "Syncs the ring layout, installed actions, your plugins, rules, trigger, translation and clipboard settings (clipboard history itself stays on this Mac). Data is stored in your own iCloud account (iCloud key-value storage); Pop has no servers. If several Macs make changes, the latest one wins.";
-"当前构建没有 iCloud 能力：需要用付费开发者账号签名，并使用带 iCloud 的 entitlements（见 README）。" = "This build doesn’t include iCloud. It must be signed with a paid developer account using the iCloud entitlements (see the README).";
 "导出设置…" = "Export Settings…";
 "导入设置…" = "Import Settings…";
 "导出和导入" = "Export and Import";
-"把设置和自己写的插件存成一个文件，在另一台 Mac 上导入；没有 iCloud 同步的版本也能这样搬过去。AI 的 API Key 只在本机钥匙串里，不会导出。" = "Save your settings and plugins to a file and import it on another Mac, even with builds that don’t sync through iCloud. The AI API key stays in this Mac’s keychain and isn’t exported.";
+"把设置和自己写的插件存成一个文件，在另一台 Mac 上导入。AI 的 API Key 只在本机钥匙串里，不会导出。" = "Save your settings and custom plugins to a file and import it on another Mac. The AI API key stays in this Mac’s keychain and isn’t exported.";
 "已导出到「%@」" = "Exported to “%@”";
 "读不了这个文件：%@" = "Can’t read this file: %@";
 "导入「%@」？" = "Import “%@”?";
@@ -3218,3 +3217,4 @@
 "找不到重新启动辅助脚本" = "The relaunch helper script is missing";
 
 "无法重新启动 Pop" = "Unable to restart Pop";
+"备份" = "Backup";
