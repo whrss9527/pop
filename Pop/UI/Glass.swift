@@ -28,7 +28,7 @@ struct GlassSurface<S: InsettableShape>: ViewModifier {
     @ViewBuilder
     func body(content: Content) -> some View {
         #if compiler(>=6.2)
-        if #available(macOS 26, *) {
+        if #available(macOS 26, *), OverlayRenderProbe.current != .legacyGlass {
             content.glassEffect(tint.map { Glass.regular.tint($0) } ?? .regular, in: shape)
         } else {
             blurred(content)

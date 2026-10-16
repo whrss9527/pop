@@ -39,6 +39,19 @@ enum OverlayDemo {
         logRegion(cardRegion, screen: screen)
         // 插件包的演示步骤用
         let demo = PluginHost.DemoContext(screen: screen, center: center, overlay: overlay, cardRegion: cardRegion)
+        if ProcessInfo.processInfo.environment["POP_RENDER_PROBE"] == "1" {
+            guard let variant = OverlayRenderProbe.current, let workload = OverlayRenderProbe.workload else {
+                log("renderProbe.error invalid-configuration")
+                NSApp.terminate(nil)
+                return
+            }
+            if workload == .isolated {
+                runRenderProbe(in: demo)
+                return
+            }
+            log("renderProbe.variant \(variant.rawValue)")
+            log("renderProbe.workload full-prefix")
+        }
 
         let installed = Set(settings.installedPlugins)
         let text = ContentClassifier.classify(.text("Liquid glass"))
@@ -329,6 +342,7 @@ enum OverlayDemo {
 
             // 插件包的步骤：占用空间
             await playPluginScenes(after: "pdfPages", in: demo, unit: unit, holdTime: holdTime)
+            if OverlayRenderProbe.workload == .fullPrefix { return }
 
             // 给 PDF 加密码：两次输入的密码一样
             await pause(holdTime)
@@ -783,6 +797,35 @@ enum OverlayDemo {
 
     /// 一步停多久再换下一步：截图脚本在每一步开始后最多 3 秒（放慢 6 倍时，也就是 0.5 × 倍数）拍照，
     /// 拍完留一点余量就换，不多等
+    /// 固定相邻两张卡片；不同实验由独立进程执行，全部测量结束后退出。
+    private static func runRenderProbe(in context: PluginHost.DemoContext) {
+        let scenes = PluginHost.shared.demoScenes(after: "pdfPages")
+        guard let variant = OverlayRenderProbe.current,
+              let previous = scenes.first(where: { $0.name == "focusSounds" }),
+              let current = scenes.first(where: { $0.name == "emojiSymbols" }) else {
+            log("renderProbe.error missing-variant-or-scene")
+            NSApp.terminate(nil)
+            return
+        }
+        log("renderProbe.variant \(variant.rawValue)")
+        Task { @MainActor in
+            await pause(1.5)
+            Motion.timeScale = 2
+            step(previous.name + ".start")
+            _ = await previous.show(context)
+            step(previous.name)
+            await pause(2)
+            step(current.name + ".start")
+            _ = await current.show(context)
+            step(current.name)
+            await pause(6)
+            context.overlay.hide(animated: false)
+            await pause(1)
+            step("renderProbe.end")
+            NSApp.terminate(nil)
+        }
+    }
+
     private static func hold(_ unit: Double) -> Double {
         0.5 * unit + 1.0
     }
@@ -806,6 +849,15 @@ enum OverlayDemo {
             Self.step(scene.name)
             await pause(min(scene.hold * sceneUnit, hold(sceneUnit)))
             scene.hide()
+            if scene.name == "emojiSymbols", OverlayRenderProbe.workload == .fullPrefix {
+                // 到此之前仍沿完整演示的原步骤/动画执行；只在专用采集后退出。
+                await pause(6)
+                context.overlay.hide(animated: false)
+                await pause(1)
+                Self.step("renderProbe.end")
+                NSApp.terminate(nil)
+                return
+            }
             wait = scene.hold * sceneUnit >= hold(sceneUnit) ? 0.25 * sceneUnit : hold(sceneUnit)
         }
         // 主流程接下来的步骤照旧放慢
