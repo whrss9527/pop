@@ -21,6 +21,10 @@ MATERIAL_CONDITIONS = (("baseline-1", True, False, "baseline"),
                        ("legacy-1", True, False, "legacy-glass"),
                        ("legacy-2", True, False, "legacy-glass"),
                        ("baseline-2", True, False, "baseline"))
+GHOST_CONDITIONS = (("baseline-1", True, False, "baseline"),
+                    ("no-ghost-1", True, False, "no-ghost"),
+                    ("no-ghost-2", True, False, "no-ghost"),
+                    ("baseline-2", True, False, "baseline"))
 
 
 def owned_app_pids(processes, executable):
@@ -65,8 +69,9 @@ def run_condition(app, output, name, readback, sampling, variant="baseline"):
             row["verified_prefix_steps"] = probe.verify_full_prefix(text, appearance)
             row["appearance"] = appearance
             events = [json.loads(line) for line in (output / "diagnostics" / f"overlay-{appearance}.jsonl").read_text().splitlines()]
-            if not any(e.get("event") == "ghostCreated" for e in events):
-                raise ValueError("baseline缺少原窗口退场事件")
+            has_ghost = any(e.get("event") == "ghostCreated" for e in events)
+            if has_ghost != (variant != "no-ghost"):
+                raise ValueError("退场事件与实验条件不符")
             row["sample_reports"] = len(list((output / "diagnostics" / f"samples-{appearance}").glob("*.txt")))
             if not sampling and row["sample_reports"] != 0:
                 raise ValueError("关闭采样的条件仍有采样")
@@ -113,8 +118,11 @@ def main():
     parser.add_argument("app", type=Path)
     parser.add_argument("output", type=Path)
     parser.add_argument("--cycles", type=int, choices=(1,), default=1)
-    parser.add_argument("--material-controls", action="store_true",
+    controls = parser.add_mutually_exclusive_group()
+    controls.add_argument("--material-controls", action="store_true",
                         help="固定读回开启/采样关闭，按baseline/legacy/legacy/baseline采集")
+    controls.add_argument("--ghost-controls", action="store_true",
+                          help="按baseline/no-ghost/no-ghost/baseline比较既有退场诊断")
     args = parser.parse_args()
     if sys.platform != "darwin" or os.environ.get("GITHUB_ACTIONS") != "true" or os.environ.get("RUNNER_ENVIRONMENT") != "github-hosted":
         parser.error("只在临时托管Mac执行，不接触个人App进程")
@@ -127,11 +135,14 @@ def main():
                 "xcode": subprocess.check_output(["xcodebuild", "-version"], text=True),
                 "executable_sha256": hashlib.sha256((app / "Contents/MacOS/Pop").read_bytes()).hexdigest(),
                 "workload": ("original screenshot driver prefix; baseline/legacy/legacy/baseline; readback on and sampling off"
-                             if args.material_controls else "original screenshot driver prefix; four readback/sampling conditions"),
+                             if args.material_controls else
+                             "original screenshot driver prefix; baseline/no-ghost/no-ghost/baseline; readback on and sampling off"
+                             if args.ghost_controls else "original screenshot driver prefix; four readback/sampling conditions"),
                 "acceptance": "collection only; all original gate exit codes and failures retained"}
     (output / "metadata.json").write_text(json.dumps(metadata, indent=2) + "\n")
     results = []
-    conditions = MATERIAL_CONDITIONS if args.material_controls else tuple((*condition, "baseline") for condition in CONDITIONS)
+    conditions = (GHOST_CONDITIONS if args.ghost_controls else MATERIAL_CONDITIONS if args.material_controls
+                  else tuple((*condition, "baseline") for condition in CONDITIONS))
     try:
         for name, readback, sampling, variant in conditions:
             results.append(run_condition(app, output / name, name, readback, sampling, variant))
