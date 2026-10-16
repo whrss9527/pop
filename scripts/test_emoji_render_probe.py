@@ -46,6 +46,11 @@ class RenderingProbeTests(unittest.TestCase):
         self.assertEqual(result["emoji_max_hang"], 2.86)
         self.assertFalse(result["within_existing_two_second_limit"])
 
+    def testExactTwoSecondBoundaryMatchesTheOriginalScreenshotGate(self):
+        for duration, passed in [(1.999, True), (2.0, False), (2.001, False)]:
+            result = probe.parse_demo(VALID.replace("hang 13.2 2.86", f"hang 13.2 {duration}"), "baseline")
+            self.assertEqual(result["within_existing_two_second_limit"], passed)
+
     def testExistingWatchdogPauseAnnotationRetainsItsAdjustedHangDuration(self):
         result = probe.parse_demo(VALID.replace("hang 13.2 2.86", "hang 13.2 2.86 paused 0.329"), "baseline")
         self.assertEqual(result["emoji_max_hang"], 2.86)
