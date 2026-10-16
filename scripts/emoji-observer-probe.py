@@ -5,6 +5,7 @@ import hashlib
 import importlib.util
 import json
 import os
+import re
 from pathlib import Path
 import signal
 import subprocess
@@ -57,8 +58,17 @@ def run_condition(app, output, name, readback, sampling):
                 raise ValueError("关闭采样的条件仍有采样")
             rows.append(row)
         images = list(output.glob("*.jpg"))
-        if bool(images) != readback:
-            raise ValueError("图片读回条件与实际输出不符")
+        reported = re.findall(r"^(light|dark)：截图 ([0-9]+) 张", (output / "driver.log").read_text(), re.MULTILINE)
+        if len(reported) != 2 or {row[0] for row in reported} != {"light", "dark"}:
+            raise ValueError("缺少原驱动的完整图片计数")
+        for appearance, count in reported:
+            actual = sum(path.name.startswith("dark-") == (appearance == "dark") for path in images)
+            if actual != int(count) or (readback and actual == 0) or (not readback and actual != 0):
+                raise ValueError("图片读回条件或部分图片输出不符")
+        for path in images:
+            with path.open("rb") as file:
+                if file.read(3) != b"\xff\xd8\xff":
+                    raise ValueError("截图不是有效JPEG输出")
         failed_gate = any(hang["duration"] >= 2 for row in rows for hang in row["hangs"])
         if failed_gate != (process.returncode == 1):
             raise ValueError("驱动退出与原两秒门禁不符，不能视作完整采集")

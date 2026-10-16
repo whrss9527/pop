@@ -45,7 +45,7 @@ class ObserverControlsTests(unittest.TestCase):
 
     def testOriginalGateFailureIsRetainedWhilePartialOrInconsistentDataRejectsCollection(self):
         fixture = Path(__file__).with_name("fixtures") / "emoji-full-prefix.json"
-        for kind in ("complete-failed-gate", "partial", "false-green"):
+        for kind in ("complete-failed-gate", "partial", "false-green", "missing-image"):
             with self.subTest(kind=kind), tempfile.TemporaryDirectory() as directory:
                 root = Path(directory)
                 driver = root / "overlay-screenshots.sh"
@@ -59,6 +59,8 @@ class ObserverControlsTests(unittest.TestCase):
                     "  text+='\\nhang 122.5 2.90\\nrenderProbe.end 130 2\\n'\n"
                     " (d/f'demo-{appearance}.log').write_text(text)\n"
                     " (d/f'overlay-{appearance}.jsonl').write_text('{\"event\":\"ghostCreated\"}\\n')\n"
+                    f" print(appearance + '：截图 {2 if kind == 'missing-image' else 0} 张')\n"
+                    f"if {kind!r} == 'missing-image': (out/'only-one.jpg').write_bytes(bytes([255,216,255]))\n"
                     f"raise SystemExit({0 if kind == 'false-green' else 1})\n")
                 driver.chmod(0o755)
                 with patch.object(observer, "__file__", str(root / "probe.py")), patch.object(observer, "stop_app") as cleanup:
@@ -69,7 +71,7 @@ class ObserverControlsTests(unittest.TestCase):
                         self.assertEqual(result["appearances"][0]["emoji_max_hang"], 2.90)
                     else:
                         with self.assertRaises(ValueError):
-                            observer.run_condition(root / "Pop.app", root / "out", "neither", False, False)
+                            observer.run_condition(root / "Pop.app", root / "out", "neither", kind == "missing-image", False)
                         self.assertIn("error", json.loads((root / "out/result.json").read_text()))
                     cleanup.assert_called_once()
                 self.assertTrue((root / "out/diagnostics/demo-light.log").exists())

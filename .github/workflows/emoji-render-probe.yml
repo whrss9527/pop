@@ -7,7 +7,7 @@ on:
         options: [isolated, full-prefix, observer]
         default: isolated
       cycles:
-        description: "Fixed1–3 cycles; empty uses isolated3/full-prefix1"
+        description: "Fixed1–3 cycles (observer1); empty uses isolated3/others1"
         default: ""
   push:
     branches: [codex/emoji-render-probe]
