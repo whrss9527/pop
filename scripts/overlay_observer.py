@@ -9,7 +9,10 @@ def configuration(environment):
     values = [environment.get(key) for key in ("POP_OBSERVER_READBACK", "POP_OBSERVER_SAMPLING")]
     if any(value not in ("0", "1") for value in values):
         raise ValueError("观察实验必须明确指定读回和采样条件")
-    return {"readback": values[0] == "1", "sampling": values[1] == "1"}
+    variant = environment.get("POP_OBSERVER_VARIANT", "baseline")
+    if variant not in ("baseline", "legacy-glass"):
+        raise ValueError("观察实验材质条件必须是baseline或legacy-glass")
+    return {"readback": values[0] == "1", "sampling": values[1] == "1", "variant": variant}
 
 
 def prefix_plan(plan, observer):
@@ -24,5 +27,8 @@ def prefix_plan(plan, observer):
 def app_environment(observer):
     if observer is None:
         return []
-    return ["--env", "POP_RENDER_PROBE=1", "--env", "POP_RENDER_PROBE_VARIANT=baseline",
+    variant = observer.get("variant", "baseline")
+    if variant not in ("baseline", "legacy-glass"):
+        raise ValueError("未知材质条件")
+    return ["--env", "POP_RENDER_PROBE=1", "--env", f"POP_RENDER_PROBE_VARIANT={variant}",
             "--env", "POP_RENDER_PROBE_WORKLOAD=full-prefix"]
