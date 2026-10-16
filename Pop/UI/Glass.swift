@@ -24,11 +24,12 @@ struct VisualEffectBackground: NSViewRepresentable {
 struct GlassSurface<S: InsettableShape>: ViewModifier {
     var shape: S
     var tint: Color?
+    var frosted = false
 
     @ViewBuilder
     func body(content: Content) -> some View {
         #if compiler(>=6.2)
-        if #available(macOS 26, *), OverlayRenderProbe.current != .legacyGlass {
+        if #available(macOS 26, *), !frosted, OverlayRenderProbe.current != .legacyGlass {
             content.glassEffect(tint.map { Glass.regular.tint($0) } ?? .regular, in: shape)
         } else {
             blurred(content)
@@ -66,8 +67,8 @@ struct GlassSurface<S: InsettableShape>: ViewModifier {
 
 extension View {
     /// 给视图加一块玻璃底，形状由 shape 决定。
-    func glassSurface<S: InsettableShape>(_ shape: S, tint: Color? = nil) -> some View {
-        modifier(GlassSurface(shape: shape, tint: tint))
+    func glassSurface<S: InsettableShape>(_ shape: S, tint: Color? = nil, frosted: Bool = false) -> some View {
+        modifier(GlassSurface(shape: shape, tint: tint, frosted: frosted))
     }
 }
 

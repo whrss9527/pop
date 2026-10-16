@@ -4,10 +4,10 @@ on:
     inputs:
       workload:
         type: choice
-        options: [isolated, full-prefix, observer, material]
+        options: [isolated, full-prefix, observer, material, emoji]
         default: isolated
       cycles:
-        description: "Fixed1–3 cycles (observer/material1); empty uses isolated3/others1"
+        description: "Fixed1–3 cycles (observer/material/emoji1); empty uses isolated3/others1"
         default: ""
   push:
     branches: [codex/emoji-render-probe]
@@ -55,10 +55,11 @@ jobs:
         run: |
           args=(--workload "$WORKLOAD")
           if [[ -n "$CYCLES" ]]; then args+=(--cycles "$CYCLES"); fi
-          if [[ "$WORKLOAD" == observer || "$WORKLOAD" == material ]]; then
+          if [[ "$WORKLOAD" == observer || "$WORKLOAD" == material || "$WORKLOAD" == emoji ]]; then
             args=()
             if [[ -n "$CYCLES" ]]; then args+=(--cycles "$CYCLES"); fi
             if [[ "$WORKLOAD" == material ]]; then args+=(--material-controls); fi
+            if [[ "$WORKLOAD" == emoji ]]; then args+=(--emoji-controls); fi
             python3 scripts/emoji-observer-probe.py "$APP" build/render-measurements "${args[@]}"
           else
             python3 scripts/emoji-render-probe.py "$APP" build/render-measurements "${args[@]}"

@@ -21,6 +21,10 @@ MATERIAL_CONDITIONS = (("baseline-1", True, False, "baseline"),
                        ("legacy-1", True, False, "legacy-glass"),
                        ("legacy-2", True, False, "legacy-glass"),
                        ("baseline-2", True, False, "baseline"))
+EMOJI_CONDITIONS = (("candidate-1", True, False, "baseline"),
+                    ("native-1", True, False, "native-emoji"),
+                    ("native-2", True, False, "native-emoji"),
+                    ("candidate-2", True, False, "baseline"))
 
 
 def owned_app_pids(processes, executable):
@@ -113,8 +117,11 @@ def main():
     parser.add_argument("app", type=Path)
     parser.add_argument("output", type=Path)
     parser.add_argument("--cycles", type=int, choices=(1,), default=1)
-    parser.add_argument("--material-controls", action="store_true",
+    controls = parser.add_mutually_exclusive_group()
+    controls.add_argument("--material-controls", action="store_true",
                         help="固定读回开启/采样关闭，按baseline/legacy/legacy/baseline采集")
+    controls.add_argument("--emoji-controls", action="store_true",
+                          help="只恢复emoji原生表面的同构建交错对照")
     args = parser.parse_args()
     if sys.platform != "darwin" or os.environ.get("GITHUB_ACTIONS") != "true" or os.environ.get("RUNNER_ENVIRONMENT") != "github-hosted":
         parser.error("只在临时托管Mac执行，不接触个人App进程")
@@ -127,11 +134,14 @@ def main():
                 "xcode": subprocess.check_output(["xcodebuild", "-version"], text=True),
                 "executable_sha256": hashlib.sha256((app / "Contents/MacOS/Pop").read_bytes()).hexdigest(),
                 "workload": ("original screenshot driver prefix; baseline/legacy/legacy/baseline; readback on and sampling off"
-                             if args.material_controls else "original screenshot driver prefix; four readback/sampling conditions"),
+                             if args.material_controls else
+                             "original screenshot driver prefix; emoji candidate/native/native/candidate; readback on and sampling off"
+                             if args.emoji_controls else "original screenshot driver prefix; four readback/sampling conditions"),
                 "acceptance": "collection only; all original gate exit codes and failures retained"}
     (output / "metadata.json").write_text(json.dumps(metadata, indent=2) + "\n")
     results = []
-    conditions = MATERIAL_CONDITIONS if args.material_controls else tuple((*condition, "baseline") for condition in CONDITIONS)
+    conditions = (EMOJI_CONDITIONS if args.emoji_controls else MATERIAL_CONDITIONS if args.material_controls
+                  else tuple((*condition, "baseline") for condition in CONDITIONS))
     try:
         for name, readback, sampling, variant in conditions:
             results.append(run_condition(app, output / name, name, readback, sampling, variant))

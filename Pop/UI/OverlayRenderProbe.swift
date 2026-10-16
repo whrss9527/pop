@@ -5,6 +5,7 @@ enum OverlayRenderProbe: String {
     case baseline
     case noGhost = "no-ghost"
     case legacyGlass = "legacy-glass"
+    case nativeEmoji = "native-emoji"
 
     static func selected(in environment: [String: String]) -> Self? {
         guard environment["POP_DEMO"] == "1", environment["POP_RENDER_PROBE"] == "1" else { return nil }

@@ -7,6 +7,7 @@ struct CardContainer<Content: View>: View {
     let title: String
     var subtitle: String? = nil
     var width: CGFloat = 380
+    var frostedGlass = false
     let onClose: () -> Void
     @ViewBuilder let content: Content
 
@@ -37,7 +38,7 @@ struct CardContainer<Content: View>: View {
         }
         .padding(16)
         .frame(width: width, alignment: .leading)
-        .glassSurface(RoundedRectangle(cornerRadius: 20, style: .continuous))
+        .glassSurface(RoundedRectangle(cornerRadius: 20, style: .continuous), frosted: frostedGlass)
         .padding(Self.shadowPadding)
     }
 }

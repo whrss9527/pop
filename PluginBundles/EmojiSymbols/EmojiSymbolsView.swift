@@ -171,7 +171,9 @@ struct EmojiSymbolsView: View {
     private let cell: CGFloat = 38
 
     var body: some View {
-        CardContainer(title: String(localized: "表情和符号"), width: 440, onClose: onClose) {
+        // 将密集字形卡片与原生玻璃合成隔离；只有专用演示对照恢复该表面。
+        CardContainer(title: String(localized: "表情和符号"), width: 440,
+                      frostedGlass: OverlayRenderProbe.current != .nativeEmoji, onClose: onClose) {
             HStack(spacing: 8) {
                 TextField("搜表情和符号：笑、猫、对勾、箭头、smile", text: $model.query)
                     .textFieldStyle(.roundedBorder)

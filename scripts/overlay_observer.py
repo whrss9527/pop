@@ -10,8 +10,8 @@ def configuration(environment):
     if any(value not in ("0", "1") for value in values):
         raise ValueError("观察实验必须明确指定读回和采样条件")
     variant = environment.get("POP_OBSERVER_VARIANT", "baseline")
-    if variant not in ("baseline", "legacy-glass"):
-        raise ValueError("观察实验材质条件必须是baseline或legacy-glass")
+    if variant not in ("baseline", "legacy-glass", "native-emoji"):
+        raise ValueError("观察实验材质条件必须是baseline、legacy-glass或native-emoji")
     return {"readback": values[0] == "1", "sampling": values[1] == "1", "variant": variant}
 
 
@@ -28,7 +28,7 @@ def app_environment(observer):
     if observer is None:
         return []
     variant = observer.get("variant", "baseline")
-    if variant not in ("baseline", "legacy-glass"):
+    if variant not in ("baseline", "legacy-glass", "native-emoji"):
         raise ValueError("未知材质条件")
     return ["--env", "POP_RENDER_PROBE=1", "--env", f"POP_RENDER_PROBE_VARIANT={variant}",
             "--env", "POP_RENDER_PROBE_WORKLOAD=full-prefix"]

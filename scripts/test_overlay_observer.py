@@ -54,6 +54,16 @@ class ObserverControlsTests(unittest.TestCase):
         self.assertEqual(len({row[0] for row in rows}), 4)
         self.assertTrue(all(row[1] and not row[2] for row in rows))
 
+    def testEmojiComparisonChangesOnlyDedicatedLocalVariantInBalancedOrder(self):
+        rows = observer.EMOJI_CONDITIONS
+        self.assertEqual([row[3] for row in rows], ["baseline", "native-emoji", "native-emoji", "baseline"])
+        self.assertEqual(len({row[0] for row in rows}), 4)
+        self.assertTrue(all(row[1] and not row[2] for row in rows))
+        base = {"POP_OBSERVER_PROBE": "1", "GITHUB_ACTIONS": "true", "RUNNER_ENVIRONMENT": "github-hosted",
+                "POP_OBSERVER_READBACK": "1", "POP_OBSERVER_SAMPLING": "0", "POP_OBSERVER_VARIANT": "native-emoji"}
+        self.assertIn("POP_RENDER_PROBE_VARIANT=native-emoji", app_environment(configuration(base)))
+        self.assertIsNone(configuration({"POP_OBSERVER_VARIANT": "native-emoji"}))
+
     def testPrefixTrimPreservesOriginalOffsetsAndRejectsMissingTarget(self):
         plan = [("ring", [0.25, 1.4]), ("emojiSymbols", [3]), ("later", [3])]
         self.assertEqual(prefix_plan(plan, {}), plan[:2])

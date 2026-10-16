@@ -18,7 +18,7 @@ final class OverlayRenderProbeTests: XCTestCase {
     }
 
     func testExperimentsRequireBothDedicatedAndDemoOptIn() {
-        for variant in ["baseline", "no-ghost", "legacy-glass"] {
+        for variant in ["baseline", "no-ghost", "legacy-glass", "native-emoji"] {
             XCTAssertNil(OverlayRenderProbe.selected(in: ["POP_RENDER_PROBE_VARIANT": variant]))
             XCTAssertNil(OverlayRenderProbe.selected(in: ["POP_DEMO": "1", "POP_RENDER_PROBE_VARIANT": variant]))
             XCTAssertNil(OverlayRenderProbe.selected(in: ["POP_RENDER_PROBE": "1", "POP_RENDER_PROBE_VARIANT": variant]))

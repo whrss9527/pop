@@ -181,3 +181,6 @@ make signing-certificate    # 即 scripts/create-signing-certificate.sh，文件
 测量工作流的`observer`负载使用原截图驱动、LaunchServices open、baseline产品渲染及已验证完整前缀。图片读回/并行采样的四条件各跑light和dark，保留原quick-step/6倍/2倍时间表。开关需明确POP_OBSERVER_PROBE和临时托管runner；普通CI仍默认截图/采样及两秒门槛。采集器记录原驱动退出码，只在完整原始日志确实超限时把性能失败作为完成的数据保留；前缀缺失、图片条件不符或退出码矛盾均拒绝完成。原截图、日志和采样全部保留。本轮固定一轮四条件，不预设因果结论。
 
 测量工作流新增`material`负载，复用原截图驱动及完整前缀；读回固定开启、采样固定关闭，以baseline→legacy-glass→legacy-glass→baseline四条件各跑light/dark。只切换已有托管诊断材质标记，普通CI默认不变。所有图片、前缀及原门禁退出仍需一致；每条件一个新进程、同一构建和runner，交错顺序不等于已消除所有共享缓存影响。采集成功不是性能通过，不凭少量未复现关闭父事项。精确2.000秒与原截图门禁一样算失败。
+
+
+`workload=emoji` 固定原始完整前缀、图片读回开启与采样关闭，按候选/native/native/候选比较emoji局部表面。`native-emoji` 仅在专用演示诊断中恢复该卡片的原生材质；其他卡片和按钮保留产品默认。采集完成不等于原2秒门禁通过，合并前必须检查原退出、两次对照与真实图片。
