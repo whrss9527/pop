@@ -19,16 +19,24 @@ CONDITIONS = (("both", True, True), ("readback-only", True, False),
               ("sampling-only", False, True), ("neither", False, False))
 
 
-def stop_app(app):
-    executable = str(app / "Contents/MacOS/Pop")
-    processes = subprocess.check_output(["ps", "-axo", "pid=,comm="], text=True)
+def owned_app_pids(processes, executable):
+    result = []
     for row in processes.splitlines():
         fields = row.strip().split(None, 1)
-        if len(fields) == 2 and fields[1] == executable:
-            try:
-                os.kill(int(fields[0]), signal.SIGTERM)
-            except ProcessLookupError:
-                pass
+        if len(fields) == 2 and fields[1] == executable and fields[0].isdigit() and int(fields[0]) > 1:
+            result.append(int(fields[0]))
+    return result
+
+
+def stop_app(app):
+    executable = str(app / "Contents/MacOS/Pop")
+    # -ww prevents terminal width from truncating the path used for ownership.
+    processes = subprocess.check_output(["ps", "-axww", "-o", "pid=,comm="], text=True)
+    for pid in owned_app_pids(processes, executable):
+        try:
+            os.kill(pid, signal.SIGTERM)
+        except ProcessLookupError:
+            pass
 
 
 def run_condition(app, output, name, readback, sampling):

@@ -14,6 +14,12 @@ spec.loader.exec_module(observer)
 
 
 class ObserverControlsTests(unittest.TestCase):
+    def testCleanupMatchesOnlyPositivePidsWithTheExactAppExecutablePath(self):
+        executable = "/owned folder/Pop.app/Contents/MacOS/Pop"
+        rows = (f"123 {executable}\n124 /other/Pop.app/Contents/MacOS/Pop\n"
+                f"125 {executable}-helper\n-1 {executable}\n0 {executable}\n")
+        self.assertEqual(observer.owned_app_pids(rows, executable), [123])
+
     def testOrdinaryDriverIgnoresIndividualTogglesAndRetainsPlan(self):
         self.assertIsNone(configuration({"POP_OBSERVER_READBACK": "0", "POP_OBSERVER_SAMPLING": "0"}))
         plan = [("ring", [1]), ("emojiSymbols", [3]), ("later", [3])]
