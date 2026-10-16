@@ -59,6 +59,9 @@ import os, shutil, subprocess, sys, threading, time
 
 log_path, work, out, scale_text, appearance, prefix, app, plugin_index, scripts = sys.argv[1:10]
 scale = float(scale_text)
+sys.path.insert(0, scripts)
+from overlay_observer import configuration, prefix_plan, app_environment
+observer = configuration(os.environ)
 
 # 边缘圆盘只拍停稳后的状态。OverlayDemo 对这些步骤固定用至多两倍动画速度。
 edge_cases = ["edge-top-8", "edge-right-8", "edge-bottom-8", "edge-left-8",
@@ -200,6 +203,7 @@ if appearance == "dark":
 # 两种外观使用同一组边缘用例，放在真实手势结束之后、单位换算之前。
 edge_index = next(i for i, (name, _) in enumerate(plan) if name == "unit")
 plan[edge_index:edge_index] = edge_plan
+plan = prefix_plan(plan, observer)
 print("边缘圆盘截图使用示例内容和模型悬停状态；不移动真实指针、不执行插件。")
 
 samples = os.path.join(work, f"samples-{appearance}")
@@ -211,6 +215,8 @@ def sample_stalls():
     GitHub 的 runner 上用 sudo（不用输密码），本机 sudo 要密码时直接采（Pop 是同一个用户开的）。
     sample 刚接上时要读几百个库的符号，很费 CPU：按 utility 的优先级跑，不和 Pop 抢；
     第一个演示步骤之前（Pop 正在启动、装载一百多个插件包）不采，那时一抢，启动就要多卡一两秒"""
+    if observer is not None and not observer["sampling"]:
+        return
     use_sudo = shutil.which("sudo") is not None and subprocess.run(["sudo", "-n", "true"], capture_output=True).returncode == 0
     seen, running, taken = set(), None, 0
     while not stop_sampling.is_set():
@@ -247,7 +253,7 @@ subprocess.run(["open", "-n", "--env", "POP_DEMO=1", "--env", f"POP_ANIMATION_SC
                 "--env", f"POP_DEMO_LOG={log_path}", "--env", f"POP_APPEARANCE={appearance}",
                 "--env", f"POP_OVERLAY_DIAGNOSTICS_LOG={os.path.join(work, 'overlay-' + appearance + '.jsonl')}",
                 "--env", f"POP_PLUGIN_INDEX_URL={plugin_index}", "--env", f"POP_PLUGIN_DIR={os.path.dirname(os.path.abspath(app))}",
-                "--env", "POP_DEMO_QUICK_STEPS=" + ",".join(quick), app], check=True)
+                "--env", "POP_DEMO_QUICK_STEPS=" + ",".join(quick), *app_environment(observer), app], check=True)
 
 def markers():
     """每一步开始的时间和这一步的动画放慢倍数（Pop 在步骤那一行里写着；没写时就是启动时给的倍数），以及最新的截图区域"""
@@ -261,6 +267,8 @@ def markers():
             if parts[0] == "region" and len(parts) >= 7:
                 region = [int(p) for p in parts[1:10]]
             elif parts[0] in ("hang", "stall"):
+                continue
+            elif observer is not None and parts[0] in ("renderProbe.variant", "renderProbe.workload"):
                 continue
             elif len(parts) >= 2:
                 result[parts[0]] = (float(parts[1]), float(parts[2]) if len(parts) >= 3 else scale)
@@ -306,8 +314,9 @@ for name, offsets in plan:
             raise SystemExit("演示没有写出截图区域")
         left, top, width, height = screen_rect(region)
         path = os.path.join(work, f"{prefix}{index:02d}-{name}-{taken:.2f}s.png")
-        subprocess.run(["screencapture", "-x", "-t", "png", f"-R{left},{top},{width},{height}", path], check=False)
-        shots.append(path)
+        if observer is None or observer["readback"]:
+            subprocess.run(["screencapture", "-x", "-t", "png", f"-R{left},{top},{width},{height}", path], check=False)
+            shots.append(path)
 def hang_lines():
     """主线程卡住的地方（Pop 里 HangWatchdog 写的 hang 行）：「外观 秒数 在哪两步之间」，和每次卡了几秒（按开始的时间）"""
     found, _ = markers()
@@ -353,7 +362,7 @@ def stall_report():
         summaries.extend("  " + line for line in lines)
     return summaries
 
-wait_for("end")
+wait_for("renderProbe.end" if observer is not None else "end")
 
 # 卡住的地方和采到的样记进 hangs.txt、stalls.txt，两遍都拍完以后一起看
 hangs, _, _ = hang_lines()
