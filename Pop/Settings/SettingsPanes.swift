@@ -1006,36 +1006,31 @@ struct SyncSettingsView: View {
 
     var body: some View {
         Form {
-            Section {
-                Toggle("通过 iCloud 同步设置", isOn: Binding(get: { sync.isEnabled }, set: { sync.setEnabled($0) }))
-                    .disabled(!sync.isAvailableInBuild)
-                LabeledContent("状态") {
-                    Text(sync.statusText)
-                        .foregroundStyle(.secondary)
-                }
-                if let date = sync.lastSyncDate {
-                    LabeledContent("上次同步") {
-                        Text(date.formatted(date: .abbreviated, time: .standard))
-                    }
-                }
-                if let device = sync.lastRemoteDevice {
-                    LabeledContent("云端配置来自") {
-                        Text(device)
-                    }
-                }
-                Button("立即同步") {
-                    sync.syncNow()
-                }
-                .disabled(!sync.isEnabled || !sync.isAvailableInBuild)
-            } footer: {
-                Text("同步圆盘布局、已安装的功能、自己添加的插件、直达规则、唤起方式、翻译和剪贴板设置（剪贴板历史本身只留在本机）。数据存在你自己的 iCloud 账号里（iCloud 键值存储），Pop 没有任何服务器。多台 Mac 都改过时，以最后一次修改为准。")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-            }
-            if !sync.isAvailableInBuild {
+            if sync.isAvailableInBuild {
                 Section {
-                    Text("当前构建没有 iCloud 能力：需要用付费开发者账号签名，并使用带 iCloud 的 entitlements（见 README）。")
-                        .foregroundStyle(.orange)
+                    Toggle("通过 iCloud 同步设置", isOn: Binding(get: { sync.isEnabled }, set: { sync.setEnabled($0) }))
+                    LabeledContent("状态") {
+                        Text(sync.statusText)
+                            .foregroundStyle(.secondary)
+                    }
+                    if let date = sync.lastSyncDate {
+                        LabeledContent("上次同步") {
+                            Text(date.formatted(date: .abbreviated, time: .standard))
+                        }
+                    }
+                    if let device = sync.lastRemoteDevice {
+                        LabeledContent("云端配置来自") {
+                            Text(device)
+                        }
+                    }
+                    Button("立即同步") {
+                        sync.syncNow()
+                    }
+                    .disabled(!sync.isEnabled)
+                } footer: {
+                    Text("同步圆盘布局、已安装的功能、自己添加的插件、直达规则、唤起方式、翻译和剪贴板设置（剪贴板历史本身只留在本机）。数据存在你自己的 iCloud 账号里（iCloud 键值存储），Pop 没有任何服务器。多台 Mac 都改过时，以最后一次修改为准。")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
                 }
             }
             Section {
@@ -1052,7 +1047,7 @@ struct SyncSettingsView: View {
             } header: {
                 Text("导出和导入")
             } footer: {
-                Text("把设置和自己写的插件存成一个文件，在另一台 Mac 上导入；没有 iCloud 同步的版本也能这样搬过去。AI 的 API Key 只在本机钥匙串里，不会导出。")
+                Text("把设置和自己写的插件存成一个文件，在另一台 Mac 上导入。AI 的 API Key 只在本机钥匙串里，不会导出。")
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
