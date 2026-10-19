@@ -161,14 +161,16 @@ final class MouseTriggerCore: @unchecked Sendable {
          post: @escaping ([CGEvent]) -> Void = MouseTriggerCore.replay,
          startTimer: @escaping (TimeInterval, @escaping () -> Void) -> () -> Void = MouseTriggerCore.dispatchTimer(after:fire:),
          startRecoveryTimer: @escaping (TimeInterval, @escaping () -> Void) -> () -> Void = MouseTriggerCore.dispatchTimer(after:fire:),
-         isPressed: @escaping (CGMouseButton) -> Bool = { CGEventSource.buttonState(.combinedSessionState, button: $0) }) {
+         buttonState: @escaping (CGEventSourceStateID, CGMouseButton) -> Bool = { CGEventSource.buttonState($0, button: $1) }) {
         current = configuration
         self.shouldBegin = shouldBegin
         self.deliver = deliver
         self.post = post
         self.startTimer = startTimer
         self.startRecoveryTimer = startRecoveryTimer
-        self.isPressed = isPressed
+        // session tap 已扣住按下事件，会话合成状态可能仍为松开；恢复检查必须读上游 HID 状态，
+        // 否则长按到点会被当成丢失松开，补发系统右键菜单，活跃手势也会被提前结束。
+        self.isPressed = { buttonState(.hidSystemState, $0) }
     }
 
     private func withLock<T>(_ body: () -> T) -> T {
