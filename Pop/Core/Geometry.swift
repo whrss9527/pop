@@ -456,6 +456,16 @@ enum ScreenGeometry {
         return clamp(CGRect(x: x, y: y, width: size.width, height: size.height), within: bounds)
     }
 
+    /// 窗口按实际像素向外对齐，不裁掉内容；布局中的亚像素变化不再反复触发同一个窗口尺寸。
+    static func pixelAlignedWindowFrame(_ frame: CGRect, scale: CGFloat) -> CGRect {
+        let scale = max(1, scale)
+        let minX = floor(frame.minX * scale) / scale
+        let minY = floor(frame.minY * scale) / scale
+        let maxX = ceil(frame.maxX * scale) / scale
+        let maxY = ceil(frame.maxY * scale) / scale
+        return CGRect(x: minX, y: minY, width: maxX - minX, height: maxY - minY)
+    }
+
     // MARK: - 贴图
 
     /// 按比例缩小到 maxSize 以内；本来就放得下时不变。
