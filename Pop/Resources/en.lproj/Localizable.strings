@@ -3218,3 +3218,9 @@
 
 "无法重新启动 Pop" = "Unable to restart Pop";
 "备份" = "Backup";
+
+"问题反馈" = "Support";
+"反馈问题" = "Report an Issue";
+"复制诊断信息" = "Copy Diagnostics";
+"诊断信息已复制" = "Diagnostics copied";
+"诊断信息包含版本、系统、芯片、权限状态和当前进程最近最多 200 条日志；未识别的日志正文会隐藏。仅复制到剪贴板，请检查后自行粘贴到问题反馈中。" = "Diagnostics include the version, system, chip, permissions, and up to 200 recent logs from this process. Unrecognized log content is hidden. The report is only copied to the clipboard; review it before pasting it into an issue.";

@@ -5,6 +5,8 @@ import SwiftUI
 
 struct UpdateSettingsView: View {
     @EnvironmentObject private var updater: Updater
+    @State private var copyingDiagnostics = false
+    @State private var diagnosticsCopied = false
 
     var body: some View {
         Form {
@@ -22,6 +24,34 @@ struct UpdateSettingsView: View {
                 } else {
                     statusRow
                 }
+            }
+
+            Section("问题反馈") {
+                HStack {
+                    Button("反馈问题") {
+                        NSWorkspace.shared.open(SupportDiagnostics.snapshot().feedbackURL)
+                    }
+                    Button("复制诊断信息") {
+                        copyingDiagnostics = true
+                        diagnosticsCopied = false
+                        let snapshot = SupportDiagnostics.snapshot()
+                        Task { @MainActor in
+                            let logs = await Task.detached(priority: .utility) {
+                                SupportDiagnostics.recentLogs()
+                            }.value
+                            let text = snapshot.text(logs: logs.lines, logsAvailable: logs.available)
+                            NSPasteboard.general.clearContents()
+                            diagnosticsCopied = NSPasteboard.general.setString(text, forType: .string)
+                            copyingDiagnostics = false
+                        }
+                    }
+                    .disabled(copyingDiagnostics)
+                    if copyingDiagnostics { ProgressView().controlSize(.small) }
+                    if diagnosticsCopied { Text("诊断信息已复制").foregroundStyle(.secondary) }
+                }
+                Text("诊断信息包含版本、系统、芯片、权限状态和当前进程最近最多 200 条日志；未识别的日志正文会隐藏。仅复制到剪贴板，请检查后自行粘贴到问题反馈中。")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
             }
 
             // 更新记录只有中文，中文界面才列出来
