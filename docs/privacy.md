@@ -10,4 +10,6 @@ Pop is a free, open-source right-click toolbox for the Mac by whrss9527.
 - Translation uses Apple's on-device Translation framework.
 - The version from GitHub checks GitHub for updates and downloads plugins from GitHub releases. The Mac App Store version does neither.
 
+- “Report an Issue” opens GitHub in your browser with the app and macOS versions prefilled. “Copy Diagnostics” copies a local report of the version, build, distribution, chip, permission states and up to 200 recent logs from this process. Unrecognized log content is hidden. The report is not uploaded; review it before sharing it yourself.
+
 Questions: https://github.com/whrss9527/pop/issues
