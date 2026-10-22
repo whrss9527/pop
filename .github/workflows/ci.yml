@@ -85,6 +85,9 @@ jobs:
       - name: Check rendering measurement protocol
         run: python3 -m unittest discover -s scripts -p 'test_emoji_render_probe.py'
 
+      - name: Check catalog contract protocol
+        run: python3 -m unittest discover -s scripts -p 'test_catalog_contract.py'
+
       - name: Check translations
         if: always()
         run: python3 scripts/check-localization.py --stringsdata ~/Library/Developer/Xcode/DerivedData --list-missing
