@@ -65,8 +65,9 @@ jobs:
           tail -80 build.log
           exit $status
 
-      # 编译时抽出来的界面文字（.stringsdata）和 en.lproj 对一遍：带中文的每一条都要有英文翻译，
-      # 两种语言的 key 和占位符一致。缺的 key 会按 .strings 的格式列在日志里
+      - name: Check App Store profile preparation
+        run: python3 -m unittest discover -s scripts -p 'test_appstore_profiles.py'
+
       - name: Check release planning
         run: python3 -m unittest discover -s scripts -p 'test_release_*.py'
 
@@ -85,6 +86,8 @@ jobs:
       - name: Check rendering measurement protocol
         run: python3 -m unittest discover -s scripts -p 'test_emoji_render_probe.py'
 
+      # 编译时抽出来的界面文字（.stringsdata）和 en.lproj 对一遍：带中文的每一条都要有英文翻译，
+      # 两种语言的 key 和占位符一致。缺的 key 会按 .strings 的格式列在日志里
       - name: Check translations
         if: always()
         run: python3 scripts/check-localization.py --stringsdata ~/Library/Developer/Xcode/DerivedData --list-missing
@@ -128,6 +131,7 @@ jobs:
       - name: Build Release app
         run: |
           APP=$(scripts/build-app.sh 0.0.0-ci build/ci | tail -n 1)
+          bash scripts/check-widget-bundle.sh "$APP"
           echo "APP=$APP" >> "$GITHUB_ENV"
 
       # 演示模式下把圆盘、结果卡片、提示、列表依次展示一遍（动画放慢 6 倍），按时截图，

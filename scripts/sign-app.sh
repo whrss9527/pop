@@ -29,5 +29,13 @@ else
   args=(--force --sign - --entitlements "$ENTITLEMENTS")
 fi
 
+# 小组件使用独立沙盒声明，先按同一身份签名，再签外层 App。
+widget_args=(--force --sign "${CODESIGN_IDENTITY:--}" --entitlements "$ROOT/Widgets/PopWidgets.entitlements")
+if [[ -n "${CODESIGN_IDENTITY:-}" ]]; then widget_args+=(--options runtime --timestamp); fi
+if [[ -n "${CODESIGN_KEYCHAIN:-}" ]]; then widget_args+=(--keychain "$CODESIGN_KEYCHAIN"); fi
+for widget in "$APP"/Contents/PlugIns/*.appex; do
+  [[ -d "$widget" ]] || continue
+  codesign "${widget_args[@]}" "$widget"
+done
 codesign "${args[@]}" "$APP"
 codesign --verify --deep --strict "$APP"

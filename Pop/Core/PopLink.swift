@@ -15,8 +15,20 @@ enum PopLink: Equatable {
     case clipboard
     case settings(SettingsTab?)
     case pluginLibrary
+    case widget(WidgetAction)
 
     static let scheme = "pop"
+
+    /// 读取选区或把结果粘贴回去的入口，必须先把焦点还给之前的 App。
+    /// 截图组件使用空输入自行框选，设置和插件库则留在 Pop 中。
+    var restoresPreviousApplication: Bool {
+        switch self {
+        case .run, .ring, .clipboard, .widget(.clipboard):
+            return true
+        case .settings, .pluginLibrary, .widget(.screenshotOCR), .widget(.screenshotTranslate), .widget(.pluginLibrary):
+            return false
+        }
+    }
 
     init?(url: URL) {
         guard url.scheme?.lowercased() == Self.scheme,
@@ -33,6 +45,11 @@ enum PopLink: Equatable {
             items.first { $0.name.lowercased() == name }?.value
         }
         switch action {
+        case "widget":
+            let tools = items.filter { $0.name.lowercased() == "tool" }
+            guard segments.count == 1, tools.count == 1, let raw = tools.first?.value,
+                  let tool = WidgetAction(rawValue: raw) else { return nil }
+            self = .widget(tool)
         case "run":
             guard let pluginID = value("plugin") ?? segments.dropFirst().first, !pluginID.isEmpty else { return nil }
             let files = items.filter { $0.name.lowercased() == "file" }

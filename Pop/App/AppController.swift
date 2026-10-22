@@ -82,24 +82,23 @@ final class AppController {
             coordinator.showToast(String(localized: "Pop 不认识这个链接：\(url.absoluteString)"), at: NSEvent.mouseLocation)
             return
         }
-        switch link {
-        case .settings, .pluginLibrary:
+        guard link.restoresPreviousApplication else {
             perform(link)
-        case .run, .ring, .clipboard:
-            // 系统打开链接时会把 Pop 带到前台。选中的内容、结果要贴回去的地方都在原来的 App 里，
-            // 所以等一下，Pop 还在前台的话先切回原来的 App 再处理
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) { [weak self] in
-                MainActor.assumeIsolated {
-                    guard let self else { return }
-                    guard NSApp.isActive, let app = self.lastExternalApp, !app.isTerminated else {
-                        self.perform(link)
-                        return
-                    }
-                    app.activate(options: [])
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) { [weak self] in
-                        MainActor.assumeIsolated {
-                            self?.perform(link)
-                        }
+            return
+        }
+        // 系统打开链接时会把 Pop 带到前台。选中的内容、结果要贴回去的地方都在原来的 App 里，
+        // 所以等一下，Pop 还在前台的话先切回原来的 App 再处理
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) { [weak self] in
+            MainActor.assumeIsolated {
+                guard let self else { return }
+                guard NSApp.isActive, let app = self.lastExternalApp, !app.isTerminated else {
+                    self.perform(link)
+                    return
+                }
+                app.activate(options: [])
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) { [weak self] in
+                    MainActor.assumeIsolated {
+                        self?.perform(link)
                     }
                 }
             }
@@ -118,6 +117,19 @@ final class AppController {
             settingsWindow.show(tab: tab)
         case .pluginLibrary:
             settingsWindow.showPluginLibrary()
+        case .widget(let action):
+            switch action {
+            case .clipboard: coordinator.showClipboardHistoryFromHotKey()
+            case .pluginLibrary: settingsWindow.showPluginLibrary()
+            case .screenshotOCR, .screenshotTranslate:
+                // 这两项自行交互式框选，明确空输入，避免读取之前 App 的选区。
+                Task { @MainActor [weak self] in
+                    await PluginBundles.shared.loadInstalled()
+                    guard let self else { return }
+                    self.registry.reloadBuiltins()
+                    self.coordinator.runFromLink(pluginID: action.rawValue, text: "", files: [])
+                }
+            }
         }
     }
 

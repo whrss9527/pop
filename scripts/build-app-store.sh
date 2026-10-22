@@ -5,6 +5,7 @@
 #
 #   正式构建（需要证书和描述文件，见 docs/app-store.md）：
 #     APPSTORE_PROFILE=Pop_Mac_App_Store.provisionprofile \
+#     WIDGET_PROVISIONING_PROFILE=PopWidgets_Mac_App_Store.provisionprofile \
 #     APP_SIGN_IDENTITY="Apple Distribution: 名字 (TEAMID)" \
 #     INSTALLER_SIGN_IDENTITY="3rd Party Mac Developer Installer: 名字 (TEAMID)" \
 #     scripts/build-app-store.sh 0.65.0
@@ -48,6 +49,8 @@ else
   IDENTITY="${APP_SIGN_IDENTITY:-}"
   INSTALLER="${INSTALLER_SIGN_IDENTITY:-}"
   [ -n "$PROFILE" ] && [ -f "$PROFILE" ] || fail "APPSTORE_PROFILE 要指向 Mac App Store 的描述文件（.provisionprofile）"
+  [ -n "${WIDGET_PROVISIONING_PROFILE:-}" ] && [ -f "$WIDGET_PROVISIONING_PROFILE" ] \
+    || fail "WIDGET_PROVISIONING_PROFILE 要指向小组件的 Mac App Store 描述文件（.provisionprofile）"
   [ -n "$IDENTITY" ] || fail "APP_SIGN_IDENTITY 没有设置（钥匙串里 Apple Distribution 证书的名字）"
   [ -n "$INSTALLER" ] || fail "INSTALLER_SIGN_IDENTITY 没有设置（钥匙串里 Mac Installer Distribution 证书的名字）"
 
@@ -62,6 +65,15 @@ else
   # 开发用的描述文件列着测试设备；App Store 的没有
   if /usr/libexec/PlistBuddy -c "Print :ProvisionedDevices" "$WORK/profile.plist" > /dev/null 2>&1; then
     fail "这是开发用的描述文件（列着测试设备），上传要用“Mac App Store Connect”类型的描述文件"
+  fi
+  security cms -D -i "$WIDGET_PROVISIONING_PROFILE" > "$WORK/widget-profile.plist" \
+    || fail "读不了小组件描述文件"
+  WIDGET_TEAM="$(plist_value "$WORK/widget-profile.plist" Entitlements:com.apple.developer.team-identifier)"
+  [[ "$WIDGET_TEAM" == "$TEAM_ID" ]] || fail "小组件和主程序描述文件的团队不一致"
+  [[ "$(plist_value "$WORK/widget-profile.plist" Entitlements:com.apple.application-identifier)" == "$TEAM_ID.$BUNDLE_ID.widgets" ]] \
+    || fail "小组件描述文件 App ID 不匹配"
+  if /usr/libexec/PlistBuddy -c 'Print :ProvisionedDevices' "$WORK/widget-profile.plist" >/dev/null 2>&1; then
+    fail "小组件需要发行描述文件"
   fi
   # 上传的 App 签名里要有 App ID 和团队 ID，和描述文件里的一样
   /usr/libexec/PlistBuddy -c "Add :com.apple.application-identifier string $TEAM_ID.$BUNDLE_ID" "$ENTITLEMENTS"
@@ -89,6 +101,20 @@ if [ -n "${CODESIGN_KEYCHAIN:-}" ]; then
 fi
 for bundle in "$APP"/Contents/PlugIns/*.bundle; do
   codesign --force --sign "$IDENTITY" ${KEYCHAIN_ARGS[@]+"${KEYCHAIN_ARGS[@]}"} "$bundle"
+done
+WIDGET_ENTITLEMENTS="$WORK/PopWidgets.entitlements"
+cp Widgets/PopWidgets.entitlements "$WIDGET_ENTITLEMENTS"
+for widget in "$APP"/Contents/PlugIns/*.appex; do
+  [[ -d "$widget" ]] || fail "App 中没有常用工具小组件"
+  if [[ "$IDENTITY" != "-" ]]; then
+    WIDGET_ID="$(plist_value "$widget/Contents/Info.plist" CFBundleIdentifier)"
+    [[ "$(plist_value "$WORK/widget-profile.plist" Entitlements:com.apple.application-identifier)" == "$TEAM_ID.$WIDGET_ID" ]] \
+      || fail "小组件描述文件 App ID 不匹配"
+    /usr/libexec/PlistBuddy -c "Add :com.apple.application-identifier string $TEAM_ID.$WIDGET_ID" "$WIDGET_ENTITLEMENTS"
+    /usr/libexec/PlistBuddy -c "Add :com.apple.developer.team-identifier string $TEAM_ID" "$WIDGET_ENTITLEMENTS"
+    cp "$WIDGET_PROVISIONING_PROFILE" "$widget/Contents/embedded.provisionprofile"
+  fi
+  codesign --force --sign "$IDENTITY" ${KEYCHAIN_ARGS[@]+"${KEYCHAIN_ARGS[@]}"} --entitlements "$WIDGET_ENTITLEMENTS" "$widget"
 done
 if [ -n "$PROFILE" ]; then
   cp "$PROFILE" "$APP/Contents/embedded.provisionprofile"

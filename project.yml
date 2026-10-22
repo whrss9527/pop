@@ -14,7 +14,7 @@ configFiles:
 settings:
   base:
     SWIFT_VERSION: "5.0"
-    MARKETING_VERSION: "0.70.3"
+    MARKETING_VERSION: "0.71.0"
     CURRENT_PROJECT_VERSION: "1"
     CODE_SIGN_STYLE: Automatic
     DEAD_CODE_STRIPPING: YES
@@ -42,9 +42,32 @@ targetTemplates:
         SKIP_INSTALL: YES
 
 targets:
+  PopWidgets:
+    type: app-extension
+    platform: macOS
+    sources:
+      - path: Widgets/PopWidgets.swift
+      - path: Pop/Core/WidgetAction.swift
+      - path: Pop/Resources/en.lproj
+        buildPhase: resources
+      - path: Pop/Resources/zh-Hans.lproj
+        buildPhase: resources
+    settings:
+      base:
+        POP_BUNDLE_ID: io.github.whrss9527.pop
+        PRODUCT_BUNDLE_IDENTIFIER: $(POP_BUNDLE_ID).widgets
+        INFOPLIST_FILE: Widgets/Info.plist
+        GENERATE_INFOPLIST_FILE: YES
+        CODE_SIGN_ENTITLEMENTS: Widgets/PopWidgets.entitlements
+        APPLICATION_EXTENSION_API_ONLY: YES
+        SWIFT_EMIT_LOC_STRINGS: YES
+        SKIP_INSTALL: YES
   Pop:
     type: application
     platform: macOS
+    dependencies:
+      - target: PopWidgets
+        embed: true
     configFiles:
       Debug: Config/Pop.xcconfig
       Release: Config/Pop.xcconfig

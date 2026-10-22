@@ -105,7 +105,10 @@ if [ "$APPSTORE" = "1" ]; then
   # App Store 版不从网上下载插件包（审核指南 2.5.2）：都打进 App 里（Contents/PlugIns），装上时从这里装载。
   # 沙盒里跑不了的不打进去，和 PluginCatalog.unavailableInAppStore 对应
   APP_STORE_EXCLUDED_PLUGINS=" PopZip PopSystemActions PopEncryptFiles PopBluetooth PopQuitApps PopUninstallApp PopNewFile PopSendToPhone "
-  rm -rf "$APP/Contents/PlugIns"
+  # 保留已嵌入的 WidgetKit 扩展，只替换随包分发的插件 bundle。
+  for old_bundle in "$APP"/Contents/PlugIns/*.bundle; do
+    if [[ -d "$old_bundle" ]]; then rm -rf "$old_bundle"; fi
+  done
   mkdir -p "$APP/Contents/PlugIns"
   for bundle in "$PRODUCTS"/Pop*.bundle; do
     [ -f "$bundle/Contents/Info.plist" ] || continue
