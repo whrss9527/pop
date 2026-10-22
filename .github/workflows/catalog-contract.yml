@@ -52,7 +52,7 @@ jobs:
           xcodegen generate
           xcodebuild build -project Pop.xcodeproj -scheme Pop -configuration Debug \
             -destination 'platform=macOS' -derivedDataPath "$RUNNER_TEMP/catalog-build" \
-            CODE_SIGNING_ALLOWED=NO > build/native-catalog/build.log 2>&1
+            POP_BUILD_ID="$GITHUB_SHA" CODE_SIGNING_ALLOWED=NO > build/native-catalog/build.log 2>&1
       - name: Export native metadata in two fresh language hosts
         run: |
           for language in zh-Hans en; do
@@ -63,16 +63,19 @@ jobs:
             xcodebuild test -project Pop.xcodeproj -scheme PopCatalog -configuration Debug \
               -destination 'platform=macOS' -derivedDataPath "$RUNNER_TEMP/catalog-build" \
               -testLanguage "$language" -testRegion "$region" \
-              -resultBundlePath "$result" CODE_SIGNING_ALLOWED=NO \
+              -resultBundlePath "$result" POP_BUILD_ID="$GITHUB_SHA" CODE_SIGNING_ALLOWED=NO \
               > "build/native-catalog/test-${language}.log" 2>&1
             xcrun xcresulttool export attachments --path "$result" \
               --output-path "build/native-catalog/exports/${language}"
           done
       - name: Validate bilingual structure and constraints
         run: |
-          python3 scripts/catalog-contract.py \
+          python3 scripts/catalog-contract.py export \
             --zh build/native-catalog/exports/zh-Hans --en build/native-catalog/exports/en \
-            --output build/native-catalog/contract.json
+            --metadata build/native-catalog/metadata.json --source "$GITHUB_SHA" \
+            --output build/native-catalog/contract.json --manifest build/native-catalog/evidence.json
+          python3 scripts/catalog-contract.py verify \
+            --manifest build/native-catalog/evidence.json --source "$GITHUB_SHA"
       - uses: actions/upload-artifact@v4
         if: always()
         with:

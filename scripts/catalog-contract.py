@@ -2,6 +2,7 @@
 """校验原生目录观察快照的结构并合并两语言；ICU与闭包行为不在Python中近似执行。"""
 import argparse
 import copy
+import hashlib
 import json
 from pathlib import Path
 import re
@@ -18,6 +19,8 @@ FUNCTION_FIELDS = {"id", "name", "summary", "symbol", "category", "accepts", "pa
 PACKAGE_FIELDS = {"id", "bundleName", "name", "summary", "symbol", "category", "independentVersion",
                   "functions", "defaultsKeys", "keychainAccounts", "dataFolders"}
 TOP_FIELDS = {"schemaVersion", "language", "appVersion", "buildID", "packages", "hostFunctions", "displayOrder"}
+METADATA_FIELDS = {"source", "system", "xcode", "scope"}
+EVIDENCE_ROLES = {"zh", "en", "metadata", "contract"}
 
 
 def require(value, message):
@@ -150,10 +153,12 @@ def merge(chinese, english):
     return result
 
 
-def load_snapshot(path):
+def snapshot_file(path, root=None):
     paths = [path] if path.is_file() else sorted(p for p in path.rglob("*") if p.is_file())
     candidates = []
     for file in paths:
+        if root is not None:
+            within_root(root, file)
         if file.stat().st_size > 10 * 1024 * 1024:
             continue
         try:
@@ -161,21 +166,105 @@ def load_snapshot(path):
         except (ValueError, UnicodeError):
             continue
         if type(value) is dict and {"packages", "hostFunctions", "language"} <= value.keys():
-            candidates.append(value)
+            candidates.append((file, value))
     require(len(candidates) == 1, "附件中必须恰好有一个完整原生快照")
     return candidates[0]
 
 
+def load_snapshot(path):
+    return snapshot_file(path)[1]
+
+
+def source_sha(value):
+    require(type(value) is str and re.fullmatch(r"[0-9a-f]{40}", value), "源码必须是完整Git SHA")
+
+
+def within_root(root, path):
+    resolved = path.resolve()
+    require(resolved.is_relative_to(root) and resolved != root, "证据文件必须位于清单目录内")
+    return resolved
+
+
+def bound_merge(chinese, english, metadata, source):
+    source_sha(source)
+    fields(metadata, METADATA_FIELDS)
+    for name in METADATA_FIELDS:
+        text(metadata[name])
+    require(metadata["source"] == source, "元数据源码与预期SHA不符")
+    result = merge(chinese, english)
+    require(result["buildID"] == source, "原生宿主/插件构建标识与源码SHA不符")
+    return result
+
+
+def verify_manifest(manifest, source):
+    source_sha(source)
+    root = manifest.parent.resolve()
+    within_root(root, manifest)
+    evidence = json.loads(manifest.read_bytes())
+    fields(evidence, {"schemaVersion", "source", "files"})
+    require(type(evidence["schemaVersion"]) is int and evidence["schemaVersion"] == 1, "未知证据版本")
+    require(evidence["source"] == source, "证据清单源码与预期SHA不符")
+    fields(evidence["files"], EVIDENCE_ROLES)
+    paths, contents = set(), {}
+    for role, entry in evidence["files"].items():
+        fields(entry, {"path", "bytes", "sha256"})
+        relative_path(entry["path"])
+        path = within_root(root, root / entry["path"])
+        require(path not in paths and path != manifest.resolve(), "证据路径重复或指向清单本身")
+        paths.add(path)
+        require(type(entry["bytes"]) is int and entry["bytes"] >= 0, "文件长度必须是非负Int")
+        require(type(entry["sha256"]) is str and re.fullmatch(r"[0-9a-f]{64}", entry["sha256"]), "SHA256无效")
+        data = path.read_bytes()
+        require(len(data) == entry["bytes"] and hashlib.sha256(data).hexdigest() == entry["sha256"],
+                f"证据文件长度或SHA256不符：{role}")
+        contents[role] = json.loads(data)
+    result = bound_merge(contents["zh"], contents["en"], contents["metadata"], source)
+    # JSON 比较保留 Bool/Int 差异，不能让 Python 的 False == 0 放过类型漂移。
+    require(json.dumps(contents["contract"], sort_keys=True) == json.dumps(result, sort_keys=True),
+            "合并目录与原始快照不符")
+    return result
+
+
+def export_contract(chinese, english, metadata, source, output, manifest):
+    root = manifest.parent.resolve()
+    root.mkdir(parents=True, exist_ok=True)
+    for path in (chinese, english, metadata, output, manifest):
+        within_root(root, path)
+    zh_file, zh = snapshot_file(chinese, root)
+    en_file, en = snapshot_file(english, root)
+    result = bound_merge(zh, en, json.loads(metadata.read_bytes()), source)
+    paths = {"zh": zh_file, "en": en_file, "metadata": metadata, "contract": output}
+    resolved = [path.resolve() for path in paths.values()]
+    require(len(set(resolved)) == len(resolved) and manifest.resolve() not in resolved,
+            "输出不能覆盖原始快照、元数据或证据清单")
+    output.parent.mkdir(parents=True, exist_ok=True)
+    output.write_text(json.dumps(result, ensure_ascii=False, indent=2) + "\n")
+    files = {}
+    for role, path in paths.items():
+        data = path.read_bytes()
+        files[role] = {"path": path.resolve().relative_to(root).as_posix(), "bytes": len(data),
+                       "sha256": hashlib.sha256(data).hexdigest()}
+    manifest.write_text(json.dumps({"schemaVersion": 1, "source": source, "files": files},
+                                   ensure_ascii=False, indent=2) + "\n")
+    return verify_manifest(manifest, source)
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--zh", type=Path, required=True)
-    parser.add_argument("--en", type=Path, required=True)
-    parser.add_argument("--output", type=Path, required=True)
+    commands = parser.add_subparsers(dest="command", required=True)
+    export = commands.add_parser("export", help="校验源码绑定并生成目录与文件摘要清单")
+    for name in ("zh", "en", "metadata", "output", "manifest"):
+        export.add_argument("--" + name, type=Path, required=True)
+    export.add_argument("--source", required=True)
+    verify = commands.add_parser("verify", help="重新核验已保存的原始快照、元数据与目录")
+    verify.add_argument("--manifest", type=Path, required=True)
+    verify.add_argument("--source", required=True)
     args = parser.parse_args()
-    result = merge(load_snapshot(args.zh), load_snapshot(args.en))
-    args.output.parent.mkdir(parents=True, exist_ok=True)
-    args.output.write_text(json.dumps(result, ensure_ascii=False, indent=2) + "\n")
-    print(f"结构已核验：{len(result['packages'])}包；ICU由原生目标检查，custom闭包语义未声明等价")
+    if args.command == "export":
+        result = export_contract(args.zh, args.en, args.metadata, args.source, args.output, args.manifest)
+    else:
+        result = verify_manifest(args.manifest, args.source)
+    print(f"结构与源码/文件摘要已核验：{len(result['packages'])}包；ICU由原生目标检查，custom闭包语义未声明等价")
 
 
 if __name__ == "__main__":
