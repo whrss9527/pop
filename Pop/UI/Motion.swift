@@ -34,6 +34,11 @@ enum Motion {
         .spring(response: seconds(0.24), dampingFraction: 0.8)
     }
 
+    /// 边缘圆盘只过渡底色和文字，不缩放或移动选中的格子。
+    static var edgeSelection: Animation {
+        .easeInOut(duration: seconds(0.15))
+    }
+
     /// 选中那一格时的「按下」
     static var commit: Animation {
         .spring(response: seconds(0.22), dampingFraction: 0.55)

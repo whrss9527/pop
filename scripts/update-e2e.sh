@@ -20,6 +20,7 @@ SERVER_PID=""
 START=""
 DOMAIN="io.github.whrss9527.pop.update-test.$(uuidgen)"
 PLUGIN_DATA="$WORK/plugin-data"
+RELAUNCH_LOG="$WORK/update-relaunch.log"
 PLUGIN_SOURCE="http://127.0.0.1:${PORT}/"
 BASE="$WORK/original/Pop.app"
 # 独立的偏好域和插件数据，不碰已安装 Pop 的设置。
@@ -49,6 +50,8 @@ pop_log() {
 fail() {
   echo "---- Pop 的更新日志 ----"
   pop_log | grep -E "Pop 更新|Pop 已启动" | tail -30 || true
+  echo "---- 更新辅助进程日志 ----"
+  if [ -f "$RELAUNCH_LOG" ]; then cat "$RELAUNCH_LOG"; fi
   echo "---- Pop 进程 ----"
   pgrep -lx Pop || echo "（Pop 没有在运行）"
   echo "---- Pop 最近的系统日志 ----"
@@ -104,7 +107,8 @@ stop_pop() {
 launch_pop() {
   stop_pop
   START="$(date '+%Y-%m-%d %H:%M:%S')"
-  open -n --env "POP_PLUGIN_DATA_DIR=$PLUGIN_DATA" --env "POP_PLUGIN_SOURCE=$PLUGIN_SOURCE" --env "POP_UPDATE_URL=http://127.0.0.1:${PORT}/releases.json" --env POP_UPDATE_AUTO_INSTALL=1 "$APP"
+  rm -f "$RELAUNCH_LOG"
+  open -n --env "POP_UPDATE_RELAUNCH_LOG=$RELAUNCH_LOG" --env "POP_PLUGIN_DATA_DIR=$PLUGIN_DATA" --env "POP_PLUGIN_SOURCE=$PLUGIN_SOURCE" --env "POP_UPDATE_URL=http://127.0.0.1:${PORT}/releases.json" --env POP_UPDATE_AUTO_INSTALL=1 "$APP"
 }
 
 wait_for_log() {
@@ -198,6 +202,9 @@ ditto "$BUNDLES/PopZip.bundle" "$PLUGIN_DATA/PluginBundles/PopZip.bundle"
 PLUGIN_SOURCE="http://127.0.0.1:${PORT}/unavailable/"
 make_release identity
 launch_pop
-wait_for_log '插件回归 version=9.9.9 zip_loaded=false pending=1' 100 || fail "插件下载失败时圆盘位置没有保留"
+wait_for_log 'Pop 已启动，版本 9.9.9' 90 || fail "插件源不可达场景中新版本没有重新启动"
+grep -q 'old_pid_exited' "$RELAUNCH_LOG" || fail "辅助进程没有记录旧 PID 退出"
+grep -q 'open_finished status=0' "$RELAUNCH_LOG" || fail "辅助进程没有成功打开新版本"
+wait_for_log '插件回归 version=9.9.9 zip_loaded=false pending=1' 20 || fail "新版本已启动，但插件下载失败时圆盘位置没有保留"
 [ "$(version_of "$APP")" = "9.9.9" ] || fail "插件下载失败阻止了 App 更新"
 echo "✅ 下载失败时保留正在更新的格子"

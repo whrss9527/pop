@@ -347,24 +347,44 @@ enum UpdateInstaller {
     }
 
     /// 等当前进程退出后再打开新程序：起一个独立的 sh 等着，Pop 自己退出时它不受影响。
-    static func relaunch(_ app: URL) {
-        let pid = ProcessInfo.processInfo.processIdentifier
-        let testEnvironment = ["POP_PLUGIN_SOURCE", "POP_PLUGIN_DATA_DIR"].compactMap { key -> String? in
-            guard let value = ProcessInfo.processInfo.environment[key] else { return nil }
-            return " --env " + shellQuote(key + "=" + value)
-        }.joined()
-        let script = "n=0; while /bin/kill -0 \(pid) 2>/dev/null && [ $n -lt 300 ]; do /bin/sleep 0.2; n=$((n+1)); done; /usr/bin/open\(testEnvironment) \(shellQuote(app.path))"
+    static func relaunch(_ app: URL) throws {
+        guard let helper = Bundle.main.url(forResource: "update-relaunch", withExtension: "sh") else {
+            throw UpdateError.install(String(localized: "找不到重新启动辅助脚本"))
+        }
+        let fileManager = FileManager.default
+        let logs = fileManager.urls(for: .libraryDirectory, in: .userDomainMask)[0]
+            .appendingPathComponent("Logs/Pop", isDirectory: true)
+        let logURL: URL
+        if let override = ProcessInfo.processInfo.environment["POP_UPDATE_RELAUNCH_LOG"] {
+            logURL = URL(fileURLWithPath: override)
+        } else {
+            logURL = logs.appendingPathComponent("update-relaunch.log")
+        }
+        try fileManager.createDirectory(at: logURL.deletingLastPathComponent(), withIntermediateDirectories: true)
+        // 固定日志只保留本次重启，不保存设置、接口地址或环境变量。
+        let log = try FileHandle(forWritingTo: prepareRelaunchLog(logURL))
+        defer { try? log.close() }
         let process = Process()
         process.executableURL = URL(fileURLWithPath: "/bin/sh")
-        process.arguments = ["-c", script]
-        process.standardInput = FileHandle.nullDevice
-        process.standardOutput = FileHandle.nullDevice
-        process.standardError = FileHandle.nullDevice
-        do {
-            try process.run()
-        } catch {
-            UpdateLog.info("启动重新打开程序的辅助进程失败：\(error.localizedDescription)")
+        var arguments = [helper.path, String(ProcessInfo.processInfo.processIdentifier), app.path, "/usr/bin/open", "300"]
+        for key in ["POP_PLUGIN_SOURCE", "POP_PLUGIN_DATA_DIR"] {
+            if let value = ProcessInfo.processInfo.environment[key] {
+                arguments += ["--env", key + "=" + value]
+            }
         }
+        process.arguments = arguments
+        process.standardInput = FileHandle.nullDevice
+        process.standardOutput = log
+        process.standardError = log
+        // 无法创建辅助进程时抛给更新器，旧进程保持运行并显示失败。
+        try process.run()
+        UpdateLog.info("重新启动辅助进程已启动 pid=\(process.processIdentifier)，日志：\(logURL.path)")
+    }
+
+    private static func prepareRelaunchLog(_ url: URL) throws -> URL {
+        try Data().write(to: url, options: .atomic)
+        try FileManager.default.setAttributes([.posixPermissions: 0o600], ofItemAtPath: url.path)
+        return url
     }
 
     // MARK: - 小工具

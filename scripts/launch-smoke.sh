@@ -37,25 +37,72 @@ done
 
 # Pop 的主线程卡住超过 0.25 秒时往这个文件里写一行「hang 开始时间 秒数」（HangWatchdog）。
 # 旧版本的 Pop（比如「发布插件」用的正式版）不写这个文件
-HANG_LOG="$(mktemp -t pop-hangs)"
+DIAGNOSTICS="${POP_STARTUP_DIAGNOSTICS_DIR:-$ROOT/build/startup-diagnostics}"
+mkdir -p "$DIAGNOSTICS"
+HANG_LOG="$DIAGNOSTICS/startup-hangs.txt"
+: > "$HANG_LOG"
+LAUNCH_PID=""
+: > "$DIAGNOSTICS/launch-pids.txt"
+DIAGNOSTIC_START="$(date '+%Y-%m-%d %H:%M:%S')"
+echo "$DIAGNOSTIC_START" > "$DIAGNOSTICS/primary-start.txt"
+source "$ROOT/scripts/startup-diagnostics.sh"
+trap preserve_startup_diagnostics EXIT
 
-START="$(date '+%Y-%m-%d %H:%M:%S')"
 if [ ${#PLUGINS[@]} -gt 0 ]; then
   echo "一起装载的插件包：${PLUGINS[*]}"
-  open --env "POP_PLUGIN_DIR=${PLUGIN_DIR}" --env "POP_HANG_LOG=${HANG_LOG}" "$APP"
+  open --env "POP_PLUGIN_DIR=${PLUGIN_DIR}" --env "POP_HANG_LOG=${HANG_LOG}" --env POP_STARTUP_TRACE=1 "$APP"
 else
-  open --env "POP_HANG_LOG=${HANG_LOG}" "$APP"
+  open --env "POP_HANG_LOG=${HANG_LOG}" --env POP_STARTUP_TRACE=1 "$APP"
 fi
 sleep 10
 
+record_launch_pid() {
+  local found
+  found="$(pgrep -x Pop || true)"
+  [[ "$found" =~ ^[1-9][0-9]*$ ]] || return 1
+  LAUNCH_PID="$found"
+  echo "$LAUNCH_PID" >> "$DIAGNOSTICS/launch-pids.txt"
+}
+
+read_launch_logs() {
+  python3 "$ROOT/scripts/startup-diagnostics.py" logs --pid "$LAUNCH_PID" --predicate "$1"
+}
+
 dump_logs() {
   echo "---- Pop 的系统日志 ----"
-  log show --start "$START" --style compact --predicate 'process == "Pop"' 2>/dev/null | tail -60 || true
+  read_launch_logs 'process == "Pop"' | tail -60 || true
   for report in ~/Library/Logs/DiagnosticReports/Pop*; do
     [ -f "$report" ] || continue
     echo "---- 崩溃报告 $report ----"
     head -c 8000 "$report"
   done
+}
+
+# 采样接入会扰动启动，所以只另起一次诊断，不重判或覆盖首次失败。
+diagnose_startup_failure() {
+  local diagnostic_log="$DIAGNOSTICS/diagnostic-hangs.txt" sampler
+  for _ in $(seq 1 20); do
+    pgrep -x Pop > /dev/null || break
+    sleep 0.1
+  done
+  if pgrep -x Pop > /dev/null; then
+    echo '前次进程尚未退出，跳过独立诊断' > "$DIAGNOSTICS/diagnostic-skipped.txt"
+    return 0
+  fi
+  : > "$diagnostic_log"
+  date '+%Y-%m-%d %H:%M:%S' > "$DIAGNOSTICS/diagnostic-start.txt"
+  defaults delete "$BUNDLE_ID" 2>/dev/null || true
+  python3 "$ROOT/scripts/startup-diagnostics.py" watch --hang-log "$diagnostic_log" \
+    --output "$DIAGNOSTICS/sampled-reproduction" &
+  sampler=$!
+  echo '原始2秒门禁已失败；以下为独立采样启动，不用于重新判定门禁。'
+  open --env "POP_PLUGIN_DIR=${PLUGIN_DIR}" --env "POP_HANG_LOG=${diagnostic_log}" \
+    --env POP_STARTUP_TRACE=1 "$APP" || true
+  wait "$sampler" || true
+  if [ -f "$DIAGNOSTICS/sampled-reproduction/pid.txt" ]; then
+    cat "$DIAGNOSTICS/sampled-reproduction/pid.txt" >> "$DIAGNOSTICS/launch-pids.txt"
+  fi
+  pkill -x Pop 2>/dev/null || true
 }
 
 # 主线程卡住的地方都列出来，卡了 2 秒以上的算失败：用的时候会觉得 Pop 卡死了
@@ -66,13 +113,13 @@ check_hangs() {
   if awk '$1 == "hang" && $3 + 0 >= 2 { bad = 1 } END { exit bad ? 0 : 1 }' "$HANG_LOG"; then
     echo "❌ ${when}时主线程卡了 2 秒以上"
     dump_logs
+    if [ "$when" = '启动' ]; then diagnose_startup_failure; fi
     exit 1
   fi
-  : > "$HANG_LOG"
 }
 
-if ! pgrep -x Pop > /dev/null; then
-  echo "❌ Pop 启动后退出了"
+if ! record_launch_pid; then
+  echo "❌ Pop 启动后没有唯一活跃进程"
   dump_logs
   exit 1
 fi
@@ -100,7 +147,7 @@ fi
 # 日志多的时候 log show 会被断管信号结束，在 pipefail 下整条管道算失败，找到了也当成没找到
 pop_log_has() {
   local predicate="$1" pattern="$2" logs
-  logs="$(log show --start "$START" --style compact --predicate "$predicate" 2>/dev/null || true)"
+  logs="$(read_launch_logs "$predicate" || true)"
   grep -qE "$pattern" <<< "$logs"
 }
 
@@ -134,9 +181,9 @@ fi
 # 每个插件包都装载上了：日志里有「loaded plugin <ID>」，或者它的可执行文件已经映射进 Pop 进程。
 # 系统日志偶尔会晚到、在日志多的时候还会丢几条，所以多等一会儿，也用 lsof 看一眼
 if [ ${#PLUGINS[@]} -gt 0 ]; then
-  PID="$(pgrep -x Pop | head -1 || true)"
+  PID="$LAUNCH_PID"
   for _ in $(seq 1 15); do
-    PLUGIN_LOG="$(log show --start "$START" --style compact --predicate 'process == "Pop" AND category == "plugins"' 2>/dev/null || true)"
+    PLUGIN_LOG="$(read_launch_logs 'process == "Pop" AND category == "plugins"' || true)"
     MAPPED="$(lsof -p "$PID" 2>/dev/null || true)"
     MISSING=()
     for i in "${!PLUGINS[@]}"; do
@@ -180,22 +227,30 @@ for _ in $(seq 1 20); do
   pgrep -x Pop > /dev/null || break
   sleep 0.5
 done
+if pgrep -x Pop > /dev/null; then
+  echo "❌ 首轮进程尚未退出，不能验收新的安装进程"
+  exit 1
+fi
 defaults delete "$BUNDLE_ID" 2>/dev/null || true
 SETTINGS_HEX="$(python3 -c 'import json, sys; print(json.dumps({"ring": {"slots": ["translate", sys.argv[1], None, None]}, "installedPlugins": ["translate", sys.argv[1]]}).encode().hex())' "$INSTALL_ID")"
 defaults write "$BUNDLE_ID" pop.settings.v1 -data "$SETTINGS_HEX"
 
-START="$(date '+%Y-%m-%d %H:%M:%S')"
+date '+%Y-%m-%d %H:%M:%S' > "$DIAGNOSTICS/install-start.txt"
+HANG_LOG="$DIAGNOSTICS/install-hangs.txt"
+: > "$HANG_LOG"
 echo "从 ${SOURCE} 装插件包 ${INSTALL_ID}"
-open --env "POP_PLUGIN_SOURCE=${SOURCE}" --env "POP_HANG_LOG=${HANG_LOG}" "$APP"
+open --env "POP_PLUGIN_SOURCE=${SOURCE}" --env "POP_HANG_LOG=${HANG_LOG}" --env POP_STARTUP_TRACE=1 "$APP"
+LAUNCH_PID=""
 installed=""
 for _ in $(seq 1 40); do
-  if pop_log_has 'process == "Pop" AND category == "plugins"' "installed plugin ${INSTALL_ID}"; then
+  if [ -z "$LAUNCH_PID" ]; then record_launch_pid || true; fi
+  if [ -n "$LAUNCH_PID" ] && pop_log_has 'process == "Pop" AND category == "plugins"' "installed plugin ${INSTALL_ID}"; then
     installed=1
     break
   fi
   sleep 1
 done
-PLUGIN_LOG="$(log show --start "$START" --style compact --predicate 'process == "Pop" AND category == "plugins"' 2>/dev/null || true)"
+PLUGIN_LOG="$(read_launch_logs 'process == "Pop" AND category == "plugins"' || true)"
 pkill -x Pop || true
 if [ -z "$installed" ]; then
   echo "❌ 插件包 ${INSTALL_ID} 没有从发布页装上"

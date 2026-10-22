@@ -39,6 +39,21 @@ json_field() {
   python3 -c 'import json, sys; print(json.load(open(sys.argv[1])).get(sys.argv[2], ""))' "$1" "$2" 2>/dev/null || true
 }
 
+# CloudKit 取票据或校验偶尔断开（stapler 68），只限次重试该错误。
+stapler_with_retry() {
+  local action="$1" app="$2" attempt result
+  for attempt in 1 2 3; do
+    if xcrun stapler "$action" "$app"; then
+      return 0
+    else
+      result=$?
+    fi
+    [ "$result" -eq 68 ] && [ "$attempt" -lt 3 ] || return "$result"
+    echo "票据 ${action} 网络查询未完成，5 秒后重试（${attempt}/3）"
+    sleep 5
+  done
+}
+
 # 先把所有包都传上去（苹果那边同时处理），再逐个等结果
 ids=()
 for zip in "$@"; do
@@ -63,10 +78,14 @@ for zip in "$@"; do
   i=$((i + 1))
   name="$(basename "$zip")"
   out="$work/wait-$name.json"
-  xcrun notarytool wait "$id" "${auth[@]}" --output-format json > "$out" || true
+  if xcrun notarytool wait "$id" "${auth[@]}" --output-format json > "$out"; then
+    wait_result=0
+  else
+    wait_result=$?
+  fi
   status="$(json_field "$out" status)"
   echo "${name}：公证结果 ${status:-未知}"
-  if [ "$status" != "Accepted" ]; then
+  if [ "$wait_result" -ne 0 ] || [ "$status" != "Accepted" ]; then
     cat "$out" || true
     echo "===== 公证日志（为什么没通过） ====="
     xcrun notarytool log "$id" "${auth[@]}" || true
@@ -82,8 +101,8 @@ for zip in "$@"; do
     echo "${name}：里面不是 App，不用钉票据"
     continue
   fi
-  xcrun stapler staple "$app"
-  xcrun stapler validate "$app"
+  stapler_with_retry staple "$app"
+  stapler_with_retry validate "$app"
   spctl --assess --type execute --verbose=2 "$app"
   target="$(cd "$(dirname "$zip")" && pwd)/$name"
   rm -f "$target"

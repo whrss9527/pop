@@ -165,11 +165,15 @@ struct SettingsRootView: View {
 /// 自己画而不用 TabView 的分段标签：系统的分段标签在一些系统版本上选中的底色画不满。
 struct SettingsTabBar: View {
     @Binding var selection: SettingsTab
+    @EnvironmentObject private var sync: CloudSync
 
     var body: some View {
         HStack(spacing: 2) {
             ForEach(Array(SettingsTab.allCases.enumerated()), id: \.element) { index, tab in
-                SettingsTabButton(tab: tab, isSelected: tab == selection, shortcut: Self.shortcut(for: index)) {
+                let showsBackup = tab == .sync && !sync.isAvailableInBuild
+                SettingsTabButton(title: showsBackup ? String(localized: "备份") : tab.title,
+                                  symbol: showsBackup ? "externaldrive" : tab.symbol,
+                                  isSelected: tab == selection, shortcut: Self.shortcut(for: index)) {
                     selection = tab
                 }
             }
@@ -189,7 +193,8 @@ struct SettingsTabBar: View {
 }
 
 private struct SettingsTabButton: View {
-    let tab: SettingsTab
+    let title: String
+    let symbol: String
     let isSelected: Bool
     let shortcut: Character?
     let action: () -> Void
@@ -199,10 +204,10 @@ private struct SettingsTabButton: View {
         let fill = isSelected ? Color.primary.opacity(0.1) : (hovering ? Color.primary.opacity(0.05) : Color.clear)
         Button(action: action) {
             VStack(spacing: 3) {
-                Image(systemName: tab.symbol)
+                Image(systemName: symbol)
                     .font(.system(size: 17))
                     .frame(height: 21)
-                Text(tab.title)
+                Text(title)
                     .font(.system(size: 11))
                     .lineLimit(1)
             }
@@ -216,9 +221,9 @@ private struct SettingsTabButton: View {
         .focusable(false)
         .focusEffectDisabled()
         .keyboardShortcut(shortcut.map { KeyboardShortcut(KeyEquivalent($0), modifiers: .command) })
-        .help(shortcut.map { String(localized: "\(tab.title)（⌘\(String($0))）") } ?? tab.title)
+        .help(shortcut.map { String(localized: "\(title)（⌘\(String($0))）") } ?? title)
         .onHover { hovering = $0 }
-        .accessibilityLabel(tab.title)
+        .accessibilityLabel(title)
         .accessibilityAddTraits(isSelected ? AccessibilityTraits.isSelected : AccessibilityTraits())
     }
 }
