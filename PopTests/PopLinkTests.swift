@@ -53,6 +53,24 @@ final class PopLinkTests: XCTestCase {
                        "不把额外字段当作工具输入")
     }
 
+    func testClipboardWidgetRestoresExternalApplicationLikeClipboardLink() throws {
+        let clipboard = try XCTUnwrap(link("pop://clipboard"))
+        let widget = try XCTUnwrap(PopLink(url: WidgetAction.clipboard.url))
+        XCTAssertTrue(clipboard.restoresPreviousApplication)
+        XCTAssertEqual(widget.restoresPreviousApplication, clipboard.restoresPreviousApplication,
+                       "剪贴板组件打开后仍要把历史粘贴到原来的 App")
+    }
+
+    func testOnlySelectionAndPasteLinksRestoreExternalApplication() throws {
+        for url in ["pop://run?plugin=translate", "pop://run?plugin=translate&text=Hello", "pop://ring"] {
+            XCTAssertTrue(try XCTUnwrap(link(url)).restoresPreviousApplication, url)
+        }
+        for url in ["pop://settings", "pop://plugin-library", WidgetAction.pluginLibrary.url.absoluteString,
+                    WidgetAction.screenshotOCR.url.absoluteString, WidgetAction.screenshotTranslate.url.absoluteString] {
+            XCTAssertFalse(try XCTUnwrap(link(url)).restoresPreviousApplication, url)
+        }
+    }
+
     func testCopiedLinkRoundTrips() {
         XCTAssertEqual(PopLink.runURL("translate").absoluteString, "pop://run?plugin=translate")
         let text = "a b&c=d+e #1 你好/?"

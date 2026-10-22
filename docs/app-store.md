@@ -16,11 +16,13 @@ Pop 的 App Store 版和 GitHub 版用同一份代码，编译时带 `APP_STORE`
 
 证书和 App Store Connect API 密钥和 Stox 用的是同一套，只有 App ID 和描述文件是 Pop 自己的。
 
-1. **App ID**：[开发者网站 → Identifiers](https://developer.apple.com/account/resources/identifiers/list) → +，App IDs → App，Bundle ID 选 Explicit，填 `io.github.whrss9527.pop`，能力都不用勾。
-2. **描述文件**：[Profiles](https://developer.apple.com/account/resources/profiles/list) → +，Distribution 下面选 **Mac App Store Connect**，App ID 选上面那个，证书选 Apple Distribution，下载得到 `.provisionprofile`。
+1. **App ID**：[开发者网站 → Identifiers](https://developer.apple.com/account/resources/identifiers/list) → +，App IDs → App，Bundle ID 选 Explicit，分别注册主程序 `io.github.whrss9527.pop` 和小组件 `io.github.whrss9527.pop.widgets`，能力都不用勾。
+2. **描述文件**：[Profiles](https://developer.apple.com/account/resources/profiles/list) → +，Distribution 下面选 **Mac App Store Connect**，分别为上面两个 App ID 创建描述文件，证书选同一团队的 Apple Distribution，下载得到两份 `.provisionprofile`。不要使用开发描述文件或用主程序的描述文件代替小组件的。
 3. **新建 App**：[App Store Connect](https://appstoreconnect.apple.com/apps) → + → 新建 App，平台 macOS，名称 `Pop – Right-Click Toolbox`（被占用的话换一个，同时改 `docs/app-store/listing/en-US/name.txt`），主要语言英语（美国），Bundle ID 选 `io.github.whrss9527.pop`，SKU 随便填（比如 pop）。
 4. **App 隐私**：App Store Connect 里这个 App → App 隐私 → 「不收集数据」。隐私政策网址：英文 https://whrss.com/privacy/pop/ ，中文 https://whrss.com/zh/privacy/pop/ （`docs/app-store/listing/*/privacy_url.txt`，工作流会填进去）。
-5. **Secrets**：在 pop 仓库的 Settings → Secrets and variables → Actions 里加上 `.github/workflows/app-store.yml` 开头列的那些。证书、密码和 API 密钥照抄 Stox 仓库里的，`APPSTORE_PROVISIONING_PROFILE` 是第 2 步的描述文件（`base64 -i Pop_Mac_App_Store.provisionprofile | pbcopy`）。
+5. **Secrets**：在 pop 仓库的 Settings → Secrets and variables → Actions 里加上 `.github/workflows/app-store.yml` 开头列的那些。证书、密码和 API 密钥照抄 Stox 仓库里的；`APPSTORE_PROVISIONING_PROFILE` 是主程序描述文件的 base64，`APPSTORE_WIDGET_PROVISIONING_PROFILE` 是小组件描述文件的 base64（分别运行 `base64 -i 对应文件.provisionprofile | pbcopy`）。工作流解码后用 `APPSTORE_PROFILE` 和 `WIDGET_PROVISIONING_PROFILE` 传文件路径，并在结束时删除临时文件。
+
+本机运行 `scripts/build-app-store.sh` 时，`APPSTORE_PROFILE` 和 `WIDGET_PROVISIONING_PROFILE` 都填本地 `.provisionprofile` 路径，不填 base64。正式打包会在构建前检查两份描述文件的团队、App ID 和发行类型；`ADHOC=1` 不需要描述文件，但不能代替正式签名验收。
 
 ## 上传、填资料、提交
 

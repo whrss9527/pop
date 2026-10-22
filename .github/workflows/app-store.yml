@@ -13,6 +13,7 @@ name: app-store
 #   APPSTORE_INSTALLER_P12          Mac Installer Distribution 证书和私钥导出的 .p12，base64
 #   APPSTORE_INSTALLER_PASSWORD     上面 .p12 的密码
 #   APPSTORE_PROVISIONING_PROFILE   Pop 的 Mac App Store Connect 类型的描述文件（.provisionprofile），base64
+#   APPSTORE_WIDGET_PROVISIONING_PROFILE   PopWidgets 的 Mac App Store Connect 描述文件，base64
 #   ASC_KEY_ID                      App Store Connect API 密钥的 Key ID
 #   ASC_ISSUER_ID                   App Store Connect API 密钥的 Issuer ID
 #   ASC_KEY_P8                      API 密钥文件 AuthKey_XXXX.p8 的内容（原文或 base64 都行）
@@ -98,6 +99,7 @@ jobs:
       APPSTORE_INSTALLER_P12: ${{ secrets.APPSTORE_INSTALLER_P12 }}
       APPSTORE_INSTALLER_PASSWORD: ${{ secrets.APPSTORE_INSTALLER_PASSWORD }}
       APPSTORE_PROVISIONING_PROFILE: ${{ secrets.APPSTORE_PROVISIONING_PROFILE }}
+      APPSTORE_WIDGET_PROVISIONING_PROFILE: ${{ secrets.APPSTORE_WIDGET_PROVISIONING_PROFILE }}
       ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
       ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
       ASC_KEY_P8: ${{ secrets.ASC_KEY_P8 }}
@@ -106,7 +108,7 @@ jobs:
         run: |
           missing=""
           for name in APPSTORE_CERTIFICATE_P12 APPSTORE_CERTIFICATE_PASSWORD APPSTORE_INSTALLER_P12 APPSTORE_INSTALLER_PASSWORD \
-                      APPSTORE_PROVISIONING_PROFILE ASC_KEY_ID ASC_ISSUER_ID ASC_KEY_P8; do
+                      APPSTORE_PROVISIONING_PROFILE APPSTORE_WIDGET_PROVISIONING_PROFILE ASC_KEY_ID ASC_ISSUER_ID ASC_KEY_P8; do
             if [ -z "${!name}" ]; then
               missing="$missing $name"
             fi
@@ -163,12 +165,11 @@ jobs:
           echo "App: $APP_IDENTITY"
           echo "Installer: $INSTALLER_IDENTITY"
 
-          printf '%s' "$APPSTORE_PROVISIONING_PROFILE" | base64 --decode > "$RUNNER_TEMP/Pop.provisionprofile"
+          python3 scripts/prepare-appstore-profiles.py
           {
             echo "CODESIGN_KEYCHAIN=$KEYCHAIN"
             echo "APP_SIGN_IDENTITY=$APP_IDENTITY"
             echo "INSTALLER_SIGN_IDENTITY=$INSTALLER_IDENTITY"
-            echo "APPSTORE_PROFILE=$RUNNER_TEMP/Pop.provisionprofile"
           } >> "$GITHUB_ENV"
 
       - name: Build and package
@@ -234,7 +235,7 @@ jobs:
         if: always()
         run: |
           security delete-keychain "$RUNNER_TEMP/appstore.keychain-db" 2>/dev/null || true
-          rm -rf ~/.appstoreconnect "$RUNNER_TEMP/Pop.provisionprofile"
+          rm -rf ~/.appstoreconnect "$RUNNER_TEMP/Pop.provisionprofile" "$RUNNER_TEMP/PopWidgets.provisionprofile"
 
   listing:
     name: Fill in the App Store listing

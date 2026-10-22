@@ -19,6 +19,17 @@ enum PopLink: Equatable {
 
     static let scheme = "pop"
 
+    /// 读取选区或把结果粘贴回去的入口，必须先把焦点还给之前的 App。
+    /// 截图组件使用空输入自行框选，设置和插件库则留在 Pop 中。
+    var restoresPreviousApplication: Bool {
+        switch self {
+        case .run, .ring, .clipboard, .widget(.clipboard):
+            return true
+        case .settings, .pluginLibrary, .widget(.screenshotOCR), .widget(.screenshotTranslate), .widget(.pluginLibrary):
+            return false
+        }
+    }
+
     init?(url: URL) {
         guard url.scheme?.lowercased() == Self.scheme,
               let components = URLComponents(url: url, resolvingAgainstBaseURL: false) else { return nil }

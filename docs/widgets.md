@@ -8,6 +8,8 @@
 
 ## 构建与验收
 
-`project.yml` 增加独立 WidgetKit 扩展并嵌入 Pop。Developer ID 构建使用同一身份先签组件再签主程序，沙盒插件打包保留 `.appex`。首版不使用 App Group；App Store 正式打包需要另行注册扩展 App ID 并通过 `WIDGET_PROVISIONING_PROFILE` 提供匹配团队/ID的发行描述文件。
+`project.yml` 增加独立 WidgetKit 扩展并嵌入 Pop。Developer ID 构建使用同一身份先签组件再签主程序，沙盒插件打包保留 `.appex`。首版不使用 App Group；App Store 正式打包需要另行注册 `io.github.whrss9527.pop.widgets` 并生成匹配团队和 ID 的 Mac App Store Connect 发行描述文件。Actions 中将它的 base64 保存为 `APPSTORE_WIDGET_PROVISIONING_PROFILE`，工作流会将其解码成私有临时文件并传入 `WIDGET_PROVISIONING_PROFILE`；本机直接把这个变量设为文件路径。两份描述文件在编译前检查，工作流结束时清理临时文件，详见 [App Store 发布](app-store.md)。
 
-`PopLinkTests` 验证入口允许列表、未知工具与重复参数的拒绝，以及额外文字和文件不会变成输入。macOS CI 校验编译、嵌入、版本、签名与 pluginkit 注册。正式签名包还需实际添加两种组件，分别在主程序运行/退出时测试四个入口，检查录屏权限缺失与框选取消，以及升级后的组件保留。没有完成这些验证时保持草稿，不把翻译检查当作功能验证通过。
+`PopLinkTests` 验证入口允许列表、未知工具与重复参数的拒绝、额外文字和文件不会变成输入，以及剪贴板组件与普通剪贴板链接共用恢复原应用焦点的策略。`python3 -m unittest discover -s scripts -p 'test_appstore_profiles.py'` 验证描述文件准备、失败清理和工作流传参。macOS CI 校验编译、嵌入、版本、签名与 pluginkit 注册。正式签名包还需实际添加两种组件，分别在主程序运行/退出时测试四个入口，检查录屏权限缺失与框选取消，以及升级后的组件保留。没有完成这些验证时保持草稿，不把翻译检查当作功能验证通过。
+
+真实粘贴还需在文本编辑器中对照 `pop://clipboard` 与 `pop://widget?tool=clipboard`：主程序已运行时打开历史并选择一条，确认粘贴回原编辑器。冷启动时若没有已知的原应用，路由策略测试不能证明粘贴目标恢复，需单独验收。
