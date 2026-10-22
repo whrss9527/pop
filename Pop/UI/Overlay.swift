@@ -371,14 +371,15 @@ final class OverlayController {
     /// 卡片内容的大小变了（比如翻译结果出来了）就跟着改窗口大小。已经退场的卡片不管。
     private func resizeCard(to size: CGSize, for owner: OverlayPresentation) {
         guard mode == .card, owner === presentation, size.width > 0, size.height > 0 else { return }
-        let frame = ScreenGeometry.cardFrame(anchor: cardAnchor, size: size, within: Self.visibleFrame(containing: cardAnchor),
-                                             gap: Self.cardGap)
+        let frame = ScreenGeometry.pixelAlignedWindowFrame(
+            ScreenGeometry.cardFrame(anchor: cardAnchor, size: size, within: Self.visibleFrame(containing: cardAnchor),
+                                     gap: Self.cardGap), scale: panel.backingScaleFactor)
         guard frame != panel.frame else { return }
         diagnostics.record(.resizeRequested, window: 0, frame: frame, ghosts: leavingPanels.count)
         // 在 SwiftUI 布局回调里直接改窗口大小会重入布局，放到下一轮 RunLoop。
         DispatchQueue.main.async { [weak self] in
             MainActor.assumeIsolated {
-                guard let self, self.mode == .card, owner === self.presentation else { return }
+                guard let self, self.mode == .card, owner === self.presentation, frame != self.panel.frame else { return }
                 self.panel.setFrame(frame, display: true)
                 self.diagnostics.record(.resizeApplied, window: 0, frame: self.panel.frame, ghosts: self.leavingPanels.count)
             }

@@ -42,7 +42,7 @@ def parse_demo(text, variant):
     emoji = [r["duration"] for r in hangs if times[2] <= r["start"] <= times[-1]]
     maximum = max(emoji, default=0)
     return {"markers": dict(zip(names, times)), "hangs": hangs, "emoji_max_hang": maximum,
-            "within_existing_two_second_limit": maximum <= 2}
+            "within_existing_two_second_limit": maximum < 2}
 
 
 def full_prefix_configuration():

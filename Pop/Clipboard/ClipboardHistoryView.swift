@@ -33,7 +33,10 @@ enum ClipboardFilter: String, CaseIterable, Identifiable {
 @MainActor
 final class ClipboardHistoryModel: ObservableObject {
     @Published var query = "" {
-        didSet { search() }
+        didSet {
+            guard query != oldValue else { return }
+            search(debounce: !query.isEmpty)
+        }
     }
     @Published var filter: ClipboardFilter = .all {
         didSet { applyFilter(keepSelection: false) }
@@ -44,6 +47,9 @@ final class ClipboardHistoryModel: ObservableObject {
     /// 按 query 从数据库里查到的（还没按 filter 筛）
     private var found: [ClipboardItem] = []
     private var searchTask: Task<Void, Never>?
+    typealias Search = @MainActor (String) async -> [ClipboardItem]
+    private let searchItems: Search
+    private let waitForSearch: @MainActor () async throws -> Void
     @Published var selection = 0
     /// ⌘ 点选的几条文字，按点选的顺序；回车时合在一起粘贴
     @Published private(set) var marked: [ClipboardItem] = []
@@ -64,8 +70,13 @@ final class ClipboardHistoryModel: ObservableObject {
 
     private var cancellable: AnyCancellable?
 
-    init(service: ClipboardService) {
+    init(service: ClipboardService, searchItems: Search? = nil,
+         waitForSearch: @escaping @MainActor () async throws -> Void = {
+             try await Task.sleep(for: .milliseconds(150))
+         }) {
         self.service = service
+        self.searchItems = searchItems ?? { await service.searchItems(matching: $0) }
+        self.waitForSearch = waitForSearch
         // 打开面板时先同步读一次，面板一出来就有内容
         found = service.items(matching: "")
         applyFilter(keepSelection: false)
@@ -76,6 +87,10 @@ final class ClipboardHistoryModel: ObservableObject {
             }
     }
 
+    deinit {
+        searchTask?.cancel()
+    }
+
     var isEnabled: Bool { service.isEnabled }
 
     var selectedItem: ClipboardItem? {
@@ -84,13 +99,19 @@ final class ClipboardHistoryModel: ObservableObject {
 
     /// 按现在的 query 重新查：在数据库的队列上查（历史多、内容长的时候要一会儿，一个字一个字打的时候不能卡），
     /// 查完以前又打了字就不要这次的
-    func search(keepSelection: Bool = false) {
+    func search(keepSelection: Bool = false, debounce: Bool = false) {
         searchTask?.cancel()
         let query = query
+        let searchItems = searchItems
+        let waitForSearch = waitForSearch
         searchTask = Task { [weak self] in
-            guard let self else { return }
-            let results = await service.searchItems(matching: query)
-            guard !Task.isCancelled, query == self.query else { return }
+            // 只延迟输入；清空和历史变动马上刷新。等待期间不持有面板 model。
+            if debounce {
+                do { try await waitForSearch() } catch { return }
+            }
+            guard !Task.isCancelled else { return }
+            let results = await searchItems(query)
+            guard let self, !Task.isCancelled, query == self.query else { return }
             found = results
             applyFilter(keepSelection: keepSelection)
         }

@@ -179,3 +179,8 @@ make signing-certificate    # 即 scripts/create-signing-certificate.sh，文件
 诊断另支持`--workload full-prefix --cycles 1`及同名工作流参数。沿原演示执行到emojiSymbols，使用原light6/dark2与quick-step倍数，严格核验保留的main19b/run38807294110参考中的123个前缀标记。这轮不做原截图脚本的图片读回，因此不冒充完全相同的截图门禁。每进程最多900秒；比较不采样，只有原超限测量才安排独立有界采样。默认六条件只验证实验协议，不证明产品修复；可预定1–3轮。普通演示与发行门槛保持原行为。
 
 测量工作流的`observer`负载使用原截图驱动、LaunchServices open、baseline产品渲染及已验证完整前缀。图片读回/并行采样的四条件各跑light和dark，保留原quick-step/6倍/2倍时间表。开关需明确POP_OBSERVER_PROBE和临时托管runner；普通CI仍默认截图/采样及两秒门槛。采集器记录原驱动退出码，只在完整原始日志确实超限时把性能失败作为完成的数据保留；前缀缺失、图片条件不符或退出码矛盾均拒绝完成。原截图、日志和采样全部保留。本轮固定一轮四条件，不预设因果结论。
+
+测量工作流新增`material`负载，复用原截图驱动及完整前缀；读回固定开启、采样固定关闭，以baseline→legacy-glass→legacy-glass→baseline四条件各跑light/dark。只切换已有托管诊断材质标记，普通CI默认不变。所有图片、前缀及原门禁退出仍需一致；每条件一个新进程、同一构建和runner，交错顺序不等于已消除所有共享缓存影响。采集成功不是性能通过，不凭少量未复现关闭父事项。精确2.000秒与原截图门禁一样算失败。
+
+
+`workload=ghost` 沿原LaunchServices/完整前缀/图片读回负载，关闭并行采样，按baseline/no-ghost/no-ghost/baseline采集light/dark。只使用既有专用演示变体，不改产品默认；no-ghost日志必须完全没有ghostCreated。保留每次原门禁退出，采集完成不代表修复。

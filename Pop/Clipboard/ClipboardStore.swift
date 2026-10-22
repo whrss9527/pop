@@ -53,6 +53,22 @@ struct ClipboardCapture: Equatable, Sendable {
 
 private let sqliteTransient = unsafeBitCast(-1, to: sqlite3_destructor_type.self)
 
+/// 取消可以发生在任意线程；排队查询开始前读取，不中断同一连接上的其他操作。
+private final class ClipboardSearchCancellation: @unchecked Sendable {
+    private let lock = NSLock()
+    private var cancelled = false
+
+    func cancel() {
+        lock.lock(); defer { lock.unlock() }
+        cancelled = true
+    }
+
+    var isCancelled: Bool {
+        lock.lock(); defer { lock.unlock() }
+        return cancelled
+    }
+}
+
 /// 剪贴板历史数据库：~/Library/Application Support/Pop/Clipboard/history.sqlite（WAL 模式），
 /// 图片单独存成 PNG 放在旁边的 Images 文件夹里。只存在本机，不会同步。
 /// 所有操作都在一个串行队列里执行，可以从任意线程调用。
@@ -62,7 +78,7 @@ final class ClipboardStore: @unchecked Sendable {
     private(set) var openError: String?
 
     private var db: OpaquePointer?
-    private let queue = DispatchQueue(label: "io.github.whrss9527.pop.clipboard")
+    private let queue: DispatchQueue
 
     static var defaultDirectory: URL {
         let fileManager = FileManager.default
@@ -71,9 +87,10 @@ final class ClipboardStore: @unchecked Sendable {
         return base.appending(path: "Pop/Clipboard", directoryHint: .isDirectory)
     }
 
-    init(directory: URL = ClipboardStore.defaultDirectory) {
+    init(directory: URL = ClipboardStore.defaultDirectory, workQueue: DispatchQueue? = nil) {
         self.directory = directory
         imagesDirectory = directory.appending(path: "Images", directoryHint: .isDirectory)
+        queue = workQueue ?? DispatchQueue(label: "io.github.whrss9527.pop.clipboard")
         queue.sync {
             openDatabase()
         }
@@ -141,10 +158,19 @@ final class ClipboardStore: @unchecked Sendable {
     /// 和 items(matching:limit:) 一样，只是调用的线程不用等着：历史多、内容长的时候一个字一个字搜要好一会儿，
     /// 历史面板打字搜索时用它，主线程不卡
     func searchItems(matching search: String, limit: Int = 200) async -> [ClipboardItem] {
-        await withCheckedContinuation { continuation in
-            queue.async {
-                continuation.resume(returning: self.query(search, limit: limit))
+        let cancellation = ClipboardSearchCancellation()
+        return await withTaskCancellationHandler {
+            await withCheckedContinuation { continuation in
+                queue.async {
+                    guard !cancellation.isCancelled else {
+                        continuation.resume(returning: [])
+                        return
+                    }
+                    continuation.resume(returning: self.query(search, limit: limit))
+                }
             }
+        } onCancel: {
+            cancellation.cancel()
         }
     }
 

@@ -10,7 +10,7 @@ Download the latest `Pop-<version>.zip` from [Releases](https://github.com/whrss
 xattr -dr com.apple.quarantine /Applications/Pop.app
 ```
 
-Builds made on GitHub don't include iCloud sync (it needs signing with your own paid developer account; see [iCloud sync](development.md#icloud-sync) under Development). Everything else works.
+GitHub and App Store builds do not include automatic iCloud sync (it needs signing with your own paid developer account; see [iCloud sync](development.md#icloud-sync) under Development). Everything else works.
 
 ### One-click updates
 
@@ -35,7 +35,7 @@ Pop is a macOS menu bar productivity tool. **Hold down the right mouse button** 
 - Math, measurements, color values or images: Pop calculates the result, converts the units, converts the color notation or recognizes the text in the image.
 - Anything else (or nothing selected): the **ring**, a radial menu, appears. Keep holding, flick toward a slot and release to run that action; release in the center to close it. (You can also have the ring stay open after you release and then click.)
 
-Which actions are installed, which slot each one takes, and which kind of content runs which action directly are all up to you in Settings. Besides 120+ built-in actions, you can **write your own plugins** with URL templates, shell scripts, JavaScript or Shortcuts, or install ready-made ones from the **plugin library** with a click. Pop also has a **clipboard history** (stored only on your Mac and cleaned up after the time you choose), and you can **pin** screenshots, images and text on top of all windows for reference. Select text and have **AI** polish, summarize or explain it, or ask a question: on macOS 26 you can use the built-in system model (runs on your Mac, no setup), or enter your own AI API. Settings and plugins can **sync through iCloud** to your other Macs, and new versions download from GitHub and **update in one click** inside the app.
+Which actions are installed, which slot each one takes, and which kind of content runs which action directly are all up to you in Settings. Besides 120+ built-in actions, you can **write your own plugins** with URL templates, shell scripts, JavaScript or Shortcuts, or install ready-made ones from the **plugin library** with a click. Pop also has a **clipboard history** (stored only on your Mac and cleaned up after the time you choose), and you can **pin** screenshots, images and text on top of all windows for reference. Select text and have **AI** polish, summarize or explain it, or ask a question: on macOS 26 you can use the built-in system model (runs on your Mac, no setup), or enter your own AI API. Settings and custom plugins can be **exported and imported** in Settings → Backup to move them to your other Macs, and new versions download from GitHub and **update in one click** inside the app.
 
 | Area | Details |
 | --- | --- |
@@ -56,12 +56,12 @@ Which actions are installed, which slot each one takes, and which kind of conten
 | Pins | Pin screenshots, selected images or text on top of all windows: drag to move, scroll or pinch to zoom, hold ⌥ and scroll to change opacity; ⌘C copies, ⌘S saves to Downloads, right-click to recognize text or annotate, double-click or Esc closes. The menu bar can close all pins at once |
 | Rules | Choose which action runs directly, skipping the ring, for each kind of content (defaults: other languages → Translate, math → Calculate, measurements → Convert Units, colors → Convert Color, images → Recognize Text) |
 | AI | Select text and have AI polish, summarize, explain or translate it, or ask a question. Answers stream in and can be copied, used to replace the selection, or pinned to the screen. On macOS 26, on Macs that support Apple Intelligence, you can use the built-in system model (runs on your Mac, offline, no setup), or enter an API compatible with OpenAI Chat Completions in Settings → AI (model servers running on your Mac work too). Selected text is sent only when you use an AI action, and the API key stays in this Mac's keychain |
-| iCloud sync | Ring layouts (including per-app rings), installed actions, custom plugins, rules, triggers and action shortcuts, translation, clipboard and AI API settings (except the API key), stored in your own iCloud key-value storage. You can also export them to a file in Settings → Sync and import it on another Mac (works in builds without iCloud sync too) |
+| Settings backup | Export a file in Settings → Backup and import it on another Mac: ring layouts (including per-app rings), installed actions, custom plugins, rules, triggers and action shortcuts, translation, clipboard and AI API settings (except the API key). Official builds do not provide automatic iCloud sync |
 | Updates | Reads GitHub Releases directly (beta versions optional). After downloading, Pop verifies the SHA-256 checksum and code signature before replacing Pop.app and restarting. New versions are announced with a notification and a download arrow on the menu bar icon, without interrupting you; after updating, the first launch sends a notification about what’s new |
 
 ### Plugins
 
-Some actions come as separate plugin bundles that aren't part of the Pop download. Install one when you need it under Plugins at the top of Settings → Actions: it downloads from this version's GitHub release in a few seconds and works right away, without a restart. You can also search for it in All Actions on the ring: plugins that aren't installed are listed after the installed actions; click one (or select it and press Return) to install it, and it runs right away if it can handle the current content. Each plugin shows its download size and how much space it takes once installed. Click Uninstall when you no longer need it: the plugin and its settings are deleted, and the action is removed from the ring and from shortcuts. With iCloud sync on, installing and uninstalling sync to your other Macs.
+Some actions come as separate plugin bundles that aren't part of the Pop download. Install one when you need it under Plugins at the top of Settings → Actions: it downloads from this version's GitHub release in a few seconds and works right away, without a restart. You can also search for it in All Actions on the ring: plugins that aren't installed are listed after the installed actions; click one (or select it and press Return) to install it, and it runs right away if it can handle the current content. Each plugin shows its download size and how much space it takes once installed. Click Uninstall when you no longer need it: the plugin and its settings are deleted, and the action is removed from the ring and from shortcuts. The installation list can be exported with your settings and imported on another Mac; plugin bundles must be downloaded on each Mac.
 
 These actions are plugins now (they're also listed in the Built-in actions table below), with more to follow:
 
@@ -122,7 +122,7 @@ Create one from a template in Settings → Actions → My Plugins, or put a JSON
 | `action.timeout` | Maximum run time of a script in seconds; it's stopped after that (not used by AI prompts) |
 | `output` | What to do with the script's result: `card` result card, `copy` copy, `replace` replace the selected text, `toast` brief message, `none` nothing |
 
-All fields are parsed leniently: missing or invalid values fall back to defaults, so exchanging plugins between old and new versions never fails outright. Like ring layouts, plugins can sync through iCloud, and you can send the JSON file to someone else to import.
+All fields are parsed leniently: missing or invalid values fall back to defaults, so exchanging plugins between old and new versions never fails outright. Like ring layouts, plugins can be moved with a settings backup, and you can send the JSON file to someone else to import.
 
 ### Plugin library
 
@@ -172,9 +172,9 @@ Re-posted events are marked and pass straight through when they come back to the
 
 | Data | Location | Sync |
 | --- | --- | --- |
-| Settings (ring, rules, triggers…) | `UserDefaults` (`io.github.whrss9527.pop`) | iCloud key-value storage |
-| Custom plugins | `~/Library/Application Support/Pop/Plugins/*.json`, one file per plugin | iCloud key-value storage |
-| Installed plugin bundles | `~/Library/Application Support/Pop/PluginBundles/*.bundle` | Which ones are installed syncs with your settings; each Mac downloads the plugins from the release |
+| Settings (ring, rules, triggers…) | `UserDefaults` (`io.github.whrss9527.pop`) | No automatic sync; export and import available |
+| Custom plugins | `~/Library/Application Support/Pop/Plugins/*.json`, one file per plugin | No automatic sync; export and import available |
+| Installed plugin bundles | `~/Library/Application Support/Pop/PluginBundles/*.bundle` | The installation list is exported with settings; each Mac downloads the plugins from the release |
 | Clipboard history | `~/Library/Application Support/Pop/Clipboard/history.sqlite` (WAL mode); images are stored as PNG files in the `Images` folder next to it. Text recognized in images is also stored in the database for searching | Not synced; stays on this Mac |
 | Inbox | `~/Documents/Pop 收集箱.md` | Follows your Documents folder |
 | Vocabulary | `~/Library/Application Support/Pop/Vocabulary.json` | Not synced; can be exported |

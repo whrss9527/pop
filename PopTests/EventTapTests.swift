@@ -40,6 +40,8 @@ final class MouseTriggerTests: XCTestCase {
         var accepts = true
         var onShouldBegin: (() -> Void)?
         var pressed = true
+        var sessionPressed = false
+        var stateQueries: [(source: CGEventSourceStateID, button: CGMouseButton)] = []
         var recovery: [(fire: () -> Void, cancelled: Bool)] = []
         var timers: [(seconds: TimeInterval, fire: () -> Void, cancelled: Bool)] = []
 
@@ -65,7 +67,10 @@ final class MouseTriggerTests: XCTestCase {
                              let index = recorder.recovery.count
                              recorder.recovery.append((fire, false))
                              return { recorder.recovery[index].cancelled = true }
-                         }, isPressed: { _ in recorder.pressed })
+                         }, buttonState: { source, button in
+                             recorder.stateQueries.append((source, button))
+                             return source == .hidSystemState ? recorder.pressed : recorder.sessionPressed
+                         })
     }
 
     private func mouse(_ type: CGEventType, _ x: CGFloat, _ y: CGFloat, button: CGMouseButton = .right,
@@ -97,6 +102,64 @@ final class MouseTriggerTests: XCTestCase {
                                           .release(CGPoint(x: 170, y: 125))])
         // 扣住的按下事件不再补发：目标 App 感知不到这次按压
         XCTAssertTrue(recorder.posted.isEmpty)
+    }
+
+    func testInterceptedPressUsesHIDStateForActivationAndRecovery() throws {
+        for mode in [TriggerMode.longPressRight, .modifierRightClick, .middleClick] {
+            let recorder = Recorder()
+            // 按下被 session tap 扣住：HID 仍按住，会话状态没有收到按下。
+            recorder.pressed = true
+            recorder.sessionPressed = false
+            let core = makeCore(.init(mode: mode), recorder: recorder)
+            let middle = mode == .middleClick
+            let down: CGEventType = middle ? .otherMouseDown : .rightMouseDown
+            let up: CGEventType = middle ? .otherMouseUp : .rightMouseUp
+            let button: CGMouseButton = middle ? .center : .right
+            XCTAssertTrue(core.handle(type: down, event: try mouse(down, 10, 20, button: button, flags: .maskAlternate)))
+            if mode == .longPressRight { recorder.fireTimer() }
+            XCTAssertEqual(recorder.signals, [.activate(CGPoint(x: 10, y: 20))])
+            XCTAssertTrue(recorder.posted.isEmpty)
+            guard !recorder.recovery.isEmpty else {
+                XCTFail("按住时必须开始恢复检查")
+                continue
+            }
+            recorder.recovery[0].fire()
+            XCTAssertEqual(recorder.signals, [.activate(CGPoint(x: 10, y: 20))])
+            XCTAssertEqual(recorder.recovery.count, 2)
+            XCTAssertFalse(recorder.stateQueries.isEmpty)
+            XCTAssertTrue(recorder.stateQueries.allSatisfy { $0.source == .hidSystemState && $0.button == button })
+            XCTAssertTrue(core.handle(type: up, event: try mouse(up, 10, 20, button: button)))
+            XCTAssertEqual(recorder.signals.last, .release(CGPoint(x: 10, y: 20)))
+        }
+    }
+
+    func testStaleSessionDownCannotKeepReleasedHIDGestureAlive() throws {
+        let recorder = Recorder()
+        let core = makeCore(recorder: recorder)
+        XCTAssertTrue(core.handle(type: .rightMouseDown, event: try mouse(.rightMouseDown, 10, 20)))
+        recorder.fireTimer()
+        // 松开事件丢失，其他事件源使会话状态仍为按住：不能阻止 HID 松开恢复。
+        recorder.pressed = false
+        recorder.sessionPressed = true
+        recorder.recovery[0].fire()
+        XCTAssertEqual(recorder.signals, [.activate(CGPoint(x: 10, y: 20)), .release(CGPoint(x: 10, y: 20))])
+        XCTAssertEqual(recorder.recovery.count, 1)
+        XCTAssertTrue(recorder.stateQueries.allSatisfy { $0.source == .hidSystemState && $0.button == .right })
+    }
+
+    func testPendingResetUsesHIDStateWhenSessionDisagrees() throws {
+        for held in [true, false] {
+            let recorder = Recorder()
+            let core = makeCore(recorder: recorder)
+            XCTAssertTrue(core.handle(type: .rightMouseDown, event: try mouse(.rightMouseDown, 10, 20)))
+            recorder.pressed = held
+            recorder.sessionPressed = !held
+            core.reset()
+            XCTAssertEqual(recorder.posted.map { $0.type }, held ? [.rightMouseDown] : [.rightMouseDown, .rightMouseUp])
+            XCTAssertTrue(recorder.stateQueries.allSatisfy { $0.source == .hidSystemState && $0.button == .right })
+            recorder.fireTimer()
+            XCTAssertTrue(recorder.signals.isEmpty)
+        }
     }
 
     func testQuickClickIsGivenBackToTheSystem() throws {

@@ -560,6 +560,41 @@ final class GeometryTests: XCTestCase {
         XCTAssertEqual(ScreenGeometry.cardFrame(anchor: CGPoint(x: 100, y: 100), size: size, within: bounds).minY, 114)
     }
 
+    func testWindowFrameIgnoresSubpixelLayoutNoiseAtEachBackingScale() {
+        let actual = CGRect(x: 368, y: 275, width: 436, height: 270)
+        for scale in [CGFloat(1), CGFloat(2)] {
+            // 与诊断中的小数高度和整数 panel.frame 相同：上边固定，底边只抖动亚像素。
+            let noise = 0.125 / scale
+            let measured = CGRect(x: actual.minX, y: actual.minY + noise,
+                                  width: actual.width, height: actual.height - noise)
+            XCTAssertEqual(ScreenGeometry.pixelAlignedWindowFrame(measured, scale: scale), actual)
+        }
+    }
+
+    func testWindowFrameKeepsRealSinglePixelChanges() {
+        for scale in [CGFloat(1), CGFloat(2)] {
+            let original = CGRect(x: -400, y: 100, width: 200, height: 150)
+            let expanded = CGRect(x: original.minX, y: original.minY,
+                                  width: original.width + 1 / scale, height: original.height)
+            XCTAssertNotEqual(ScreenGeometry.pixelAlignedWindowFrame(original, scale: scale),
+                              ScreenGeometry.pixelAlignedWindowFrame(expanded, scale: scale))
+            XCTAssertEqual(ScreenGeometry.pixelAlignedWindowFrame(expanded, scale: scale), expanded)
+        }
+    }
+
+    func testWindowFrameAlignmentContainsContentAndIsStableOnNegativeCoordinates() {
+        let content = CGRect(x: -1279.75, y: -125.125, width: 435.625, height: 269.375)
+        for scale in [CGFloat(1), CGFloat(2)] {
+            let aligned = ScreenGeometry.pixelAlignedWindowFrame(content, scale: scale)
+            XCTAssertTrue(aligned.contains(content))
+            XCTAssertLessThan(content.minX - aligned.minX, 1 / scale)
+            XCTAssertLessThan(content.minY - aligned.minY, 1 / scale)
+            XCTAssertLessThan(aligned.maxX - content.maxX, 1 / scale)
+            XCTAssertLessThan(aligned.maxY - content.maxY, 1 / scale)
+            XCTAssertEqual(ScreenGeometry.pixelAlignedWindowFrame(aligned, scale: scale), aligned)
+        }
+    }
+
     func testPinFrames() {
         let screen = CGRect(x: 0, y: 0, width: 1440, height: 900)
         XCTAssertEqual(ScreenGeometry.fitted(CGSize(width: 2000, height: 1000), within: CGSize(width: 1000, height: 1000)),
