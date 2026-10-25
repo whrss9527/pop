@@ -1,0 +1,18 @@
+{
+  "id": "bytePreview",
+  "version": "1.0.0",
+  "name": {
+    "zh-Hans": "文件字节预览",
+    "en": "File Byte Preview"
+  },
+  "summary": {
+    "zh-Hans": "只读预览一个普通文件开头最多 4096 字节，显示偏移、十六进制和 ASCII；不修改或执行文件",
+    "en": "Read up to the first 4096 bytes of one regular file as offsets, hexadecimal and ASCII without modifying or executing it"
+  },
+  "symbol": "doc.text.magnifyingglass",
+  "category": "files",
+  "functions": ["bytePreview"],
+  "defaultsKeys": [],
+  "keychainAccounts": [],
+  "dataFolders": []
+}
