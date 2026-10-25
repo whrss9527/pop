@@ -1,0 +1,11 @@
+/* 文件字节预览：独立插件包的界面翻译 */
+"文件字节预览" = "File Byte Preview";
+"只读预览一个普通文件开头最多 4096 字节，显示偏移、十六进制和 ASCII；不修改或执行文件" = "Read up to the first 4096 bytes of one regular file as offsets, hexadecimal and ASCII without modifying or executing it";
+"请只选中一个普通文件" = "Select exactly one regular file";
+"只能预览本机文件" = "Only local files can be previewed";
+"不支持文件夹、符号链接或特殊文件" = "Folders, symbolic links and special files are not supported";
+"无法读取这个文件，请检查文件是否存在及读取权限" = "Unable to read this file. Check that it exists and is readable";
+"仅显示前 4096 字节，后续内容未读取" = "Showing only the first 4096 bytes; the remaining content was not read";
+"已显示 %lld 字节" = "Displayed %lld bytes";
+"文件为空，没有可预览的字节" = "This file is empty; there are no bytes to preview";
+"复制预览" = "Copy Preview";
