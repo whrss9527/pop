@@ -21,8 +21,11 @@ struct BytePreviewPlugin: PopPlugin {
 
     @MainActor func run(_ content: ClassifiedContent, context: PluginContext) async -> PluginOutcome {
         let files = content.files
-        let result: Result<BytePreview.Snapshot, BytePreview.Failure> = await runInBackground {
-            do { return .success(try BytePreview.read(files)) }
+        let result: Result<(preview: BytePreview.Snapshot, text: String), BytePreview.Failure> = await runInBackground {
+            do {
+                let preview = try BytePreview.read(files)
+                return .success((preview, preview.text))
+            }
             catch let failure as BytePreview.Failure { return .failure(failure) }
             catch { return .failure(.cannotRead) }
         }
@@ -40,14 +43,18 @@ struct BytePreviewPlugin: PopPlugin {
                 message = String(localized: "无法读取这个文件，请检查文件是否存在及读取权限", bundle: .bytePreview)
             }
             return .failure(message)
-        case .success(let preview):
-            let detail = preview.truncated
-                ? String(localized: "仅显示前 4096 字节，后续内容未读取", bundle: .bytePreview)
-                : String(localized: "已显示 \(preview.data.count) 字节", bundle: .bytePreview)
-            return .card(ResultCard(title: preview.name,
-                                    body: preview.data.isEmpty ? String(localized: "文件为空，没有可预览的字节", bundle: .bytePreview) : preview.text,
-                                    detail: detail, monospaced: true,
-                                    copyText: preview.data.isEmpty ? nil : preview.text))
+        case .success(let result):
+            return .present(PluginPresentation { session in
+                let screen = NSScreen.screens.first { NSMouseInRect(session.anchor, $0.frame, false) } ?? NSScreen.main
+                let available = screen?.visibleFrame.size ?? CGSize(width: 800, height: 600)
+                // CardContainer 外侧还有阴影边距，正文保留独立双向滚动区域。
+                let width = max(1, min(640, available.width - 68))
+                let height = max(1, min(360, available.height - 220))
+                session.showCard(BytePreviewView(preview: result.preview, text: result.text,
+                                                width: width, viewportHeight: height,
+                                                onCopy: { session.perform(.copy(result.text)) },
+                                                onClose: { session.end() }))
+            })
         }
     }
 }

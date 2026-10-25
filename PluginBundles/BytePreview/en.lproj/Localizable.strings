@@ -8,3 +8,4 @@
 "仅显示前 4096 字节，后续内容未读取" = "Showing only the first 4096 bytes; the remaining content was not read";
 "已显示 %lld 字节" = "Displayed %lld bytes";
 "文件为空，没有可预览的字节" = "This file is empty; there are no bytes to preview";
+"复制预览" = "Copy Preview";
