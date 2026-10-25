@@ -28,8 +28,15 @@ enum BytePreview {
     }
 
     static func read(_ files: [URL]) throws -> Snapshot {
-        guard files.count == 1, let file = files.first else { throw Failure.requiresSingleFile }
-        guard file.isFileURL, file.host == nil || file.host == "" || file.host?.lowercased() == "localhost",
+        guard files.count == 1 else { throw Failure.requiresSingleFile }
+        // Foundation 在不同系统上可能无法把非法 URL 值还原成可用的元素。
+        guard let file = files.first else { throw Failure.notLocalFile }
+        // 先检查尚未转成文件系统路径的编码形式，避免 NUL 在 Darwin 路径转换时被截断。
+        guard let components = URLComponents(url: file, resolvingAgainstBaseURL: false),
+              components.scheme?.lowercased() == "file",
+              components.host == nil || components.host == "" || components.host?.lowercased() == "localhost",
+              !components.percentEncodedPath.contains("%00"),
+              file.isFileURL,
               !file.path(percentEncoded: false).utf8.contains(0) else { throw Failure.notLocalFile }
         // O_NONBLOCK 避免误选 FIFO 时等待写入者；O_NOFOLLOW 不跟随最后一级符号链接。
         let descriptor = file.withUnsafeFileSystemRepresentation { path in

@@ -106,10 +106,38 @@ final class BytePreviewTests: XCTestCase {
         failure(.requiresSingleFile, files: [url, url])
     }
 
-    func testNonLocalAndNULPathsAreRejected() throws {
+    func testNonLocalPathsAreRejected() throws {
         failure(.notLocalFile, files: [try XCTUnwrap(URL(string: "https://example.com/private.bin"))])
         failure(.notLocalFile, files: [try XCTUnwrap(URL(string: "file://remote.example.com/private.bin"))])
-        failure(.notLocalFile, files: [URL(fileURLWithPath: "/tmp/visible\0hidden")])
+    }
+
+    func testEncodedNULCannotReadAnExistingPathPrefix() throws {
+        let original = Data([0x50, 0x4F, 0x50])
+        let prefix = try file(original, in: temporaryDirectory(), name: "visible")
+        let encoded = try XCTUnwrap(URL(string: prefix.absoluteString + "%00hidden"))
+        let files = [encoded]
+        XCTAssertEqual(files.count, 1)
+        XCTAssertNotNil(files.first)
+        XCTAssertTrue(try XCTUnwrap(URLComponents(url: encoded, resolvingAgainstBaseURL: false)).percentEncodedPath.contains("%00"))
+        failure(.notLocalFile, files: files)
+        XCTAssertEqual(try Data(contentsOf: prefix), original)
+    }
+
+    func testRawNULInitializerIsRejectedAtItsObservableBoundary() throws {
+        let prefix = try file(Data([1, 2, 3]), in: temporaryDirectory(), name: "visible")
+        // 某些 Darwin Foundation 版本产生不可用的 URL 元素，数组的可观察数量可能已不是 1。
+        let files = [URL(fileURLWithPath: prefix.path + "\0hidden")]
+        let expected: BytePreview.Failure = files.count == 1 ? .notLocalFile : .requiresSingleFile
+        failure(expected, files: files)
+        XCTAssertEqual(try Data(contentsOf: prefix), Data([1, 2, 3]))
+    }
+
+    func testLiteralPercentZeroZeroInFilenameIsNotDecodedTwice() throws {
+        let original = Data([0x41, 0x42])
+        let url = try file(original, in: temporaryDirectory(), name: "visible%00hidden")
+        let components = try XCTUnwrap(URLComponents(url: url, resolvingAgainstBaseURL: false))
+        XCTAssertTrue(components.percentEncodedPath.contains("%2500"))
+        XCTAssertEqual(try BytePreview.read([url]).data, original)
     }
 
     func testDirectoryAndSymbolicLinkAreRejected() throws {
