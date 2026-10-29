@@ -65,6 +65,7 @@ observer = configuration(os.environ)
 
 # 边缘圆盘只拍停稳后的状态。OverlayDemo 对这些步骤固定用至多两倍动画速度。
 edge_cases = ["edge-top-8", "edge-right-8", "edge-bottom-8", "edge-left-8",
+              "edge-top-inset-35-8", "edge-top-inset-100-8", "edge-left-inset-100-8", "corner-top-left-inset-100-8",
               "corner-top-left-8", "corner-top-right-8", "corner-bottom-right-8", "corner-bottom-left-8",
               "corner-top-left-12"]
 edge_plan = [(name + "-" + state, [3.0]) for name in edge_cases for state in ("loaded", "hover-first", "hover")]
