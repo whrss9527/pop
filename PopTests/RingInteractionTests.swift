@@ -163,8 +163,8 @@ final class RingInteractionTests: XCTestCase {
                                      installed: [BuiltinPluginID.clipboardHistory], content: nil)
             ring.freezePlacement(anchor: anchor, safeFrame: CGRect(x: 0, y: 0, width: 800, height: 600))
             XCTAssertTrue(ring.placement?.hasOverflow == true)
-            XCTAssertEqual(ring.visibleSlots.count, anchor.y == 600 ? 2 : 5)
-            XCTAssertLessThanOrEqual(ring.geometry.outerRadius, 184)
+            XCTAssertEqual(ring.visibleSlots.count, anchor.y == 600 ? 2 : 4)
+            XCTAssertLessThanOrEqual(ring.geometry.outerRadius, 160)
             XCTAssertEqual(ring.visibleSlots.last?.id, ring.overflowID)
             XCTAssertEqual(ring.slots.count, 12)
             var visited: [Int] = []
