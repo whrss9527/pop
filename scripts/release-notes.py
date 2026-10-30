@@ -42,6 +42,9 @@ def main():
     args = parser.parse_args()
     index = json.loads(pathlib.Path(args.index).read_text())
     if args.previous:
+        # 正式版与测试版并行发布时，对比标签可能晚于检出创建。
+        subprocess.run(['git', 'fetch', '--no-tags', 'origin',
+                        f'refs/tags/{args.previous}:refs/tags/{args.previous}'], check=True)
         paths = subprocess.check_output(['git', 'diff', '--name-only', args.previous, 'HEAD', '--', 'PluginBundles'], text=True).splitlines()
     else:
         paths = subprocess.check_output(['git', 'ls-files', 'PluginBundles'], text=True).splitlines()

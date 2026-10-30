@@ -192,6 +192,7 @@ struct RingMenuView: View {
     @ObservedObject var model: RingViewModel
     @ObservedObject var presentation: OverlayPresentation
     @Environment(\.accessibilityReduceMotion) private var systemReduceMotion
+    @Environment(\.colorScheme) private var colorScheme
 
     private var reduceMotion: Bool {
         systemReduceMotion && !Motion.ignoresReduceMotion
@@ -372,7 +373,8 @@ struct RingMenuView: View {
 
     /// 圆心的文字：指着的功能名用强调色（用不了时是灰色，下面一行小字说明原因），读到的内容用次要颜色
     private func centerLabel(_ center: RingViewModel.Center) -> some View {
-        let tint = center.isFunction && center.enabled ? Color.accentColor : Color.secondary
+        let tint: Color = center.isFunction && center.enabled
+            ? (colorScheme == .dark ? .primary : .accentColor) : .secondary
         let size: CGFloat = center.isFunction ? (isEdge ? 12 : 11) : (isEdge ? 11 : 10)
         let weight: Font.Weight = center.isFunction ? .semibold : .medium
         return VStack(spacing: 2) {
@@ -493,6 +495,7 @@ struct RingArc: Shape {
 }
 
 private struct RingSlotLabel: View {
+    @Environment(\.colorScheme) private var colorScheme
     let slot: RingViewModel.Slot
     let isHovered: Bool
     let committed: Int?
@@ -528,7 +531,7 @@ private struct RingSlotLabel: View {
             }
         }
         .frame(width: 66)
-        .foregroundStyle(active ? Color.accentColor : Color.primary)
+        .foregroundStyle(active && colorScheme == .light ? Color.accentColor : Color.primary)
         .opacity(isLoading && !slot.isOverflow ? (isEdge ? 0.55 : 0.45) :
                     (slot.enabled ? 1 : (slot.pendingPackage != nil ? 0.65 : (isEdge ? 0.48 : 0.3))))
         .opacity(dimmed ? 0.35 : 1)
