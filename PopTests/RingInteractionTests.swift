@@ -188,7 +188,8 @@ final class RingInteractionTests: XCTestCase {
 
     @MainActor
     func testAdaptiveRenderedPositionsMatchHoverAndDragContinuation() {
-        for anchor in [CGPoint(x: 0, y: 450), CGPoint(x: 24, y: 450)] {
+        for anchor in [CGPoint(x: 0, y: 450), CGPoint(x: 24, y: 450), CGPoint(x: 48, y: 450),
+                       CGPoint(x: 84, y: 450), CGPoint(x: 96, y: 450), CGPoint(x: 110, y: 450)] {
             let layout = RingLayout.default
             let ring = RingViewModel(layout: layout, catalog: BuiltinPlugins.make().map(\.info),
                                      installed: Set(layout.slots.compactMap { $0 }), content: .empty)

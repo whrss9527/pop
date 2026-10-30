@@ -270,7 +270,7 @@ final class GeometryTests: XCTestCase {
     func testNearEdgeLayoutsKeepAllSlotCountsOnScreen() {
         let safe = CGRect(x: 1440.5, y: -900.25, width: 1440, height: 900)
         for count in [3, 4, 5, 6, 8, 12] {
-            for distance: CGFloat in [0, 12, 24, 34, 35, 48, 64, 84, 100, 120, 145] {
+            for distance: CGFloat in [0, 12, 24, 34, 35, 48, 64, 84, 96, 100, 110, 120, 145] {
                 let anchors = [CGPoint(x: safe.midX, y: safe.maxY - distance),
                                CGPoint(x: safe.midX, y: safe.minY + distance),
                                CGPoint(x: safe.minX + distance, y: safe.midY),
@@ -324,6 +324,65 @@ final class GeometryTests: XCTestCase {
             XCTAssertFalse(placement.hasOverflow)
             XCTAssertLessThanOrEqual(placement.geometry.outerRadius, 130)
             assertSafeAdaptivePlacement(placement)
+        }
+    }
+
+    func testMovingAwayFromStraightEdgesDoesNotReduceVisibleSlots() {
+        let safe = CGRect(x: 0, y: 0, width: 1440, height: 900)
+        for count in [4, 6, 8, 12] {
+            var previousCounts = [0, 0, 0, 0]
+            for distance in 0...194 {
+                let inset = CGFloat(distance)
+                let anchors = [CGPoint(x: safe.midX, y: safe.maxY - inset),
+                               CGPoint(x: safe.midX, y: safe.minY + inset),
+                               CGPoint(x: safe.minX + inset, y: safe.midY),
+                               CGPoint(x: safe.maxX - inset, y: safe.midY)]
+                for (edge, anchor) in anchors.enumerated() {
+                    let placement = RingPlacement(slotCount: count, anchor: anchor, safeFrame: safe)
+                    XCTAssertGreaterThanOrEqual(placement.visibleSlotCount, previousCounts[edge],
+                                                "\(count) 格，第 \(edge) 条边，距离 \(distance)")
+                    previousCounts[edge] = placement.visibleSlotCount
+                    if !placement.geometry.isFullCircle && placement.visibleSlotCount > 4 {
+                        XCTAssertEqual(placement.geometry.labelRadius, 84, accuracy: 0.000_001)
+                    }
+                }
+            }
+        }
+    }
+
+    func testExtraSlotsDoNotExpandTheCompactFourSlotLayout() {
+        let safe = CGRect(x: -1440, y: 80, width: 1440, height: 900)
+        for distance: CGFloat in [35, 48, 64, 80, 83, 84, 96, 100, 110, 145] {
+            let anchors = [CGPoint(x: safe.midX, y: safe.maxY - distance),
+                           CGPoint(x: safe.midX, y: safe.minY + distance),
+                           CGPoint(x: safe.minX + distance, y: safe.midY),
+                           CGPoint(x: safe.maxX - distance, y: safe.midY)]
+            for anchor in anchors {
+                let reference = RingPlacement(slotCount: 4, anchor: anchor, safeFrame: safe)
+                for count in [6, 8, 12] {
+                    let placement = RingPlacement(slotCount: count, anchor: anchor, safeFrame: safe)
+                    XCTAssertLessThanOrEqual(placement.geometry.outerRadius, reference.geometry.outerRadius)
+                    assertSafeAdaptivePlacement(placement)
+                }
+            }
+        }
+    }
+
+    func testPartialMenusKeepAFortyFiveDegreeOutwardCancelOpening() {
+        let safe = CGRect(x: 0, y: 0, width: 1440, height: 900)
+        for distance: CGFloat in [70, 80, 83, 84, 90, 96, 100, 110, 145] {
+            let edges: [(CGPoint, Double)] = [(CGPoint(x: safe.midX, y: safe.maxY - distance), -90),
+                                             (CGPoint(x: safe.midX, y: safe.minY + distance), 90),
+                                             (CGPoint(x: safe.minX + distance, y: safe.midY), 180),
+                                             (CGPoint(x: safe.maxX - distance, y: safe.midY), 0)]
+            for (anchor, outward) in edges {
+                let placement = RingPlacement(slotCount: 8, anchor: anchor, safeFrame: safe)
+                XCTAssertLessThanOrEqual(placement.geometry.sweepDegrees, 315.000_001)
+                for adjustment: Double in [-20, 0, 20] {
+                    XCTAssertNil(placement.geometry.slot(at: offset(angle: outward + adjustment, radius: 10_000)))
+                }
+                assertSafeAdaptivePlacement(placement)
+            }
         }
     }
 

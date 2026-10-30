@@ -146,15 +146,34 @@ struct RingPlacement: Equatable {
             return
         }
 
-        // 先尝试显示全部格子，再逐个减少；最后一个位置由视图模型替换成「更多」。
-        for visibleCount in stride(from: count, through: 1, by: -1) {
-            if let adapted = Self.adaptiveGeometry(count: visibleCount, anchor: anchor, safeFrame: safeFrame) {
-                geometry = adapted
-                frame = Self.windowFrame(anchor: anchor, radius: adapted.outerRadius).intersection(safeFrame)
-                visibleSlotCount = visibleCount
-                hasOverflow = visibleCount < count
-                return
+        let edgeDistance = min(anchor.x - safeFrame.minX, safeFrame.maxX - anchor.x,
+                               anchor.y - safeFrame.minY, safeFrame.maxY - anchor.y)
+        // Dock 和菜单栏内的唤起点需为移入可用区域保留空间。
+        let maximumRadius: CGFloat = edgeDistance < 0 ? Self.maximumLabelRadius : 116
+        let progress = min(max(edgeDistance, 0) / (RingGeometry.outerRadius(forSlotCount: 8) + Self.padding), 1)
+        let radiusLimit = maximumRadius - (maximumRadius - Self.minimumLabelRadius) * progress
+        var referenceGeometry: RingGeometry?
+        for visibleCount in stride(from: min(count, 4), through: 1, by: -1) {
+            if let adapted = Self.adaptiveGeometry(count: visibleCount, anchor: anchor, safeFrame: safeFrame,
+                                                   radiusLimit: radiusLimit) {
+                referenceGeometry = adapted
+                break
             }
+        }
+        if var adapted = referenceGeometry {
+            // 额外入口只使用最小半径，避免为多放一格把扇形撑大。
+            for visibleCount in stride(from: count, through: adapted.slotCount + 1, by: -1) {
+                if let expanded = Self.adaptiveGeometry(count: visibleCount, anchor: anchor, safeFrame: safeFrame,
+                                                        radiusLimit: Self.minimumLabelRadius) {
+                    adapted = expanded
+                    break
+                }
+            }
+            geometry = adapted
+            frame = Self.windowFrame(anchor: anchor, radius: adapted.outerRadius).intersection(safeFrame)
+            visibleSlotCount = adapted.slotCount
+            hasOverflow = adapted.slotCount < count
+            return
         }
 
         // 极小的可用区域只保留一个入口。半径上限内能容纳标签时，把完整标签留在区域内。
@@ -203,14 +222,9 @@ struct RingPlacement: Equatable {
         return CGRect(x: anchor.x - reach, y: anchor.y - reach, width: reach * 2, height: reach * 2)
     }
 
-    private static func adaptiveGeometry(count: Int, anchor: CGPoint, safeFrame: CGRect) -> RingGeometry? {
+    private static func adaptiveGeometry(count: Int, anchor: CGPoint, safeFrame: CGRect,
+                                         radiusLimit: CGFloat) -> RingGeometry? {
         guard safeFrame.width >= safeLabelSize.width, safeFrame.height >= safeLabelSize.height else { return nil }
-        let edgeDistance = min(anchor.x - safeFrame.minX, safeFrame.maxX - anchor.x,
-                               anchor.y - safeFrame.minY, safeFrame.maxY - anchor.y)
-        // Dock 和菜单栏内的唤起点需为移入可用区域保留空间。
-        let maximumRadius: CGFloat = edgeDistance < 0 ? maximumLabelRadius : 116
-        let progress = min(max(edgeDistance, 0) / (RingGeometry.outerRadius(forSlotCount: 8) + padding), 1)
-        let radiusLimit = maximumRadius - (maximumRadius - minimumLabelRadius) * progress
         if let edge = edgeHuggingGeometry(count: count, anchor: anchor, safeFrame: safeFrame, radiusLimit: radiusLimit) {
             return edge
         }
@@ -268,7 +282,7 @@ struct RingPlacement: Equatable {
         return nil
     }
 
-    /// 直边的首尾圆头贴近边界；角落仍由通用布局处理。
+    /// 靠近直边时首尾圆头贴近边界，向内移动后保留朝外的取消方向。
     /// 标签中心不必等分整个命中弧，格子之间用相邻中心的角平分线划界。
     private static func edgeHuggingGeometry(count: Int, anchor: CGPoint, safeFrame: CGRect,
                                           radiusLimit: CGFloat) -> RingGeometry? {
@@ -280,20 +294,21 @@ struct RingPlacement: Equatable {
         let bandWidth = RingGeometry(slotCount: count).bandHalfWidth
         let clearance = max(bandWidth, safeLabelSize.width / 2) + 2
         guard let edge = edges.min(by: { $0.distance < $1.distance }),
-              edge.distance >= 0, edge.distance < radiusLimit else { return nil }
+              edge.distance >= 0 else { return nil }
         // 首尾标签和端帽都要完整；左右边缘的横向文字比圆头稍宽。
         let labelClearance = edge.inward == 0 || edge.inward == 180 ? clearance : bandWidth + 2
         let radii = stride(from: minimumLabelRadius, through: radiusLimit, by: CGFloat(2)).map { $0 } + [radiusLimit]
         for radius in radii {
-            guard edge.distance < radius else { continue }
+            // 向屏幕外至少留出 45° 的取消方向。
+            let edgeDistance = min(edge.distance, radius * sin(CGFloat(67.5) * .pi / 180))
             // 竖直边缘给横向文字的内侧角留出命中余量，仍优先采用最小半径。
             let extra = edge.inward == 0 || edge.inward == 180 ? CGFloat(12) : 0
             for inset in stride(from: labelClearance, through: labelClearance + extra, by: CGFloat(2)) {
-                let halfSpan = Double(acos((inset - edge.distance) / radius)) * 180 / .pi
+                let halfSpan = Double(acos((inset - edgeDistance) / radius)) * 180 / .pi
                 let step = 2 * halfSpan / Double(count - 1)
                 let angles = (0..<count).map { edge.inward - halfSpan + Double($0) * step }
                 // 指针略在屏幕内时，首尾标签可以回到边缘；命中边界仍止于可见屏幕。
-                let edgeExtension = Double(asin(edge.distance / radius)) * 180 / .pi
+                let edgeExtension = Double(asin(edgeDistance / radius)) * 180 / .pi
                 let candidate = RingGeometry(slotCount: count, outerRadius: radius + 44,
                                              arcStartDegrees: edge.inward - 90 - edgeExtension,
                                              arcSweepDegrees: 180 + edgeExtension * 2,
