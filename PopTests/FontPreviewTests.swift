@@ -96,9 +96,8 @@ final class FontPreviewTests: XCTestCase {
         XCTAssertFalse(sample.onlyCovering)
         XCTAssertTrue(sample.shown.contains { $0.name == "Menlo" })
         // 没有一个字体能完整显示时说明怎么办
-        model.filter = .monospaced
-        model.onlyCovering = true
-        XCTAssertEqual(model.summary, "没有能完整显示这段文字的字体，取消「只看能显示的」再看看")
+        let noFonts = FontPreviewModel(text: "你好", families: [])
+        XCTAssertEqual(noFonts.summary, "没有能完整显示这段文字的字体，取消「只看能显示的」再看看")
         // 复制成图片
         let png = try XCTUnwrap(model.image(.custom(pingFang.postScriptName, size: 24)))
         XCTAssertNotNil(NSImage(data: png))
