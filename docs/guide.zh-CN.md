@@ -4,7 +4,7 @@
 
 ## 安装
 
-到 [Releases](https://github.com/whrss9527/pop/releases) 下载最新的 `Pop-<版本>.zip`，解压后把 `Pop.app` 拖进「应用程序」文件夹（每个版本的发布说明里也写了安装步骤）。没有经过苹果公证的包，第一次打开前需要在终端里执行：
+到 [Releases](https://github.com/whrss9527/pop/releases) 下载最新的 `Pop-<版本>.dmg`，打开后把 `Pop.app` 拖到右侧「应用程序」文件夹（每个版本的发布说明里也写了安装步骤）。没有经过苹果公证的包，第一次打开前需要在终端里执行：
 
 ```bash
 xattr -dr com.apple.quarantine /Applications/Pop.app

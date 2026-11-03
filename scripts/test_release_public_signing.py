@@ -35,8 +35,20 @@ elif tool == "codesign":
     else: print("Authority=" + os.environ["FAKE_AUTHORITY"])
 elif tool == "ditto":
     if args[0] == "-x":
-        if os.environ["FAKE_HAS_APP"] == "1": (Path(args[-1]) / "Pop.app").mkdir()
+        if os.environ["FAKE_HAS_APP"] == "1":
+            app = Path(args[-1]) / "Pop.app"
+            app.mkdir(parents=True)
+            (app / "fixture").write_text("same")
     else: Path(args[-1]).write_bytes(b"repacked-test-only")
+elif tool == "hdiutil":
+    if args[0] == "attach":
+        volume = Path(args[args.index("-mountpoint") + 1])
+        (volume / "Pop.app").mkdir(parents=True)
+        (volume / "Pop.app/fixture").write_text(os.environ["FAKE_DMG_CONTENT"])
+        (volume / ".background").mkdir()
+        (volume / ".background/background.png").write_bytes(b"picture")
+        if os.environ["FAKE_DMG_LAYOUT"] == "1": (volume / ".DS_Store").write_bytes(b"layout")
+    elif args[0] == "detach": state["detached"] = True
 elif tool == "spctl":
     if args[0] == "--status":
         print(os.environ["FAKE_POLICY"])
@@ -52,7 +64,7 @@ sys.exit(result)
 
 
 class PublicSigningTests(unittest.TestCase):
-    def run_gate(self, mode, overrides=None, pipeline=False):
+    def run_gate(self, mode, overrides=None, pipeline=False, dmg=False):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             tools = root / "bin"
@@ -60,11 +72,13 @@ class PublicSigningTests(unittest.TestCase):
             mock = tools / "mock.py"
             mock.write_text(MOCK)
             mock.chmod(0o755)
-            for tool in ("ditto", "codesign", "xcrun", "spctl", "sleep", "gh"):
+            for tool in ("ditto", "codesign", "xcrun", "spctl", "sleep", "gh", "hdiutil"):
                 (tools / tool).symlink_to(mock)
             state = root / "state.json"
             state.write_text("{}")
-            archive = root / "Pop-test-only.zip"
+            archive = root / ("Pop-test-only.dmg" if dmg else "Pop-test-only.zip")
+            reference = root / "reference.zip"
+            reference.write_bytes(b"zip fixture")
             archive.write_bytes(b"test-only")
             env = dict(os.environ, PATH=str(tools) + os.pathsep + os.environ["PATH"],
                        RUNNER_TEMP=str(root), FAKE_STATE=str(state),
@@ -76,7 +90,7 @@ class PublicSigningTests(unittest.TestCase):
                        FAKE_VALIDATE="[0]", FAKE_SIGNATURE_RESULT="0", FAKE_AUTHORITY=NAME,
                        FAKE_SOURCE="Notarized Developer ID", FAKE_ASSESSMENT_RESULT="0",
                        FAKE_POLICY="assessments enabled", FAKE_POLICY_RESULT="0",
-                       FAKE_HAS_APP="1")
+                       FAKE_HAS_APP="1", FAKE_DMG_CONTENT="same", FAKE_DMG_LAYOUT="1")
             env.update(overrides or {})
             if pipeline:
                 # 真正的门禁和公证脚本必须依次成功，才能到达发行命令替身。
@@ -85,12 +99,12 @@ class PublicSigningTests(unittest.TestCase):
                     bash "$1/check-public-signing.sh" identity
                     bash "$1/notarize.sh" "$2"
                     export NOTARIZED=1
-                    bash "$1/check-public-signing.sh" archive "$2"
+                    bash "$1/check-public-signing.sh" archive "$2" "$3"
                     gh release create vtest-only
-                ''', "test", str(SCRIPTS), str(archive)]
+                ''', "test", str(SCRIPTS), str(archive), str(reference)]
             else:
                 command = ["bash", str(SCRIPTS / "check-public-signing.sh"), mode]
-                if mode == "archive": command.append(str(archive))
+                if mode == "archive": command.extend([str(archive), str(reference)])
             result = subprocess.run(command, env=env, capture_output=True, text=True)
             remaining = list(root.glob("pop-public-signing.*"))
             return result, json.loads(state.read_text()), remaining
@@ -187,6 +201,22 @@ class PublicSigningTests(unittest.TestCase):
         self.assertIn("--all-architectures", state["verify_arguments"])
         self.assertIn("--strict", state["verify_arguments"])
         self.assertFalse(remaining)
+
+    def test_dmg_and_contained_app_are_verified_and_always_unmounted(self):
+        result, state, remaining = self.run_gate("archive", pipeline=True, dmg=True)
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertTrue(state["published"])
+        self.assertTrue(state["detached"])
+        self.assertFalse(remaining)
+        for overrides in ({"FAKE_DMG_CONTENT": "different"}, {"FAKE_DMG_LAYOUT": "0"},
+                          {"FAKE_SIGNATURE_RESULT": "1"}, {"FAKE_VALIDATE": "[65]"},
+                          {"FAKE_SOURCE": "Unnotarized Developer ID"}):
+            with self.subTest(overrides=overrides):
+                result, state, remaining = self.run_gate("archive", overrides, dmg=True)
+                self.assertNotEqual(result.returncode, 0)
+                self.assertNotIn("published", state)
+                self.assertTrue(state["detached"])
+                self.assertFalse(remaining)
 
     def test_workflow_binds_publication_to_final_verification_and_excludes_dry_run(self):
         workflow = (SCRIPTS.parent / ".github/workflows/release.yml").read_text()

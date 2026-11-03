@@ -4,7 +4,7 @@
 
 ## Installation
 
-Download the latest `Pop-<version>.zip` from [Releases](https://github.com/whrss9527/pop/releases), unzip it and drag `Pop.app` into the Applications folder (every release note also lists the steps). Builds that aren't notarized by Apple need this in Terminal before the first launch:
+Download the latest `Pop-<version>.dmg` from [Releases](https://github.com/whrss9527/pop/releases), open it and drag `Pop.app` to the Applications folder on the right (every release note also lists the steps). Builds that aren't notarized by Apple need this in Terminal before the first launch:
 
 ```bash
 xattr -dr com.apple.quarantine /Applications/Pop.app

@@ -44,7 +44,7 @@ elif tool == "sleep":
 
 class NotarizationTests(unittest.TestCase):
     def run_notary(self, staple=(0,), validate=(0,), status="Accepted",
-                   plugin_only=False, assessment=0, wait_result=0):
+                   plugin_only=False, assessment=0, wait_result=0, extension="zip"):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             tools = root / "bin"
@@ -56,7 +56,7 @@ class NotarizationTests(unittest.TestCase):
                 (tools / name).symlink_to(mock)
             state = root / "state.json"
             state.write_text("{}")
-            archive = root / "Sample.zip"
+            archive = root / ("Sample." + extension)
             archive.write_bytes(b"original")
             env = dict(os.environ, PATH=str(tools) + os.pathsep + os.environ["PATH"],
                        RUNNER_TEMP=str(root / "runner"), NOTARY_KEY_P8="",
@@ -79,6 +79,16 @@ class NotarizationTests(unittest.TestCase):
         self.assertEqual(state["sleeps"], [["5"], ["5"]])
         self.assertEqual(state["assessments"], 1)
         self.assertEqual(archive, b"repacked")
+
+    def test_dmg_is_stapled_and_assessed_without_unpacking(self):
+        result, state, archive = self.run_notary(extension="dmg", staple=(68, 0))
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertEqual(state["actions"], ["staple", "staple", "validate"])
+        self.assertEqual(state["assessments"], 1)
+        self.assertEqual(archive, b"original")
+        result, state, archive = self.run_notary(extension="dmg", status="Invalid")
+        self.assertNotEqual(result.returncode, 0)
+        self.assertNotIn("actions", state)
 
     def test_staple_exhaustion_stops_after_three_and_keeps_archive(self):
         result, state, archive = self.run_notary(staple=(68,))

@@ -48,7 +48,7 @@ brew install --cask whrss9527/tap/pop
 
 Or by hand:
 
-1. Download the latest `Pop-<version>.zip` from [Releases](https://github.com/whrss9527/pop/releases), unzip it and drag `Pop.app` into Applications.
+1. Download the latest `Pop-<version>.dmg` from [Releases](https://github.com/whrss9527/pop/releases), open it and drag `Pop.app` to Applications on the right.
 2. On first launch, turn Pop on in System Settings → Privacy & Security → Accessibility when asked.
 3. New versions install from within Pop with one click.
 
