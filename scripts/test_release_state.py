@@ -189,6 +189,33 @@ class ReleaseStateTests(unittest.TestCase):
         values = list(m.documents('[]\n[{"id":1}]\n[]\n[{"id":2}]'))
         self.assertEqual([v['id'] for page in values for v in page], [1,2])
 
+    def test_partial_retry_retains_passed_checks_and_requires_latest_result(self):
+        release = m.Release(VERSION)
+        runs = [dict(id=4, run_number=5, run_attempt=2, head_sha=SOURCE, head_branch='main', event='push')]
+        gates = [dict(id=index, run_attempt=1, name=name, status='completed', conclusion='success')
+                 for index, name in enumerate(sorted(m.GATES), 1)]
+        name = 'launch-smoke (macos-26)'
+        for status, conclusion in [('completed', 'success'), ('completed', 'failure'), ('in_progress', None)]:
+            with self.subTest(status=status, conclusion=conclusion):
+                jobs = [dict(id=10, run_attempt=2, name=name, status=status, conclusion=conclusion), *gates]
+                with patch.object(release, 'api', return_value={'status':'identical'}), \
+                        patch.object(release, 'pages', side_effect=[runs,jobs]) as pages:
+                    if conclusion == 'success':
+                        release.validated(SOURCE)
+                    else:
+                        with self.assertRaises(ValueError): release.validated(SOURCE)
+                    self.assertIn('filter=all', pages.call_args.args[0])
+
+    def test_latest_job_in_same_attempt_cannot_be_hidden_by_older_success(self):
+        release = m.Release(VERSION)
+        runs = [dict(id=4, run_number=5, head_sha=SOURCE, head_branch='main', event='push')]
+        jobs = [dict(id=index, run_attempt=1, name=name, status='completed', conclusion='success')
+                for index, name in enumerate(sorted(m.GATES), 1)]
+        jobs.insert(0, dict(id=10, run_attempt=1, name=jobs[-1]['name'], status='completed', conclusion='failure'))
+        with patch.object(release, 'api', return_value={'status':'identical'}), \
+                patch.object(release, 'pages', side_effect=[runs,jobs]):
+            with self.assertRaises(ValueError): release.validated(SOURCE)
+
     def test_metadata_checksum_and_tag_drift_fail_closed(self):
         release = FakeRelease()
         self.publish(release)

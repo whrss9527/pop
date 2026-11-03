@@ -115,7 +115,8 @@ class Release:
                 and v.get('event') in ('push', 'schedule', 'workflow_dispatch')]
         if not runs: raise ValueError('没有该源码的main原生验证')
         latest = max(runs, key=lambda v: (v['run_number'], v.get('run_attempt', 1)))
-        jobs = self.pages('actions/runs/' + str(latest['id']) + '/jobs?per_page=100', 'jobs')
+        jobs = self.pages('actions/runs/' + str(latest['id']) + '/jobs?per_page=100&filter=all', 'jobs')
+        jobs.sort(key=lambda value: (value.get('run_attempt', 1), value.get('id', 0)))
         gates = {v['name']: v for v in jobs if v['name'] in GATES}
         if set(gates) != GATES or any(v.get('status') != 'completed' or v.get('conclusion') != 'success' for v in gates.values()):
             raise ValueError('精确源码的四项main原生门禁尚未全部通过')
