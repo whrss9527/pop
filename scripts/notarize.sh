@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # 把用 Developer ID 签好名的 zip 提交苹果公证，通过后把公证票据钉（staple）到 Pop.app 上，再重新打成同名的 zip；
-# 装着插件包（不是 App）的 zip 只公证，不钉票据。
+# DMG 公证后直接钉票据；装着插件包的 ZIP 只公证，不钉票据。
 # 公证过的包，用户下载后双击就能打开，不用再手动解除隔离。
 #   scripts/notarize.sh dist/Pop-0.3.0.zip
 # 凭据二选一（发布流程从 GitHub Secrets 传进来，见 docs/development.zh-CN.md「签名与公证」）：
@@ -8,7 +8,7 @@
 #   Apple ID：NOTARY_APPLE_ID、NOTARY_PASSWORD（App 专用密码）、NOTARY_TEAM_ID
 set -euo pipefail
 
-[ $# -gt 0 ] || { echo "用法：scripts/notarize.sh 文件.zip …"; exit 1; }
+[ $# -gt 0 ] || { echo "用法：scripts/notarize.sh 文件.zip或.dmg …"; exit 1; }
 work="${RUNNER_TEMP:-${TMPDIR:-/tmp}}/pop-notary"
 rm -rf "$work" && mkdir -p "$work"
 trap 'rm -f "$work/AuthKey.p8"' EXIT
@@ -56,12 +56,12 @@ stapler_with_retry() {
 
 # 先把所有包都传上去（苹果那边同时处理），再逐个等结果
 ids=()
-for zip in "$@"; do
-  [ -f "$zip" ] || { echo "找不到 $zip"; exit 1; }
-  name="$(basename "$zip")"
+for archive in "$@"; do
+  [ -f "$archive" ] || { echo "找不到 $archive"; exit 1; }
+  name="$(basename "$archive")"
   out="$work/submit-$name.json"
   echo "上传 $name 提交公证"
-  if ! xcrun notarytool submit "$zip" "${auth[@]}" --output-format json > "$out"; then
+  if ! xcrun notarytool submit "$archive" "${auth[@]}" --output-format json > "$out"; then
     cat "$out" || true
     echo "提交失败：$name"
     exit 1
@@ -73,10 +73,10 @@ for zip in "$@"; do
 done
 
 i=0
-for zip in "$@"; do
+for archive in "$@"; do
   id="${ids[$i]}"
   i=$((i + 1))
-  name="$(basename "$zip")"
+  name="$(basename "$archive")"
   out="$work/wait-$name.json"
   if xcrun notarytool wait "$id" "${auth[@]}" --output-format json > "$out"; then
     wait_result=0
@@ -91,10 +91,17 @@ for zip in "$@"; do
     xcrun notarytool log "$id" "${auth[@]}" || true
     exit 1
   fi
+  if [[ "$archive" == *.dmg ]]; then
+    stapler_with_retry staple "$archive"
+    stapler_with_retry validate "$archive"
+    spctl --assess --type open --context context:primary-signature --verbose=2 "$archive"
+    echo "${name}：已钉上公证票据"
+    continue
+  fi
   # 解压、钉票据、确认系统认可，再压回原来的文件
   dir="$work/staple-${name%.zip}"
   rm -rf "$dir" && mkdir -p "$dir"
-  ditto -x -k "$zip" "$dir"
+  ditto -x -k "$archive" "$dir"
   app="$dir/Pop.app"
   if [ ! -d "$app" ]; then
     # 插件包：Pop 自己下载、校验签名后装载，公证通过就行，不用钉票据
@@ -104,7 +111,7 @@ for zip in "$@"; do
   stapler_with_retry staple "$app"
   stapler_with_retry validate "$app"
   spctl --assess --type execute --verbose=2 "$app"
-  target="$(cd "$(dirname "$zip")" && pwd)/$name"
+  target="$(cd "$(dirname "$archive")" && pwd)/$name"
   rm -f "$target"
   (cd "$dir" && ditto -c -k --keepParent Pop.app "$target")
   echo "${name}：已钉上公证票据"

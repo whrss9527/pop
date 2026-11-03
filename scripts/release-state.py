@@ -148,7 +148,7 @@ class Release:
         paths = inventory(self.version, source)
         sums = Path('dist/SHA256SUMS.txt')
         hashes = integrity.checksums(sums)
-        if hashes != {paths[0].name: integrity.sha256(paths[0])}:
+        if hashes != {path.name: integrity.sha256(path) for path in paths[:2]}:
             raise ValueError('本地附件与完整校验和不一致')
         if not self.allowed(): print('稳定版延期：等待下个上海工作日额度'); return
         value = self.find()
@@ -195,6 +195,8 @@ class Release:
 def inventory(version, source):
     root = Path('dist')
     app = root / ('Pop-' + version + '.zip')
+    dmg = root / ('Pop-' + version + '.dmg')
+    if not dmg.is_file() or dmg.stat().st_size == 0: raise ValueError('缺少 DMG 安装包')
     index_path = root / 'plugins' / ('plugins-' + version + '.json')
     index = json.loads(index_path.read_text())
     with zipfile.ZipFile(app) as archive:
@@ -211,7 +213,7 @@ def inventory(version, source):
     entries = index.get('plugins', [])
     if not isinstance(entries, list) or {v['id'] for v in entries} != set(declared) or len(entries) != len(declared):
         raise ValueError('插件索引缺少工程插件或有重复项')
-    paths = [app, index_path]
+    paths = [app, dmg, index_path]
     for item in entries:
         plugin_id = item['id']
         if not re.fullmatch(r'[A-Za-z0-9_-]+', plugin_id) or item['file'] != 'plugin-' + plugin_id + '.zip': raise ValueError('插件文件名无效')
@@ -236,7 +238,7 @@ def main():
     elif mode == 'checksums':
         source = run('git', 'rev-parse', 'HEAD').strip()
         paths = inventory(release.version, source)
-        Path('dist/SHA256SUMS.txt').write_text(integrity.sha256(paths[0]) + '  ' + paths[0].name + '\n')
+        Path('dist/SHA256SUMS.txt').write_text(''.join(integrity.sha256(path) + '  ' + path.name + '\n' for path in paths[:2]))
     elif mode == 'publish':
         release.publish(run('git', 'rev-parse', 'HEAD').strip())
     else: raise ValueError('未知发行命令')

@@ -79,6 +79,8 @@ class ReleaseStateTests(unittest.TestCase):
         Path('project.yml').write_text('        POP_PLUGIN_ID: fixture\n')
         Path('notes.md').write_text('fixture release notes')
         self.app = Path('dist/Pop-0.70.2.zip')
+        self.dmg = Path('dist/Pop-0.70.2.dmg')
+        self.dmg.write_bytes(b'dmg fixture')
         self.plugin = Path('dist/plugins/plugin-fixture.zip')
         self.index = Path('dist/plugins/plugins-0.70.2.json')
         build = VERSION + '+' + SOURCE[:12]
@@ -95,7 +97,7 @@ class ReleaseStateTests(unittest.TestCase):
             archive.writestr(bundle + '/Contents/Info.plist', plistlib.dumps(info))
 
     def sums(self):
-        Path('dist/SHA256SUMS.txt').write_text(m.integrity.sha256(self.app) + '  ' + self.app.name + '\n')
+        Path('dist/SHA256SUMS.txt').write_text(''.join(m.integrity.sha256(path) + '  ' + path.name + '\n' for path in (self.app, self.dmg)))
 
     def publish(self, release):
         with patch.object(m.subprocess, 'run', side_effect=release.command): release.publish(SOURCE)
@@ -110,8 +112,16 @@ class ReleaseStateTests(unittest.TestCase):
         self.publish(release)
         self.assertFalse(release.state['draft'])
         self.assertEqual({v['name'] for v in release.state['assets']},
-                         {self.app.name, self.plugin.name, self.index.name, 'SHA256SUMS.txt'})
+                         {self.app.name, self.dmg.name, self.plugin.name, self.index.name, 'SHA256SUMS.txt'})
         self.assertEqual(sum(path == 'releases/1' for path, _ in release.mutations), 1)
+
+    def test_missing_or_modified_dmg_stops_publication(self):
+        self.dmg.write_bytes(b'changed')
+        release = FakeRelease()
+        with self.assertRaises(ValueError): self.publish(release)
+        self.assertIsNone(release.state)
+        self.dmg.unlink()
+        with self.assertRaises(ValueError): m.inventory(VERSION, SOURCE)
 
     def test_published_release_is_never_modified(self):
         release = FakeRelease()
@@ -133,7 +143,7 @@ class ReleaseStateTests(unittest.TestCase):
         release = FakeRelease(); release.allowed_results = [True, False]
         self.publish(release)
         self.assertTrue(release.state['draft'])
-        self.assertEqual(len(release.state['assets']), 4)
+        self.assertEqual(len(release.state['assets']), 5)
         self.publish(release)
         self.assertFalse(release.state['draft'])
 

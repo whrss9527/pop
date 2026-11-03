@@ -148,6 +148,12 @@ jobs:
       - name: Launch smoke test
         run: scripts/launch-smoke.sh "$APP"
 
+      - name: Check DMG drag installation
+        run: |
+          mkdir -p build/dmg
+          ditto -c -k --keepParent "$APP" build/dmg/Pop-ci.zip
+          scripts/package-dmg.sh build/dmg/Pop-ci.zip build/dmg/Pop-ci.dmg
+
       - name: Upload startup diagnostic evidence
         if: always()
         uses: actions/upload-artifact@v4

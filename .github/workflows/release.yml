@@ -71,7 +71,9 @@ jobs:
         with:
           ref: ${{ github.workflow_sha }}
       - name: Keep release policy helpers
-        run: cp scripts/release-state.py scripts/release-integrity.py scripts/release-plan.py scripts/release-notes.py scripts/check-public-signing.sh scripts/notarize.sh "$RUNNER_TEMP/"
+        run: |
+          cp scripts/release-state.py scripts/release-integrity.py scripts/release-plan.py scripts/release-notes.py scripts/check-public-signing.sh scripts/notarize.sh "$RUNNER_TEMP/"
+          cp scripts/package-dmg.sh scripts/dmg-background.swift "$RUNNER_TEMP/"
 
       # 注意：shell 变量后面紧跟中文或全角符号时一定要写成 ${VAR}，否则 bash 可能把多字节字符的一部分当成变量名。
       - name: Check version
@@ -172,11 +174,25 @@ jobs:
           bash "$RUNNER_TEMP/notarize.sh" "dist/Pop-${VERSION}.zip" "${plugins[@]}"
           echo "NOTARIZED=1" >> "$GITHUB_ENV"
 
+      - name: Package and notarize DMG
+        if: steps.policy.outputs.allowed == 'true'
+        env:
+          NOTARY_KEY_P8: ${{ secrets.NOTARY_KEY_P8 }}
+          NOTARY_KEY_ID: ${{ secrets.NOTARY_KEY_ID }}
+          NOTARY_ISSUER_ID: ${{ secrets.NOTARY_ISSUER_ID }}
+          NOTARY_APPLE_ID: ${{ secrets.NOTARY_APPLE_ID }}
+          NOTARY_PASSWORD: ${{ secrets.NOTARY_PASSWORD }}
+          NOTARY_TEAM_ID: ${{ secrets.NOTARY_TEAM_ID }}
+        run: |
+          bash "$RUNNER_TEMP/package-dmg.sh" "dist/Pop-${VERSION}.zip" "dist/Pop-${VERSION}.dmg"
+          bash "$RUNNER_TEMP/notarize.sh" "dist/Pop-${VERSION}.dmg"
+
       - name: Verify final public installation archive
         id: distribution
         if: steps.policy.outputs.allowed == 'true'
         run: |
           bash "$RUNNER_TEMP/check-public-signing.sh" archive "dist/Pop-${VERSION}.zip"
+          bash "$RUNNER_TEMP/check-public-signing.sh" archive "dist/Pop-${VERSION}.dmg" "dist/Pop-${VERSION}.zip"
           echo "verified=true" >> "$GITHUB_OUTPUT"
 
       - name: Checksums
@@ -196,7 +212,7 @@ jobs:
           previous=$(jq -sr '[.[][] | select(.draft == false and .prerelease == false)] | sort_by(.published_at) | last | .tag_name // empty' "$RUNNER_TEMP/previous-releases.json")
           python3 "$RUNNER_TEMP/release-notes.py" --version "$VERSION" --previous "$previous" --index "dist/plugins/plugins-${VERSION}.json" > changes.md
 
-          SIGNATURE="已用 Developer ID 签名并通过苹果公证，下载解压后双击就能打开。"
+          SIGNATURE="已用 Developer ID 签名并通过苹果公证，拖入「应用程序」后就能打开。"
 
           {
             echo "Pop ${VERSION}，需要 macOS 15 或更新版本，Apple 芯片和 Intel 通用。"
@@ -207,7 +223,7 @@ jobs:
             echo
             echo "### 安装"
             echo
-            echo "1. 下载下面的 \`Pop-${VERSION}.zip\`，解压后把 \`Pop.app\` 拖进「应用程序」文件夹。"
+            echo "1. 下载下面的 \`Pop-${VERSION}.dmg\`，打开后把 \`Pop.app\` 拖到右侧「应用程序」文件夹。"
             echo "2. 双击打开。"
             echo "3. 第一次打开会弹出 Pop 的设置窗口。按「快速上手」的提示，到「系统设置 → 隐私与安全性 → 辅助功能」里打开 Pop，几秒内自动生效。"
             echo "4. 选中一段英文，**按住**鼠标右键约 0.25 秒，就会弹出翻译；在空白处按住右键会弹出圆盘，不要松开，往要用的功能方向一划再松开即可（在圆心松开就关闭）。普通点一下右键仍然是系统菜单。"
@@ -221,7 +237,9 @@ jobs:
             echo "- CI 构建的包不带 iCloud 同步（需要付费开发者账号签名，见 README）。"
             echo "- 截图识字第一次使用时，系统会请求「录屏与系统录音」权限；授权后如果截到的只有桌面背景，重新打开 Pop 即可。"
             echo
-            echo "SHA-256：\`$(awk -v file="Pop-${VERSION}.zip" '$2 == file { print $1 }' dist/SHA256SUMS.txt)\`"
+            echo "ZIP 附件用于应用内更新，也可以解压后手动安装。"
+            echo
+            echo "DMG SHA-256：\`$(awk -v file="Pop-${VERSION}.dmg" '$2 == file { print $1 }' dist/SHA256SUMS.txt)\`"
           } > notes.md
           cat notes.md
 
