@@ -39,13 +39,13 @@ final class RingContrastTests: XCTestCase {
             for wallpaper in backgrounds {
                 let surface = blend(gray(palette.surfaceLevel), opacity: RingPalette.surfaceOpacity, over: wallpaper)
                 for accent in backgrounds {
-                    for opacity in [0.16, 0.28] {
+                    for opacity in [RingPalette.hoverOpacity, RingPalette.commitOpacity] {
                         let highlighted = blend(accent, opacity: opacity, over: surface)
                         XCTAssertGreaterThanOrEqual(ColorContrast.ratio(gray(palette.foregroundLevel), highlighted), 4.5)
                     }
                 }
                 for tint in [gray(0), gray(1)] {
-                    let hovered = blend(tint, opacity: 0.06, over: surface)
+                    let hovered = blend(tint, opacity: RingPalette.unavailableHoverOpacity, over: surface)
                     let muted = blend(gray(palette.foregroundLevel), opacity: RingPalette.mutedOpacity, over: hovered)
                     XCTAssertGreaterThanOrEqual(ColorContrast.ratio(muted, hovered), 4.5)
                 }

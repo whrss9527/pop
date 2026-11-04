@@ -388,40 +388,54 @@ struct PolarDot: Shape {
 
 struct RingPalette {
     let isDark: Bool
-    static let surfaceOpacity = 0.96
-    static let mutedOpacity = 0.65
+    static let surfaceOpacity = 0.8
+    static let mutedOpacity = 0.8
+    static let hoverOpacity = 0.1
+    static let commitOpacity = 0.16
+    static let unavailableHoverOpacity = 0.06
     var surfaceLevel: Double { isDark ? 0.13 : 0.97 }
     var foregroundLevel: Double { isDark ? 0.96 : 0.08 }
     var surface: Color { Color(white: surfaceLevel) }
     var foreground: Color { Color(white: foregroundLevel) }
 }
 
+private struct RingBackdropBlendingKey: EnvironmentKey {
+    static let defaultValue: NSVisualEffectView.BlendingMode = .behindWindow
+}
+
+extension EnvironmentValues {
+    var ringBackdropBlending: NSVisualEffectView.BlendingMode {
+        get { self[RingBackdropBlendingKey.self] }
+        set { self[RingBackdropBlendingKey.self] = newValue }
+    }
+}
+
 private struct RingSurface<Surface: InsettableShape>: View {
     @Environment(\.colorScheme) private var colorScheme
+    @Environment(\.ringBackdropBlending) private var blendingMode
     let shape: Surface
-    var tint: Color? = nil
 
     var body: some View {
         let palette = RingPalette(isDark: colorScheme == .dark)
-        shape
-            .fill(palette.surface.opacity(RingPalette.surfaceOpacity))
-            .glassSurface(shape, tint: tint)
-            .overlay { shape.strokeBorder(palette.foreground.opacity(0.2), lineWidth: 0.75) }
-            .shadow(color: .black.opacity(0.2), radius: 4, y: 2)
+        ZStack {
+            VisualEffectBackground(material: .hudWindow, blendingMode: blendingMode)
+            palette.surface.opacity(RingPalette.surfaceOpacity)
+        }
+            .clipShape(shape)
+            .overlay {
+                shape.strokeBorder(LinearGradient(colors: [.white.opacity(0.45), palette.foreground.opacity(0.2)],
+                                                 startPoint: .topLeading, endPoint: .bottomTrailing), lineWidth: 0.75)
+            }
+            .shadow(color: .black.opacity(0.2), radius: 2, y: 1)
     }
 }
 
 private struct RingCaption: ViewModifier {
-    @Environment(\.colorScheme) private var colorScheme
-
     func body(content: Content) -> some View {
-        let palette = RingPalette(isDark: colorScheme == .dark)
         content
             .padding(.horizontal, 3)
             .padding(.vertical, 1)
-            .background(palette.surface.opacity(RingPalette.surfaceOpacity), in: Capsule())
-            .overlay { Capsule().strokeBorder(palette.foreground.opacity(0.15), lineWidth: 0.5) }
-            .shadow(color: .black.opacity(0.18), radius: 2, y: 1)
+            .background { RingSurface(shape: Capsule()) }
     }
 }
 
@@ -488,10 +502,11 @@ private struct RingSlotLabel: View {
             .font(.system(size: 19, weight: .medium))
             .frame(width: bubbleDiameter, height: bubbleDiameter)
             .background {
-                RingSurface(shape: Circle(), tint: active ? .accentColor : nil)
+                RingSurface(shape: Circle())
                     .overlay {
                         Circle()
-                            .fill(tint.opacity(active ? (isCommitted ? 0.28 : 0.16) : (isHovered ? 0.06 : 0)))
+                            .fill(tint.opacity(active ? (isCommitted ? RingPalette.commitOpacity : RingPalette.hoverOpacity)
+                                                   : (isHovered ? RingPalette.unavailableHoverOpacity : 0)))
                     }
                     .overlay {
                         Circle()
