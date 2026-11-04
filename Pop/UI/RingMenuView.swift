@@ -238,7 +238,7 @@ struct RingMenuView: View {
         let reach = slotReach(phase)
         let spacing = 2 * model.geometry.labelRadius * sin(model.geometry.slotStep / 2)
         let labelWidth = min(60, max(40, spacing - 8))
-        let bubbleDiameter = min(38, max(28, spacing - 24))
+        let bubbleDiameter = min(36, max(26, spacing - 26))
         return RingSlotLabel(slot: slot, isHovered: model.hovered == slot.id, committed: model.committed,
                              isLoading: model.isLoading, reduceMotion: reduceMotion,
                              labelWidth: labelWidth, bubbleDiameter: bubbleDiameter)
@@ -272,10 +272,7 @@ struct RingMenuView: View {
     private func hub(phase: OverlayPresentation.Phase) -> some View {
         let diameter = isEdge ? 24 : model.geometry.innerRadius * 2 - 4
         return ZStack {
-            Circle()
-                .fill(Color.primary.opacity(0.06))
-                .overlay(Circle().strokeBorder(Color.primary.opacity(0.12), lineWidth: 1))
-                .glassSurface(Circle())
+            RingSurface(shape: Circle())
             if let hovered = model.hovered {
                 // 圆心边上的小点指着当前的格子，跟着高亮一起转
                 let enabled = model.isOverflow(hovered) || (model.slots.indices.contains(hovered) && model.slots[hovered].enabled)
@@ -285,12 +282,13 @@ struct RingMenuView: View {
                     .animation(reduceMotion ? nil : Motion.ringHover, value: model.highlightAngle)
                     .transition(.opacity)
             }
-            // 边缘布局的提示单独放在弧带内侧；原锚点只保留轻量的取消标记。
+            // 靠边时提示放在扇形内侧，唤起点只保留取消标记。
             if hubHasRoom && !isEdge {
                 ZStack {
                     if model.isLoading {
                         ProgressView()
                             .controlSize(.small)
+                            .tint(RingPalette(isDark: colorScheme == .dark).foreground)
                             .transition(.opacity)
                     } else {
                         centerLabel(model.center)
@@ -310,24 +308,26 @@ struct RingMenuView: View {
 
     /// 靠边时把说明从被裁切的圆心移到弧带内侧，读取和不可用原因仍能看见。
     private func edgeStatus(phase: OverlayPresentation.Phase) -> some View {
-        VStack(spacing: 2) {
+        let palette = RingPalette(isDark: colorScheme == .dark)
+        return VStack(spacing: 2) {
             if model.isLoading {
                 HStack(spacing: 6) {
                     ProgressView().controlSize(.mini)
-                    Text("读取中…").font(.system(size: 10, weight: .medium)).foregroundStyle(.secondary)
+                    Text("读取中…").font(.system(size: 10, weight: .medium))
+                        .foregroundStyle(palette.foreground.opacity(RingPalette.mutedOpacity))
                 }
             } else {
                 centerLabel(model.center)
                 if model.center.detail == nil {
                     Text("关闭（Esc）")
                         .font(.system(size: 9))
-                        .foregroundStyle(.tertiary)
+                        .foregroundStyle(palette.foreground.opacity(RingPalette.mutedOpacity))
                 }
             }
         }
         .padding(.horizontal, 8)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .glassSurface(RoundedRectangle(cornerRadius: 10, style: .continuous))
+        .background { RingSurface(shape: RoundedRectangle(cornerRadius: 10, style: .continuous)) }
         .opacity(phase == .shown ? 1 : 0)
         .animation(Motion.content, value: model.isLoading)
         .animation(Motion.content, value: model.center)
@@ -336,10 +336,10 @@ struct RingMenuView: View {
         .allowsHitTesting(false)
     }
 
-    /// 圆心的文字：指着的功能名用强调色（用不了时是灰色，下面一行小字说明原因），读到的内容用次要颜色
+    /// 圆心保留功能名称与不可用原因。
     private func centerLabel(_ center: RingViewModel.Center) -> some View {
-        let tint: Color = center.isFunction && center.enabled
-            ? (colorScheme == .dark ? .primary : .accentColor) : .secondary
+        let palette = RingPalette(isDark: colorScheme == .dark)
+        let tint = palette.foreground.opacity(center.enabled ? 1 : RingPalette.mutedOpacity)
         let size: CGFloat = center.isFunction ? (isEdge ? 12 : 11) : (isEdge ? 11 : 10)
         let weight: Font.Weight = center.isFunction ? .semibold : .medium
         return VStack(spacing: 2) {
@@ -350,7 +350,7 @@ struct RingMenuView: View {
             if let detail = center.detail {
                 Text(detail)
                     .font(.system(size: 9))
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(palette.foreground.opacity(RingPalette.mutedOpacity))
                     .lineLimit(isEdge ? 1 : 2)
             }
         }
@@ -386,6 +386,45 @@ struct PolarDot: Shape {
     }
 }
 
+struct RingPalette {
+    let isDark: Bool
+    static let surfaceOpacity = 0.96
+    static let mutedOpacity = 0.65
+    var surfaceLevel: Double { isDark ? 0.13 : 0.97 }
+    var foregroundLevel: Double { isDark ? 0.96 : 0.08 }
+    var surface: Color { Color(white: surfaceLevel) }
+    var foreground: Color { Color(white: foregroundLevel) }
+}
+
+private struct RingSurface<Surface: InsettableShape>: View {
+    @Environment(\.colorScheme) private var colorScheme
+    let shape: Surface
+    var tint: Color? = nil
+
+    var body: some View {
+        let palette = RingPalette(isDark: colorScheme == .dark)
+        shape
+            .fill(palette.surface.opacity(RingPalette.surfaceOpacity))
+            .glassSurface(shape, tint: tint)
+            .overlay { shape.strokeBorder(palette.foreground.opacity(0.2), lineWidth: 0.75) }
+            .shadow(color: .black.opacity(0.2), radius: 4, y: 2)
+    }
+}
+
+private struct RingCaption: ViewModifier {
+    @Environment(\.colorScheme) private var colorScheme
+
+    func body(content: Content) -> some View {
+        let palette = RingPalette(isDark: colorScheme == .dark)
+        content
+            .padding(.horizontal, 3)
+            .padding(.vertical, 1)
+            .background(palette.surface.opacity(RingPalette.surfaceOpacity), in: Capsule())
+            .overlay { Capsule().strokeBorder(palette.foreground.opacity(0.15), lineWidth: 0.5) }
+            .shadow(color: .black.opacity(0.18), radius: 2, y: 1)
+    }
+}
+
 private struct RingSlotLabel: View {
     @Environment(\.colorScheme) private var colorScheme
     let slot: RingViewModel.Slot
@@ -400,11 +439,14 @@ private struct RingSlotLabel: View {
         let isCommitted = committed == slot.id
         let active = (isHovered && slot.enabled) || isCommitted
         let dimmed = committed != nil && !isCommitted
+        let palette = RingPalette(isDark: colorScheme == .dark)
+        let foregroundOpacity = (isLoading && !slot.isOverflow) || !slot.enabled || dimmed ? RingPalette.mutedOpacity : 1
         VStack(spacing: 3) {
             if slot.isOverflow {
                 icon("ellipsis", active: active, isCommitted: isCommitted)
                 Text("更多")
                     .font(.system(size: 10.5, weight: active ? .semibold : .regular))
+                    .modifier(RingCaption())
             } else if let info = slot.info {
                 icon(info.symbol, active: active, isCommitted: isCommitted)
                 // 英文名字稍长一点时缩小一些放下，少截掉一些
@@ -413,23 +455,26 @@ private struct RingSlotLabel: View {
                     .lineLimit(1)
                     .minimumScaleFactor(0.8)
                     .allowsTightening(true)
+                    .modifier(RingCaption())
             } else if slot.pendingPackage != nil {
                 icon("arrow.clockwise", active: false, isCommitted: false)
                 Text("正在更新")
                     .font(.system(size: 10.5))
+                    .modifier(RingCaption())
             } else {
-                Circle()
-                    .fill(Color.secondary.opacity(0.35))
-                    .frame(width: 5, height: 5)
+                ZStack {
+                    RingSurface(shape: Circle())
+                    Circle().fill(palette.foreground.opacity(RingPalette.mutedOpacity))
+                        .frame(width: 5, height: 5)
+                }
+                .frame(width: bubbleDiameter, height: bubbleDiameter)
             }
         }
         .frame(width: labelWidth)
         .lineLimit(1)
         .minimumScaleFactor(0.8)
-        .foregroundStyle(active && colorScheme == .light ? Color.accentColor : Color.primary)
-        .opacity(isLoading && !slot.isOverflow ? 0.45 :
-                    (slot.enabled ? 1 : (slot.pendingPackage != nil ? 0.65 : 0.3)))
-        .opacity(dimmed ? 0.35 : 1)
+        // 状态只调整前景，避免衬底随内容一起变透明。
+        .foregroundStyle(palette.foreground.opacity(foregroundOpacity))
         .scaleEffect(reduceMotion ? 1 : (isCommitted ? 0.92 : 1))
         .animation(Motion.ringHover, value: active)
         .animation(Motion.ringCommit, value: isCommitted)
@@ -443,8 +488,7 @@ private struct RingSlotLabel: View {
             .font(.system(size: 19, weight: .medium))
             .frame(width: bubbleDiameter, height: bubbleDiameter)
             .background {
-                Color.clear
-                    .glassSurface(Circle(), tint: active ? .accentColor : nil)
+                RingSurface(shape: Circle(), tint: active ? .accentColor : nil)
                     .overlay {
                         Circle()
                             .fill(tint.opacity(active ? (isCommitted ? 0.28 : 0.16) : (isHovered ? 0.06 : 0)))
