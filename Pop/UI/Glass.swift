@@ -1,20 +1,22 @@
 import AppKit
 import SwiftUI
 
-/// 透过窗口看到后面的桌面和其他窗口（模糊）。macOS 15 上当玻璃底用。
+/// 系统背景模糊，可采样窗口后方或窗口内的内容。
 struct VisualEffectBackground: NSViewRepresentable {
     var material: NSVisualEffectView.Material = .hudWindow
+    var blendingMode: NSVisualEffectView.BlendingMode = .behindWindow
 
     func makeNSView(context: Context) -> NSVisualEffectView {
         let view = NSVisualEffectView()
         view.material = material
-        view.blendingMode = .behindWindow
+        view.blendingMode = blendingMode
         view.state = .active
         return view
     }
 
     func updateNSView(_ view: NSVisualEffectView, context: Context) {
         view.material = material
+        view.blendingMode = blendingMode
     }
 }
 
