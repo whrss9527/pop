@@ -389,14 +389,19 @@ struct PolarDot: Shape {
 struct RingPalette {
     let isDark: Bool
     static let surfaceOpacity = 0.8
+    static let bubbleOpacity = 0.28
     static let mutedOpacity = 0.8
     static let hoverOpacity = 0.1
     static let commitOpacity = 0.16
     static let unavailableHoverOpacity = 0.06
     var surfaceLevel: Double { isDark ? 0.13 : 0.97 }
     var foregroundLevel: Double { isDark ? 0.96 : 0.08 }
+    var iconForegroundLevel: Double { isDark ? 1 : 0 }
+    var iconOutlineLevel: Double { isDark ? 0 : 1 }
     var surface: Color { Color(white: surfaceLevel) }
     var foreground: Color { Color(white: foregroundLevel) }
+    var iconForeground: Color { Color(white: iconForegroundLevel) }
+    var iconOutline: Color { Color(white: iconOutlineLevel) }
 }
 
 private struct RingBackdropBlendingKey: EnvironmentKey {
@@ -414,12 +419,13 @@ private struct RingSurface<Surface: InsettableShape>: View {
     @Environment(\.colorScheme) private var colorScheme
     @Environment(\.ringBackdropBlending) private var blendingMode
     let shape: Surface
+    var tintOpacity: Double = RingPalette.surfaceOpacity
 
     var body: some View {
         let palette = RingPalette(isDark: colorScheme == .dark)
         ZStack {
             VisualEffectBackground(material: .hudWindow, blendingMode: blendingMode)
-            palette.surface.opacity(RingPalette.surfaceOpacity)
+            palette.surface.opacity(tintOpacity)
         }
             .clipShape(shape)
             .overlay {
@@ -427,6 +433,24 @@ private struct RingSurface<Surface: InsettableShape>: View {
                                                  startPoint: .topLeading, endPoint: .bottomTrailing), lineWidth: 0.75)
             }
             .shadow(color: .black.opacity(0.2), radius: 2, y: 1)
+    }
+}
+
+private struct RingGlyphOutline: ViewModifier {
+    let color: Color
+
+    func body(content: Content) -> some View {
+        content
+            .background {
+                ZStack {
+                    content.foregroundStyle(color).offset(x: -0.65)
+                    content.foregroundStyle(color).offset(x: 0.65)
+                    content.foregroundStyle(color).offset(y: -0.65)
+                    content.foregroundStyle(color).offset(y: 0.65)
+                }
+                .accessibilityHidden(true)
+            }
+            .compositingGroup()
     }
 }
 
@@ -477,9 +501,10 @@ private struct RingSlotLabel: View {
                     .modifier(RingCaption())
             } else {
                 ZStack {
-                    RingSurface(shape: Circle())
-                    Circle().fill(palette.foreground.opacity(RingPalette.mutedOpacity))
+                    RingSurface(shape: Circle(), tintOpacity: RingPalette.bubbleOpacity)
+                    Circle().fill(palette.iconForeground)
                         .frame(width: 5, height: 5)
+                        .overlay { Circle().strokeBorder(palette.iconOutline, lineWidth: 1) }
                 }
                 .frame(width: bubbleDiameter, height: bubbleDiameter)
             }
@@ -497,12 +522,15 @@ private struct RingSlotLabel: View {
     }
 
     private func icon(_ symbol: String, active: Bool, isCommitted: Bool) -> some View {
+        let palette = RingPalette(isDark: colorScheme == .dark)
         let tint = slot.enabled ? Color.accentColor : Color.primary
         return Image(systemName: symbol)
             .font(.system(size: 19, weight: .medium))
+            .modifier(RingGlyphOutline(color: palette.iconOutline))
+            .foregroundStyle(palette.iconForeground)
             .frame(width: bubbleDiameter, height: bubbleDiameter)
             .background {
-                RingSurface(shape: Circle())
+                RingSurface(shape: Circle(), tintOpacity: RingPalette.bubbleOpacity)
                     .overlay {
                         Circle()
                             .fill(tint.opacity(active ? (isCommitted ? RingPalette.commitOpacity : RingPalette.hoverOpacity)
