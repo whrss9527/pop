@@ -33,21 +33,25 @@ final class RingContrastTests: XCTestCase {
         }
     }
 
-    func testHoveredAndCommittedIconsKeepContrastWithAnyAccentColor() {
+    func testOutlinedIconsStayDistinctWithAnyWallpaperAndAccentColor() {
         for isDark in [false, true] {
             let palette = RingPalette(isDark: isDark)
             for wallpaper in backgrounds {
-                let surface = blend(gray(palette.surfaceLevel), opacity: RingPalette.surfaceOpacity, over: wallpaper)
+                let surface = blend(gray(palette.surfaceLevel), opacity: RingPalette.bubbleOpacity, over: wallpaper)
+                let foreground = gray(palette.iconForegroundLevel)
+                let outline = gray(palette.iconOutlineLevel)
+                XCTAssertGreaterThanOrEqual(ColorContrast.ratio(foreground, outline), 4.5)
                 for accent in backgrounds {
                     for opacity in [RingPalette.hoverOpacity, RingPalette.commitOpacity] {
                         let highlighted = blend(accent, opacity: opacity, over: surface)
-                        XCTAssertGreaterThanOrEqual(ColorContrast.ratio(gray(palette.foregroundLevel), highlighted), 4.5)
+                        XCTAssertGreaterThanOrEqual(max(ColorContrast.ratio(foreground, highlighted),
+                                                        ColorContrast.ratio(outline, highlighted)), 4.5)
                     }
                 }
                 for tint in [gray(0), gray(1)] {
                     let hovered = blend(tint, opacity: RingPalette.unavailableHoverOpacity, over: surface)
-                    let muted = blend(gray(palette.foregroundLevel), opacity: RingPalette.mutedOpacity, over: hovered)
-                    XCTAssertGreaterThanOrEqual(ColorContrast.ratio(muted, hovered), 4.5)
+                    XCTAssertGreaterThanOrEqual(max(ColorContrast.ratio(foreground, hovered),
+                                                    ColorContrast.ratio(outline, hovered)), 4.5)
                 }
             }
         }
