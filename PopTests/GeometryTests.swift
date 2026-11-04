@@ -141,8 +141,8 @@ final class GeometryTests: XCTestCase {
         XCTAssertTrue(placement.hasOverflow)
         XCTAssertGreaterThanOrEqual(placement.visibleSlotCount, 2)
         XCTAssertLessThan(placement.visibleSlotCount, 12)
-        XCTAssertEqual(placement.labelFrame(0, hoverSafe: false).size, CGSize(width: 66, height: 40))
-        XCTAssertEqual(placement.labelFrame(0).size, CGSize(width: 72, height: 44))
+        XCTAssertEqual(placement.labelFrame(0, hoverSafe: false).size, CGSize(width: 60, height: 54))
+        XCTAssertEqual(placement.labelFrame(0).size, CGSize(width: 60, height: 60))
         assertSafeAdaptivePlacement(placement)
     }
 
@@ -171,7 +171,7 @@ final class GeometryTests: XCTestCase {
 
     func testNarrowScreenFallbackKeepsSingleEntryCompactAndVisible() {
         for safeFrame in [CGRect(x: 0, y: 0, width: 72, height: 900),
-                          CGRect(x: -1000, y: 40, width: 1440, height: 44)] {
+                          CGRect(x: -1000, y: 40, width: 1440, height: 60)] {
             let anchor = CGPoint(x: safeFrame.minX, y: safeFrame.midY)
             let placement = RingPlacement(slotCount: 12, anchor: anchor, safeFrame: safeFrame)
             XCTAssertEqual(placement.visibleSlotCount, 1)
@@ -184,7 +184,7 @@ final class GeometryTests: XCTestCase {
         }
     }
 
-    func testTopEdgeEightSlotMenuUsesDenseBandWithoutMakingRoomForStatus() {
+    func testTopEdgeEightSlotMenuUsesCompactBubblesWithoutMakingRoomForStatus() {
         let safeFrame = CGRect(x: 0, y: 0, width: 1440, height: 900)
         let placement = RingPlacement(slotCount: 8, anchor: CGPoint(x: 720, y: 900), safeFrame: safeFrame)
         let geometry = placement.geometry
@@ -194,15 +194,16 @@ final class GeometryTests: XCTestCase {
         var maxX = -CGFloat.infinity
         for index in 0..<placement.visibleSlotCount {
             let center = geometry.slotCenterOffset(index)
-            minX = min(minX, center.dx - geometry.bandHalfWidth)
-            maxX = max(maxX, center.dx + geometry.bandHalfWidth)
+            let label = placement.labelFrame(index)
+            minX = min(minX, label.minX - placement.anchor.x)
+            maxX = max(maxX, label.maxX - placement.anchor.x)
             if index > 0 {
                 let previous = geometry.slotCenterOffset(index - 1)
-                XCTAssertLessThanOrEqual(hypot(center.dx - previous.dx, center.dy - previous.dy), 86.001)
+                XCTAssertLessThanOrEqual(hypot(center.dx - previous.dx, center.dy - previous.dy), 96.001)
             }
         }
         XCTAssertLessThanOrEqual(maxX - minX, 280)
-        XCTAssertLessThanOrEqual(geometry.bandHalfWidth * 2, 68)
+        XCTAssertGreaterThanOrEqual(RingPlacement.safeLabelSize.height, 60)
         XCTAssertNil(placement.statusFrame, "不应为了提示卡扩大紧凑布局")
         XCTAssertGreaterThanOrEqual(RingPlacement.safeLabelSize.height, 44)
         assertSafeAdaptivePlacement(placement)
@@ -221,7 +222,7 @@ final class GeometryTests: XCTestCase {
         }
     }
 
-    func testFourSlotsHugEveryStraightEdgeWithoutMovingTheAnchor() {
+    func testFourBubblesStayNearEveryStraightEdgeWithoutMovingTheAnchor() {
         let safe = CGRect(x: -1440, y: 80, width: 1440, height: 900)
         for distance: CGFloat in [0, 2, 12, 24, 34] {
             let anchors = [CGPoint(x: safe.midX, y: safe.maxY - distance),
@@ -234,16 +235,13 @@ final class GeometryTests: XCTestCase {
                 XCTAssertEqual(placement.anchor, anchor)
                 XCTAssertEqual(placement.visibleSlotCount, 4)
                 XCTAssertFalse(placement.hasOverflow)
-                XCTAssertLessThanOrEqual(geometry.labelRadius, edge < 2 ? 104 : 106)
+                XCTAssertLessThanOrEqual(geometry.outerRadius, 160)
                 for index in [0, 3] {
-                    let center = geometry.slotCenterOffset(index)
-                    let gaps = [safe.maxY - anchor.y - center.dy,
-                                anchor.y + center.dy - safe.minY,
-                                anchor.x + center.dx - safe.minX,
-                                safe.maxX - anchor.x - center.dx]
-                    let gap = gaps[edge] - geometry.bandHalfWidth
-                    XCTAssertGreaterThanOrEqual(gap, 2 - 0.000_001)
-                    XCTAssertLessThanOrEqual(gap, edge < 2 ? 2.000_001 : 10.000_001)
+                    let label = placement.labelFrame(index)
+                    let gaps = [safe.maxY - label.maxY, label.minY - safe.minY,
+                                label.minX - safe.minX, safe.maxX - label.maxX]
+                    XCTAssertGreaterThanOrEqual(gaps[edge], -0.000_001)
+                    XCTAssertLessThanOrEqual(gaps[edge], RingPlacement.safeLabelSize.width / 2)
                 }
                 assertSafeAdaptivePlacement(placement)
             }
@@ -315,14 +313,14 @@ final class GeometryTests: XCTestCase {
         }
     }
 
-    func testCrossingBandWidthDoesNotExpandFourSlotMenu() {
+    func testNearEdgeFourSlotMenuKeepsBubblesCompact() {
         let safe = CGRect(x: 0, y: 0, width: 1440, height: 900)
         for distance: CGFloat in [33.5, 34, 34.5, 35] {
             let placement = RingPlacement(slotCount: 4, anchor: CGPoint(x: safe.midX, y: safe.maxY - distance),
                                           safeFrame: safe)
             XCTAssertEqual(placement.visibleSlotCount, 4)
             XCTAssertFalse(placement.hasOverflow)
-            XCTAssertLessThanOrEqual(placement.geometry.outerRadius, 130)
+            XCTAssertLessThanOrEqual(placement.geometry.outerRadius, 140)
             assertSafeAdaptivePlacement(placement)
         }
     }
@@ -442,7 +440,7 @@ final class GeometryTests: XCTestCase {
         XCTAssertTrue(placement.hasOverflow)
         XCTAssertEqual(placement.anchor, anchor)
         XCTAssertEqual(placement.frame, safeFrame)
-        XCTAssertEqual(placement.labelFrame(0).size, CGSize(width: 72, height: 44))
+        XCTAssertEqual(placement.labelFrame(0).size, CGSize(width: 60, height: 60))
         XCTAssertEqual(placement, RingPlacement(slotCount: 12, anchor: anchor, safeFrame: safeFrame))
     }
 
@@ -594,7 +592,7 @@ final class GeometryTests: XCTestCase {
             for sample in 0...20 {
                 let angle = geometry.slotCenterDegrees(index) - geometry.highlightArcSpanDegrees / 2
                     + geometry.highlightArcSpanDegrees * Double(sample) / 20
-                // 边缘高亮实际使用 2 点描边、3 点阴影，半径与 RingHighlight 保持一致。
+                // 边缘装饰范围保留在弧带包络内。
                 let rim = offset(angle: angle, radius: geometry.labelRadius + geometry.bandHalfWidth - 5)
                 let glow = CGRect(x: placement.anchor.x + rim.dx - 4, y: placement.anchor.y + rim.dy - 4,
                                   width: 8, height: 8)

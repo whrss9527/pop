@@ -141,7 +141,7 @@ final class RingViewModel: ObservableObject {
 
     func setHovered(_ index: Int?) {
         guard index != hovered, committed == nil else { return }
-        withAnimation(Motion.hover) {
+        withAnimation(Motion.ringHover) {
             if let index, let position = displayIndex(for: index) {
                 if hovered == nil {
                     highlightID += 1
@@ -168,7 +168,7 @@ final class RingViewModel: ObservableObject {
         if hovered != index {
             setHovered(index)
         }
-        withAnimation(Motion.commit) {
+        withAnimation(Motion.ringCommit) {
             committed = index
         }
     }
@@ -186,16 +186,16 @@ final class RingViewModel: ObservableObject {
     }
 }
 
-/// 圆盘：中间是玻璃圆盘，靠边是两端圆润的玻璃弧带；高亮沿着图标滑过去。
-/// 收起时（选中或取消）圆盘微微放大、格子往外飘着淡出，选中的那一格再按一下。动画的方向始终是从里往外。
+/// 功能以独立气泡展示，靠边时朝屏幕内排列。
 struct RingMenuView: View {
     @ObservedObject var model: RingViewModel
     @ObservedObject var presentation: OverlayPresentation
+    var reduceMotionOverride: Bool? = nil
     @Environment(\.accessibilityReduceMotion) private var systemReduceMotion
     @Environment(\.colorScheme) private var colorScheme
 
     private var reduceMotion: Bool {
-        systemReduceMotion && !Motion.ignoresReduceMotion
+        reduceMotionOverride ?? (systemReduceMotion && !Motion.ignoresReduceMotion)
     }
 
     private var isEdge: Bool { !model.geometry.isFullCircle }
@@ -212,18 +212,6 @@ struct RingMenuView: View {
         ZStack(alignment: .topLeading) {
             Color.clear
             ZStack {
-                Color.clear
-                    .frame(width: size, height: size)
-                    .glassSurface(RingDisc(geometry: geometry))
-                    .scaleEffect(discScale(phase))
-                    .opacity(phase == .shown ? 1 : 0)
-                    .animation(phase == .shown ? Motion.ringOpen : Motion.exit, value: phase)
-
-                highlight
-                    .scaleEffect(isEdge ? discScale(phase) : 1)
-                    .opacity(phase == .shown ? 1 : 0)
-                    .animation(phase == .shown ? Motion.ringOpen : Motion.exit, value: phase)
-
                 ForEach(model.visibleSlots) { slot in
                     slotView(slot, phase: phase)
                 }
@@ -244,49 +232,24 @@ struct RingMenuView: View {
         .clipped()
     }
 
-    @ViewBuilder
-    private var highlight: some View {
-        if isEdge {
-            // 每格独立淡入淡出，不把朝上的矩形或外沿弧线滑到圆头外面。
-            ZStack {
-                ForEach(model.visibleSlots) { slot in
-                    let selected = model.hovered == slot.id
-                    let tint = slot.enabled ? Color.accentColor : Color.primary
-                    RingSelectionSector(geometry: model.geometry, index: model.displayIndex(for: slot.id) ?? 0)
-                        .fill(LinearGradient(colors: [tint.opacity(slot.enabled ? (model.committed == slot.id ? 0.25 : 0.16) : 0.08),
-                                                       tint.opacity(slot.enabled ? 0.07 : 0.03)],
-                                             startPoint: .topLeading, endPoint: .bottomTrailing))
-                        .blur(radius: 3)
-                        .opacity(selected ? 1 : 0)
-                        .animation(Motion.edgeSelection, value: selected)
-                        .animation(Motion.edgeSelection, value: model.committed)
-                }
-            }
-            .frame(width: model.geometry.diameter, height: model.geometry.diameter)
-            // 模糊以后再按玻璃的同一条路径裁剪，首尾圆头和切换过程都不会越界。
-            .clipShape(RingDisc(geometry: model.geometry).inset(by: 1.5))
-            .allowsHitTesting(false)
-        } else if let hovered = model.hovered, model.displayIndex(for: hovered) != nil {
-            RingHighlight(angle: model.highlightAngle, geometry: model.geometry,
-                          enabled: model.isOverflow(hovered) || (model.slots.indices.contains(hovered) && model.slots[hovered].enabled),
-                          committed: model.committed != nil)
-                .id(model.highlightID)
-                .animation(reduceMotion ? nil : Motion.hover, value: model.highlightAngle)
-                .transition(.opacity)
-        }
-    }
-
     private func slotView(_ slot: RingViewModel.Slot, phase: OverlayPresentation.Phase) -> some View {
         let position = model.displayIndex(for: slot.id) ?? 0
         let offset = model.geometry.slotCenterOffset(position)
         let reach = slotReach(phase)
+        let spacing = 2 * model.geometry.labelRadius * sin(model.geometry.slotStep / 2)
+        let labelWidth = min(60, max(40, spacing - 8))
+        let bubbleDiameter = min(38, max(28, spacing - 24))
         return RingSlotLabel(slot: slot, isHovered: model.hovered == slot.id, committed: model.committed,
-                             isLoading: model.isLoading, isEdge: isEdge, reduceMotion: reduceMotion)
+                             isLoading: model.isLoading, reduceMotion: reduceMotion,
+                             labelWidth: labelWidth, bubbleDiameter: bubbleDiameter)
             .help(slotHint(slot))
-            .scaleEffect(reduceMotion || phase != .entering ? 1 : (isEdge ? 0.94 : 0.55))
+            .accessibilityElement(children: .ignore)
+            .accessibilityLabel(Text(slotHint(slot)))
+            .accessibilityAddTraits(.isButton)
+            .scaleEffect(reduceMotion || phase != .entering ? 1 : 0.72)
             .opacity(phase == .shown ? 1 : 0)
             .offset(x: offset.dx * reach, y: -offset.dy * reach)
-            .animation(phase == .shown ? Motion.ringOpen.delay(reduceMotion ? 0 : Double(position) * Motion.slotStagger * (isEdge ? 0.5 : 1))
+            .animation(phase == .shown ? Motion.ringOpen.delay(reduceMotion ? 0 : min(Double(position) * Motion.slotStagger, Motion.seconds(0.045)))
                                        : Motion.exit,
                        value: phase)
     }
@@ -312,12 +275,14 @@ struct RingMenuView: View {
             Circle()
                 .fill(Color.primary.opacity(0.06))
                 .overlay(Circle().strokeBorder(Color.primary.opacity(0.12), lineWidth: 1))
+                .glassSurface(Circle())
             if let hovered = model.hovered {
                 // 圆心边上的小点指着当前的格子，跟着高亮一起转
                 let enabled = model.isOverflow(hovered) || (model.slots.indices.contains(hovered) && model.slots[hovered].enabled)
                 PolarDot(angle: model.highlightAngle, distance: diameter / 2 - 6, radius: 2.5)
                     .fill(enabled ? Color.accentColor : Color.primary.opacity(0.4))
                     .id(model.highlightID)
+                    .animation(reduceMotion ? nil : Motion.ringHover, value: model.highlightAngle)
                     .transition(.opacity)
             }
             // 边缘布局的提示单独放在弧带内侧；原锚点只保留轻量的取消标记。
@@ -334,13 +299,13 @@ struct RingMenuView: View {
                     }
                 }
                 .animation(Motion.content, value: model.isLoading)
-                .animation(Motion.hover, value: model.center)
+                .animation(Motion.content, value: model.center)
             }
         }
         .frame(width: diameter, height: diameter)
-        .scaleEffect(reduceMotion || phase != .entering ? 1 : 0.5)
+        .scaleEffect(reduceMotion || phase != .entering ? 1 : 0.88)
         .opacity(phase == .shown ? 1 : 0)
-        .animation(phase == .shown ? Motion.ringOpen.delay(Motion.seconds(0.04)) : Motion.exit, value: phase)
+        .animation(phase == .shown ? Motion.ringOpen : Motion.exit, value: phase)
     }
 
     /// 靠边时把说明从被裁切的圆心移到弧带内侧，读取和不可用原因仍能看见。
@@ -392,67 +357,14 @@ struct RingMenuView: View {
         .multilineTextAlignment(.center)
     }
 
-    /// 圆盘的缩放：从小弹开，收起时微微放大着淡出
-    private func discScale(_ phase: OverlayPresentation.Phase) -> CGFloat {
-        guard !reduceMotion else { return 1 }
-        switch phase {
-        case .entering: return isEdge ? 0.96 : 0.3
-        case .shown: return 1
-        case .leaving: return isEdge ? 1.015 : 1.05
-        }
-    }
-
-    /// 中央圆盘从圆心飞出；边缘弧带只做短距离展开，避免长途飞入。
+    /// 靠边时只做短距离展开，保持气泡处于可见区域。
     private func slotReach(_ phase: OverlayPresentation.Phase) -> CGFloat {
         guard !reduceMotion else { return 1 }
         switch phase {
-        case .entering: return isEdge ? 0.94 : 0.12
+        case .entering: return isEdge ? 0.94 : 0.6
         case .shown: return 1
-        case .leaving: return isEdge ? 1.015 : 1.1
+        case .leaving: return isEdge ? 1.015 : 1.04
         }
-    }
-}
-
-/// 中央圆盘保留圆形高亮和随选择移动的外沿细弧线。
-/// 这一格现在用不了（比如没选中文字时的「翻译」）时换成灰色，仍然看得出指着哪里。
-private struct RingHighlight: View {
-    let angle: Double
-    let geometry: RingGeometry
-    let enabled: Bool
-    let committed: Bool
-
-    var body: some View {
-        let radius = geometry.highlightRadius
-        let arcSpan = geometry.highlightArcSpanDegrees
-        let tint = enabled ? Color.accentColor : Color.primary
-        ZStack {
-            PolarDot(angle: angle, distance: geometry.labelRadius, radius: radius)
-                .fill(tint.opacity(enabled ? (committed ? 0.34 : 0.2) : 0.1))
-            PolarDot(angle: angle, distance: geometry.labelRadius, radius: radius)
-                .stroke(tint.opacity(enabled ? 0.4 : 0.22), lineWidth: 1)
-            RingArc(angle: angle, radius: geometry.outerRadius - 5, span: arcSpan)
-                .stroke(tint.opacity(enabled ? 1 : 0.35), style: StrokeStyle(lineWidth: 3, lineCap: .round))
-                .shadow(color: enabled ? Color.accentColor.opacity(0.7) : .clear, radius: 5)
-        }
-        .frame(width: geometry.diameter, height: geometry.diameter)
-        .allowsHitTesting(false)
-    }
-}
-
-/// 与命中检测共用扇区边界；实际可见范围由玻璃弧带裁剪。
-private struct RingSelectionSector: Shape {
-    let geometry: RingGeometry
-    let index: Int
-
-    func path(in rect: CGRect) -> Path {
-        let sector = geometry.sectorDegrees(index)
-        let center = CGPoint(x: rect.midX, y: rect.midY)
-        var path = Path()
-        path.move(to: center)
-        path.addArc(center: center, radius: geometry.diameter,
-                    startAngle: .degrees(sector.start), endAngle: .degrees(sector.end), clockwise: false)
-        path.closeSubpath()
-        return path
     }
 }
 
@@ -474,34 +386,15 @@ struct PolarDot: Shape {
     }
 }
 
-/// 以 angle 为中心、张角 span 的一段圆弧（度，SwiftUI 坐标系）。
-struct RingArc: Shape {
-    var angle: Double
-    var radius: CGFloat
-    var span: Double
-
-    var animatableData: Double {
-        get { angle }
-        set { angle = newValue }
-    }
-
-    func path(in rect: CGRect) -> Path {
-        var path = Path()
-        // y 轴向下时，clockwise: false 在屏幕上是顺时针方向
-        path.addArc(center: CGPoint(x: rect.midX, y: rect.midY), radius: radius,
-                    startAngle: .degrees(angle - span / 2), endAngle: .degrees(angle + span / 2), clockwise: false)
-        return path
-    }
-}
-
 private struct RingSlotLabel: View {
     @Environment(\.colorScheme) private var colorScheme
     let slot: RingViewModel.Slot
     let isHovered: Bool
     let committed: Int?
     let isLoading: Bool
-    let isEdge: Bool
     let reduceMotion: Bool
+    let labelWidth: CGFloat
+    let bubbleDiameter: CGFloat
 
     var body: some View {
         let isCommitted = committed == slot.id
@@ -530,62 +423,38 @@ private struct RingSlotLabel: View {
                     .frame(width: 5, height: 5)
             }
         }
-        .frame(width: 66)
+        .frame(width: labelWidth)
+        .lineLimit(1)
+        .minimumScaleFactor(0.8)
         .foregroundStyle(active && colorScheme == .light ? Color.accentColor : Color.primary)
-        .opacity(isLoading && !slot.isOverflow ? (isEdge ? 0.55 : 0.45) :
-                    (slot.enabled ? 1 : (slot.pendingPackage != nil ? 0.65 : (isEdge ? 0.48 : 0.3))))
+        .opacity(isLoading && !slot.isOverflow ? 0.45 :
+                    (slot.enabled ? 1 : (slot.pendingPackage != nil ? 0.65 : 0.3)))
         .opacity(dimmed ? 0.35 : 1)
-        .scaleEffect(reduceMotion || isEdge ? 1 : (isCommitted ? 1.2 : (active ? 1.12 : 1)))
-        .animation(isEdge ? Motion.edgeSelection : Motion.hover, value: active)
-        .animation(isEdge ? Motion.edgeSelection : Motion.commit, value: isCommitted)
+        .scaleEffect(reduceMotion ? 1 : (isCommitted ? 0.92 : 1))
+        .animation(Motion.ringHover, value: active)
+        .animation(Motion.ringCommit, value: isCommitted)
         .animation(Motion.content, value: slot.enabled)
         .animation(Motion.content, value: isLoading)
     }
 
     private func icon(_ symbol: String, active: Bool, isCommitted: Bool) -> some View {
-        Image(systemName: symbol)
-            .font(.system(size: isEdge ? 18 : 19, weight: .medium))
-            .symbolEffect(.bounce, value: isCommitted && !reduceMotion && !isEdge)
-            .frame(width: isEdge ? 24 : nil, height: isEdge ? 24 : 22)
+        let tint = slot.enabled ? Color.accentColor : Color.primary
+        return Image(systemName: symbol)
+            .font(.system(size: 19, weight: .medium))
+            .frame(width: bubbleDiameter, height: bubbleDiameter)
             .background {
-                if isEdge {
-                    RoundedRectangle(cornerRadius: 8, style: .continuous)
-                        .fill(active ? Color.white.opacity(0.16) : Color.primary.opacity(0.045))
-                        .overlay {
-                            RoundedRectangle(cornerRadius: 8, style: .continuous)
-                                .strokeBorder(Color.primary.opacity(0.06), lineWidth: 0.5)
-                        }
-                }
+                Color.clear
+                    .glassSurface(Circle(), tint: active ? .accentColor : nil)
+                    .overlay {
+                        Circle()
+                            .fill(tint.opacity(active ? (isCommitted ? 0.28 : 0.16) : (isHovered ? 0.06 : 0)))
+                    }
+                    .overlay {
+                        Circle()
+                            .strokeBorder(tint.opacity(active ? 0.65 : (isHovered ? 0.22 : 0)), lineWidth: 1.5)
+                    }
             }
-    }
-}
-
-/// 边缘弧带使用命中扇区的标签中心线；圆润端帽仅作装饰，不扩张可选方向。
-private struct RingDisc: InsettableShape {
-    let geometry: RingGeometry
-    var insetAmount: CGFloat = 0
-
-    func inset(by amount: CGFloat) -> RingDisc {
-        var copy = self
-        copy.insetAmount += amount
-        return copy
-    }
-
-    func path(in rect: CGRect) -> Path {
-        guard !geometry.isFullCircle else { return Path(ellipseIn: rect.insetBy(dx: insetAmount, dy: insetAmount)) }
-        let center = CGPoint(x: rect.midX, y: rect.midY)
-        let width = max(0, geometry.bandHalfWidth - insetAmount)
-        let radius = geometry.labelRadius
-        // 单格是圆润的独立底座；多格以圆头描边得到完整的环带，正确支持 strokeBorder 的内缩。
-        if geometry.slotCount <= 1 {
-            let angle = CGFloat(geometry.bandStartDegrees) * .pi / 180
-            return Path(ellipseIn: CGRect(x: center.x + cos(angle) * radius - width,
-                                         y: center.y + sin(angle) * radius - width, width: width * 2, height: width * 2))
-        }
-        var arc = Path()
-        arc.addArc(center: center, radius: radius,
-                   startAngle: .degrees(geometry.bandStartDegrees), endAngle: .degrees(geometry.bandEndDegrees), clockwise: false)
-        return arc.strokedPath(StrokeStyle(lineWidth: width * 2, lineCap: .round, lineJoin: .round))
+            .scaleEffect(reduceMotion ? 1 : (active && !isCommitted ? 1.1 : 1))
     }
 }
 

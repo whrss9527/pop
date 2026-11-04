@@ -58,6 +58,10 @@ final class OverlayPresentation: ObservableObject {
     }
 
     @Published fileprivate(set) var phase: Phase = .entering
+
+    init(phase: Phase = .entering) {
+        self.phase = phase
+    }
 }
 
 /// 卡片和提示的进场、退场：从指针所在的那个角弹出来，收起时淡出。
