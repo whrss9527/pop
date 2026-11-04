@@ -19,29 +19,27 @@ enum Motion {
         value * timeScale
     }
 
-    /// 圆盘展开：从中心往外展开。不回弹（临界阻尼）：回弹会让圆盘和格子冲过头再往回缩，看起来像从外往里收
+    /// 圆盘气泡短距离展开。
     static var ringOpen: Animation {
-        .spring(response: seconds(0.32), dampingFraction: 1)
+        .spring(response: seconds(0.28), dampingFraction: 0.88)
     }
 
     /// 格子从圆心依次飞出的间隔
     static var slotStagger: Double {
-        seconds(0.02)
+        seconds(0.006)
+    }
+
+    static var ringHover: Animation {
+        .spring(response: seconds(0.18), dampingFraction: 0.86)
+    }
+
+    static var ringCommit: Animation {
+        .spring(response: seconds(0.14), dampingFraction: 0.9)
     }
 
     /// 高亮在格子之间滑动、图标放大
     static var hover: Animation {
         .spring(response: seconds(0.24), dampingFraction: 0.8)
-    }
-
-    /// 边缘圆盘只过渡底色和文字，不缩放或移动选中的格子。
-    static var edgeSelection: Animation {
-        .easeInOut(duration: seconds(0.15))
-    }
-
-    /// 选中那一格时的「按下」
-    static var commit: Animation {
-        .spring(response: seconds(0.22), dampingFraction: 0.55)
     }
 
     /// 结果卡片、列表弹出

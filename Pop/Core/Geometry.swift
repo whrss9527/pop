@@ -81,7 +81,7 @@ struct RingGeometry: Equatable {
         labelAnglesOverride?[index] ?? (startDegrees + (Double(index) + 0.5) * stepDegrees)
     }
 
-    /// 完整圆盘保留原来的高亮；边缘扇形的高亮直径至少 44 点，避免目标缩小。
+    /// 图标周围的安全半径。
     var highlightRadius: CGFloat {
         let chord = 2 * labelRadius * sin(slotStep / 2)
         if isFullCircle {
@@ -96,8 +96,7 @@ struct RingGeometry: Equatable {
         return min(Double(slotStep) * 180 / .pi * (compact ? 0.5 : 0.62), compact ? 32 : 42)
     }
 
-    /// 边缘菜单只在标签周围铺一条弧带，圆心和弧带之间留空。
-    /// 端帽以首末标签为圆心，不改变原来的扇区命中边界。
+    /// 边缘扇形的径向安全包络半宽，端点以首末标签为圆心。
     var bandHalfWidth: CGFloat { 34 }
     var bandStartDegrees: Double { slotCenterDegrees(0) }
     var bandEndDegrees: Double { slotCenterDegrees(max(slotCount - 1, 0)) }
@@ -123,13 +122,13 @@ struct RingPlacement: Equatable {
     let hasOverflow: Bool
 
     static let padding: CGFloat = 22
-    static let labelSize = CGSize(width: 66, height: 40)
-    /// 保留 66 点标签宽度，预留 1.06 倍悬停/提交动画的空间，目标高度至少 44 点。
-    static let safeLabelSize = CGSize(width: 72, height: 44)
+    static let labelSize = CGSize(width: 60, height: 54)
+    /// 包含气泡、名称和悬停放大所需空间。
+    static let safeLabelSize = CGSize(width: 60, height: 60)
     private static let minimumLabelRadius: CGFloat = 84
     /// 唤起点在可用区域外时，标签中心最多向内移动 140 点。
     static let maximumLabelRadius: CGFloat = 140
-    /// 86 点为 72×44 标签的对角线留出余量，每个标签完整落在自己的扇区内。
+    /// 入口中心间距下限，完整标签另按扇区边界校验。
     static let minimumCenterSpacing: CGFloat = 86
 
     init(slotCount: Int, anchor: CGPoint, safeFrame: CGRect) {
@@ -194,7 +193,7 @@ struct RingPlacement: Equatable {
                       width: size.width, height: size.height)
     }
 
-    /// 提示放在弧带内侧的留白里。放不下完整卡片时省略，不能盖住功能或取消区。
+    /// 提示放在扇形内侧的留白里。放不下完整卡片时省略，不能盖住功能或取消区。
     var statusFrame: CGRect? {
         guard !geometry.isFullCircle else { return nil }
         let size = CGSize(width: 96, height: 32)
