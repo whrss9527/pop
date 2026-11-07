@@ -277,8 +277,16 @@ private final class UIFixtureURLProtocol: URLProtocol {
                 self.client?.urlProtocol(self, didFailWithError: URLError(.cannotConnectToHost))
                 return
             }
-            let manifest = Data(#"{"id":"fixture-search","name":"Fixture Search","action":{"type":"url","url":"https://fixture.invalid/search?q={text}"}}"#.utf8)
-            let index: [String: Any] = ["format": 1, "plugins": [["id": "fixture-search", "name": "示例搜索", "summary": "只保存到临时目录，不会执行", "author": "UI Fixture", "type": "url", "url": "plugin.json", "sha256": Digests.sha256(manifest), "localized": ["en": ["name": "Fixture Search", "summary": "Saved only in the temporary directory; never executed"]]]]]
+            // 用生产模型编码，避免手写字段偏离插件 schema；固定时间使索引和文件响应的校验值一致。
+            let summary = "只保存到临时目录，不会执行"
+            let englishSummary = "Saved only in the temporary directory; never executed"
+            var fixture = PluginManifest(id: "fixture-search", name: "示例搜索", summary: summary,
+                                         action: .init(type: .url, template: "https://fixture.invalid/search?q={text}"),
+                                         output: .none, modifiedAt: Date(timeIntervalSince1970: 0))
+            fixture.localized = ["en": .init(name: "Fixture Search", summary: englishSummary)]
+            precondition(fixture.validationError() == nil)
+            let manifest = try! PluginManifest.makeEncoder().encode(fixture)
+            let index: [String: Any] = ["format": 1, "plugins": [["id": fixture.id, "name": fixture.name, "summary": summary, "author": "UI Fixture", "type": "url", "url": "plugin.json", "sha256": Digests.sha256(manifest), "localized": ["en": ["name": "Fixture Search", "summary": englishSummary]]]]]
             let data = url.lastPathComponent == "index.json" ? (try! JSONSerialization.data(withJSONObject: index)) : manifest
             UIFixtureNetwork.shared.record("response", path: url.path)
             self.client?.urlProtocol(self, didReceive: HTTPURLResponse(url: url, statusCode: 200, httpVersion: "HTTP/1.1", headerFields: nil)!, cacheStoragePolicy: .notAllowed)
