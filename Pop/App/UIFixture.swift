@@ -213,7 +213,7 @@ private struct UIFixtureView: View {
             } else {
                 VStack(spacing: 20) {
                     Picker("Fake response", selection: $state.libraryMode) {
-                        Text("5 seconds").tag(0)
+                        Text("30 seconds").tag(0)
                         Text("Fail once, then succeed").tag(1)
                         Text("Ready").tag(2)
                     }.frame(width: 360)
@@ -286,7 +286,7 @@ private final class UIFixtureURLProtocol: URLProtocol {
             self.client?.urlProtocolDidFinishLoading(self)
         }
         pending = work
-        DispatchQueue.global(qos: .utility).asyncAfter(deadline: .now() + (url.path.contains("/slow/") ? 5 : 0.25), execute: work)
+        DispatchQueue.global(qos: .utility).asyncAfter(deadline: .now() + (url.path.contains("/slow/") ? 30 : 0.25), execute: work)
     }
     override func stopLoading() {
         pending?.cancel()
