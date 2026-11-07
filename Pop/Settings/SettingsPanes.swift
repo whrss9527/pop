@@ -368,6 +368,9 @@ struct RingSettingsView: View {
     @State private var query = ""
     @State private var category: BuiltinCategory? = nil
     @State private var placement: RingFunctionFilter.Placement = .all
+    @State private var selectedSlot = 0
+    @State private var nameDraft = ""
+    @FocusState private var nameFocused: Bool
 
     private var installed: [PluginInfo] {
         catalog.filter { store.settings.isInstalled($0.id) }
@@ -394,6 +397,107 @@ struct RingSettingsView: View {
             get: { layout.slotCount },
             set: { count in updateLayout { $0.setSlotCount(count) } }
         )
+    }
+
+    private var selectedPluginID: String? {
+        layout.slots.indices.contains(selectedSlot) ? layout.slots[selectedSlot] : nil
+    }
+
+    private var selectedInfo: PluginInfo? {
+        selectedPluginID.flatMap { id in catalog.first(where: { $0.id == id }) }
+    }
+
+    private func refreshNameDraft() {
+        nameDraft = selectedPluginID.flatMap { layout.customDisplayName(for: $0) } ?? ""
+    }
+
+    private var appearanceControls: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack {
+                Text("圆盘外观").font(.headline)
+                Spacer()
+                Button { updateLayout { $0.resetAppearance() } } label: {
+                    Image(systemName: "arrow.counterclockwise")
+                        .frame(width: 24, height: 24)
+                }
+                    .buttonStyle(.borderless)
+                    .help("恢复外观")
+                    .accessibilityLabel(Text("恢复外观"))
+                    .disabled(layout.appearance == .default)
+            }
+            VStack(alignment: .leading, spacing: 4) {
+                Text("按钮形状").font(.caption).foregroundStyle(.secondary)
+                Picker("按钮形状", selection: Binding(
+                    get: { layout.appearance.shape },
+                    set: { shape in updateLayout { $0.appearance.shape = shape } }
+                )) {
+                    Text("圆角").tag(RingButtonShape.roundedRectangle)
+                    Text("圆形").tag(RingButtonShape.circle)
+                    Text("方形").tag(RingButtonShape.square)
+                }
+                .pickerStyle(.menu)
+                .labelsHidden()
+                .frame(maxWidth: .infinity)
+            }
+            VStack(spacing: 4) {
+                HStack {
+                    Text("按钮大小")
+                    Spacer()
+                    Text(layout.appearance.normalized.scale, format: .percent.precision(.fractionLength(0)))
+                        .monospacedDigit()
+                        .frame(width: 48, alignment: .trailing)
+                }
+                Slider(value: Binding(
+                    get: { layout.appearance.normalized.scale },
+                    set: { scale in updateLayout { $0.appearance.scale = scale } }
+                ), in: RingAppearance.scaleRange, step: 0.05)
+                    .accessibilityLabel(Text("按钮大小"))
+            }
+            Divider()
+            if let pluginID = selectedPluginID, let info = catalog.first(where: { $0.id == pluginID }) {
+                HStack {
+                    Text("显示名称").font(.caption).layoutPriority(1)
+                    Spacer(minLength: 4)
+                    Text("功能：\(info.name)").font(.caption).foregroundStyle(.secondary)
+                        .lineLimit(1).layoutPriority(-1)
+                }
+                HStack {
+                    TextField("显示名称", text: Binding(
+                        get: { nameDraft },
+                        set: { name in
+                            nameDraft = String(name.prefix(RingLayout.maximumCustomNameLength))
+                            let draft = nameDraft
+                            updateLayout { $0.setCustomName(draft, for: pluginID) }
+                        }
+                    ), prompt: Text(info.name))
+                        .textFieldStyle(.roundedBorder)
+                        .accessibilityLabel(Text("显示名称"))
+                        .focused($nameFocused)
+                        .onSubmit { nameFocused = false; refreshNameDraft() }
+                        .help("只改变这个圆盘中的名称，留空使用原名。")
+                    Button {
+                        updateLayout { $0.setCustomName(nil, for: pluginID) }
+                        nameDraft = ""
+                    } label: {
+                        Image(systemName: "arrow.counterclockwise")
+                            .frame(width: 24, height: 24)
+                    }
+                    .buttonStyle(.borderless)
+                    .help("恢复名称")
+                    .accessibilityLabel(Text("恢复名称"))
+                    .disabled(layout.customDisplayName(for: pluginID) == nil)
+                }
+            } else {
+                Text("选择一个功能修改名称").font(.caption).foregroundStyle(.secondary)
+            }
+            RingButtonAppearancePreview(appearance: layout.appearance, slotCount: layout.slotCount,
+                                        name: selectedInfo.map { layout.customDisplayName(for: $0.id) ?? $0.name } ?? String(localized: "功能"),
+                                        symbol: selectedInfo?.symbol ?? "plus")
+                .frame(height: 104)
+                .frame(maxWidth: .infinity)
+            Text("实际大小").font(.caption).foregroundStyle(.secondary).frame(maxWidth: .infinity)
+        }
+        .frame(maxWidth: 400)
     }
 
     var body: some View {
@@ -445,41 +549,61 @@ struct RingSettingsView: View {
             }
             .frame(width: 250)
 
-            VStack(spacing: 14) {
+            ScrollView {
+              VStack(spacing: 14) {
                 appPicker
-                RingEditorCanvas(layout: layout, catalog: catalog, installed: installed) { pluginID, index in
-                    updateLayout { $0.place(pluginID, at: index) }
-                }
-                Picker("格子数", selection: slotCount) {
-                    ForEach(RingLayout.allowedSlotCounts, id: \.self) { count in
-                        Text("\(count) 格").tag(count)
+                HStack(alignment: .center, spacing: 16) {
+                    VStack(spacing: 12) {
+                        RingEditorCanvas(layout: layout, catalog: catalog, installed: installed, selectedSlot: selectedSlot,
+                                         onSelect: { selectedSlot = $0 }) { pluginID, index in
+                            updateLayout { $0.place(pluginID, at: index) }
+                        }
+                        Text("点击预览中的按钮可修改名称。")
+                            .font(.caption).foregroundStyle(.secondary)
+                        Text("圆盘预览已缩放；右侧显示按钮实际大小。")
+                            .font(.caption2).foregroundStyle(.secondary)
+                        Picker("格子数", selection: slotCount) {
+                            ForEach(RingLayout.allowedSlotCounts, id: \.self) { count in
+                                Text("\(count) 格").tag(count)
+                            }
+                        }
+                        .pickerStyle(.menu)
+                        .frame(width: 260)
                     }
+                    .frame(width: 260)
+                    appearanceControls.frame(width: 200)
                 }
-                .pickerStyle(.segmented)
-                // 段上写着「4 格」「6 格」，不用标题；macOS 15 上标题会挤成两行
-                .labelsHidden()
-                .frame(width: 320)
                 HStack {
                     Text("格子上点右键可以直接选择功能或清空。")
                         .font(.caption)
                         .foregroundStyle(.secondary)
                     if editing == nil {
                         Button("恢复默认布局") {
+                            nameFocused = false
                             store.update { $0.ring = .default }
                         }
                         .controlSize(.small)
                     } else {
                         Button("和默认圆盘一样") {
+                            nameFocused = false
                             let base = store.settings.ring
                             updateLayout { $0 = base }
                         }
                         .controlSize(.small)
                     }
                 }
+              }
+              .padding(.bottom, 8)
             }
             .frame(maxWidth: .infinity)
         }
         .padding(20)
+        .onAppear { refreshNameDraft() }
+        .onChange(of: selectedPluginID) { refreshNameDraft() }
+        .onChange(of: editing) { nameFocused = false; refreshNameDraft() }
+        .onChange(of: nameFocused) { _, focused in if !focused { refreshNameDraft() } }
+        .onChange(of: layout.slots.count) { _, count in selectedSlot = min(selectedSlot, max(0, count - 1)) }
+        .onChange(of: layout.customNames) { if !nameFocused { refreshNameDraft() } }
         .onChange(of: store.settings.appRings) {
             // 正在编辑的 App 圆盘被删掉了（比如从另一台 Mac 同步过来）：回到默认圆盘
             if let editing, !store.settings.appRings.contains(where: { $0.bundleID == editing }) {
@@ -592,62 +716,64 @@ struct RingEditorCanvas: View {
     let layout: RingLayout
     let catalog: [PluginInfo]
     let installed: [PluginInfo]
+    var selectedSlot: Int = 0
+    var onSelect: (Int) -> Void = { _ in }
     let onPlace: (String?, Int) -> Void
 
     @State var targetedSlot: Int? = nil
 
     var body: some View {
-        let geometry = RingGeometry(slotCount: max(layout.slotCount, 1), innerRadius: 46, outerRadius: 158)
-        let size = geometry.diameter
-        ZStack {
-            Circle()
-                .fill(Color.secondary.opacity(0.07))
-            Circle()
-                .strokeBorder(Color.secondary.opacity(0.25), lineWidth: 1)
-            Circle()
-                .fill(Color.secondary.opacity(0.12))
-                .frame(width: geometry.innerRadius * 2, height: geometry.innerRadius * 2)
-            Text("0 号格在正上方\n顺时针排列")
-                .font(.system(size: 9))
-                .multilineTextAlignment(.center)
-                .foregroundStyle(.secondary)
-            ForEach(Array(layout.slots.enumerated()), id: \.offset) { index, pluginID in
-                let offset = geometry.slotCenterOffset(index)
-                slot(index: index, pluginID: pluginID)
-                    .position(x: size / 2 + offset.dx, y: size / 2 - offset.dy)
-            }
-        }
-        .frame(width: size, height: size)
-    }
-
-    private func slot(index: Int, pluginID: String?) -> some View {
-        let info = pluginID.flatMap { id in catalog.first(where: { $0.id == id }) }
-        let isTargeted = targetedSlot == index
-        return VStack(spacing: 4) {
-            ZStack {
-                Circle()
-                    .fill(isTargeted ? Color.accentColor.opacity(0.25) : Color(nsColor: .controlBackgroundColor))
-                Circle()
-                    .strokeBorder(isTargeted ? Color.accentColor : Color.secondary.opacity(0.35), lineWidth: isTargeted ? 2 : 1)
-                if let info {
-                    Image(systemName: info.symbol)
-                        .font(.system(size: 18))
-                } else {
-                    Image(systemName: "plus")
-                        .foregroundStyle(.secondary)
+        let model = makePreview()
+        if let placement = model.placement {
+            let scale = min(1, 260 / max(placement.frame.width, placement.frame.height))
+            ZStack(alignment: .topLeading) {
+                RingMenuView(model: model, presentation: OverlayPresentation(phase: .shown), reduceMotionOverride: true)
+                    .allowsHitTesting(false)
+                    .accessibilityHidden(true)
+                ForEach(Array(layout.slots.enumerated()), id: \.offset) { index, pluginID in
+                    let frame = placement.labelFrame(index, hoverSafe: false)
+                    slot(index: index, pluginID: pluginID, size: frame.size)
+                        .position(x: frame.midX - placement.frame.minX, y: placement.frame.maxY - frame.midY)
                 }
             }
-            .frame(width: 48, height: 48)
-            Text(info?.name ?? String(localized: "空"))
-                .font(.caption2)
-                .foregroundStyle(info == nil ? Color.secondary : Color.primary)
-                .lineLimit(1)
+            .frame(width: placement.frame.width, height: placement.frame.height)
+            .scaleEffect(scale, anchor: .topLeading)
+            .frame(width: placement.frame.width * scale, height: placement.frame.height * scale, alignment: .topLeading)
+            .frame(width: 260, height: 260)
+            .help("预览会缩放以完整显示圆盘。")
         }
-        .frame(width: 76)
-        .contentShape(Rectangle())
+    }
+
+    private func makePreview() -> RingViewModel {
+        let model = RingViewModel(layout: layout, catalog: catalog, installed: Set(installed.map(\.id)),
+                                  content: ContentClassifier.classify(.text("Hello")), hapticFeedback: {})
+        model.freezePlacement(anchor: .zero, safeFrame: CGRect(x: -2000, y: -2000, width: 4000, height: 4000))
+        model.setHovered(selectedSlot)
+        return model
+    }
+
+    private func slot(index: Int, pluginID: String?, size: CGSize) -> some View {
+        let info = pluginID.flatMap { id in catalog.first(where: { $0.id == id }) }
+        let isTargeted = targetedSlot == index
+        let metrics = RingButtonMetrics(slotCount: layout.slotCount, appearance: layout.appearance)
+        let shape = RoundedRectangle(cornerRadius: metrics.cornerRadius, style: .circular)
+        return Button { onSelect(index) } label: {
+            shape.fill(Color.accentColor.opacity(isTargeted ? 0.25 : 0))
+                .overlay {
+                    shape.strokeBorder(Color.accentColor.opacity(isTargeted || selectedSlot == index ? 0.8 : 0),
+                                       lineWidth: isTargeted ? 2 : 1)
+                }
+                .frame(width: size.width, height: size.height)
+                .contentShape(shape)
+                .accessibilityLabel(Text(info.flatMap { layout.customDisplayName(for: $0.id) } ?? info?.name ?? String(localized: "空格子")))
+                .accessibilityValue(selectedSlot == index ? Text("已选中") : Text(""))
+                .accessibilityHint(Text("点击预览中的按钮可修改名称。"))
+        }
+        .buttonStyle(.plain)
         .dropDestination(for: String.self) { items, _ in
             guard let id = items.first else { return false }
             onPlace(id, index)
+            onSelect(index)
             return true
         } isTargeted: { targeted in
             if targeted {
@@ -663,13 +789,13 @@ struct RingEditorCanvas: View {
                 if !members.isEmpty {
                     Menu(category.title) {
                         ForEach(members) { plugin in
-                            Button(plugin.name) { onPlace(plugin.id, index) }
+                            Button(plugin.name) { onPlace(plugin.id, index); onSelect(index) }
                         }
                     }
                 }
             }
             Divider()
-            Button("清空这一格") { onPlace(nil, index) }
+            Button("清空这一格") { onPlace(nil, index); onSelect(index) }
         }
         .help(info?.summary ?? String(localized: "空格子"))
     }

@@ -29,12 +29,17 @@ class RenderingProbeTests(unittest.TestCase):
         self.assertIn("focusSounds", quick)
         self.assertNotIn("ring", quick)
         for appearance, steps in fixture["appearances"].items():
-            self.assertEqual(len(steps), 123)
+            self.assertEqual(len(steps), 142)
+            names = [name for name, _ in steps]
+            self.assertIn("edge-top-inset-48-8-hover", names)
+            self.assertIn("small-screen-12-loaded", names)
+            self.assertIn("small-screen-12-overflow", names)
+            self.assertNotIn("corner-top-left-12-overflow", names)
             text = "renderProbe.workload full-prefix\n" + "\n".join(
                 f"{name} {index + 1} {scale}" for index, (name, scale) in enumerate(steps))
-            self.assertEqual(probe.verify_full_prefix(text, appearance), 123)
+            self.assertEqual(probe.verify_full_prefix(text, appearance), 142)
             for bad in [text.replace("loaded 2", "missing-step 2", 1),
-                        text.replace("emojiSymbols 123 2.0", "emojiSymbols 123 6.0"),
+                        text.replace("emojiSymbols 142 2.0", "emojiSymbols 142 6.0"),
                         text.replace("ring 1", "ring nan", 1),
                         text + "\nrenderProbe.workload full-prefix"]:
                 with self.subTest(appearance=appearance, log=bad[:70]):

@@ -540,10 +540,14 @@ final class PopCoordinator: MouseTriggerDelegate {
         let ring: RingViewModel
         if let existing = current.ring {
             // 结果卡片的「更多功能」也回到本次原布局；屏幕已变则安全取消。
-            if let placement = existing.placement,
-               placement.safeFrame != OverlayController.visibleFrame(containing: current.anchor) {
-                endSession()
-                return
+            if let placement = existing.placement {
+                let boundary = OverlayController.ringScreenBoundary(containing: current.anchor)
+                guard placement.matchesBoundary(safeFrame: boundary.availableFrame,
+                                                excludedFrames: boundary.excludedFrames,
+                                                displayScale: boundary.displayScale) else {
+                    endSession()
+                    return
+                }
             }
             existing.resetSelection()
             if let content { existing.update(content: content) }

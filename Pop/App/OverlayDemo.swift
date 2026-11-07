@@ -532,7 +532,7 @@ enum OverlayDemo {
     /// 这里只驱动展示模型：先冻结落点再加载内容，分别拍加载后和悬停的状态，不移动指针、不运行插件。
     private static func playEdgeRings(overlay: OverlayController, screen: NSScreen, catalog: [PluginInfo],
                                       content: ClassifiedContent, unit: Double) async {
-        let visible = screen.visibleFrame
+        let visible = OverlayController.ringScreenBoundary(containing: CGPoint(x: screen.frame.midX, y: screen.frame.midY)).availableFrame
         let cases: [(name: String, anchor: CGPoint, count: Int)] = [
             ("edge-top-8", CGPoint(x: visible.midX, y: visible.maxY), 8),
             ("edge-right-8", CGPoint(x: visible.maxX, y: visible.midY), 8),
@@ -570,7 +570,7 @@ enum OverlayDemo {
             step(scene.name + "-loaded")
             await pause(hold(sceneUnit))
 
-            // 首尾圆头分别取证，覆盖选区与玻璃轮廓相交的位置。
+            // 首尾功能分别取证，覆盖选中反馈与玻璃轮廓相交的位置。
             model.setHovered(model.visibleSlots.first?.id)
             step(scene.name + "-hover-first")
             await pause(hold(sceneUnit))
@@ -581,19 +581,34 @@ enum OverlayDemo {
             await pause(hold(sceneUnit))
 
             if scene.count == 12 {
-                // 紧凑列表直接使用同一模型；回调为空，演示绝不执行列表里的功能
+                // 全屏角落可能容纳十二项。另用真实小屏边界求解，只有确实溢出才展示“更多”链路。
+                let smallBounds = CGRect(x: 0, y: 0, width: 320, height: 240)
+                let smallAnchor = CGPoint.zero
+                let small = RingViewModel(layout: layout, catalog: catalog, installed: installed, content: content)
+                small.freezePlacement(anchor: smallAnchor, safeFrame: smallBounds, displayScale: screen.backingScaleFactor)
+                precondition(small.placement?.hasOverflow == true, "小屏演示必须实际溢出")
                 overlay.hide(animated: false)
-                overlay.showCard(RingOverflowView(model: model, onSelect: { _ in }, onBack: {}, onCancel: {},
+                overlay.showCard(RingMenuView(model: small, presentation: OverlayPresentation(phase: .shown))
+                    .frame(width: small.placement!.frame.width, height: small.placement!.frame.height), anchor: scene.anchor)
+                await pause(0.5 * sceneUnit)
+                if let panel = NSApp.windows.first(where: { $0 is OverlayPanel && $0.isVisible }) {
+                    logRegion(panel.frame.insetBy(dx: -24, dy: -24), screen: screen)
+                }
+                step("small-screen-12-loaded")
+                await pause(hold(sceneUnit))
+
+                overlay.hide(animated: false)
+                overlay.showCard(RingOverflowView(model: small, onSelect: { _ in }, onBack: {}, onCancel: {},
                                                   maxHeight: max(120, visible.height - 20)), anchor: scene.anchor)
                 // 等布局回传实际大小，按真正的窗口裁图，长列表的滚动区域也完整保留
                 await pause(0.5 * sceneUnit)
                 if let panel = NSApp.windows.first(where: { $0 is OverlayPanel && $0.isVisible }) {
                     logRegion(panel.frame.insetBy(dx: -24, dy: -24), screen: screen)
                 }
-                step("corner-top-left-12-overflow")
+                step("small-screen-12-overflow")
                 await pause(hold(sceneUnit))
 
-                // 只在演示目录里移除一个已安装插件的实现：第一格在扇形里，最后一格藏在「更多」里。
+                // 只在演示目录里移除一个已安装插件的实现；首末原编号分别覆盖直接入口和更多列表。
                 // 其他格子的内容和可用状态照旧，不真的卸载、更新或执行插件。
                 let pendingFunction = PluginCatalog.packages[0].functions[0]
                 var pendingSlots = sampleSlots
@@ -602,10 +617,16 @@ enum OverlayDemo {
                 let pending = RingViewModel(layout: RingLayout(slots: pendingSlots),
                                             catalog: catalog.filter { $0.id != pendingFunction },
                                             installed: installed.union([pendingFunction]), content: nil)
+                pending.freezePlacement(anchor: smallAnchor, safeFrame: smallBounds, displayScale: screen.backingScaleFactor)
+                precondition(pending.placement?.hasOverflow == true &&
+                             !pending.visibleSlots.contains(where: { $0.id == pending.slots.count - 1 }),
+                             "待更新末项必须实际收进更多")
                 overlay.hide(animated: false)
-                overlay.showRing(pending, center: scene.anchor)
-                if let placement = pending.placement {
-                    logRegion(placement.frame.insetBy(dx: -24, dy: -24), screen: screen)
+                overlay.showCard(RingMenuView(model: pending, presentation: OverlayPresentation(phase: .shown))
+                    .frame(width: pending.placement!.frame.width, height: pending.placement!.frame.height), anchor: scene.anchor)
+                await pause(0.5 * sceneUnit)
+                if let panel = NSApp.windows.first(where: { $0 is OverlayPanel && $0.isVisible }) {
+                    logRegion(panel.frame.insetBy(dx: -24, dy: -24), screen: screen)
                 }
                 pending.update(content: content)
                 step("corner-pending-loaded")

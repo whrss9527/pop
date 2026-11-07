@@ -1,9 +1,9 @@
 {
-  "source": "19b6d777e88daa7c4b170951cef59d6a76fae5e1",
-  "run": 38807294110,
-  "job": 116671319784,
-  "artifact": 12007697912,
-  "description": "Original full screenshot demo marker names and animation scales through emojiSymbols; no screenshot readback in the new measurement workload.",
+  "source": "33df86f048f5bd2abc8347f95a17b3fbc2b7e2ae",
+  "run": 42383969937,
+  "job": 128437309104,
+  "artifact": 13578684400,
+  "description": "完整截图演示至 emojiSymbols 的实际步骤名和动画倍数；来源为 CI #613 保留的浅色、深色原始日志，不改变截图或两秒性能门禁。",
   "appearances": {
     "light": [
       [
@@ -107,6 +107,78 @@
         2.0
       ],
       [
+        "edge-top-inset-35-8-loaded",
+        2.0
+      ],
+      [
+        "edge-top-inset-35-8-hover-first",
+        2.0
+      ],
+      [
+        "edge-top-inset-35-8-hover",
+        2.0
+      ],
+      [
+        "edge-top-inset-48-8-loaded",
+        2.0
+      ],
+      [
+        "edge-top-inset-48-8-hover-first",
+        2.0
+      ],
+      [
+        "edge-top-inset-48-8-hover",
+        2.0
+      ],
+      [
+        "edge-top-inset-100-8-loaded",
+        2.0
+      ],
+      [
+        "edge-top-inset-100-8-hover-first",
+        2.0
+      ],
+      [
+        "edge-top-inset-100-8-hover",
+        2.0
+      ],
+      [
+        "edge-left-inset-96-8-loaded",
+        2.0
+      ],
+      [
+        "edge-left-inset-96-8-hover-first",
+        2.0
+      ],
+      [
+        "edge-left-inset-96-8-hover",
+        2.0
+      ],
+      [
+        "edge-left-inset-100-8-loaded",
+        2.0
+      ],
+      [
+        "edge-left-inset-100-8-hover-first",
+        2.0
+      ],
+      [
+        "edge-left-inset-100-8-hover",
+        2.0
+      ],
+      [
+        "corner-top-left-inset-100-8-loaded",
+        2.0
+      ],
+      [
+        "corner-top-left-inset-100-8-hover-first",
+        2.0
+      ],
+      [
+        "corner-top-left-inset-100-8-hover",
+        2.0
+      ],
+      [
         "corner-top-left-8-loaded",
         2.0
       ],
@@ -167,7 +239,11 @@
         2.0
       ],
       [
-        "corner-top-left-12-overflow",
+        "small-screen-12-loaded",
+        2.0
+      ],
+      [
+        "small-screen-12-overflow",
         2.0
       ],
       [
@@ -601,6 +677,78 @@
         2.0
       ],
       [
+        "edge-top-inset-35-8-loaded",
+        2.0
+      ],
+      [
+        "edge-top-inset-35-8-hover-first",
+        2.0
+      ],
+      [
+        "edge-top-inset-35-8-hover",
+        2.0
+      ],
+      [
+        "edge-top-inset-48-8-loaded",
+        2.0
+      ],
+      [
+        "edge-top-inset-48-8-hover-first",
+        2.0
+      ],
+      [
+        "edge-top-inset-48-8-hover",
+        2.0
+      ],
+      [
+        "edge-top-inset-100-8-loaded",
+        2.0
+      ],
+      [
+        "edge-top-inset-100-8-hover-first",
+        2.0
+      ],
+      [
+        "edge-top-inset-100-8-hover",
+        2.0
+      ],
+      [
+        "edge-left-inset-96-8-loaded",
+        2.0
+      ],
+      [
+        "edge-left-inset-96-8-hover-first",
+        2.0
+      ],
+      [
+        "edge-left-inset-96-8-hover",
+        2.0
+      ],
+      [
+        "edge-left-inset-100-8-loaded",
+        2.0
+      ],
+      [
+        "edge-left-inset-100-8-hover-first",
+        2.0
+      ],
+      [
+        "edge-left-inset-100-8-hover",
+        2.0
+      ],
+      [
+        "corner-top-left-inset-100-8-loaded",
+        2.0
+      ],
+      [
+        "corner-top-left-inset-100-8-hover-first",
+        2.0
+      ],
+      [
+        "corner-top-left-inset-100-8-hover",
+        2.0
+      ],
+      [
         "corner-top-left-8-loaded",
         2.0
       ],
@@ -661,7 +809,11 @@
         2.0
       ],
       [
-        "corner-top-left-12-overflow",
+        "small-screen-12-loaded",
+        2.0
+      ],
+      [
+        "small-screen-12-overflow",
         2.0
       ],
       [

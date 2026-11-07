@@ -70,7 +70,7 @@ edge_cases = ["edge-top-8", "edge-right-8", "edge-bottom-8", "edge-left-8",
               "corner-top-left-8", "corner-top-right-8", "corner-bottom-right-8", "corner-bottom-left-8",
               "corner-top-left-12"]
 edge_plan = [(name + "-" + state, [3.0]) for name in edge_cases for state in ("loaded", "hover-first", "hover")]
-edge_plan.extend([("corner-top-left-12-overflow", [3.0]),
+edge_plan.extend([("small-screen-12-loaded", [3.0]), ("small-screen-12-overflow", [3.0]),
                   ("corner-pending-loaded", [3.0]), ("corner-pending-overflow", [3.0])])
 
 # 每一步开始后第几秒截图（按放慢 6 倍设计，别的倍数按比例换算）
