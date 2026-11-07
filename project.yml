@@ -466,6 +466,15 @@ targets:
         POP_PLUGIN_ID: hash
         POP_PLUGIN_ENTRY: PopHashEntry
 
+  PopBytePreview:
+    templates: [PopPlugin]
+    sources: [PluginBundles/BytePreview]
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: io.github.whrss9527.pop.plugin.bytePreview
+        POP_PLUGIN_ID: bytePreview
+        POP_PLUGIN_ENTRY: PopBytePreviewEntry
+
   PopQRCode:
     templates: [PopPlugin]
     sources: [PluginBundles/QRCode]
@@ -1120,6 +1129,7 @@ targets:
       - path: PluginBundles/Base64Image
       - path: PluginBundles/QRCode
       - path: PluginBundles/Hash
+      - path: PluginBundles/BytePreview/BytePreview.swift
       - path: PluginBundles/Contrast
       - path: PluginBundles/NumberConvert
       - path: PluginBundles/DateSpan
@@ -1240,6 +1250,7 @@ schemes:
         PopBase64Image: all
         PopQRCode: all
         PopHash: all
+        PopBytePreview: all
         PopContrast: all
         PopNumberConvert: all
         PopDateSpan: all
