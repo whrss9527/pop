@@ -10,6 +10,7 @@ struct PluginLibraryView: View {
     @State private var query = ""
     @State private var notice: String? = nil
     @State private var errorMessage: String? = nil
+    @State private var loadRevision = 0
 
     var body: some View {
         VStack(spacing: 0) {
@@ -47,7 +48,7 @@ struct PluginLibraryView: View {
             .padding(12)
         }
         .frame(width: 600, height: 540)
-        .task {
+        .task(id: loadRevision) {
             await model.load()
         }
         .alert("没有装上", isPresented: Binding(get: { errorMessage != nil }, set: { if !$0 { errorMessage = nil } })) {
@@ -72,7 +73,7 @@ struct PluginLibraryView: View {
                     .multilineTextAlignment(.center)
                     .foregroundStyle(.secondary)
                 Button("重试") {
-                    Task { await model.load() }
+                    loadRevision += 1
                 }
             }
             .padding(24)
