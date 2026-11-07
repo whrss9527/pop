@@ -403,6 +403,10 @@ struct RingSettingsView: View {
         layout.slots.indices.contains(selectedSlot) ? layout.slots[selectedSlot] : nil
     }
 
+    private var selectedInfo: PluginInfo? {
+        selectedPluginID.flatMap { id in catalog.first(where: { $0.id == id }) }
+    }
+
     private func refreshNameDraft() {
         nameDraft = selectedPluginID.flatMap { layout.customDisplayName(for: $0) } ?? ""
     }
@@ -461,6 +465,12 @@ struct RingSettingsView: View {
             } else {
                 Text("选择一个功能修改名称").font(.caption).foregroundStyle(.secondary)
             }
+            RingButtonAppearancePreview(appearance: layout.appearance, slotCount: layout.slotCount,
+                                        name: selectedInfo.map { layout.customDisplayName(for: $0.id) ?? $0.name } ?? String(localized: "功能"),
+                                        symbol: selectedInfo?.symbol ?? "plus")
+                .frame(height: 104)
+                .frame(maxWidth: .infinity)
+            Text("实际大小").font(.caption).foregroundStyle(.secondary).frame(maxWidth: .infinity)
         }
         .frame(maxWidth: 400)
     }
@@ -525,6 +535,8 @@ struct RingSettingsView: View {
                         }
                         Text("点击预览中的按钮可修改名称。")
                             .font(.caption).foregroundStyle(.secondary)
+                        Text("圆盘预览已缩放；右侧显示按钮实际大小。")
+                            .font(.caption2).foregroundStyle(.secondary)
                         Picker("格子数", selection: slotCount) {
                             ForEach(RingLayout.allowedSlotCounts, id: \.self) { count in
                                 Text("\(count) 格").tag(count)
@@ -709,7 +721,7 @@ struct RingEditorCanvas: View {
 
     private func makePreview() -> RingViewModel {
         let model = RingViewModel(layout: layout, catalog: catalog, installed: Set(installed.map(\.id)),
-                                  content: ContentClassifier.classify(.text("Hello")))
+                                  content: ContentClassifier.classify(.text("Hello")), hapticFeedback: {})
         model.freezePlacement(anchor: .zero, safeFrame: CGRect(x: -2000, y: -2000, width: 4000, height: 4000))
         model.setHovered(selectedSlot)
         return model

@@ -3242,3 +3242,7 @@
 "点击预览中的按钮可修改名称。" = "Click a preview button to edit its name.";
 
 "预览会缩放以完整显示圆盘。" = "The preview scales to show the entire ring.";
+
+"实际大小" = "Actual size";
+
+"圆盘预览已缩放；右侧显示按钮实际大小。" = "The ring preview is scaled; the button on the right is shown at its actual size.";
