@@ -442,7 +442,11 @@ struct RingSettingsView: View {
             }
             Divider()
             if let pluginID = selectedPluginID, let info = catalog.first(where: { $0.id == pluginID }) {
-                Text("功能：\(info.name)").font(.caption).foregroundStyle(.secondary)
+                HStack {
+                    Text("显示名称").font(.caption)
+                    Spacer(minLength: 4)
+                    Text("功能：\(info.name)").font(.caption).foregroundStyle(.secondary).lineLimit(1)
+                }
                 HStack {
                     TextField("显示名称", text: Binding(
                         get: { nameDraft },
@@ -453,6 +457,7 @@ struct RingSettingsView: View {
                         }
                     ), prompt: Text(info.name))
                         .textFieldStyle(.roundedBorder)
+                        .accessibilityLabel(Text("显示名称"))
                         .focused($nameFocused)
                         .onSubmit { nameFocused = false; refreshNameDraft() }
                         .help("只改变这个圆盘中的名称，留空使用原名。")
