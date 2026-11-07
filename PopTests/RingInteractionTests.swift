@@ -157,15 +157,19 @@ final class RingInteractionTests: XCTestCase {
 
     @MainActor
     func testOverflowKeepsEveryOriginalSlotAndKeyboardVisitsMore() {
-        for anchor in [CGPoint(x: 0, y: 600), CGPoint(x: 0, y: 300)] {
+        let smallScreen = CGRect(x: 0, y: 0, width: 180, height: 160)
+        for anchor in [CGPoint(x: smallScreen.minX, y: smallScreen.maxY),
+                       CGPoint(x: smallScreen.minX, y: smallScreen.midY)] {
             let layout = RingLayout(slots: Array(repeating: BuiltinPluginID.clipboardHistory, count: 12))
             let ring = RingViewModel(layout: layout, catalog: BuiltinPlugins.make().map(\.info),
                                      installed: [BuiltinPluginID.clipboardHistory], content: nil)
-            ring.freezePlacement(anchor: anchor, safeFrame: CGRect(x: 0, y: 0, width: 800, height: 600))
-            XCTAssertTrue(ring.placement?.hasOverflow == true)
-            XCTAssertEqual(ring.visibleSlots.count, anchor.y == 600 ? 2 : 4)
-            XCTAssertLessThanOrEqual(ring.geometry.outerRadius, 160)
-            XCTAssertEqual(ring.visibleSlots.last?.id, ring.overflowID)
+            ring.freezePlacement(anchor: anchor, safeFrame: smallScreen)
+            XCTAssertTrue(ring.placement?.hasOverflow == true, "真实空间不足时才使用更多")
+            XCTAssertLessThan(ring.visibleSlots.count, ring.slots.count)
+            XCTAssertEqual(ring.visibleSlots.filter(\.isOverflow).map(\.id), [ring.overflowID])
+            XCTAssertEqual(Set(ring.visibleSlots.map(\.id)),
+                           Set(Array(0..<max(ring.visibleSlots.count - 1, 0)) + [ring.overflowID]),
+                           "更多前仍按原始编号保留候选，物理排列可以循环旋转")
             XCTAssertEqual(ring.slots.count, 12)
             var visited: [Int] = []
             for _ in ring.visibleSlots {
@@ -174,10 +178,12 @@ final class RingInteractionTests: XCTestCase {
                 ring.setHovered(next)
             }
             XCTAssertEqual(visited, ring.visibleSlots.map(\.id))
+            XCTAssertEqual(ring.nextVisibleSlot(by: 1), visited.first)
+            XCTAssertEqual(visited.filter { $0 == ring.overflowID }.count, 1)
+            ring.setHovered(ring.overflowID)
             XCTAssertTrue(ring.isOverflow(ring.hovered))
             XCTAssertNil(ring.pluginSlot(ring.overflowID))
             XCTAssertNil(ring.selectablePlugin(at: ring.overflowID))
-            XCTAssertEqual(ring.nextVisibleSlot(by: 1), 0)
             ring.update(content: .empty)
             for id in 0..<12 {
                 XCTAssertEqual(ring.selectablePlugin(at: id)?.id, BuiltinPluginID.clipboardHistory,
@@ -203,8 +209,13 @@ final class RingInteractionTests: XCTestCase {
             }
             ring.updateHover(offset: .zero)
             XCTAssertNil(ring.hovered)
-            ring.updateHover(offset: CGVector(dx: -200, dy: 0))
-            XCTAssertNil(ring.hovered, "朝弧外划动不选中")
+            if !ring.geometry.isFullCircle {
+                let gapAngle = CGFloat(ring.geometry.startDegrees - (360 - ring.geometry.sweepDegrees) / 2) * .pi / 180
+                let reach = ring.geometry.outerRadius + 100
+                ring.updateHover(offset: CGVector(dx: cos(gapAngle) * reach, dy: -sin(gapAngle) * reach))
+                XCTAssertNil(ring.hovered, "朝实际弧外的取消方向划动不选中")
+                XCTAssertEqual(decide(hovered: ring.hovered, closes: true), .close)
+            }
         }
     }
 
@@ -268,7 +279,7 @@ final class RingInteractionTests: XCTestCase {
         let function = package.functions[0]
         let layout = RingLayout(slots: Array(repeating: function, count: 12))
         let ring = RingViewModel(layout: layout, catalog: [], installed: [function], content: nil)
-        ring.freezePlacement(anchor: CGPoint(x: 0, y: 600), safeFrame: CGRect(x: 0, y: 0, width: 800, height: 600))
+        ring.freezePlacement(anchor: CGPoint(x: 0, y: 160), safeFrame: CGRect(x: 0, y: 0, width: 180, height: 160))
         let placement = ring.placement
         let visibleIDs = ring.visibleSlots.map(\.id)
         XCTAssertTrue(placement?.hasOverflow == true)
@@ -281,9 +292,10 @@ final class RingInteractionTests: XCTestCase {
             XCTAssertNil(ring.pluginSlot(slot.id))
             XCTAssertNil(ring.selectablePlugin(at: slot.id))
         }
-        XCTAssertTrue(ring.visibleSlots.last?.isOverflow == true)
-        XCTAssertTrue(ring.visibleSlots.last?.enabled == true)
-        XCTAssertNil(ring.visibleSlots.last?.pendingPackage)
+        let more = ring.visibleSlots.first(where: \.isOverflow)
+        XCTAssertNotNil(more)
+        XCTAssertTrue(more?.enabled == true)
+        XCTAssertNil(more?.pendingPackage)
         ring.update(content: ContentClassifier.classify(.text("hello")))
         XCTAssertEqual(ring.placement, placement)
         XCTAssertEqual(ring.visibleSlots.map(\.id), visibleIDs)
