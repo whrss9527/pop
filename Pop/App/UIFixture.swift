@@ -67,11 +67,13 @@ private struct UIFixtureRingParameters: Equatable {
     let dock: Int
     let count: Int
     let longNames: Bool
+    let appearance: RingAppearance
+    let customName: String
 
     func hasSameLayout(as other: Self) -> Bool {
         screen == other.screen && menuBarHeight == other.menuBarHeight && notch == other.notch
             && displayScale == other.displayScale && dock == other.dock && count == other.count
-            && longNames == other.longNames
+            && longNames == other.longNames && appearance == other.appearance
     }
 
     var boundary: RingScreenBoundary {
@@ -103,6 +105,9 @@ private final class UIFixtureState: ObservableObject {
     @Published var loading = false
     @Published var backdrop = 0
     @Published var longNames = false
+    @Published var buttonShape = RingButtonShape.roundedRectangle
+    @Published var buttonScale = 1.0
+    @Published var firstCustomName = ""
     @Published var screenWidth = 1000.0
     @Published var screenHeight = 650.0
     @Published var anchorX = 500.0
@@ -119,6 +124,7 @@ private final class UIFixtureState: ObservableObject {
     @Published var chooser: PluginChooserModel
     @Published var notice = "Actions only update this message; no plug-in is executed."
     @Published var libraryOpen = false
+    @Published var ringSettingsOpen = false
     @Published var libraryMode = 0
     @Published var library: PluginLibraryModel?
     @Published var translationOpen = false
@@ -172,12 +178,16 @@ private final class UIFixtureState: ObservableObject {
                                        anchor: CGPoint(x: min(max(anchorX, 0), width), y: min(max(anchorY, 0), height)),
                                        menuBarHeight: min(max(menuBarHeight, 0), 80), notch: notch,
                                        displayScale: displayScale, dock: dock,
-                                       count: count, longNames: longNames)
+                                       count: count, longNames: longNames,
+                                       appearance: RingAppearance(shape: buttonShape, scale: buttonScale).normalized,
+                                       customName: firstCustomName)
     }
 
-    private static func makeRing(_ entries: [PluginInfo], loading: Bool) -> RingViewModel {
-        RingViewModel(layout: RingLayout(slots: entries.map { Optional($0.id) }), catalog: entries,
-                      installed: Set(entries.map(\.id)), content: loading ? nil : ContentClassifier.classify(.text("Liquid glass")))
+    private static func makeRing(_ entries: [PluginInfo], loading: Bool, appearance: RingAppearance = .default,
+                                 customNames: [String: String] = [:]) -> RingViewModel {
+        RingViewModel(layout: RingLayout(slots: entries.map { Optional($0.id) }, appearance: appearance, customNames: customNames), catalog: entries,
+                      installed: Set(entries.map(\.id)), content: loading ? nil : ContentClassifier.classify(.text("Liquid glass")),
+                      hapticFeedback: {})
     }
 
     func resetRing() {
@@ -198,15 +208,16 @@ private final class UIFixtureState: ObservableObject {
                            symbol: info.symbol, summary: info.summary, accepts: info.accepts)
             }
         }
-        ring = Self.makeRing(entries, loading: loading)
+        let names = entries.first.map { [$0.id: parameters.customName] } ?? [:]
+        ring = Self.makeRing(entries, loading: loading, appearance: parameters.appearance, customNames: names)
         let boundary = parameters.boundary
         let key = RingPlacementCache.Key(configuredSlotIDs: ring.configuredSlotIDs, slotCount: ring.slots.count,
                                          safeFrame: boundary.availableFrame, excludedFrames: boundary.excludedFrames,
-                                         displayScale: boundary.displayScale)
+                                         displayScale: boundary.displayScale, appearance: ring.appearance)
         let preferred = ringPlacementCache.preferredDisplayOrder(for: key, anchor: parameters.anchor)
         ring.freezePlacement(anchor: parameters.anchor, safeFrame: boundary.availableFrame,
                              excludedFrames: boundary.excludedFrames, displayScale: boundary.displayScale,
-                             preferredDisplayOrder: preferred)
+                             preferredDisplayOrder: preferred, appearance: ring.appearance)
         if let placement = ring.placement { ringPlacementCache.record(placement, for: key) }
         showOverflow = false
         placementRevision += 1
@@ -218,6 +229,16 @@ private final class UIFixtureState: ObservableObject {
         notice = "Loading changed — same invocation #\(placementRevision), placement stays frozen"
     }
 
+    func resetRingCustomization() {
+        let unchanged = buttonShape == RingAppearance.default.shape && buttonScale == RingAppearance.default.scale
+            && firstCustomName.isEmpty
+        buttonShape = RingAppearance.default.shape
+        buttonScale = RingAppearance.default.scale
+        firstCustomName = ""
+        // 参数变化由 onChange 开新场景；已经是默认值时仍允许清除本次选择。
+        if unchanged { resetRing() }
+    }
+
     func activate(_ index: Int) {
         NSApp.keyWindow?.makeFirstResponder(nil)
         if ring.isOverflow(index) {
@@ -226,7 +247,7 @@ private final class UIFixtureState: ObservableObject {
         } else if let info = ring.selectablePlugin(at: index) {
             ring.commit(index)
             showOverflow = false
-            selected(info)
+            selected(info, displayName: ring.slots[index].displayName)
         }
     }
 
@@ -237,9 +258,9 @@ private final class UIFixtureState: ObservableObject {
         libraryOpen = true
     }
 
-    func selected(_ info: PluginInfo) {
+    func selected(_ info: PluginInfo, displayName: String? = nil) {
         activationCount += 1
-        notice = "Selected: \(info.name) [\(info.id)] — activation #\(activationCount)"
+        notice = "Selected: \(displayName ?? info.name) [\(info.id)] — activation #\(activationCount)"
     }
 
     func openTranslation() {
@@ -304,6 +325,8 @@ private struct UIFixtureView: View {
                 Toggle("Dark", isOn: $state.dark).toggleStyle(.switch)
                 Button("中文") { state.language("zh-Hans") }
                 Button("English") { state.language("en") }
+                Button("Ring settings") { state.ringSettingsOpen = true }
+                    .accessibilityIdentifier("fixture-ring-settings")
             }
             Text(verbatim: "Language buttons reopen this fixture. No AppController, clipboard, permissions, cloud, updater, or global event monitors.")
                 .font(.caption).foregroundStyle(.secondary)
@@ -357,6 +380,21 @@ private struct UIFixtureView: View {
                     .environment(\.openURL, OpenURLAction { _ in .discarded })
             }
         }
+        .sheet(isPresented: $state.ringSettingsOpen) {
+            VStack(spacing: 0) {
+                HStack {
+                    Text(verbatim: "Production ring settings · isolated fixture store")
+                        .font(.caption).foregroundStyle(.secondary)
+                    Spacer()
+                    Button("Done") { state.ringSettingsOpen = false }
+                }.padding(12)
+                Divider()
+                RingSettingsView(catalog: state.catalog)
+                    .environmentObject(state.store)
+            }
+            .frame(width: 840, height: 500)
+            .environment(\.openURL, OpenURLAction { _ in .discarded })
+        }
     }
 }
 
@@ -381,6 +419,22 @@ private struct UIFixtureRingScene: View {
             HStack(spacing: 14) {
                 scalar("X", value: $state.anchorX, range: 0...state.ringParameters.screen.width)
                 scalar("Y", value: $state.anchorY, range: 0...state.ringParameters.screen.height)
+            }
+            HStack(spacing: 10) {
+                Picker("Shape", selection: $state.buttonShape) {
+                    Text(verbatim: "Rounded").tag(RingButtonShape.roundedRectangle)
+                    Text(verbatim: "Circle").tag(RingButtonShape.circle)
+                    Text(verbatim: "Square").tag(RingButtonShape.square)
+                }.frame(width: 180)
+                Text(verbatim: "Size").font(.caption)
+                Slider(value: $state.buttonScale, in: 0.8...1.6, step: 0.05)
+                    .frame(width: 120).accessibilityLabel(Text(verbatim: "Ring button size"))
+                Text(verbatim: String(format: "%.0f%%", state.buttonScale * 100))
+                    .font(.caption.monospacedDigit()).frame(width: 42)
+                TextField("First action name", text: $state.firstCustomName)
+                    .textFieldStyle(.roundedBorder)
+                    .accessibilityLabel(Text(verbatim: "First ring action name"))
+                Button("Reset appearance & name") { state.resetRingCustomization() }
             }
             DisclosureGroup(isExpanded: $state.showScreenSettings) {
                 VStack(spacing: 6) {
@@ -502,6 +556,8 @@ private struct UIFixtureRingCanvas: View {
                 .frame(width: parameters.screen.width, height: max(parameters.menuBarHeight, parameters.notch ? 32 : 0))
             if let placement = state.ring.placement {
                 RingMenuView(model: state.ring, presentation: state.presentation, reduceMotionOverride: state.reduceMotion)
+                    // 场景输入统一交给外层坐标适配器，材质视图不截走预览点击。
+                    .allowsHitTesting(false)
                     .frame(width: placement.frame.width, height: placement.frame.height)
                     .position(x: placement.frame.midX, y: parameters.screen.maxY - placement.frame.midY)
             }

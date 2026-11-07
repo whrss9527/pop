@@ -9,9 +9,10 @@ final class RingViewModel: ObservableObject {
         var enabled: Bool
         var isOverflow = false
         var pendingPackage: String? = nil
+        var customName: String? = nil
 
         /// 更多列表也保留等待更新的功能名称、图标和不可执行状态。
-        var displayName: String { info?.name ?? pendingPackage ?? String(localized: "空格子") }
+        var displayName: String { customName ?? info?.name ?? pendingPackage ?? String(localized: "空格子") }
         var displaySymbol: String { info?.symbol ?? (pendingPackage == nil ? "circle.dotted" : "arrow.clockwise") }
         var updateHint: String? {
             pendingPackage == nil ? nil : String(localized: "正在更新，联网后会自动重试")
@@ -19,7 +20,9 @@ final class RingViewModel: ObservableObject {
     }
 
     let configuredSlotIDs: [String?]
+    let appearance: RingAppearance
     private let baseGeometry: RingGeometry
+    private let hapticFeedback: () -> Void
     /// 一次唤起只算一次；异步内容、返回圆盘都不改变位置和编号。
     private(set) var placement: RingPlacement?
     var geometry: RingGeometry { placement?.geometry ?? baseGeometry }
@@ -36,10 +39,11 @@ final class RingViewModel: ObservableObject {
     func displayIndex(for id: Int) -> Int? { visibleSlots.firstIndex { $0.id == id } }
 
     func freezePlacement(anchor: CGPoint, safeFrame: CGRect, excludedFrames: [CGRect] = [], displayScale: CGFloat = 1,
-                         preferredDisplayOrder: [Int]? = nil) {
+                         preferredDisplayOrder: [Int]? = nil, appearance: RingAppearance? = nil) {
         guard placement == nil else { return }
         placement = RingPlacement(slotCount: slots.count, anchor: anchor, safeFrame: safeFrame,
-                                  excludedFrames: excludedFrames, displayScale: displayScale, preferredDisplayOrder: preferredDisplayOrder)
+                                  excludedFrames: excludedFrames, displayScale: displayScale, preferredDisplayOrder: preferredDisplayOrder,
+                                  appearance: (appearance ?? self.appearance).normalized)
     }
 
     #if POP_UI_FIXTURE
@@ -90,16 +94,22 @@ final class RingViewModel: ObservableObject {
         var enabled = true
     }
 
-    init(layout: RingLayout, catalog: [PluginInfo], installed: Set<String>, content: ClassifiedContent?) {
+    init(layout: RingLayout, catalog: [PluginInfo], installed: Set<String>, content: ClassifiedContent?,
+         hapticFeedback: @escaping () -> Void = {
+             NSHapticFeedbackManager.defaultPerformer.perform(.alignment, performanceTime: .now)
+         }) {
         let count = max(layout.slotCount, 1)
         configuredSlotIDs = layout.slots
+        appearance = layout.appearance.normalized
+        self.hapticFeedback = hapticFeedback
         baseGeometry = RingGeometry(slotCount: count, outerRadius: RingGeometry.outerRadius(forSlotCount: count))
         slots = layout.slots.enumerated().map { index, pluginID in
             let info = pluginID.flatMap { id in installed.contains(id) ? catalog.first(where: { $0.id == id }) : nil }
             let pending = pluginID.flatMap { id in
                 installed.contains(id) && info == nil ? PluginCatalog.all.first(where: { $0.functions.contains(id) })?.name : nil
             }
-            return Slot(id: index, info: info, enabled: false, pendingPackage: pending)
+            return Slot(id: index, info: info, enabled: false, pendingPackage: pending,
+                        customName: pluginID.flatMap { layout.customDisplayName(for: $0) })
         }
         centerText = String(localized: "读取中…")
         isLoading = true
@@ -130,14 +140,14 @@ final class RingViewModel: ObservableObject {
         if isOverflow(hovered) { return Center(title: String(localized: "更多功能"), isFunction: true) }
         guard let hovered, slots.indices.contains(hovered) else { return Center(title: centerText) }
         let slot = slots[hovered]
-        if let package = slot.pendingPackage {
-            return Center(title: package, detail: String(localized: "正在更新，联网后会自动重试"), isFunction: true, enabled: false)
+        if slot.pendingPackage != nil {
+            return Center(title: slot.displayName, detail: String(localized: "正在更新，联网后会自动重试"), isFunction: true, enabled: false)
         }
         guard let info = slot.info else {
             return Center(title: String(localized: "空格子"), detail: String(localized: "可以在设置里放上功能"), isFunction: true, enabled: false)
         }
         let hint = slot.enabled || isLoading ? nil : Self.unavailableHint(for: info, content: content)
-        return Center(title: info.name, detail: hint, isFunction: true, enabled: slot.enabled)
+        return Center(title: slot.displayName, detail: hint, isFunction: true, enabled: slot.enabled)
     }
 
     /// 这一格用不了时的简短说明：缺的是哪种内容，或者这次的内容不合适
@@ -176,7 +186,7 @@ final class RingViewModel: ObservableObject {
         }
         // 触控板上划过每一格轻轻震一下
         if let index, slots.indices.contains(index), slots[index].enabled {
-            NSHapticFeedbackManager.defaultPerformer.perform(.alignment, performanceTime: .now)
+            hapticFeedback()
         }
     }
 
@@ -273,10 +283,12 @@ struct RingMenuView: View {
         let position = model.displayIndex(for: slot.id) ?? 0
         let offset = model.geometry.slotCenterOffset(position)
         let reach = slotReach(phase)
-        let labelWidth = model.placement?.buttonSize.width ?? RingButtonMetrics(slotCount: model.slots.count).bodySize.width
+        let appearance = model.placement?.appearance ?? model.appearance
+        let metrics = RingButtonMetrics(slotCount: model.slots.count, appearance: appearance)
         return RingSlotLabel(slot: slot, isHovered: model.hovered == slot.id, committed: model.committed,
                              isLoading: model.isLoading, reduceMotion: reduceMotion,
-                             labelWidth: labelWidth)
+                              metrics: metrics, appearance: appearance,
+                              content: RingLabelContentLayout(metrics: metrics, appearance: appearance, slotCount: model.slots.count))
             .help(slotHint(slot))
             .accessibilityElement(children: .ignore)
             .accessibilityLabel(Text(slotHint(slot)))
@@ -293,8 +305,8 @@ struct RingMenuView: View {
         if slot.isOverflow { return String(localized: "更多功能") }
         if let hint = slot.updateHint { return slot.displayName + "\n" + hint }
         guard let info = slot.info else { return String(localized: "空格子") }
-        if model.isLoading { return info.name + "\n" + String(localized: "读取中…") }
-        return slot.enabled ? info.name : info.name + "\n" + RingViewModel.unavailableHint(for: info, content: model.content)
+        if model.isLoading { return slot.displayName + "\n" + String(localized: "读取中…") }
+        return slot.enabled ? slot.displayName : slot.displayName + "\n" + RingViewModel.unavailableHint(for: info, content: model.content)
     }
 
     private var hubHasRoom: Bool {
@@ -494,6 +506,32 @@ private struct RingSurface<Surface: InsettableShape>: View {
     }
 }
 
+/// 与标签实际排版共用的内容范围；圆形把文字和图标留在内接正方形内。
+struct RingLabelContentLayout: Equatable {
+    let contentSize: CGSize
+    let glyphSize: CGFloat
+    let glyphHeight: CGFloat
+    let captionSize: CGFloat
+    let captionHeight: CGFloat
+    let spacing: CGFloat
+
+    init(metrics: RingButtonMetrics, appearance: RingAppearance, slotCount: Int) {
+        let scale = CGFloat(appearance.normalized.scale)
+        let dense = RingButtonMetrics(slotCount: slotCount).bodySize.width < 48
+        let circle = appearance.shape == .circle
+        let inset = circle ? CGFloat.zero : 4 * scale
+        let side = min(metrics.bodySize.width, metrics.bodySize.height) / sqrt(2)
+        contentSize = circle ? CGSize(width: side, height: side)
+            : CGSize(width: max(1, metrics.bodySize.width - inset * 2),
+                     height: max(1, metrics.bodySize.height - inset * 2))
+        captionSize = max(9, (dense ? 9 : 10) * scale)
+        captionHeight = ceil(captionSize * 1.3)
+        spacing = max(1.5, 3 * scale)
+        glyphHeight = min((dense ? 20 : 24) * scale, max(9, contentSize.height - captionHeight - spacing))
+        glyphSize = min((dense ? 16 : 18) * scale, max(9, glyphHeight * 0.8))
+    }
+}
+
 private struct RingSlotLabel: View {
     @Environment(\.colorScheme) private var colorScheme
     let slot: RingViewModel.Slot
@@ -501,7 +539,9 @@ private struct RingSlotLabel: View {
     let committed: Int?
     let isLoading: Bool
     let reduceMotion: Bool
-    let labelWidth: CGFloat
+    let metrics: RingButtonMetrics
+    let appearance: RingAppearance
+    let content: RingLabelContentLayout
 
     var body: some View {
         let isCommitted = committed == slot.id
@@ -510,34 +550,26 @@ private struct RingSlotLabel: View {
         let palette = RingPalette(isDark: colorScheme == .dark)
         let foregroundOpacity = (isLoading && !slot.isOverflow) || !slot.enabled || dimmed ? RingPalette.mutedOpacity : 1
         let tint = slot.enabled ? Color.accentColor : palette.foreground
-        let shape = RoundedRectangle(cornerRadius: min(14, labelWidth * 0.28), style: .circular)
-        VStack(spacing: 3) {
+        VStack(spacing: content.spacing) {
             if slot.isOverflow {
                 glyph("ellipsis", active: active, isCommitted: isCommitted)
                 caption(String(localized: "更多"))
             } else if let info = slot.info {
                 glyph(info.symbol, active: active, isCommitted: isCommitted)
-                caption(info.name)
+                caption(slot.displayName)
             } else if slot.pendingPackage != nil {
                 glyph("arrow.clockwise", active: false, isCommitted: false)
-                caption(String(localized: "正在更新"))
+                caption(slot.customName ?? String(localized: "正在更新"))
             } else {
                 Circle().fill(palette.foreground.opacity(foregroundOpacity))
                     .frame(width: 4, height: 4)
             }
         }
-        .padding(.horizontal, 4)
-        .frame(width: labelWidth, height: min(54, labelWidth))
+        .frame(width: content.contentSize.width, height: content.contentSize.height)
+        .frame(width: metrics.bodySize.width, height: metrics.bodySize.height)
         .foregroundStyle(palette.foreground.opacity(foregroundOpacity))
         .background {
-            RingSurface(shape: shape)
-                .overlay {
-                    shape.fill(tint.opacity(active ? (isCommitted ? RingPalette.commitOpacity : RingPalette.hoverOpacity)
-                                                   : (isHovered ? RingPalette.unavailableHoverOpacity : 0)))
-                }
-                .overlay {
-                    shape.strokeBorder(tint.opacity(active ? 0.55 : (isHovered ? 0.22 : 0)), lineWidth: 1)
-                }
+            surface(tint: tint, active: active, isCommitted: isCommitted)
         }
         .scaleEffect(reduceMotion ? 1 : (isCommitted ? 0.92 : 1))
         .animation(Motion.ringHover, value: active)
@@ -546,20 +578,70 @@ private struct RingSlotLabel: View {
         .animation(Motion.content, value: isLoading)
     }
 
+    @ViewBuilder
+    private func surface(tint: Color, active: Bool, isCommitted: Bool) -> some View {
+        switch appearance.shape {
+        case .roundedRectangle:
+            decorated(RoundedRectangle(cornerRadius: metrics.cornerRadius, style: .circular), tint: tint,
+                      active: active, isCommitted: isCommitted)
+        case .circle:
+            decorated(Circle(), tint: tint, active: active, isCommitted: isCommitted)
+        case .square:
+            decorated(Rectangle(), tint: tint, active: active, isCommitted: isCommitted)
+        }
+    }
+
+    private func decorated<Surface: InsettableShape>(_ shape: Surface, tint: Color, active: Bool,
+                                                    isCommitted: Bool) -> some View {
+        RingSurface(shape: shape)
+            .overlay {
+                shape.fill(tint.opacity(active ? (isCommitted ? RingPalette.commitOpacity : RingPalette.hoverOpacity)
+                                               : (isHovered ? RingPalette.unavailableHoverOpacity : 0)))
+            }
+            .overlay {
+                shape.strokeBorder(tint.opacity(active ? 0.55 : (isHovered ? 0.22 : 0)), lineWidth: 1)
+            }
+    }
+
     private func caption(_ name: String) -> some View {
         Text(name)
-            .font(.system(size: labelWidth < 48 ? 9 : 10, weight: .medium))
+            .font(.system(size: content.captionSize, weight: .medium))
             .lineLimit(1)
-            .minimumScaleFactor(0.8)
+            .minimumScaleFactor(9 / content.captionSize)
+            .truncationMode(.tail)
             .allowsTightening(true)
+            .frame(maxWidth: .infinity)
+            .frame(height: content.captionHeight)
     }
 
     private func glyph(_ symbol: String, active: Bool, isCommitted: Bool) -> some View {
         Image(systemName: symbol)
             .symbolRenderingMode(.monochrome)
-            .font(.system(size: labelWidth < 48 ? 16 : 18, weight: .regular))
-            .frame(height: labelWidth < 48 ? 20 : 24)
+            .font(.system(size: content.glyphSize, weight: .regular))
+            .frame(height: content.glyphHeight)
             .scaleEffect(reduceMotion ? 1 : (active && !isCommitted ? 1.06 : 1))
+    }
+}
+
+/// 设置中按真实点尺寸展示单个入口；只复用生产标签，不创建模型或触发反馈。
+struct RingButtonAppearancePreview: View {
+    let appearance: RingAppearance
+    let slotCount: Int
+    let name: String
+    let symbol: String
+
+    var body: some View {
+        let appearance = appearance.normalized
+        let metrics = RingButtonMetrics(slotCount: slotCount, appearance: appearance)
+        let info = PluginInfo(id: "ring-appearance-preview", name: name, symbol: symbol, summary: "", accepts: [])
+        let slot = RingViewModel.Slot(id: 0, info: info, enabled: true)
+        RingSlotLabel(slot: slot, isHovered: false, committed: nil, isLoading: false, reduceMotion: true,
+                      metrics: metrics, appearance: appearance,
+                      content: RingLabelContentLayout(metrics: metrics, appearance: appearance, slotCount: slotCount))
+            .padding(RingButtonMetrics.shadowMargin)
+            .environment(\.ringBackdropBlending, .withinWindow)
+            .accessibilityElement(children: .combine)
+            .accessibilityLabel(Text(name))
     }
 }
 
