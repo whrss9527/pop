@@ -427,6 +427,10 @@ final class TranslationModel: ObservableObject {
         mode = .single(services.unavailableReason(engine) == nil ? engine : .system)
     }
 
+    deinit {
+        for task in tasks.values { task.cancel() }
+    }
+
     /// 正在看的引擎；对比时是 nil
     var engine: TranslationEngine? {
         if case .single(let engine) = mode {
@@ -457,6 +461,21 @@ final class TranslationModel: ObservableObject {
     /// 卡片出现时开始翻译
     func start() {
         runMissing()
+    }
+
+    /// 卡片消失时结束工作；保留完成的结果，再次显示时只重启被打断的引擎。
+    func stop() {
+        generation += 1
+        for task in tasks.values { task.cancel() }
+        tasks = [:]
+        if configuration != nil { configuration = nil }
+        let retained = results.filter { _, phase in
+            switch phase {
+            case .checking, .translating, .partial: return false
+            default: return true
+            }
+        }
+        if retained != results { results = retained }
     }
 
     /// 换一种目标语言重新翻译
@@ -506,27 +525,33 @@ final class TranslationModel: ObservableObject {
             return
         }
         let generation = self.generation
+        let services = self.services
+        let text = self.text
+        let source = self.sourceCode
+        let target = targetCode
         if engine == .system {
             results[engine] = .checking
             tasks[engine] = Task { [weak self] in
-                await self?.prepareSystem(generation: generation)
+                guard !Task.isCancelled else { return }
+                // 检查期间不持有整个模型；即使服务忽略取消，迟到结果也不能重新配置卡片。
+                let status = await services.checkSystem(text, source, target)
+                guard let self, self.generation == generation, !Task.isCancelled else { return }
+                self.applySystem(status)
             }
             return
         }
         results[engine] = .translating
-        let services = self.services
-        let text = self.text
-        let target = targetCode
         tasks[engine] = Task { [weak self] in
+            guard !Task.isCancelled else { return }
             var output = ""
             do {
                 let stream = try await services.translate(engine, text, target)
                 for try await piece in stream {
+                    guard let self, self.generation == generation, !Task.isCancelled else { return }
                     output += piece
-                    guard let self, self.generation == generation else { return }
                     self.results[engine] = .partial(output)
                 }
-                guard let self, self.generation == generation else { return }
+                guard let self, self.generation == generation, !Task.isCancelled else { return }
                 let translated = output.trimmingCharacters(in: .whitespacesAndNewlines)
                 self.results[engine] = translated.isEmpty ? .failed(String(localized: "\(engine.title) 没有返回译文")) : .done(translated)
             } catch {
@@ -537,9 +562,7 @@ final class TranslationModel: ObservableObject {
     }
 
     /// 系统翻译先确认语言包已经装好。没装好时不在浮窗里弹系统下载框（非激活面板里显示不正常），而是引导去设置页下载。
-    private func prepareSystem(generation: Int) async {
-        let status = await services.checkSystem(text, sourceCode, targetCode)
-        guard self.generation == generation else { return }
+    private func applySystem(_ status: SystemTranslationStatus) {
         switch status {
         case .installed:
             results[.system] = .translating
@@ -558,10 +581,10 @@ final class TranslationModel: ObservableObject {
         let generation = self.generation
         do {
             let response = try await session.translate(text)
-            guard self.generation == generation else { return }
+            guard self.generation == generation, !Task.isCancelled else { return }
             results[.system] = .done(response.targetText)
         } catch {
-            guard self.generation == generation else { return }
+            guard self.generation == generation, !Task.isCancelled else { return }
             results[.system] = .failed(String(localized: "翻译失败：\(error.localizedDescription)"))
         }
     }
@@ -643,6 +666,9 @@ struct TranslationCardView: View {
         }
         .task {
             model.start()
+        }
+        .onDisappear {
+            model.stop()
         }
     }
 

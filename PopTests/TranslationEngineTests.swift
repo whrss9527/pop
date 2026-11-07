@@ -121,6 +121,11 @@ final class DeepLClientTests: XCTestCase {
 
 @MainActor
 final class TranslationModelTests: XCTestCase {
+    private final class WeakModel {
+        weak var value: TranslationModel?
+        init(_ value: TranslationModel?) { self.value = value }
+    }
+
     /// 记下联网引擎收到的请求
     private final class Calls {
         var requests: [(engine: TranslationEngine, target: String)] = []
@@ -161,6 +166,187 @@ final class TranslationModelTests: XCTestCase {
         model.start()
         await model.waitUntilFinished()
         XCTAssertEqual(calls.requests.count, 1)
+    }
+
+    func testReleasingModelCancelsAnUnfinishedStream() async {
+        let started = XCTestExpectation(description: "译文流开始等待")
+        let cancelled = XCTestExpectation(description: "译文流随模型释放取消")
+        var continuation: AsyncThrowingStream<String, Error>.Continuation?
+        let held = TranslationServices(
+            unavailableReason: { _ in nil },
+            translate: { _, _, _ in
+                AsyncThrowingStream { stream in
+                    continuation = stream
+                    stream.onTermination = { reason in
+                        if case .cancelled = reason { cancelled.fulfill() }
+                    }
+                    started.fulfill()
+                }
+            },
+            checkSystem: { _, _, _ in .needsDownload }
+        )
+        var model: TranslationModel? = TranslationModel(text: "Hello", sourceLanguage: "en", targetLanguage: "zh-Hans",
+                                                        engine: .ai, services: held)
+        model?.start()
+        let began = await XCTWaiter.fulfillment(of: [started], timeout: 2)
+        XCTAssertEqual(began, .completed)
+        guard began == .completed else { continuation?.finish(); return }
+        let released = WeakModel(model)
+        model = nil
+        XCTAssertNil(released.value)
+        let ended = await XCTWaiter.fulfillment(of: [cancelled], timeout: 1)
+        continuation?.finish()
+        XCTAssertEqual(ended, .completed, "模型已释放，等待中的联网译文流也应取消")
+    }
+
+    func testStopCancelsBothStreamsAndRestartsOnlyInterruptedEngines() async {
+        let first = XCTestExpectation(description: "两个引擎开始")
+        first.expectedFulfillmentCount = 2
+        let stopped = XCTestExpectation(description: "两个引擎取消")
+        stopped.expectedFulfillmentCount = 2
+        let restarted = XCTestExpectation(description: "两个引擎重新开始")
+        restarted.expectedFulfillmentCount = 2
+        var requests: [(TranslationEngine, AsyncThrowingStream<String, Error>.Continuation)] = []
+        let held = TranslationServices(
+            unavailableReason: { _ in nil },
+            translate: { engine, _, _ in
+                AsyncThrowingStream { continuation in
+                    let initial = requests.count < 2
+                    requests.append((engine, continuation))
+                    continuation.onTermination = { reason in
+                        if initial, case .cancelled = reason { stopped.fulfill() }
+                    }
+                    (initial ? first : restarted).fulfill()
+                }
+            },
+            checkSystem: { _, _, _ in .unsupported }
+        )
+        let model = TranslationModel(text: "Hello", sourceLanguage: "en", targetLanguage: "zh-Hans", engine: .ai, services: held)
+        model.start()
+        model.switchMode(to: .compare)
+        let began = await XCTWaiter.fulfillment(of: [first], timeout: 2)
+        XCTAssertEqual(began, .completed)
+        guard began == .completed else { requests.forEach { $0.1.finish() }; return }
+        let system = model.phase(of: .system)
+        model.stop()
+        let ended = await XCTWaiter.fulfillment(of: [stopped], timeout: 2)
+        XCTAssertEqual(ended, .completed)
+        XCTAssertEqual(model.phase(of: .ai), .checking)
+        XCTAssertEqual(model.phase(of: .deepL), .checking)
+        XCTAssertEqual(model.phase(of: .system), system)
+        XCTAssertNil(model.configuration)
+        model.start()
+        let beganAgain = await XCTWaiter.fulfillment(of: [restarted], timeout: 2)
+        XCTAssertEqual(beganAgain, .completed)
+        for (engine, continuation) in requests.suffix(2) {
+            continuation.yield("fresh \(engine.rawValue)")
+            continuation.finish()
+        }
+        await model.waitUntilFinished()
+        XCTAssertEqual(requests.count, 4)
+        XCTAssertEqual(model.phase(of: .ai), .done("fresh ai"))
+        XCTAssertEqual(model.phase(of: .deepL), .done("fresh deepL"))
+    }
+
+    func testStopRejectsLateLanguageCheckAndCanRestart() async {
+        let started = XCTestExpectation(description: "语言检查开始")
+        let waiting = XCTestExpectation(description: "开始等待旧任务结束")
+        var pending: CheckedContinuation<SystemTranslationStatus, Never>?
+        var checks = 0
+        let held = TranslationServices(
+            unavailableReason: { _ in nil },
+            translate: { _, _, _ in AsyncThrowingStream { $0.finish() } },
+            checkSystem: { _, _, _ in
+                checks += 1
+                guard checks == 1 else { return .needsDownload }
+                let result = await withCheckedContinuation { continuation in
+                    pending = continuation
+                    started.fulfill()
+                }
+                return result
+            }
+        )
+        let model = TranslationModel(text: "Hello", sourceLanguage: "en", targetLanguage: "zh-Hans", services: held)
+        model.start()
+        let began = await XCTWaiter.fulfillment(of: [started], timeout: 2)
+        XCTAssertEqual(began, .completed)
+        let oldTask = Task { @MainActor in
+            waiting.fulfill()
+            await model.waitUntilFinished()
+        }
+        let awaitingOld = await XCTWaiter.fulfillment(of: [waiting], timeout: 2)
+        XCTAssertEqual(awaitingOld, .completed)
+        model.stop()
+        pending?.resume(returning: .installed)
+        await oldTask.value
+        XCTAssertNil(model.configuration)
+        XCTAssertTrue(model.results.isEmpty)
+        model.start()
+        await model.waitUntilFinished()
+        XCTAssertEqual(checks, 2)
+        XCTAssertEqual(model.phase, .needsDownload)
+    }
+
+    func testPendingLanguageCheckDoesNotRetainTheReleasedModel() async {
+        let started = XCTestExpectation(description: "语言检查已等待")
+        let cancelled = XCTestExpectation(description: "语言检查收到取消")
+        var pending: CheckedContinuation<SystemTranslationStatus, Never>?
+        let held = TranslationServices(
+            unavailableReason: { _ in nil },
+            translate: { _, _, _ in AsyncThrowingStream { $0.finish() } },
+            checkSystem: { _, _, _ in
+                await withTaskCancellationHandler {
+                    await withCheckedContinuation { continuation in
+                        pending = continuation
+                        started.fulfill()
+                    }
+                } onCancel: { cancelled.fulfill() }
+            }
+        )
+        var model: TranslationModel? = TranslationModel(text: "Hello", sourceLanguage: "en", targetLanguage: "zh-Hans", services: held)
+        model?.start()
+        let began = await XCTWaiter.fulfillment(of: [started], timeout: 2)
+        XCTAssertEqual(began, .completed)
+        let released = WeakModel(model)
+        model = nil
+        XCTAssertNil(released.value)
+        let ended = await XCTWaiter.fulfillment(of: [cancelled], timeout: 1)
+        pending?.resume(returning: .needsDownload)
+        XCTAssertEqual(ended, .completed)
+    }
+
+    func testCompletedTranslationSurvivesStopWithoutAnotherRequest() async {
+        let calls = Calls()
+        let model = TranslationModel(text: "Hello", sourceLanguage: "en", targetLanguage: "zh-Hans", engine: .ai, services: services(calls))
+        model.start()
+        await model.waitUntilFinished()
+        model.stop()
+        XCTAssertEqual(model.phase, .done("AI→zh-Hans"))
+        model.start()
+        await model.waitUntilFinished()
+        XCTAssertEqual(calls.requests.count, 1)
+    }
+
+    func testStopBeforeTasksBeginDoesNotCallServices() async {
+        let system = XCTestExpectation(description: "关闭后不启动语言检查")
+        let ai = XCTestExpectation(description: "关闭后不启动 AI 请求")
+        let deepL = XCTestExpectation(description: "关闭后不启动 DeepL 请求")
+        for expectation in [system, ai, deepL] { expectation.isInverted = true }
+        let held = TranslationServices(
+            unavailableReason: { _ in nil },
+            translate: { engine, _, _ in
+                (engine == .ai ? ai : deepL).fulfill()
+                return AsyncThrowingStream { $0.finish() }
+            },
+            checkSystem: { _, _, _ in system.fulfill(); return .needsDownload }
+        )
+        let model = TranslationModel(text: "Hello", sourceLanguage: "en", targetLanguage: "zh-Hans", engine: .ai, services: held)
+        model.start()
+        model.switchMode(to: .compare)
+        model.stop()
+        let result = await XCTWaiter.fulfillment(of: [system, ai, deepL], timeout: 0.2)
+        XCTAssertEqual(result, .completed)
+        XCTAssertTrue(model.results.isEmpty)
     }
 
     func testCompareRunsEveryEngineOnce() async {
