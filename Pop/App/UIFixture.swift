@@ -60,6 +60,7 @@ private final class UIFixtureState: ObservableObject {
     @Published var reduceMotion = false
     @Published var count = 8
     @Published var loading = false
+    @Published var backdrop = 0
     @Published var longNames = false
     @Published var ring: RingViewModel
     @Published var chooser: PluginChooserModel
@@ -201,6 +202,11 @@ private struct UIFixtureView: View {
                     Toggle("Long names", isOn: $state.longNames)
                     Toggle("Loading", isOn: $state.loading)
                     Toggle("Reduce Motion", isOn: $state.reduceMotion)
+                    Picker("Backdrop", selection: $state.backdrop) {
+                        Text(verbatim: "Blue").tag(0)
+                        Text(verbatim: "White").tag(1)
+                        Text(verbatim: "Stripes").tag(2)
+                    }.frame(width: 150)
                     Button("Reset") { state.resetRing() }
                 }
                 RingMenuView(model: state.ring, presentation: state.presentation, reduceMotionOverride: state.reduceMotion)
@@ -217,6 +223,22 @@ private struct UIFixtureView: View {
                         }
                     }
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .environment(\.ringBackdropBlending, .withinWindow)
+                    .background {
+                        if state.backdrop == 1 {
+                            Color.white
+                        } else if state.backdrop == 2 {
+                            Canvas { context, size in
+                                for column in 0..<Int(ceil(size.width / 32)) {
+                                    let rect = CGRect(x: CGFloat(column) * 32, y: 0, width: 32, height: size.height)
+                                    context.fill(Path(rect), with: .color(column.isMultiple(of: 2) ? .black : .white))
+                                }
+                            }
+                        } else {
+                            LinearGradient(colors: [Color(red: 0.14, green: 0.43, blue: 0.65), Color(red: 0.34, green: 0.68, blue: 0.81)],
+                                           startPoint: .topLeading, endPoint: .bottomTrailing)
+                        }
+                    }
             } else if state.scene == 1 {
                 PluginChooserView(model: state.chooser, onClose: { state.scene = 0 })
                     .frame(maxWidth: .infinity, maxHeight: .infinity)

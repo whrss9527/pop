@@ -237,11 +237,10 @@ struct RingMenuView: View {
         let offset = model.geometry.slotCenterOffset(position)
         let reach = slotReach(phase)
         let spacing = 2 * model.geometry.labelRadius * sin(model.geometry.slotStep / 2)
-        let labelWidth = min(60, max(40, spacing - 8))
-        let bubbleDiameter = min(36, max(26, spacing - 26))
+        let labelWidth = min(60, max(36, spacing - 12))
         return RingSlotLabel(slot: slot, isHovered: model.hovered == slot.id, committed: model.committed,
                              isLoading: model.isLoading, reduceMotion: reduceMotion,
-                             labelWidth: labelWidth, bubbleDiameter: bubbleDiameter)
+                             labelWidth: labelWidth)
             .help(slotHint(slot))
             .accessibilityElement(children: .ignore)
             .accessibilityLabel(Text(slotHint(slot)))
@@ -388,20 +387,15 @@ struct PolarDot: Shape {
 
 struct RingPalette {
     let isDark: Bool
-    static let surfaceOpacity = 0.8
-    static let bubbleOpacity = 0.28
+    static let surfaceOpacity = 0.86
     static let mutedOpacity = 0.8
     static let hoverOpacity = 0.1
-    static let commitOpacity = 0.16
+    static let commitOpacity = 0.14
     static let unavailableHoverOpacity = 0.06
     var surfaceLevel: Double { isDark ? 0.13 : 0.97 }
     var foregroundLevel: Double { isDark ? 0.96 : 0.08 }
-    var iconForegroundLevel: Double { isDark ? 1 : 0 }
-    var iconOutlineLevel: Double { isDark ? 0 : 1 }
     var surface: Color { Color(white: surfaceLevel) }
     var foreground: Color { Color(white: foregroundLevel) }
-    var iconForeground: Color { Color(white: iconForegroundLevel) }
-    var iconOutline: Color { Color(white: iconOutlineLevel) }
 }
 
 private struct RingBackdropBlendingKey: EnvironmentKey {
@@ -429,37 +423,10 @@ private struct RingSurface<Surface: InsettableShape>: View {
         }
             .clipShape(shape)
             .overlay {
-                shape.strokeBorder(LinearGradient(colors: [.white.opacity(0.45), palette.foreground.opacity(0.2)],
+                shape.strokeBorder(LinearGradient(colors: [.white.opacity(colorScheme == .dark ? 0.16 : 0.55), palette.foreground.opacity(0.08)],
                                                  startPoint: .topLeading, endPoint: .bottomTrailing), lineWidth: 0.75)
             }
-            .shadow(color: .black.opacity(0.2), radius: 2, y: 1)
-    }
-}
-
-private struct RingGlyphOutline: ViewModifier {
-    let color: Color
-
-    func body(content: Content) -> some View {
-        content
-            .background {
-                ZStack {
-                    content.foregroundStyle(color).offset(x: -0.65)
-                    content.foregroundStyle(color).offset(x: 0.65)
-                    content.foregroundStyle(color).offset(y: -0.65)
-                    content.foregroundStyle(color).offset(y: 0.65)
-                }
-                .accessibilityHidden(true)
-            }
-            .compositingGroup()
-    }
-}
-
-private struct RingCaption: ViewModifier {
-    func body(content: Content) -> some View {
-        content
-            .padding(.horizontal, 3)
-            .padding(.vertical, 1)
-            .background { RingSurface(shape: Capsule()) }
+            .shadow(color: .black.opacity(0.12), radius: 3, y: 1)
     }
 }
 
@@ -471,7 +438,6 @@ private struct RingSlotLabel: View {
     let isLoading: Bool
     let reduceMotion: Bool
     let labelWidth: CGFloat
-    let bubbleDiameter: CGFloat
 
     var body: some View {
         let isCommitted = committed == slot.id
@@ -479,41 +445,36 @@ private struct RingSlotLabel: View {
         let dimmed = committed != nil && !isCommitted
         let palette = RingPalette(isDark: colorScheme == .dark)
         let foregroundOpacity = (isLoading && !slot.isOverflow) || !slot.enabled || dimmed ? RingPalette.mutedOpacity : 1
+        let tint = slot.enabled ? Color.accentColor : palette.foreground
+        let shape = RoundedRectangle(cornerRadius: min(14, labelWidth * 0.28), style: .circular)
         VStack(spacing: 3) {
             if slot.isOverflow {
-                icon("ellipsis", active: active, isCommitted: isCommitted)
-                Text("更多")
-                    .font(.system(size: 10.5, weight: active ? .semibold : .regular))
-                    .modifier(RingCaption())
+                glyph("ellipsis", active: active, isCommitted: isCommitted)
+                caption(String(localized: "更多"))
             } else if let info = slot.info {
-                icon(info.symbol, active: active, isCommitted: isCommitted)
-                // 英文名字稍长一点时缩小一些放下，少截掉一些
-                Text(info.name)
-                    .font(.system(size: 10.5, weight: active ? .semibold : .regular))
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.8)
-                    .allowsTightening(true)
-                    .modifier(RingCaption())
+                glyph(info.symbol, active: active, isCommitted: isCommitted)
+                caption(info.name)
             } else if slot.pendingPackage != nil {
-                icon("arrow.clockwise", active: false, isCommitted: false)
-                Text("正在更新")
-                    .font(.system(size: 10.5))
-                    .modifier(RingCaption())
+                glyph("arrow.clockwise", active: false, isCommitted: false)
+                caption(String(localized: "正在更新"))
             } else {
-                ZStack {
-                    RingSurface(shape: Circle(), tintOpacity: RingPalette.bubbleOpacity)
-                    Circle().fill(palette.iconForeground)
-                        .frame(width: 5, height: 5)
-                        .overlay { Circle().strokeBorder(palette.iconOutline, lineWidth: 1) }
-                }
-                .frame(width: bubbleDiameter, height: bubbleDiameter)
+                Circle().fill(palette.foreground.opacity(foregroundOpacity))
+                    .frame(width: 4, height: 4)
             }
         }
-        .frame(width: labelWidth)
-        .lineLimit(1)
-        .minimumScaleFactor(0.8)
-        // 状态只调整前景，避免衬底随内容一起变透明。
+        .padding(.horizontal, 4)
+        .frame(width: labelWidth, height: min(54, labelWidth))
         .foregroundStyle(palette.foreground.opacity(foregroundOpacity))
+        .background {
+            RingSurface(shape: shape)
+                .overlay {
+                    shape.fill(tint.opacity(active ? (isCommitted ? RingPalette.commitOpacity : RingPalette.hoverOpacity)
+                                                   : (isHovered ? RingPalette.unavailableHoverOpacity : 0)))
+                }
+                .overlay {
+                    shape.strokeBorder(tint.opacity(active ? 0.55 : (isHovered ? 0.22 : 0)), lineWidth: 1)
+                }
+        }
         .scaleEffect(reduceMotion ? 1 : (isCommitted ? 0.92 : 1))
         .animation(Motion.ringHover, value: active)
         .animation(Motion.ringCommit, value: isCommitted)
@@ -521,27 +482,20 @@ private struct RingSlotLabel: View {
         .animation(Motion.content, value: isLoading)
     }
 
-    private func icon(_ symbol: String, active: Bool, isCommitted: Bool) -> some View {
-        let palette = RingPalette(isDark: colorScheme == .dark)
-        let tint = slot.enabled ? Color.accentColor : Color.primary
-        return Image(systemName: symbol)
-            .font(.system(size: 19, weight: .medium))
-            .modifier(RingGlyphOutline(color: palette.iconOutline))
-            .foregroundStyle(palette.iconForeground)
-            .frame(width: bubbleDiameter, height: bubbleDiameter)
-            .background {
-                RingSurface(shape: Circle(), tintOpacity: RingPalette.bubbleOpacity)
-                    .overlay {
-                        Circle()
-                            .fill(tint.opacity(active ? (isCommitted ? RingPalette.commitOpacity : RingPalette.hoverOpacity)
-                                                   : (isHovered ? RingPalette.unavailableHoverOpacity : 0)))
-                    }
-                    .overlay {
-                        Circle()
-                            .strokeBorder(tint.opacity(active ? 0.65 : (isHovered ? 0.22 : 0)), lineWidth: 1.5)
-                    }
-            }
-            .scaleEffect(reduceMotion ? 1 : (active && !isCommitted ? 1.1 : 1))
+    private func caption(_ name: String) -> some View {
+        Text(name)
+            .font(.system(size: labelWidth < 48 ? 9 : 10, weight: .medium))
+            .lineLimit(1)
+            .minimumScaleFactor(0.8)
+            .allowsTightening(true)
+    }
+
+    private func glyph(_ symbol: String, active: Bool, isCommitted: Bool) -> some View {
+        Image(systemName: symbol)
+            .symbolRenderingMode(.monochrome)
+            .font(.system(size: labelWidth < 48 ? 16 : 18, weight: .regular))
+            .frame(height: labelWidth < 48 ? 20 : 24)
+            .scaleEffect(reduceMotion ? 1 : (active && !isCommitted ? 1.06 : 1))
     }
 }
 
