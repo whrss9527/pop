@@ -1044,11 +1044,21 @@ targets:
         POP_PLUGIN_ID: sleepTimer
         POP_PLUGIN_ENTRY: PopSleepTimerEntry
 
+  PopSemVer:
+    templates: [PopPlugin]
+    sources: [PluginBundles/SemVer]
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: io.github.whrss9527.pop.plugin.semver
+        POP_PLUGIN_ID: semver
+        POP_PLUGIN_ENTRY: PopSemVerEntry
+
   PopTests:
     type: bundle.unit-test
     platform: macOS
     sources:
       - path: PopTests
+      - path: PluginBundles/SemVer/SemanticVersion.swift
       # 插件包的代码也编进单元测试，直接测
       - path: PluginBundles/ScreenPen
       - path: PluginBundles/CameraBubble
@@ -1176,6 +1186,7 @@ schemes:
         PopPointerHighlight: all
         PopTeleprompter: all
         PopSleepTimer: all
+        PopSemVer: all
         PopHoldToQuit: all
         PopMouseWheel: all
         PopWindowPiP: all
