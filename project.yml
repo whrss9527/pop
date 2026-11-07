@@ -42,6 +42,23 @@ targetTemplates:
         SKIP_INSTALL: YES
 
 targets:
+  # 只承载生产视图的本机验收入口，不组装 AppController 或系统服务。
+  PopUIFixture:
+    type: application
+    platform: macOS
+    sources:
+      - path: Pop
+        excludes: [App/PopMain.swift, Resources/Info.plist, "Resources/*.entitlements"]
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: io.github.whrss9527.pop.ui-fixture
+        INFOPLIST_FILE: Config/PopUIFixture-Info.plist
+        GENERATE_INFOPLIST_FILE: NO
+        SWIFT_ACTIVE_COMPILATION_CONDITIONS: "$(inherited) POP_UI_FIXTURE"
+        CODE_SIGNING_ALLOWED: NO
+        ENABLE_HARDENED_RUNTIME: NO
+        ENABLE_DEBUG_DYLIB: NO
+
   Pop:
     type: application
     platform: macOS
@@ -1167,6 +1184,12 @@ targets:
         GENERATE_INFOPLIST_FILE: YES
 
 schemes:
+  PopUIFixture:
+    build:
+      targets:
+        PopUIFixture: all
+    run:
+      config: Debug
   Pop:
     build:
       targets:
