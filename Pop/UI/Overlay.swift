@@ -406,12 +406,13 @@ final class OverlayController {
         // 先记下新的状态再放内容：卡片第一次排版时就会报告大小，这时要认得出它是当前的卡片
         self.mode = mode
         self.presentation = presentation
+        // 先给空面板设置目标尺寸，避免新内容首次排版继承上一张卡片的大小。
+        panel.setFrame(frame, display: true)
+        diagnostics.record(.initialFrameApplied, window: 0, frame: panel.frame, ghosts: leavingPanels.count)
         let hosting = NSHostingView(rootView: content)
         hosting.sizingOptions = []
         panel.contentView = hosting
         diagnostics.record(.hostingInstalled, window: 0, frame: panel.frame, ghosts: leavingPanels.count)
-        panel.setFrame(frame, display: true)
-        diagnostics.record(.initialFrameApplied, window: 0, frame: panel.frame, ghosts: leavingPanels.count)
         // 先按「进场前」的样子画出第一帧，下一轮再切到显示状态，视图才有动画可做
         DispatchQueue.main.async { [weak self] in
             MainActor.assumeIsolated {
