@@ -74,6 +74,7 @@ private final class UIFixtureState: ObservableObject {
     let pluginStore: PluginStore
     let catalog: [PluginInfo]
     private let session: URLSession
+    private var activationCount = 0
 
     init() {
         let arguments = ProcessInfo.processInfo.arguments
@@ -100,7 +101,7 @@ private final class UIFixtureState: ObservableObject {
         }
         ring = Self.makeRing(Array(catalog.prefix(8)), loading: false)
         chooser = PluginChooserModel(plugins: catalog)
-        chooser.onRun = { [weak self] info in self?.notice = "Selected: \(info.name) [\(info.id)]" }
+        chooser.onRun = { [weak self] info in self?.selected(info) }
         print("POP_UI_FIXTURE_ROOT=\(root.path)")
     }
 
@@ -128,6 +129,11 @@ private final class UIFixtureState: ObservableObject {
         libraryOpen = true
     }
 
+    func selected(_ info: PluginInfo) {
+        activationCount += 1
+        notice = "Selected: \(info.name) [\(info.id)] — activation #\(activationCount)"
+    }
+
     /// 键盘分发是 fixture 适配器；列表直接复用生产 handleKey，圆盘复用生产选择/移动模型。
     func handleKey(_ event: NSEvent) -> Bool {
         guard !libraryOpen else { return false }
@@ -139,7 +145,7 @@ private final class UIFixtureState: ObservableObject {
         case 36, 76:
             if let info = ring.selectablePlugin(at: ring.hovered), let index = ring.hovered {
                 ring.commit(index)
-                notice = "Selected: \(info.name) [\(info.id)]"
+                selected(info)
             }
             return true
         case 53: ring.resetSelection(); return true
@@ -197,7 +203,7 @@ private struct UIFixtureView: View {
                     .onTapGesture {
                         if let index = state.ring.hovered, let info = state.ring.selectablePlugin(at: index) {
                             state.ring.commit(index)
-                            state.notice = "Selected: \(info.name) [\(info.id)]"
+                            state.selected(info)
                         }
                     }
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
