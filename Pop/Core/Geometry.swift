@@ -357,7 +357,7 @@ struct RingPlacement: Equatable {
             }
             guard maximum.isFinite, maximum + RingPlacement.epsilon >= minimum else { return nil }
             let reference = RingGeometry(slotCount: count, outerRadius: RingGeometry.outerRadius(forSlotCount: count))
-            let nominal = (0..<count).map { -.pi / 2 + Double($0) * RingPlacement.turn / Double(count) }
+            let nominal: [Double] = nominalAngles(count: count)
             let preferredMinimum = max(minimum, regularRadius(originalRadius: reference.labelRadius, angles: nominal))
             // 自然方向优先于绝对最小半径，避免整圆恢复时密排布局整体旋转。
             // 这个下界与正规圆盘共用按钮四角计算；它不是容量限制。
@@ -391,7 +391,7 @@ struct RingPlacement: Equatable {
             let entireCircle = arcs.count == 1 && arcs[0].end - arcs[0].start >= RingPlacement.turn - 1e-9
             let full = entireCircle && hubFits(fullCircle: true)
             if count == originalCount {
-                let nominal = (0..<count).map { -.pi / 2 + Double($0) * RingPlacement.turn / Double(count) }
+                let nominal: [Double] = nominalAngles(count: count)
                 if full, let original = solution(radius: radius, angles: nominal, fullCircle: true,
                                                  allowsPreferredOrder: false) { return original }
             }
@@ -430,6 +430,21 @@ struct RingPlacement: Equatable {
                 }
             }
             return best
+        }
+
+        /// 明确 Double 类型并保持运算顺序，避免旧版 Swift 对 map 内数值重载的推断超时。
+        private func nominalAngles(count: Int) -> [Double] {
+            var angles: [Double] = []
+            angles.reserveCapacity(count)
+            let firstAngle: Double = -Double.pi / 2.0
+            let divisor: Double = Double(count)
+            for index in 0..<count {
+                let product: Double = Double(index) * RingPlacement.turn
+                let offset: Double = product / divisor
+                let angle: Double = firstAngle + offset
+                angles.append(angle)
+            }
+            return angles
         }
 
         /// 四角角域随中心角单调增加；让下个矩形完全越过前一个的末边界。
