@@ -542,10 +542,19 @@ private struct UIFixtureRingCanvas: View {
                                                        dy: parameters.screen.maxY - point.y - parameters.anchor.y))
             } else { state.ring.setHovered(nil) }
         }
-        .onTapGesture {
+        .gesture(SpatialTapGesture().onEnded { tap in
             NSApp.keyWindow?.makeFirstResponder(nil)
-            if let index = state.ring.hovered { state.activate(index) }
-        }
+            // 点击可能没有先收到 mouseMoved；和生产 mouse-up 一样，按本次位置重新命中。
+            state.ring.updateHover(offset: CGVector(dx: tap.location.x - parameters.anchor.x,
+                                                   dy: parameters.screen.maxY - tap.location.y - parameters.anchor.y))
+            if let index = state.ring.hovered {
+                state.notice = state.ring.isOverflow(index) ? "Tapped More" : "Tapped target \(index + 1)"
+                state.activate(index)
+            } else {
+                state.notice = "Tapped cancel / outside direction"
+            }
+            state.notice += String(format: " · tap-local (%.1f, %.1f) pt", tap.location.x, tap.location.y)
+        })
     }
 
     @ViewBuilder private var backdrop: some View {
