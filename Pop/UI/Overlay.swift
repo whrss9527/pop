@@ -1,6 +1,57 @@
 import AppKit
 import SwiftUI
 
+/// 圆盘可以覆盖菜单栏的软件区域，仍避开 Dock 和屏幕实际遮挡。
+/// 参数和结果均使用 AppKit 全局屏幕坐标；不读取或修改系统偏好。
+struct RingScreenBoundary: Equatable {
+    let availableFrame: CGRect
+    let excludedFrames: [CGRect]
+    let displayScale: CGFloat
+
+    init(screenFrame: CGRect, visibleFrame: CGRect, topInset: CGFloat = 0,
+         auxiliaryTopLeft: CGRect? = nil, auxiliaryTopRight: CGRect? = nil,
+         displayScale: CGFloat = 1) {
+        self.displayScale = displayScale.isFinite && displayScale > 0 ? displayScale : 1
+        let visible = screenFrame.intersection(visibleFrame)
+        guard !visible.isNull, visible.width > 0, visible.height > 0 else {
+            availableFrame = .zero
+            excludedFrames = []
+            return
+        }
+        // 只放开顶部菜单栏；左右和底部继续采用 visibleFrame 的 Dock 边界。
+        let available = CGRect(x: visible.minX, y: visible.minY, width: visible.width,
+                               height: screenFrame.maxY - visible.minY)
+        availableFrame = available
+        let obscuredHeight = topInset.isFinite ? min(max(topInset, 0), screenFrame.height) : 0
+        guard obscuredHeight > 0 else {
+            excludedFrames = []
+            return
+        }
+        let topBand = CGRect(x: screenFrame.minX, y: screenFrame.maxY - obscuredHeight,
+                             width: screenFrame.width, height: obscuredHeight)
+        // NSScreen 的两个辅助区域已是全局坐标，表示顶部仍能显示的左右部分。
+        // 从顶部条带扣掉它们，留下实际遮挡；元数据为空时保守保留整个遮挡条带。
+        let unobscured = [auxiliaryTopLeft, auxiliaryTopRight].compactMap { $0 }
+            .filter { !$0.isNull && !$0.isEmpty }
+        let obscured = unobscured.reduce([topBand]) { pieces, area in
+            pieces.flatMap { Self.subtract(area, from: $0) }
+        }
+        excludedFrames = obscured.map { $0.intersection(available) }
+            .filter { !$0.isNull && !$0.isEmpty }
+    }
+
+    private static func subtract(_ area: CGRect, from source: CGRect) -> [CGRect] {
+        let cut = source.intersection(area)
+        guard !cut.isNull, !cut.isEmpty else { return [source] }
+        return [
+            CGRect(x: source.minX, y: source.minY, width: cut.minX - source.minX, height: source.height),
+            CGRect(x: cut.maxX, y: source.minY, width: source.maxX - cut.maxX, height: source.height),
+            CGRect(x: cut.minX, y: source.minY, width: cut.width, height: cut.minY - source.minY),
+            CGRect(x: cut.minX, y: cut.maxY, width: cut.width, height: source.maxY - cut.maxY)
+        ].filter { !$0.isEmpty }
+    }
+}
+
 /// 圆盘、结果卡片和提示共用的浮动面板：无边框、透明、不激活 App。
 /// 不激活很关键：原来的 App 一直在前台，选区不会丢，模拟的 ⌘C 也不会发到我们自己身上。
 final class OverlayPanel: NSPanel {
@@ -199,7 +250,9 @@ final class OverlayController {
     // MARK: - 显示
 
     func showRing(_ model: RingViewModel, center: CGPoint) {
-        model.freezePlacement(anchor: center, safeFrame: Self.visibleFrame(containing: center))
+        let boundary = Self.ringScreenBoundary(containing: center)
+        model.freezePlacement(anchor: center, safeFrame: boundary.availableFrame,
+                              excludedFrames: boundary.excludedFrames, displayScale: boundary.displayScale)
         guard let placement = model.placement else { return }
         let presentation = OverlayPresentation()
         present(RingMenuView(model: model, presentation: presentation), frame: placement.frame,
@@ -465,8 +518,23 @@ final class OverlayController {
     }
 
     static func visibleFrame(containing point: CGPoint) -> CGRect {
-        let screen = NSScreen.screens.first { NSMouseInRect(point, $0.frame, false) } ?? NSScreen.main ?? NSScreen.screens.first
-        return screen?.visibleFrame ?? CGRect(x: 0, y: 0, width: 1440, height: 900)
+        screen(containing: point)?.visibleFrame ?? CGRect(x: 0, y: 0, width: 1440, height: 900)
+    }
+
+    static func ringScreenBoundary(containing point: CGPoint) -> RingScreenBoundary {
+        guard let screen = screen(containing: point) else {
+            let fallback = CGRect(x: 0, y: 0, width: 1440, height: 900)
+            return RingScreenBoundary(screenFrame: fallback, visibleFrame: fallback)
+        }
+        return RingScreenBoundary(screenFrame: screen.frame, visibleFrame: screen.visibleFrame,
+                                  topInset: screen.safeAreaInsets.top,
+                                  auxiliaryTopLeft: screen.auxiliaryTopLeftArea,
+                                  auxiliaryTopRight: screen.auxiliaryTopRightArea,
+                                  displayScale: screen.backingScaleFactor)
+    }
+
+    private static func screen(containing point: CGPoint) -> NSScreen? {
+        NSScreen.screens.first { NSMouseInRect(point, $0.frame, false) } ?? NSScreen.main ?? NSScreen.screens.first
     }
 
     static var primaryScreenHeight: CGFloat {
