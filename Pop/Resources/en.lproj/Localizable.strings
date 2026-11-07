@@ -3218,3 +3218,27 @@
 
 "无法重新启动 Pop" = "Unable to restart Pop";
 "备份" = "Backup";
+
+"圆盘外观" = "Ring appearance";
+
+"恢复外观" = "Reset appearance";
+
+"按钮形状" = "Button shape";
+
+"方形" = "Square";
+
+"按钮大小" = "Button size";
+
+"功能：%@" = "Function: %@";
+
+"显示名称" = "Display name";
+
+"只改变这个圆盘中的名称，留空使用原名。" = "Changes the name in this ring only. Leave blank to use the original name.";
+
+"恢复名称" = "Reset name";
+
+"选择一个功能修改名称" = "Select a function to rename it";
+
+"点击预览中的按钮可修改名称。" = "Click a preview button to edit its name.";
+
+"预览会缩放以完整显示圆盘。" = "The preview scales to show the entire ring.";
