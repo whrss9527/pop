@@ -567,8 +567,7 @@ struct RingSettingsView: View {
                                 Text("\(count) 格").tag(count)
                             }
                         }
-                        .pickerStyle(.segmented)
-                        .labelsHidden()
+                        .pickerStyle(.menu)
                         .frame(width: 260)
                     }
                     .frame(width: 260)
