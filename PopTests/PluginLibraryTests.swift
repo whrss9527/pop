@@ -5,6 +5,8 @@ import XCTest
 /// 假的插件库：按网址返回设好的状态码和内容，没设的网址当作连不上，不联网。
 final class MockPluginLibrary: URLProtocol {
     static var responses: [String: (status: Int, body: Data)] = [:]
+    static var cancelledURLs: Set<String> = []
+    static var requests: [String] = []
 
     static func session() -> URLSession {
         let configuration = URLSessionConfiguration.ephemeral
@@ -16,6 +18,13 @@ final class MockPluginLibrary: URLProtocol {
     override class func canonicalRequest(for request: URLRequest) -> URLRequest { request }
 
     override func startLoading() {
+        if let url = request.url {
+            Self.requests.append(url.absoluteString)
+            if Self.cancelledURLs.contains(url.absoluteString) {
+                client?.urlProtocol(self, didFailWithError: URLError(.cancelled))
+                return
+            }
+        }
         guard let url = request.url, let response = Self.responses[url.absoluteString],
               let http = HTTPURLResponse(url: url, statusCode: response.status, httpVersion: "HTTP/1.1", headerFields: nil) else {
             client?.urlProtocol(self, didFailWithError: URLError(.cannotConnectToHost))
@@ -37,12 +46,16 @@ final class PluginLibraryTests: XCTestCase {
 
     override func setUpWithError() throws {
         MockPluginLibrary.responses = [:]
+        MockPluginLibrary.cancelledURLs = []
+        MockPluginLibrary.requests = []
         directory = FileManager.default.temporaryDirectory.appending(path: "pop-library-\(UUID().uuidString)", directoryHint: .isDirectory)
         defaults = try XCTUnwrap(UserDefaults(suiteName: "pop.tests.\(UUID().uuidString)"))
     }
 
     override func tearDownWithError() throws {
         MockPluginLibrary.responses = [:]
+        MockPluginLibrary.cancelledURLs = []
+        MockPluginLibrary.requests = []
         try? FileManager.default.removeItem(at: directory)
     }
 
@@ -198,6 +211,65 @@ final class PluginLibraryTests: XCTestCase {
         } catch {
             XCTAssertEqual((error as? PluginLibrary.Failure)?.message, "插件库的索引读不出来")
         }
+    }
+
+    func testCancelledIndexRequestDoesNotTryAnotherMirror() async throws {
+        MockPluginLibrary.cancelledURLs = [github.absoluteString]
+        MockPluginLibrary.responses[mirror.absoluteString] = (200, indexData([]))
+        let session = MockPluginLibrary.session()
+        defer { session.invalidateAndCancel() }
+        do {
+            _ = try await PluginLibrary.fetchIndex(from: [github, mirror], session: session)
+            XCTFail("取消后不能再从镜像下载索引")
+        } catch {
+            XCTAssertTrue(error is CancellationError, "\(error)")
+        }
+        XCTAssertEqual(MockPluginLibrary.requests, [github.absoluteString])
+    }
+
+    func testCancelledPluginRequestDoesNotTryAnotherMirror() async throws {
+        let data = pluginFile(id: "search-a", name: "搜索 A")
+        let entry = PluginIndex.Entry(id: "search-a", name: "搜索 A", url: "search-a.json", sha256: Digests.sha256(data))
+        let primary = "https://example.com/pop/main/plugins/search-a.json"
+        MockPluginLibrary.cancelledURLs = [primary]
+        MockPluginLibrary.responses["https://mirror.example.net/pop@main/plugins/search-a.json"] = (200, data)
+        let session = MockPluginLibrary.session()
+        defer { session.invalidateAndCancel() }
+        do {
+            _ = try await PluginLibrary.fetchPlugin(entry, catalog: .init(index: .init(plugins: [entry]), source: github),
+                                                    sources: [github, mirror], session: session)
+            XCTFail("取消后不能再从镜像下载插件")
+        } catch {
+            XCTAssertTrue(error is CancellationError, "\(error)")
+        }
+        XCTAssertEqual(MockPluginLibrary.requests, [primary])
+    }
+
+    @MainActor
+    func testAlreadyCancelledLoadKeepsCatalogWithoutStartingRequests() async throws {
+        MockPluginLibrary.responses[github.absoluteString] = (200, indexData([]))
+        let session = MockPluginLibrary.session()
+        defer { session.invalidateAndCancel() }
+        let model = PluginLibraryModel(sources: [github, mirror], session: session, defaults: defaults)
+        await model.load()
+        let loaded = try XCTUnwrap(model.catalog)
+        MockPluginLibrary.requests = []
+        let cancelled = Task { @MainActor in await model.load() }
+        cancelled.cancel()
+        await cancelled.value
+        XCTAssertEqual(model.catalog, loaded)
+        XCTAssertTrue(MockPluginLibrary.requests.isEmpty)
+    }
+
+    @MainActor
+    func testCancellationDoesNotBecomeAVisibleLoadError() async {
+        MockPluginLibrary.cancelledURLs = [github.absoluteString]
+        let session = MockPluginLibrary.session()
+        defer { session.invalidateAndCancel() }
+        let model = PluginLibraryModel(sources: [github, mirror], session: session, defaults: defaults)
+        await model.load()
+        if case .failed(let message) = model.phase { XCTFail("取消不应显示网络失败：\(message)") }
+        XCTAssertEqual(MockPluginLibrary.requests, [github.absoluteString])
     }
 
     @MainActor

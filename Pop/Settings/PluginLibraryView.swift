@@ -2,14 +2,24 @@ import AppKit
 import SwiftUI
 
 /// 插件库：列出 GitHub 上 plugins 文件夹里的插件，可以搜索，点一下就装上。
+@MainActor
 struct PluginLibraryView: View {
     @ObservedObject var store: SettingsStore
     @ObservedObject var pluginStore: PluginStore
     let onClose: () -> Void
-    @StateObject private var model = PluginLibraryModel()
+    @StateObject private var model: PluginLibraryModel
     @State private var query = ""
     @State private var notice: String? = nil
     @State private var errorMessage: String? = nil
+    @State private var loadRevision = 0
+
+    init(store: SettingsStore, pluginStore: PluginStore, model: PluginLibraryModel? = nil,
+         onClose: @escaping () -> Void) {
+        self.store = store
+        self.pluginStore = pluginStore
+        self.onClose = onClose
+        _model = StateObject(wrappedValue: model ?? PluginLibraryModel())
+    }
 
     var body: some View {
         VStack(spacing: 0) {
@@ -47,7 +57,7 @@ struct PluginLibraryView: View {
             .padding(12)
         }
         .frame(width: 600, height: 540)
-        .task {
+        .task(id: loadRevision) {
             await model.load()
         }
         .alert("没有装上", isPresented: Binding(get: { errorMessage != nil }, set: { if !$0 { errorMessage = nil } })) {
@@ -72,7 +82,7 @@ struct PluginLibraryView: View {
                     .multilineTextAlignment(.center)
                     .foregroundStyle(.secondary)
                 Button("重试") {
-                    Task { await model.load() }
+                    loadRevision += 1
                 }
             }
             .padding(24)

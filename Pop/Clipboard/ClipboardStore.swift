@@ -143,7 +143,12 @@ final class ClipboardStore: @unchecked Sendable {
                     .optionalText(capture.sourceApp), .double(date.timeIntervalSince1970), .double(date.timeIntervalSince1970),
                     .int(Int64(capture.byteSize)),
                 ])
-            guard inserted, let db else { return nil }
+            guard inserted, let db else {
+                if let imageName {
+                    try? FileManager.default.removeItem(at: imagesDirectory.appending(path: imageName))
+                }
+                return nil
+            }
             return sqlite3_last_insert_rowid(db)
         }
     }
@@ -345,9 +350,10 @@ final class ClipboardStore: @unchecked Sendable {
         return version
     }
 
-    private func execute(_ sql: String) {
-        guard let db else { return }
-        sqlite3_exec(db, sql, nil, nil, nil)
+    @discardableResult
+    private func execute(_ sql: String) -> Bool {
+        guard let db else { return false }
+        return sqlite3_exec(db, sql, nil, nil, nil) == SQLITE_OK
     }
 
     /// 执行一条语句，逐行回调结果。只能在 queue 里调用。
@@ -379,16 +385,19 @@ final class ClipboardStore: @unchecked Sendable {
     /// 删除查询出来的记录和对应的图片文件，返回删除条数。只能在 queue 里调用。
     @discardableResult
     private func removeRows(selecting sql: String, _ values: [SQLValue]) -> Int {
+        guard let db, execute("BEGIN IMMEDIATE") else { return 0 }
+        var committed = false
+        defer { if !committed { execute("ROLLBACK") } }
         var victims: [(id: Int64, imageName: String?)] = []
-        _ = run(sql, values) { statement in
+        let selected = run(sql, values) { statement in
             victims.append((id: sqlite3_column_int64(statement, 0), imageName: Self.text(statement, 1)))
         }
-        guard !victims.isEmpty else { return 0 }
-        execute("BEGIN")
+        guard selected, !victims.isEmpty else { return 0 }
         for victim in victims {
-            _ = run("DELETE FROM items WHERE id = ?", [.int(victim.id)])
+            guard run("DELETE FROM items WHERE id = ?", [.int(victim.id)]), sqlite3_changes(db) == 1 else { return 0 }
         }
-        execute("COMMIT")
+        guard execute("COMMIT") else { return 0 }
+        committed = true
         for victim in victims {
             if let name = victim.imageName {
                 try? FileManager.default.removeItem(at: imagesDirectory.appending(path: name))
@@ -400,11 +409,12 @@ final class ClipboardStore: @unchecked Sendable {
     /// 删掉数据库里没有引用的图片（比如写完图片还没来得及记录就退出了）。只能在 queue 里调用。
     private func removeOrphanImages() {
         var referenced = Set<String>()
-        _ = run("SELECT image_name FROM items WHERE image_name IS NOT NULL", []) { statement in
+        let selected = run("SELECT image_name FROM items WHERE image_name IS NOT NULL", []) { statement in
             if let name = Self.text(statement, 0) {
                 referenced.insert(name)
             }
         }
+        guard selected else { return }
         let files = (try? FileManager.default.contentsOfDirectory(atPath: imagesDirectory.path(percentEncoded: false))) ?? []
         for name in files where name.hasSuffix(".png") && !referenced.contains(name) {
             try? FileManager.default.removeItem(at: imagesDirectory.appending(path: name))

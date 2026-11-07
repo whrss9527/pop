@@ -154,12 +154,7 @@ struct PluginChooserView: View {
                 ScrollView {
                     LazyVStack(spacing: 2) {
                         ForEach(Array(model.results.enumerated()), id: \.element.id) { index, info in
-                            PluginChooserRow(info: info, index: index, isRecent: model.recent.contains(info.id))
-                                .selectionHighlight(index == model.selection, in: selectionSpace)
-                                .id(info.id)
-                                .onTapGesture {
-                                    model.onRun(info)
-                                }
+                            actionRow(info, index: index)
                         }
                         if !model.packages.isEmpty {
                             Text("没装的插件 · 点一下装上就能用")
@@ -171,13 +166,7 @@ struct PluginChooserView: View {
                                 .padding(.bottom, 2)
                             ForEach(Array(model.packages.enumerated()), id: \.element.id) { offset, package in
                                 let index = model.results.count + offset
-                                PluginPackageChooserRow(package: package, status: model.status(of: package),
-                                                        downloadSize: model.downloadSize(of: package))
-                                    .selectionHighlight(index == model.selection, in: selectionSpace)
-                                    .id(PluginChooserModel.rowID(package))
-                                    .onTapGesture {
-                                        model.activate(index)
-                                    }
+                                packageRow(package, index: index)
                             }
                         }
                     }
@@ -194,11 +183,49 @@ struct PluginChooserView: View {
                     guard let id = model.selectedRowID else { return }
                     proxy.scrollTo(id)
                 }
+                .onChange(of: model.query) { _, _ in
+                    // 重新搜索时索引可能仍为 0，但旧的手动滚动位置不能藏住新选中的首项。
+                    guard let id = model.selectedRowID else { return }
+                    proxy.scrollTo(id, anchor: .top)
+                }
             }
         }
         .task {
             searchFocused = true
         }
+    }
+
+    private func actionRow(_ info: PluginInfo, index: Int) -> some View {
+        Button {
+            model.onRun(info)
+        } label: {
+            PluginChooserRow(info: info, index: index, isRecent: model.recent.contains(info.id))
+        }
+        .buttonStyle(.plain)
+        .selectionHighlight(index == model.selection, in: selectionSpace)
+        .id(info.id)
+        .accessibilityLabel(Text(info.name))
+        .accessibilityHint(Text(info.summary))
+        .accessibilityAddTraits(index == model.selection ? .isSelected : [])
+        .accessibilityIdentifier("chooser-action-\(info.id)")
+    }
+
+    private func packageRow(_ package: PluginPackage, index: Int) -> some View {
+        let status = model.status(of: package)
+        return Button {
+            model.activate(index)
+        } label: {
+            PluginPackageChooserRow(package: package, status: status, downloadSize: model.downloadSize(of: package))
+        }
+        .buttonStyle(.plain)
+        .selectionHighlight(index == model.selection, in: selectionSpace)
+        .id(PluginChooserModel.rowID(package))
+        .disabled(status == .installing)
+        .accessibilityLabel(Text(package.name))
+        .accessibilityHint(Text(package.summary))
+        .accessibilityValue(Text(PluginPackageChooserRow.statusDescription(status)))
+        .accessibilityAddTraits(index == model.selection ? .isSelected : [])
+        .accessibilityIdentifier("chooser-package-\(package.id)")
     }
 }
 
@@ -249,6 +276,15 @@ struct PluginPackageChooserRow: View {
     let package: PluginPackage
     let status: PluginManager.Status
     let downloadSize: Int64?
+
+    static func statusDescription(_ status: PluginManager.Status) -> String {
+        switch status {
+        case .notInstalled: return String(localized: "未安装")
+        case .installing: return String(localized: "正在下载…")
+        case .installed: return String(localized: "已安装")
+        case .failed(let message): return String(localized: "装不上：\(message)")
+        }
+    }
 
     var body: some View {
         HStack(spacing: 10) {

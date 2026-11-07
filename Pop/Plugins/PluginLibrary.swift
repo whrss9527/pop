@@ -163,8 +163,10 @@ enum PluginLibrary {
 
     /// 依次试每个地址，返回第一个读得出来的索引
     static func fetchIndex(from sources: [URL], session: URLSession) async throws -> Catalog {
+        try Task.checkCancellation()
         var lastError = Failure(String(localized: "连不上插件库"))
         for source in sources {
+            try Task.checkCancellation()
             do {
                 let data = try await download(source, session: session)
                 guard let index = try? JSONDecoder().decode(PluginIndex.self, from: data) else {
@@ -172,6 +174,8 @@ enum PluginLibrary {
                     continue
                 }
                 return Catalog(index: index, source: source)
+            } catch is CancellationError {
+                throw CancellationError()
             } catch {
                 lastError = error as? Failure ?? Failure(error.localizedDescription)
             }
@@ -193,14 +197,18 @@ enum PluginLibrary {
 
     /// 下载插件文件，核对后读成插件；一个地址下载不了或者核对不上时换下一个
     static func fetchPlugin(_ entry: PluginIndex.Entry, catalog: Catalog, sources: [URL], session: URLSession) async throws -> PluginManifest {
+        try Task.checkCancellation()
         guard entry.kind != nil else {
             throw Failure(String(localized: "「\(entry.name)」要更新 Pop 才能安装"))
         }
         var lastError = Failure(String(localized: "下载不了「\(entry.name)」"))
         for url in candidates(for: entry, catalog: catalog, sources: sources) {
+            try Task.checkCancellation()
             do {
                 let data = try await download(url, session: session)
                 return try manifest(from: data, entry: entry)
+            } catch is CancellationError {
+                throw CancellationError()
             } catch {
                 lastError = error as? Failure ?? Failure(error.localizedDescription)
             }
@@ -232,6 +240,7 @@ enum PluginLibrary {
     }
 
     private static func download(_ url: URL, session: URLSession) async throws -> Data {
+        try Task.checkCancellation()
         var request = URLRequest(url: url)
         request.setValue(UpdateChecker.userAgent, forHTTPHeaderField: "User-Agent")
         request.cachePolicy = .reloadIgnoringLocalCacheData
@@ -239,8 +248,12 @@ enum PluginLibrary {
         do {
             result = try await session.data(for: request)
         } catch {
+            if Task.isCancelled || error is CancellationError || (error as? URLError)?.code == .cancelled {
+                throw CancellationError()
+            }
             throw Failure(String(localized: "连不上插件库：\(error.localizedDescription)"))
         }
+        try Task.checkCancellation()
         if let http = result.1 as? HTTPURLResponse, !(200..<300).contains(http.statusCode) {
             throw Failure(String(localized: "插件库返回了错误（\(http.statusCode)）"))
         }
@@ -294,11 +307,16 @@ final class PluginLibraryModel: ObservableObject {
     }
 
     func load() async {
+        guard !Task.isCancelled else { return }
         phase = .loading
         do {
             let loaded = try await PluginLibrary.fetchIndex(from: sources, session: session)
+            try Task.checkCancellation()
             phase = .loaded(loaded)
+        } catch is CancellationError {
+            return
         } catch {
+            guard !Task.isCancelled else { return }
             phase = .failed((error as? PluginLibrary.Failure)?.message ?? error.localizedDescription)
         }
     }

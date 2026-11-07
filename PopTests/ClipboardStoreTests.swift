@@ -93,6 +93,93 @@ final class ClipboardStoreTests: XCTestCase {
         XCTAssertEqual(store.item(id: fileID)?.fileURLs.map(\.lastPathComponent), ["a.txt", "b c.txt"])
     }
 
+    private func database(_ store: ClipboardStore, execute sql: String) throws {
+        var connection: OpaquePointer?
+        XCTAssertEqual(sqlite3_open(store.directory.appending(path: "history.sqlite").path, &connection), SQLITE_OK)
+        let handle = try XCTUnwrap(connection)
+        defer { sqlite3_close(handle) }
+        XCTAssertEqual(sqlite3_exec(handle, sql, nil, nil, nil), SQLITE_OK, String(cString: sqlite3_errmsg(handle)))
+    }
+
+    private func image(_ store: ClipboardStore, value: UInt8) throws -> (id: Int64, url: URL, data: Data) {
+        let data = Data([0x89, 0x50, 0x4e, 0x47, value])
+        let id = try XCTUnwrap(store.add(ClipboardCapture(kind: .image, text: "", imagePNG: data)))
+        let item = try XCTUnwrap(store.item(id: id))
+        return (id, try XCTUnwrap(store.imageURL(for: item)), data)
+    }
+
+    func testFailedDeleteKeepsItsReferencedImageAndCanRetry() throws {
+        let store = ClipboardStore(directory: directory)
+        let saved = try image(store, value: 1)
+        var connection: OpaquePointer?
+        XCTAssertEqual(sqlite3_open(directory.appending(path: "history.sqlite").path, &connection), SQLITE_OK)
+        let handle = try XCTUnwrap(connection)
+        defer { sqlite3_close(handle) }
+        XCTAssertEqual(sqlite3_exec(handle, "BEGIN IMMEDIATE", nil, nil, nil), SQLITE_OK)
+        store.delete(id: saved.id)
+        XCTAssertNotNil(store.item(id: saved.id))
+        XCTAssertEqual(try Data(contentsOf: saved.url), saved.data)
+        XCTAssertEqual(sqlite3_exec(handle, "ROLLBACK", nil, nil, nil), SQLITE_OK)
+        store.delete(id: saved.id)
+        XCTAssertNil(store.item(id: saved.id))
+        XCTAssertFalse(FileManager.default.fileExists(atPath: saved.url.path))
+    }
+
+    func testFailedBatchDeleteRollsBackRowsAndKeepsEveryImage() throws {
+        let store = ClipboardStore(directory: directory)
+        let first = try image(store, value: 1)
+        let second = try image(store, value: 2)
+        try database(store, execute: """
+            CREATE TRIGGER refuse_delete BEFORE DELETE ON items WHEN old.id = \(second.id)
+            BEGIN SELECT RAISE(ABORT, 'fixture delete failure'); END;
+            """)
+        XCTAssertEqual(store.cleanup(retentionDays: 0, maxItems: 0), 0)
+        XCTAssertEqual(Set(store.items().map(\.id)), [first.id, second.id])
+        XCTAssertEqual(try Data(contentsOf: first.url), first.data)
+        XCTAssertEqual(try Data(contentsOf: second.url), second.data)
+        try database(store, execute: "DROP TRIGGER refuse_delete")
+        XCTAssertEqual(store.cleanup(retentionDays: 0, maxItems: 0), 2)
+        XCTAssertTrue(store.items().isEmpty)
+        XCTAssertFalse(FileManager.default.fileExists(atPath: first.url.path))
+        XCTAssertFalse(FileManager.default.fileExists(atPath: second.url.path))
+    }
+
+    func testIgnoredDeleteDoesNotRemoveTheImage() throws {
+        let store = ClipboardStore(directory: directory)
+        let saved = try image(store, value: 1)
+        try database(store, execute: """
+            CREATE TRIGGER ignore_delete BEFORE DELETE ON items
+            BEGIN SELECT RAISE(IGNORE); END;
+            """)
+        store.clear(keepPinned: false)
+        XCTAssertNotNil(store.item(id: saved.id))
+        XCTAssertEqual(try Data(contentsOf: saved.url), saved.data)
+    }
+
+    func testFailedReferenceQueryKeepsImages() throws {
+        let store = ClipboardStore(directory: directory)
+        let saved = try image(store, value: 1)
+        try database(store, execute: "ALTER TABLE items RENAME TO unavailable_items")
+        store.clear(keepPinned: false)
+        XCTAssertEqual(try Data(contentsOf: saved.url), saved.data)
+        try database(store, execute: "ALTER TABLE unavailable_items RENAME TO items")
+        XCTAssertNotNil(store.item(id: saved.id))
+    }
+
+    func testFailedImageInsertRemovesOnlyItsNewFile() throws {
+        let store = ClipboardStore(directory: directory)
+        let saved = try image(store, value: 1)
+        try database(store, execute: """
+            CREATE TRIGGER refuse_insert BEFORE INSERT ON items
+            BEGIN SELECT RAISE(ABORT, 'fixture insert failure'); END;
+            """)
+        XCTAssertNil(store.add(ClipboardCapture(kind: .image, text: "", imagePNG: Data([1, 2, 3]))))
+        XCTAssertEqual(try FileManager.default.contentsOfDirectory(atPath: store.imagesDirectory.path), [saved.url.lastPathComponent])
+        XCTAssertEqual(try Data(contentsOf: saved.url), saved.data)
+        try database(store, execute: "DROP TRIGGER refuse_insert")
+        XCTAssertNotNil(store.add(text("retry")))
+    }
+
     func testSkipsTwoFactorLinks() {
         // 两步验证的链接里写着密钥：剪贴板历史不记
         XCTAssertTrue(ClipboardMonitor.containsSecretLink("扫到的 OTPAUTH://totp/a?secret=JBSWY3DPEHPK3PXP"))
