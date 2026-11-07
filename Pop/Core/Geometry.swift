@@ -141,6 +141,8 @@ struct RingPlacement: Equatable {
     let anchor: CGPoint
     let safeFrame: CGRect
     let excludedFrames: [CGRect]
+    /// 布局求解和窗口对齐实际使用的比例，恢复旧布局时也按同一规则比较。
+    let displayScale: CGFloat
     let visibleSlotCount: Int
     let hasOverflow: Bool
     let buttonSize: CGSize
@@ -159,10 +161,11 @@ struct RingPlacement: Equatable {
         let count = max(slotCount, 1)
         let metrics = RingButtonMetrics(slotCount: count)
         let exclusions = excludedFrames.filter { Self.isFinite($0) && !$0.isEmpty }
-        let scale = displayScale.isFinite && displayScale > 0 ? max(displayScale, 1) : 1
+        let scale = Self.normalizedDisplayScale(displayScale)
         self.anchor = anchor
         self.safeFrame = safeFrame
         self.excludedFrames = exclusions
+        self.displayScale = scale
         buttonSize = metrics.bodySize
 
         let solver = Solver(anchor: anchor, bounds: safeFrame, exclusions: exclusions,
@@ -220,6 +223,17 @@ struct RingPlacement: Equatable {
             hasOverflow = count > 1
             displayOrder = [0]
         }
+    }
+
+    /// 返回既有圆盘时校验同一套可用区域，不能再与扣除了菜单栏的 visibleFrame 比较。
+    func matchesBoundary(safeFrame: CGRect, excludedFrames: [CGRect], displayScale: CGFloat) -> Bool {
+        Self.isFinite(self.safeFrame) && !self.safeFrame.isEmpty &&
+            self.safeFrame == safeFrame && self.excludedFrames == excludedFrames &&
+            self.displayScale == Self.normalizedDisplayScale(displayScale)
+    }
+
+    private static func normalizedDisplayScale(_ scale: CGFloat) -> CGFloat {
+        scale.isFinite && scale > 0 ? max(scale, 1) : 1
     }
 
     /// 标签的屏幕矩形。安全包络只包含当前实际阴影，不再包含不存在的弧带和圆头。
