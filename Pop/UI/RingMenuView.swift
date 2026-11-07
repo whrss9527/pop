@@ -18,23 +18,46 @@ final class RingViewModel: ObservableObject {
         }
     }
 
+    let configuredSlotIDs: [String?]
     private let baseGeometry: RingGeometry
     /// 一次唤起只算一次；异步内容、返回圆盘都不改变位置和编号。
     private(set) var placement: RingPlacement?
     var geometry: RingGeometry { placement?.geometry ?? baseGeometry }
     var overflowID: Int { slots.count }
     var visibleSlots: [Slot] {
-        guard let placement, placement.hasOverflow else { return slots }
-        return Array(slots.prefix(max(placement.visibleSlotCount - 1, 0))) +
-            [Slot(id: overflowID, info: nil, enabled: true, isOverflow: true)]
+        guard let placement else { return slots }
+        let candidates = placement.hasOverflow
+            ? Array(slots.prefix(max(placement.visibleSlotCount - 1, 0))) +
+                [Slot(id: overflowID, info: nil, enabled: true, isOverflow: true)]
+            : slots
+        return placement.displayOrder.compactMap { candidates.indices.contains($0) ? candidates[$0] : nil }
     }
     func isOverflow(_ index: Int?) -> Bool { placement?.hasOverflow == true && index == overflowID }
     func displayIndex(for id: Int) -> Int? { visibleSlots.firstIndex { $0.id == id } }
 
-    func freezePlacement(anchor: CGPoint, safeFrame: CGRect) {
+    func freezePlacement(anchor: CGPoint, safeFrame: CGRect, excludedFrames: [CGRect] = [], displayScale: CGFloat = 1,
+                         preferredDisplayOrder: [Int]? = nil) {
         guard placement == nil else { return }
-        placement = RingPlacement(slotCount: slots.count, anchor: anchor, safeFrame: safeFrame)
+        placement = RingPlacement(slotCount: slots.count, anchor: anchor, safeFrame: safeFrame,
+                                  excludedFrames: excludedFrames, displayScale: displayScale, preferredDisplayOrder: preferredDisplayOrder)
     }
+
+    #if POP_UI_FIXTURE
+    func setLoadingForFixture(_ loading: Bool) {
+        if loading {
+            content = nil
+            centerText = String(localized: "读取中…")
+            isLoading = true
+            slots = slots.map { slot in
+                var slot = slot
+                slot.enabled = false
+                return slot
+            }
+        } else {
+            update(content: ContentClassifier.classify(.text("Liquid glass")))
+        }
+    }
+    #endif
 
     func nextVisibleSlot(by delta: Int) -> Int {
         let ids = visibleSlots.map(\.id)
@@ -69,6 +92,7 @@ final class RingViewModel: ObservableObject {
 
     init(layout: RingLayout, catalog: [PluginInfo], installed: Set<String>, content: ClassifiedContent?) {
         let count = max(layout.slotCount, 1)
+        configuredSlotIDs = layout.slots
         baseGeometry = RingGeometry(slotCount: count, outerRadius: RingGeometry.outerRadius(forSlotCount: count))
         slots = layout.slots.enumerated().map { index, pluginID in
             let info = pluginID.flatMap { id in installed.contains(id) ? catalog.first(where: { $0.id == id }) : nil }
@@ -135,7 +159,7 @@ final class RingViewModel: ObservableObject {
 
     /// offset 是指针相对圆心（或按下点）的偏移，y 轴向上；nil 表示不指向任何格子。
     func updateHover(offset: CGVector?) {
-        let index = offset.flatMap { geometry.slot(at: $0) }
+        let index = offset.flatMap { placement?.slot(at: $0) ?? (placement == nil ? geometry.slot(at: $0) : nil) }
         setHovered(index.flatMap { visibleSlots.indices.contains($0) ? visibleSlots[$0].id : nil })
     }
 
@@ -215,12 +239,25 @@ struct RingMenuView: View {
                 ForEach(model.visibleSlots) { slot in
                     slotView(slot, phase: phase)
                 }
-                if !isEdge || hubHasRoom {
+                if hubHasRoom {
                     hub(phase: phase)
                 }
             }
             .frame(width: size, height: size)
             .position(origin)
+
+            if let placement, let cancel = compactCancelFrame {
+                Image(systemName: "xmark")
+                    .font(.system(size: 10, weight: .medium))
+                    .foregroundStyle(RingPalette(isDark: colorScheme == .dark).foreground)
+                    .frame(width: cancel.width, height: cancel.height)
+                    .background { RingSurface(shape: Circle()) }
+                    .position(x: cancel.midX - placement.frame.minX, y: placement.frame.maxY - cancel.midY)
+                    .opacity(phase == .shown ? 1 : 0)
+                    .animation(Motion.content, value: phase)
+                    .accessibilityHidden(true)
+                    .allowsHitTesting(false)
+            }
 
             if let placement, let status = placement.statusFrame {
                 edgeStatus(phase: phase)
@@ -236,8 +273,7 @@ struct RingMenuView: View {
         let position = model.displayIndex(for: slot.id) ?? 0
         let offset = model.geometry.slotCenterOffset(position)
         let reach = slotReach(phase)
-        let spacing = 2 * model.geometry.labelRadius * sin(model.geometry.slotStep / 2)
-        let labelWidth = min(60, max(36, spacing - 12))
+        let labelWidth = model.placement?.buttonSize.width ?? RingButtonMetrics(slotCount: model.slots.count).bodySize.width
         return RingSlotLabel(slot: slot, isHovered: model.hovered == slot.id, committed: model.committed,
                              isLoading: model.isLoading, reduceMotion: reduceMotion,
                              labelWidth: labelWidth)
@@ -263,13 +299,41 @@ struct RingMenuView: View {
 
     private var hubHasRoom: Bool {
         guard let placement = model.placement else { return true }
-        let radius = model.geometry.innerRadius
-        return placement.safeFrame.contains(CGRect(x: placement.anchor.x - radius, y: placement.anchor.y - radius,
-                                                   width: radius * 2, height: radius * 2))
+        return placement.hubFrame != nil
+    }
+
+    /// 边缘圆心放不下时，在原取消死区内保留可见的关闭标记，不挪动手势原点。
+    private var compactCancelFrame: CGRect? {
+        guard let placement = model.placement, placement.hubFrame == nil else { return nil }
+        let radius: CGFloat = 12
+        let margin = RingButtonMetrics.shadowMargin
+        let bounds = placement.safeFrame.insetBy(dx: radius + margin, dy: radius + margin)
+        guard bounds.width >= 0, bounds.height >= 0 else { return nil }
+        func clamped(_ point: CGPoint) -> CGPoint {
+            CGPoint(x: min(max(point.x, bounds.minX), bounds.maxX),
+                    y: min(max(point.y, bounds.minY), bounds.maxY))
+        }
+        var candidates = [clamped(placement.anchor)]
+        for excluded in placement.excludedFrames {
+            candidates += [clamped(CGPoint(x: excluded.minX - radius - margin, y: placement.anchor.y)),
+                           clamped(CGPoint(x: excluded.maxX + radius + margin, y: placement.anchor.y)),
+                           clamped(CGPoint(x: placement.anchor.x, y: excluded.minY - radius - margin))]
+        }
+        return candidates.sorted {
+            hypot($0.x - placement.anchor.x, $0.y - placement.anchor.y) <
+                hypot($1.x - placement.anchor.x, $1.y - placement.anchor.y)
+        }.compactMap { center -> CGRect? in
+            guard hypot(center.x - placement.anchor.x, center.y - placement.anchor.y) + radius < model.geometry.innerRadius else { return nil }
+            let rect = CGRect(x: center.x - radius, y: center.y - radius, width: radius * 2, height: radius * 2)
+            let envelope = rect.insetBy(dx: -margin, dy: -margin)
+            guard placement.safeFrame.contains(envelope), placement.frame.contains(envelope),
+                  !placement.excludedFrames.contains(where: { $0.intersects(envelope) }) else { return nil }
+            return rect
+        }.first
     }
 
     private func hub(phase: OverlayPresentation.Phase) -> some View {
-        let diameter = isEdge ? 24 : model.geometry.innerRadius * 2 - 4
+        let diameter = model.geometry.innerRadius * 2 - 4
         return ZStack {
             RingSurface(shape: Circle())
             if let hovered = model.hovered {
@@ -281,8 +345,8 @@ struct RingMenuView: View {
                     .animation(reduceMotion ? nil : Motion.ringHover, value: model.highlightAngle)
                     .transition(.opacity)
             }
-            // 靠边时提示放在扇形内侧，唤起点只保留取消标记。
-            if hubHasRoom && !isEdge {
+            // 实际空间容纳圆心时保留同一套内容提示。
+            if hubHasRoom {
                 ZStack {
                     if model.isLoading {
                         ProgressView()
