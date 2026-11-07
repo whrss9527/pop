@@ -416,36 +416,50 @@ struct RingSettingsView: View {
             HStack {
                 Text("圆盘外观").font(.headline)
                 Spacer()
-                Button("恢复外观") { updateLayout { $0.resetAppearance() } }
-                    .controlSize(.small)
+                Button { updateLayout { $0.resetAppearance() } } label: {
+                    Image(systemName: "arrow.counterclockwise")
+                        .frame(width: 24, height: 24)
+                }
+                    .buttonStyle(.borderless)
+                    .help("恢复外观")
+                    .accessibilityLabel(Text("恢复外观"))
                     .disabled(layout.appearance == .default)
             }
-            Picker("按钮形状", selection: Binding(
-                get: { layout.appearance.shape },
-                set: { shape in updateLayout { $0.appearance.shape = shape } }
-            )) {
-                Text("圆角").tag(RingButtonShape.roundedRectangle)
-                Text("圆形").tag(RingButtonShape.circle)
-                Text("方形").tag(RingButtonShape.square)
+            VStack(alignment: .leading, spacing: 4) {
+                Text("按钮形状").font(.caption).foregroundStyle(.secondary)
+                Picker("按钮形状", selection: Binding(
+                    get: { layout.appearance.shape },
+                    set: { shape in updateLayout { $0.appearance.shape = shape } }
+                )) {
+                    Text("圆角").tag(RingButtonShape.roundedRectangle)
+                    Text("圆形").tag(RingButtonShape.circle)
+                    Text("方形").tag(RingButtonShape.square)
+                }
+                .pickerStyle(.menu)
+                .labelsHidden()
+                .frame(maxWidth: .infinity)
             }
-            .pickerStyle(.segmented)
-            HStack {
-                Text("按钮大小")
+            VStack(spacing: 4) {
+                HStack {
+                    Text("按钮大小")
+                    Spacer()
+                    Text(layout.appearance.normalized.scale, format: .percent.precision(.fractionLength(0)))
+                        .monospacedDigit()
+                        .frame(width: 48, alignment: .trailing)
+                }
                 Slider(value: Binding(
                     get: { layout.appearance.normalized.scale },
                     set: { scale in updateLayout { $0.appearance.scale = scale } }
                 ), in: RingAppearance.scaleRange, step: 0.05)
                     .accessibilityLabel(Text("按钮大小"))
-                Text(layout.appearance.normalized.scale, format: .percent.precision(.fractionLength(0)))
-                    .monospacedDigit()
-                    .frame(width: 48, alignment: .trailing)
             }
             Divider()
             if let pluginID = selectedPluginID, let info = catalog.first(where: { $0.id == pluginID }) {
                 HStack {
-                    Text("显示名称").font(.caption)
+                    Text("显示名称").font(.caption).layoutPriority(1)
                     Spacer(minLength: 4)
-                    Text("功能：\(info.name)").font(.caption).foregroundStyle(.secondary).lineLimit(1)
+                    Text("功能：\(info.name)").font(.caption).foregroundStyle(.secondary)
+                        .lineLimit(1).layoutPriority(-1)
                 }
                 HStack {
                     TextField("显示名称", text: Binding(
@@ -461,10 +475,16 @@ struct RingSettingsView: View {
                         .focused($nameFocused)
                         .onSubmit { nameFocused = false; refreshNameDraft() }
                         .help("只改变这个圆盘中的名称，留空使用原名。")
-                    Button("恢复名称") {
+                    Button {
                         updateLayout { $0.setCustomName(nil, for: pluginID) }
                         nameDraft = ""
+                    } label: {
+                        Image(systemName: "arrow.counterclockwise")
+                            .frame(width: 24, height: 24)
                     }
+                    .buttonStyle(.borderless)
+                    .help("恢复名称")
+                    .accessibilityLabel(Text("恢复名称"))
                     .disabled(layout.customDisplayName(for: pluginID) == nil)
                 }
             } else {
@@ -551,6 +571,7 @@ struct RingSettingsView: View {
                         .labelsHidden()
                         .frame(width: 260)
                     }
+                    .frame(width: 260)
                     appearanceControls.frame(width: 200)
                 }
                 HStack {
