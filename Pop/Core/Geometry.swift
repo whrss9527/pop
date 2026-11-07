@@ -124,13 +124,25 @@ struct RingButtonMetrics: Equatable {
     static let shadowMargin: CGFloat = 4
     static let gap: CGFloat = 4
 
-    init(slotCount: Int) {
+    init(slotCount: Int, appearance: RingAppearance = .default) {
         let count = max(slotCount, 1)
         let original = RingGeometry(slotCount: count, outerRadius: RingGeometry.outerRadius(forSlotCount: count))
         let chord = 2 * original.labelRadius * sin(.pi / CGFloat(count))
-        let width = min(60, max(36, chord - 12))
-        bodySize = CGSize(width: width, height: min(54, width))
-        cornerRadius = min(14, width * 0.28)
+        let originalWidth = min(60, max(36, chord - 12))
+        let normalized = appearance.normalized
+        let scale = CGFloat(normalized.normalizedScale)
+        let width = max(36, originalWidth * scale)
+        switch normalized.shape {
+        case .roundedRectangle:
+            bodySize = CGSize(width: width, height: max(36, min(54, originalWidth) * scale))
+            cornerRadius = min(14, originalWidth * 0.28) * scale
+        case .circle:
+            bodySize = CGSize(width: width, height: width)
+            cornerRadius = width / 2
+        case .square:
+            bodySize = CGSize(width: width, height: width)
+            cornerRadius = 0
+        }
     }
 }
 
@@ -143,6 +155,7 @@ struct RingPlacement: Equatable {
     let excludedFrames: [CGRect]
     /// 布局求解和窗口对齐实际使用的比例，恢复旧布局时也按同一规则比较。
     let displayScale: CGFloat
+    let appearance: RingAppearance
     let visibleSlotCount: Int
     let hasOverflow: Bool
     let buttonSize: CGSize
@@ -157,15 +170,17 @@ struct RingPlacement: Equatable {
 
     init(slotCount: Int, anchor: CGPoint, safeFrame: CGRect,
          excludedFrames: [CGRect] = [], displayScale: CGFloat = 1,
-         preferredDisplayOrder: [Int]? = nil) {
+         preferredDisplayOrder: [Int]? = nil, appearance: RingAppearance = .default) {
         let count = max(slotCount, 1)
-        let metrics = RingButtonMetrics(slotCount: count)
+        let normalizedAppearance = appearance.normalized
+        let metrics = RingButtonMetrics(slotCount: count, appearance: normalizedAppearance)
         let exclusions = excludedFrames.filter { Self.isFinite($0) && !$0.isEmpty }
         let scale = Self.normalizedDisplayScale(displayScale)
         self.anchor = anchor
         self.safeFrame = safeFrame
         self.excludedFrames = exclusions
         self.displayScale = scale
+        self.appearance = normalizedAppearance
         buttonSize = metrics.bodySize
 
         let solver = Solver(anchor: anchor, bounds: safeFrame, exclusions: exclusions,

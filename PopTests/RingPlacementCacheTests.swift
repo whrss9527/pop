@@ -5,9 +5,10 @@ final class RingPlacementCacheTests: XCTestCase {
     private let safeFrame = CGRect(x: 0, y: 0, width: 1000, height: 650)
 
     private func key(ids: [String?] = ["first", "second", "third", "fourth"], count: Int = 4,
-                     frame: CGRect? = nil, exclusions: [CGRect] = [], scale: CGFloat = 2) -> RingPlacementCache.Key {
+                     frame: CGRect? = nil, exclusions: [CGRect] = [], scale: CGFloat = 2,
+                     appearance: RingAppearance = .default) -> RingPlacementCache.Key {
         .init(configuredSlotIDs: ids, slotCount: count, safeFrame: frame ?? safeFrame,
-              excludedFrames: exclusions, displayScale: scale)
+              excludedFrames: exclusions, displayScale: scale, appearance: appearance)
     }
 
     func testNearbyInvocationReusesOnlyMostRecentOrder() {
@@ -85,5 +86,34 @@ final class RingPlacementCacheTests: XCTestCase {
             let new = next.labelFrame(next.displayOrder.firstIndex(of: slotID)!, hoverSafe: false)
             XCTAssertLessThan(hypot(new.midX - old.midX, new.midY - old.midY), 4)
         }
+    }
+
+    func testShapeAndSizeChangesInvalidateThePreviousCut() {
+        let placement = RingPlacement(slotCount: 4, anchor: CGPoint(x: 500, y: 325), safeFrame: safeFrame)
+        var cache = RingPlacementCache()
+        cache.record(placement, for: key())
+        for appearance in [RingAppearance(shape: .circle), RingAppearance(shape: .square), RingAppearance(scale: 1.2)] {
+            XCTAssertNil(cache.preferredDisplayOrder(for: key(appearance: appearance), anchor: placement.anchor))
+        }
+    }
+
+    func testCacheUsesNormalizedAppearanceAndConfiguredNeighborhoodSize() {
+        let large = RingAppearance(shape: .square, scale: 1.6)
+        let placement = RingPlacement(slotCount: 4, anchor: CGPoint(x: 500, y: 325), safeFrame: safeFrame,
+                                      appearance: large)
+        var cache = RingPlacementCache()
+        cache.record(placement, for: key(appearance: large))
+        let equivalent = RingAppearance(shape: .square, scale: 100)
+        XCTAssertEqual(cache.preferredDisplayOrder(for: key(appearance: equivalent), anchor: placement.anchor),
+                       placement.displayOrder)
+        let reach = max(placement.buttonSize.width, placement.buttonSize.height)
+        XCTAssertGreaterThan(reach, RingButtonMetrics(slotCount: 4).bodySize.width)
+        XCTAssertNotNil(cache.preferredDisplayOrder(for: key(appearance: large),
+                                                   anchor: CGPoint(x: placement.anchor.x + reach, y: placement.anchor.y)))
+        XCTAssertNil(cache.preferredDisplayOrder(for: key(appearance: large),
+                                                anchor: CGPoint(x: placement.anchor.x + reach + 0.5, y: placement.anchor.y)))
+        var invalid = RingAppearance()
+        invalid.scale = .nan
+        XCTAssertEqual(key(appearance: invalid), key())
     }
 }

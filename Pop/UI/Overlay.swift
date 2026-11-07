@@ -61,6 +61,17 @@ struct RingPlacementCache {
         let safeFrame: CGRect
         let excludedFrames: [CGRect]
         let displayScale: CGFloat
+        let appearance: RingAppearance
+
+        init(configuredSlotIDs: [String?], slotCount: Int, safeFrame: CGRect,
+             excludedFrames: [CGRect], displayScale: CGFloat, appearance: RingAppearance = .default) {
+            self.configuredSlotIDs = configuredSlotIDs
+            self.slotCount = slotCount
+            self.safeFrame = safeFrame
+            self.excludedFrames = excludedFrames
+            self.displayScale = displayScale
+            self.appearance = appearance.normalized
+        }
     }
 
     private struct Entry {
@@ -292,11 +303,11 @@ final class OverlayController {
         let boundary = Self.ringScreenBoundary(containing: center)
         let key = RingPlacementCache.Key(configuredSlotIDs: model.configuredSlotIDs, slotCount: model.slots.count,
                                          safeFrame: boundary.availableFrame, excludedFrames: boundary.excludedFrames,
-                                         displayScale: boundary.displayScale)
+                                         displayScale: boundary.displayScale, appearance: model.appearance)
         let preferred = ringPlacementCache.preferredDisplayOrder(for: key, anchor: center)
         model.freezePlacement(anchor: center, safeFrame: boundary.availableFrame,
                               excludedFrames: boundary.excludedFrames, displayScale: boundary.displayScale,
-                              preferredDisplayOrder: preferred)
+                              preferredDisplayOrder: preferred, appearance: model.appearance)
         guard let placement = model.placement else { return }
         ringPlacementCache.record(placement, for: key)
         let presentation = OverlayPresentation()

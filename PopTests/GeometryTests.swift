@@ -43,6 +43,77 @@ final class GeometryTests: XCTestCase {
         }
     }
 
+    func testDefaultAppearancePreservesMetricsAndPlacement() {
+        let anchor = CGPoint(x: 0, y: 450)
+        XCTAssertEqual(RingButtonMetrics(slotCount: 8), RingButtonMetrics(slotCount: 8, appearance: .default))
+        XCTAssertEqual(RingPlacement(slotCount: 8, anchor: anchor, safeFrame: screen, displayScale: 2),
+                       RingPlacement(slotCount: 8, anchor: anchor, safeFrame: screen, displayScale: 2, appearance: .default))
+    }
+
+    func testRoundedAppearanceScalesActualWidthAndHeight() {
+        let metrics = RingButtonMetrics(slotCount: 4, appearance: RingAppearance(scale: 1.25))
+        XCTAssertEqual(metrics.bodySize, CGSize(width: 75, height: 67.5))
+        XCTAssertEqual(metrics.cornerRadius, 17.5)
+        let small = RingButtonMetrics(slotCount: 12, appearance: RingAppearance(scale: 0.8))
+        XCTAssertEqual(small.bodySize, CGSize(width: 36, height: 36))
+    }
+
+    func testCircleAndSquareHaveSquareConfiguredBodies() {
+        let circle = RingButtonMetrics(slotCount: 4, appearance: RingAppearance(shape: .circle, scale: 1.2))
+        let square = RingButtonMetrics(slotCount: 4, appearance: RingAppearance(shape: .square, scale: 1.2))
+        XCTAssertEqual(circle.bodySize, CGSize(width: 72, height: 72))
+        XCTAssertEqual(square.bodySize, circle.bodySize)
+        XCTAssertEqual(circle.cornerRadius, 36)
+        XCTAssertEqual(square.cornerRadius, 0)
+    }
+
+    func testPlacementStoresNormalizedAppearance() {
+        var invalid = RingAppearance(shape: .circle)
+        invalid.scale = .infinity
+        let placement = RingPlacement(slotCount: 4, anchor: CGPoint(x: 720, y: 450), safeFrame: screen,
+                                      appearance: invalid)
+        XCTAssertEqual(placement.appearance, RingAppearance(shape: .circle, scale: 1))
+        XCTAssertEqual(placement.buttonSize, CGSize(width: 60, height: 60))
+        assertSafe(placement)
+    }
+
+    func testConfiguredShapeAndSizeDriveRealScreenAndExclusionFootprints() {
+        let bounds = CGRect(x: 0, y: 0, width: 1000, height: 650)
+        let notch = CGRect(x: 420, y: 618, width: 160, height: 32)
+        for shape in RingButtonShape.allCases {
+            for scale in [0.8, 1.6] {
+                for displayScale: CGFloat in [1, 2] {
+                    let appearance = RingAppearance(shape: shape, scale: scale)
+                    let metrics = RingButtonMetrics(slotCount: 12, appearance: appearance)
+                    for anchor in [CGPoint.zero, CGPoint(x: 500, y: 650)] {
+                        let placement = RingPlacement(slotCount: 12, anchor: anchor, safeFrame: bounds,
+                                                      excludedFrames: [notch], displayScale: displayScale,
+                                                      appearance: appearance)
+                        XCTAssertEqual(placement.appearance, appearance.normalized)
+                        XCTAssertEqual(placement.buttonSize, metrics.bodySize)
+                        for index in 0..<placement.visibleSlotCount {
+                            XCTAssertEqual(placement.labelFrame(index, hoverSafe: false).size, metrics.bodySize)
+                        }
+                        assertSafe(placement)
+                    }
+                }
+            }
+        }
+    }
+
+    func testLargerConfiguredTargetsChangeCapacityInsteadOfUsingOldMetrics() {
+        let bounds = CGRect(x: 0, y: 0, width: 320, height: 240)
+        let normal = RingPlacement(slotCount: 12, anchor: .zero, safeFrame: bounds, displayScale: 2)
+        let large = RingPlacement(slotCount: 12, anchor: .zero, safeFrame: bounds, displayScale: 2,
+                                  appearance: RingAppearance(shape: .square, scale: 1.6))
+        XCTAssertGreaterThan(large.buttonSize.width, normal.buttonSize.width)
+        XCTAssertGreaterThan(large.buttonSize.height, normal.buttonSize.height)
+        XCTAssertLessThan(large.visibleSlotCount, normal.visibleSlotCount)
+        XCTAssertTrue(large.hasOverflow)
+        assertSafe(normal)
+        assertSafe(large)
+    }
+
     func testFullCircleIsKeptWhenActualButtonsAndHubFit() {
         let anchor = CGPoint(x: 720, y: 450)
         let placement = RingPlacement(slotCount: 4, anchor: anchor, safeFrame: screen)
