@@ -1166,6 +1166,19 @@ targets:
         PRODUCT_BUNDLE_IDENTIFIER: io.github.whrss9527.pop.tests
         GENERATE_INFOPLIST_FILE: YES
 
+  PopCatalogTests:
+    type: bundle.unit-test
+    platform: macOS
+    sources: [CatalogContractTests]
+    dependencies:
+      - target: Pop
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: io.github.whrss9527.pop.catalog-tests
+        GENERATE_INFOPLIST_FILE: YES
+        TEST_HOST: $(BUILT_PRODUCTS_DIR)/Pop.app/Contents/MacOS/Pop
+        BUNDLE_LOADER: $(TEST_HOST)
+
 schemes:
   Pop:
     build:
@@ -1291,3 +1304,15 @@ schemes:
         - PopTests
     archive:
       config: Release
+
+  PopCatalog:
+    build:
+      targets:
+        Pop: all
+        PopCatalogTests: [test]
+    test:
+      config: Debug
+      language: zh-Hans
+      gatherCoverageData: false
+      targets:
+        - PopCatalogTests

@@ -1,0 +1,85 @@
+name: Native catalog contract
+on:
+  workflow_dispatch:
+  push:
+    branches: [codex/native-catalog-contract]
+    paths:
+      - .github/workflows/catalog-contract.yml
+      - CatalogContractTests/**
+      - scripts/catalog-contract.py
+      - scripts/test_catalog_contract.py
+      - project.yml
+permissions:
+  contents: read
+concurrency:
+  group: catalog-contract-${{ github.sha }}
+  cancel-in-progress: false
+jobs:
+  snapshot:
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [macos-15, macos-26]
+    steps:
+      - uses: actions/checkout@v5
+      - name: Select Xcode
+        run: |
+          XCODE=$(ls -d /Applications/Xcode_*.app | grep -iv -e beta -e release_candidate | sort -V | tail -1)
+          sudo xcode-select -s "$XCODE"
+          xcodebuild -version
+      - name: Check schema protocol
+        run: python3 -m unittest discover -s scripts -p test_catalog_contract.py
+      - name: Install XcodeGen
+        run: brew install xcodegen
+      - name: Bind source and environment
+        run: |
+          mkdir -p build/native-catalog
+          python3 - <<'PY'
+          import json, os, subprocess
+          from pathlib import Path
+          def read(*args): return subprocess.check_output(args, text=True).strip()
+          sha = read('git', 'rev-parse', 'HEAD')
+          assert sha == os.environ['GITHUB_SHA']
+          Path('build/native-catalog/metadata.json').write_text(json.dumps({
+              'source': sha, 'system': read('sw_vers'), 'xcode': read('xcodebuild', '-version'),
+              'scope': 'native metadata only; custom closure semantics and lazy loading not implemented'
+          }, indent=2) + '\n')
+          PY
+      - name: Build the actual app and all plugin bundles once
+        run: |
+          xcodegen generate
+          xcodebuild build -project Pop.xcodeproj -scheme Pop -configuration Debug \
+            -destination 'platform=macOS' -derivedDataPath "$RUNNER_TEMP/catalog-build" \
+            POP_BUILD_ID="$GITHUB_SHA" CODE_SIGNING_ALLOWED=NO > build/native-catalog/build.log 2>&1
+      - name: Export native metadata in two fresh language hosts
+        run: |
+          for language in zh-Hans en; do
+            region=US
+            if [[ "$language" == zh-Hans ]]; then region=CN; fi
+            result="build/native-catalog/results/${language}.xcresult"
+            mkdir -p build/native-catalog/results
+            xcodebuild test -project Pop.xcodeproj -scheme PopCatalog -configuration Debug \
+              -destination 'platform=macOS' -derivedDataPath "$RUNNER_TEMP/catalog-build" \
+              -testLanguage "$language" -testRegion "$region" \
+              -resultBundlePath "$result" POP_BUILD_ID="$GITHUB_SHA" CODE_SIGNING_ALLOWED=NO \
+              > "build/native-catalog/test-${language}.log" 2>&1
+            xcrun xcresulttool export attachments --path "$result" \
+              --output-path "build/native-catalog/exports/${language}"
+          done
+      - name: Validate bilingual structure and constraints
+        run: |
+          python3 scripts/catalog-contract.py export \
+            --zh build/native-catalog/exports/zh-Hans --en build/native-catalog/exports/en \
+            --metadata build/native-catalog/metadata.json --source "$GITHUB_SHA" \
+            --output build/native-catalog/contract.json --manifest build/native-catalog/evidence.json
+          python3 scripts/catalog-contract.py verify \
+            --manifest build/native-catalog/evidence.json --source "$GITHUB_SHA"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: native-catalog-${{ matrix.os }}
+          path: build/native-catalog/
+          if-no-files-found: error
+          retention-days: 14
