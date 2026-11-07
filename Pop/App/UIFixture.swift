@@ -407,16 +407,19 @@ private struct UIFixtureRingScene: View {
                 Text(verbatim: "Screen settings · \(Int(state.ringParameters.screen.width))×\(Int(state.ringParameters.screen.height)) pt · \(Int(state.displayScale)) pixels/pt")
                     .font(.caption)
             }
-            UIFixtureRingDiagnostics(state: state)
+            UIFixtureRingDiagnostics(state: state, model: state.ring)
             GeometryReader { proxy in
                 let screen = state.ringParameters.screen
                 let fit = min(1, min(proxy.size.width / screen.width, proxy.size.height / screen.height))
                 UIFixtureRingCanvas(state: state)
-                    .frame(width: screen.width, height: screen.height)
+                    .frame(width: screen.width, height: screen.height, alignment: .topLeading)
                     .scaleEffect(fit, anchor: .topLeading)
-                    .frame(width: screen.width * fit, height: screen.height * fit)
-                    .position(x: proxy.size.width / 2, y: proxy.size.height / 2)
+                    // scaleEffect 不改变占位；缩后容器必须从左上放置原始屏幕，不能再居中原始尺寸。
+                    .frame(width: screen.width * fit, height: screen.height * fit, alignment: .topLeading)
+                    .frame(width: proxy.size.width, height: proxy.size.height, alignment: .center)
+                    .clipped()
             }
+            .clipped()
             Text(verbatim: "Simulated screen only. X/Y use AppKit points (Y up); Pixels/pt controls geometry precision. Preview is scaled to fit; the desktop, menu bar and Dock stay unchanged.")
                 .font(.system(size: 10)).foregroundStyle(.secondary)
         }
@@ -434,30 +437,53 @@ private struct UIFixtureRingScene: View {
     }
 }
 
+/// 与生产求解器使用相同的浮点容差，只忽略计算误差，不容许一个显示像素的真实越界。
+private enum UIFixtureTargetBounds {
+    static let epsilon: CGFloat = 0.000_000_1
+
+    static func minimumMargin(_ target: CGRect, in frame: CGRect) -> CGFloat {
+        min(min(target.minX - frame.minX, frame.maxX - target.maxX),
+            min(target.minY - frame.minY, frame.maxY - target.maxY))
+    }
+
+    static func overlapDepth(_ target: CGRect, exclusions: [CGRect]) -> CGFloat {
+        exclusions.map { excluded -> CGFloat in
+            let overlap = excluded.intersection(target)
+            return overlap.isNull ? 0 : min(overlap.width, overlap.height)
+        }.max() ?? 0
+    }
+
+    static func fits(_ target: CGRect, in boundary: RingScreenBoundary) -> Bool {
+        minimumMargin(target, in: boundary.availableFrame) >= -epsilon
+            && overlapDepth(target, exclusions: boundary.excludedFrames) <= epsilon
+    }
+}
+
 private struct UIFixtureRingDiagnostics: View {
     @ObservedObject var state: UIFixtureState
+    @ObservedObject var model: RingViewModel
     var body: some View {
         let parameters = state.ringParameters
         let boundary = parameters.boundary
-        let placement = state.ring.placement
-        let direct = state.ring.visibleSlots.filter { !$0.isOverflow }.count
-        let fits = placement.map { placement in
-            (0..<placement.visibleSlotCount).allSatisfy {
-                let target = placement.labelFrame($0)
-                return boundary.availableFrame.contains(target) && !boundary.excludedFrames.contains { $0.intersects(target) }
-            }
-        } ?? false
+        let placement = model.placement
+        let direct = model.visibleSlots.filter { !$0.isOverflow }.count
+        let targets = placement.map { placement in (0..<placement.visibleSlotCount).map { placement.labelFrame($0) } } ?? []
+        let fits = !targets.isEmpty && targets.allSatisfy { UIFixtureTargetBounds.fits($0, in: boundary) }
+        let margin = targets.map { UIFixtureTargetBounds.minimumMargin($0, in: boundary.availableFrame) }.min() ?? 0
+        let overlap = targets.map { UIFixtureTargetBounds.overlapDepth($0, exclusions: boundary.excludedFrames) }.max() ?? 0
         VStack(alignment: .leading, spacing: 2) {
-            Text(verbatim: String(format: "Invocation #%d · anchor %.1f, %.1f pt / %.1f, %.1f px · direct %d/%d · More %@ · radius %.1f pt · targets contained %@",
+            Text(verbatim: String(format: "Invocation #%d · anchor %.1f, %.1f pt / %.1f, %.1f px · direct %d/%d · More %@ · radius %.1f pt",
                                   state.placementRevision, parameters.anchor.x, parameters.anchor.y,
                                   parameters.anchor.x * parameters.displayScale, parameters.anchor.y * parameters.displayScale,
-                                  direct, state.ring.slots.count, placement?.hasOverflow == true ? "yes" : "no",
-                                  state.ring.geometry.labelRadius, fits ? "true" : "false"))
+                                  direct, model.slots.count, placement?.hasOverflow == true ? "yes" : "no",
+                                  model.geometry.labelRadius))
             Text(verbatim: String(format: "Screen %.0f×%.0f pt · usable [%.0f, %.0f, %.0f, %.0f] · exclusions %d · hovered %@",
                                   parameters.screen.width, parameters.screen.height,
                                   boundary.availableFrame.minX, boundary.availableFrame.minY,
                                   boundary.availableFrame.width, boundary.availableFrame.height,
-                                  boundary.excludedFrames.count, state.ring.hovered.map(String.init) ?? "none"))
+                                  boundary.excludedFrames.count, model.hovered.map(String.init) ?? "none"))
+            Text(verbatim: String(format: "targets contained %@ · min margin %+.9g pt · obstruction overlap %.9g pt · tolerance 0.0000001 pt",
+                                  fits ? "true" : "false", margin, overlap))
         }
         .font(.system(size: 10, design: .monospaced))
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -491,7 +517,7 @@ private struct UIFixtureRingCanvas: View {
                 if state.showBounds, let placement = state.ring.placement {
                     for index in 0..<placement.visibleSlotCount {
                         let target = placement.labelFrame(index)
-                        let fits = boundary.availableFrame.contains(target) && !boundary.excludedFrames.contains { $0.intersects(target) }
+                        let fits = UIFixtureTargetBounds.fits(target, in: boundary)
                         context.stroke(Path(local(target)), with: .color(fits ? .green : .red), lineWidth: 0.75)
                     }
                 }
