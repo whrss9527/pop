@@ -1,0 +1,18 @@
+{
+  "id": "semver",
+  "version": "1.0.0",
+  "name": {
+    "zh-Hans": "语义版本",
+    "en": "Semantic Versions"
+  },
+  "summary": {
+    "zh-Hans": "比较或排序选中的语义版本，每行一个；遵循 SemVer 2.0，构建信息不影响优先级，全程离线",
+    "en": "Compare or sort selected semantic versions, one per line; follows SemVer 2.0, ignores build metadata in precedence and works offline"
+  },
+  "symbol": "number.square",
+  "category": "developer",
+  "functions": ["semver"],
+  "defaultsKeys": [],
+  "keychainAccounts": [],
+  "dataFolders": []
+}
