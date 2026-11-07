@@ -183,6 +183,11 @@ struct PluginChooserView: View {
                     guard let id = model.selectedRowID else { return }
                     proxy.scrollTo(id)
                 }
+                .onChange(of: model.query) { _, _ in
+                    // 重新搜索时索引可能仍为 0，但旧的手动滚动位置不能藏住新选中的首项。
+                    guard let id = model.selectedRowID else { return }
+                    proxy.scrollTo(id, anchor: .top)
+                }
             }
         }
         .task {
