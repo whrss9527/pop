@@ -85,7 +85,7 @@ class ObserverControlsTests(unittest.TestCase):
                     " text='renderProbe.variant '+os.environ['POP_OBSERVER_VARIANT']+'\\nrenderProbe.workload full-prefix\\n'\n"
                     f" if {kind!r} != 'partial':\n"
                     "  text+='\\n'.join(f'{name} {i+1} {scale}' for i,(name,scale) in enumerate(steps))\n"
-                    "  text+='\\nhang 122.5 2.90\\nrenderProbe.end 130 2\\n'\n"
+                    "  text+=f'\\nhang {len(steps)-0.5} 2.90\\nrenderProbe.end {len(steps)+7} 2\\n'\n"
                     " (d/f'demo-{appearance}.log').write_text(text)\n"
                     f" ghost = (os.environ['POP_OBSERVER_VARIANT'] != 'no-ghost' or {kind!r} == 'unexpected-ghost') and {kind!r} != 'missing-ghost'\n"
                     " (d/f'overlay-{appearance}.jsonl').write_text('{\"event\":\"ghostCreated\"}\\n' if ghost else '')\n"
