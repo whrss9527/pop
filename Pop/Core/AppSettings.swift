@@ -434,6 +434,10 @@ struct RingLayout: Codable, Equatable {
     static let allowedSlotCounts = [4, 6, 8, 10, 12]
 
     var slots: [String?]
+    var appearance: RingAppearance = .default
+    /// 仅圆盘中的显示名称，按功能 ID 保存；卸载或调整格子不丢弃用户文字。
+    var customNames: [String: String] = [:]
+    static let maximumCustomNameLength = 40
 
     /// 上半圈放处理选中文字的功能，下半圈放不需要选中内容的功能，什么都没选中时也有得用。
     static let `default` = RingLayout(slots: [
@@ -459,14 +463,71 @@ struct RingLayout: Codable, Equatable {
         BuiltinPluginID.copyPath,
     ])
 
-    init(slots: [String?]) {
+    init(slots: [String?], appearance: RingAppearance = .default, customNames: [String: String] = [:]) {
         self.slots = slots
+        self.appearance = appearance.normalized
+        self.customNames = customNames.compactMapValues(Self.normalizedCustomName)
+    }
+
+    private enum CodingKeys: String, CodingKey { case slots, appearance, customNames }
+
+    /// 一个损坏的名称只影响自身，不让同一字典中的有效别名一起丢失。
+    private struct DecodedCustomName: Decodable {
+        let value: String?
+        init(from decoder: Decoder) throws {
+            value = try? decoder.singleValueContainer().decode(String.self)
+        }
     }
 
     init(from decoder: Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
         let decoded: [String?] = c.lenient(.slots, default: RingLayout.default.slots)
         slots = decoded.isEmpty ? RingLayout.default.slots : Array(decoded.prefix(RingLayout.allowedSlotCounts.max() ?? 12))
+        appearance = c.lenient(.appearance, default: RingAppearance.default).normalized
+        let names: [String: DecodedCustomName] = c.lenient(.customNames, default: [:])
+        customNames = names.compactMapValues { Self.normalizedCustomName($0.value) }
+    }
+
+    func encode(to encoder: Encoder) throws {
+        var c = encoder.container(keyedBy: CodingKeys.self)
+        try c.encode(slots, forKey: .slots)
+        try c.encode(appearance.normalized, forKey: .appearance)
+        try c.encode(customNames.compactMapValues(Self.normalizedCustomName), forKey: .customNames)
+    }
+
+    func customDisplayName(for pluginID: String) -> String? {
+        Self.normalizedCustomName(customNames[pluginID])
+    }
+
+    mutating func setCustomName(_ name: String?, for pluginID: String) {
+        customNames[pluginID] = Self.normalizedCustomName(name)
+    }
+
+    mutating func resetAppearance() {
+        appearance = .default
+    }
+
+    private static func normalizedCustomName(_ name: String?) -> String? {
+        guard let name else { return nil }
+        var cleaned = String.UnicodeScalarView()
+        for scalar in name.unicodeScalars {
+            switch scalar.properties.generalCategory {
+            case .control:
+                // 多行或制表的导入名称保持单行，其余 C0 / C1 控制符丢弃。
+                if scalar == "\n" || scalar == "\r" || scalar == "\t" { cleaned.append(" ") }
+            case .lineSeparator, .paragraphSeparator:
+                cleaned.append(" ")
+            default:
+                // 保留 ZWJ、变体选择符和组合字符，不能拆开用户输入的字形。
+                cleaned.append(scalar)
+            }
+        }
+        let trimmed = String(cleaned).trimmingCharacters(in: .whitespacesAndNewlines)
+        let result = String(trimmed.prefix(maximumCustomNameLength)).trimmingCharacters(in: .whitespacesAndNewlines)
+        guard result.unicodeScalars.contains(where: {
+            $0.properties.generalCategory != .format && !CharacterSet.whitespacesAndNewlines.contains($0)
+        }) else { return nil }
+        return result
     }
 
     var slotCount: Int { slots.count }
