@@ -52,6 +52,43 @@ struct RingScreenBoundary: Equatable {
     }
 }
 
+/// 只记住最近一次唤起的切口，不保留模型、窗口或系统偏好。
+/// 相同配置在一个按钮宽度内重复唤起时，尽量沿用动作方向；是否仍能容纳由几何求解器决定。
+struct RingPlacementCache {
+    struct Key: Equatable {
+        let configuredSlotIDs: [String?]
+        let slotCount: Int
+        let safeFrame: CGRect
+        let excludedFrames: [CGRect]
+        let displayScale: CGFloat
+    }
+
+    private struct Entry {
+        let key: Key
+        let anchor: CGPoint
+        let buttonSize: CGSize
+        let displayOrder: [Int]
+    }
+
+    private var previous: Entry?
+
+    func preferredDisplayOrder(for key: Key, anchor: CGPoint) -> [Int]? {
+        guard let previous, previous.key == key,
+              hypot(anchor.x - previous.anchor.x, anchor.y - previous.anchor.y)
+                <= max(previous.buttonSize.width, previous.buttonSize.height) else { return nil }
+        return previous.displayOrder
+    }
+
+    mutating func record(_ placement: RingPlacement, for key: Key) {
+        previous = Entry(key: key, anchor: placement.anchor, buttonSize: placement.buttonSize,
+                         displayOrder: placement.displayOrder)
+    }
+
+    mutating func clear() {
+        previous = nil
+    }
+}
+
 /// 圆盘、结果卡片和提示共用的浮动面板：无边框、透明、不激活 App。
 /// 不激活很关键：原来的 App 一直在前台，选区不会丢，模拟的 ⌘C 也不会发到我们自己身上。
 final class OverlayPanel: NSPanel {
@@ -211,6 +248,7 @@ final class OverlayController {
     private var screensObserver: NSObjectProtocol?
     private var toastTimer: Timer?
     private var cancelsOnScreenChange = false
+    private var ringPlacementCache = RingPlacementCache()
 
     /// 给圆盘阴影和弹开时的回弹留的边距
     static let ringPadding: CGFloat = 22
@@ -237,6 +275,7 @@ final class OverlayController {
                                                                  object: nil, queue: .main) { [weak self] _ in
             MainActor.assumeIsolated {
                 guard let self else { return }
+                self.ringPlacementCache.clear()
                 if self.cancelsOnScreenChange {
                     // 手势中途换屏、改缩放或改变 Dock 安全区时，取消而不是重排到别的功能。
                     self.dismissByUser()
@@ -251,9 +290,15 @@ final class OverlayController {
 
     func showRing(_ model: RingViewModel, center: CGPoint) {
         let boundary = Self.ringScreenBoundary(containing: center)
+        let key = RingPlacementCache.Key(configuredSlotIDs: model.configuredSlotIDs, slotCount: model.slots.count,
+                                         safeFrame: boundary.availableFrame, excludedFrames: boundary.excludedFrames,
+                                         displayScale: boundary.displayScale)
+        let preferred = ringPlacementCache.preferredDisplayOrder(for: key, anchor: center)
         model.freezePlacement(anchor: center, safeFrame: boundary.availableFrame,
-                              excludedFrames: boundary.excludedFrames, displayScale: boundary.displayScale)
+                              excludedFrames: boundary.excludedFrames, displayScale: boundary.displayScale,
+                              preferredDisplayOrder: preferred)
         guard let placement = model.placement else { return }
+        ringPlacementCache.record(placement, for: key)
         let presentation = OverlayPresentation()
         present(RingMenuView(model: model, presentation: presentation), frame: placement.frame,
                 mode: .ring, presentation: presentation)

@@ -68,6 +68,12 @@ private struct UIFixtureRingParameters: Equatable {
     let count: Int
     let longNames: Bool
 
+    func hasSameLayout(as other: Self) -> Bool {
+        screen == other.screen && menuBarHeight == other.menuBarHeight && notch == other.notch
+            && displayScale == other.displayScale && dock == other.dock && count == other.count
+            && longNames == other.longNames
+    }
+
     var boundary: RingScreenBoundary {
         let dockSize: CGFloat = 56
         let topInset: CGFloat = notch ? 32 : 0
@@ -126,6 +132,8 @@ private final class UIFixtureState: ObservableObject {
     let catalog: [PluginInfo]
     private let session: URLSession
     private var activationCount = 0
+    private var ringPlacementCache = RingPlacementCache()
+    private var previousRingParameters: UIFixtureRingParameters?
 
     init() {
         let arguments = ProcessInfo.processInfo.arguments
@@ -174,6 +182,10 @@ private final class UIFixtureState: ObservableObject {
 
     func resetRing() {
         let parameters = ringParameters
+        if previousRingParameters?.hasSameLayout(as: parameters) != true {
+            ringPlacementCache.clear()
+        }
+        previousRingParameters = parameters
         anchorX = Double(parameters.anchor.x)
         anchorY = Double(parameters.anchor.y)
         screenWidth = Double(parameters.screen.width)
@@ -188,8 +200,14 @@ private final class UIFixtureState: ObservableObject {
         }
         ring = Self.makeRing(entries, loading: loading)
         let boundary = parameters.boundary
+        let key = RingPlacementCache.Key(configuredSlotIDs: ring.configuredSlotIDs, slotCount: ring.slots.count,
+                                         safeFrame: boundary.availableFrame, excludedFrames: boundary.excludedFrames,
+                                         displayScale: boundary.displayScale)
+        let preferred = ringPlacementCache.preferredDisplayOrder(for: key, anchor: parameters.anchor)
         ring.freezePlacement(anchor: parameters.anchor, safeFrame: boundary.availableFrame,
-                             excludedFrames: boundary.excludedFrames, displayScale: boundary.displayScale)
+                             excludedFrames: boundary.excludedFrames, displayScale: boundary.displayScale,
+                             preferredDisplayOrder: preferred)
+        if let placement = ring.placement { ringPlacementCache.record(placement, for: key) }
         showOverflow = false
         placementRevision += 1
         notice = "New invocation #\(placementRevision) — production placement / RingMenuView"
