@@ -67,6 +67,9 @@ private final class UIFixtureState: ObservableObject {
     @Published var libraryOpen = false
     @Published var libraryMode = 0
     @Published var library: PluginLibraryModel?
+    @Published var translationOpen = false
+    @Published var translation: TranslationModel?
+    let translationBackend = UIFixtureTranslationBackend()
     let presentation = OverlayPresentation(phase: .shown)
     let root: URL
     let defaults: UserDefaults
@@ -134,6 +137,12 @@ private final class UIFixtureState: ObservableObject {
         notice = "Selected: \(info.name) [\(info.id)] — activation #\(activationCount)"
     }
 
+    func openTranslation() {
+        translation = TranslationModel(text: "Offline translation cancellation fixture", sourceLanguage: "en",
+                                       targetLanguage: "zh-Hans", engine: .ai, services: translationBackend.services)
+        translationOpen = true
+    }
+
     /// 键盘分发是 fixture 适配器；列表直接复用生产 handleKey，圆盘复用生产选择/移动模型。
     func handleKey(_ event: NSEvent) -> Bool {
         guard !libraryOpen else { return false }
@@ -175,6 +184,7 @@ private struct UIFixtureView: View {
                     Text(verbatim: "Ring / 圆盘").tag(0)
                     Text(verbatim: "Features / 全部功能").tag(1)
                     Text(verbatim: "Library / 插件库").tag(2)
+                    Text(verbatim: "Translate / 翻译").tag(3)
                 }.pickerStyle(.segmented)
                 Toggle("Dark", isOn: $state.dark).toggleStyle(.switch)
                 Button("中文") { state.language("zh-Hans") }
@@ -210,7 +220,7 @@ private struct UIFixtureView: View {
             } else if state.scene == 1 {
                 PluginChooserView(model: state.chooser, onClose: { state.scene = 0 })
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
-            } else {
+            } else if state.scene == 2 {
                 VStack(spacing: 20) {
                     Picker("Fake response", selection: $state.libraryMode) {
                         Text("30 seconds").tag(0)
@@ -221,6 +231,9 @@ private struct UIFixtureView: View {
                     Text(verbatim: "Only URLProtocol fixtures. Installs write to a temporary plug-in directory; external links are blocked.")
                     Text(verbatim: state.root.path).font(.system(.caption, design: .monospaced)).textSelection(.enabled)
                 }.frame(maxWidth: .infinity, maxHeight: .infinity)
+            } else {
+                UIFixtureTranslationScene(state: state, backend: state.translationBackend)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
             Divider()
             Text(verbatim: state.notice).font(.caption).frame(maxWidth: .infinity, alignment: .leading)
@@ -237,6 +250,69 @@ private struct UIFixtureView: View {
                 PluginLibraryView(store: state.store, pluginStore: state.pluginStore, model: model,
                                   onClose: { state.libraryOpen = false })
                     .environment(\.openURL, OpenURLAction { _ in .discarded })
+            }
+        }
+    }
+}
+
+/// 保持译文流未完成，既能观察取消，也不会显示生产卡片的朗读/复制等完成后操作。
+@MainActor
+private final class UIFixtureTranslationBackend: ObservableObject {
+    @Published private(set) var active = 0
+    private var serial = 0
+    private var streams: [Int: AsyncThrowingStream<String, Error>.Continuation] = [:]
+
+    var services: TranslationServices {
+        TranslationServices(
+            unavailableReason: { engine in engine == .system ? "System translation is disabled in this fixture" : nil },
+            translate: { [weak self] engine, _, target in
+                guard let self else { throw CancellationError() }
+                return await self.openStream(engine, target: target)
+            },
+            checkSystem: { _, _, _ in .unsupported }
+        )
+    }
+
+    private func openStream(_ engine: TranslationEngine, target: String) -> AsyncThrowingStream<String, Error> {
+        serial += 1
+        let id = serial
+        let path = "\(id)/\(engine.rawValue)/\(target)"
+        UIFixtureNetwork.shared.record("translation.start", path: path)
+        return AsyncThrowingStream { continuation in
+            streams[id] = continuation
+            active = streams.count
+            continuation.onTermination = { [weak self] reason in
+                let cancelled: Bool
+                if case .cancelled = reason { cancelled = true } else { cancelled = false }
+                Task { @MainActor [weak self] in
+                    guard let self, self.streams.removeValue(forKey: id) != nil else { return }
+                    self.active = self.streams.count
+                    UIFixtureNetwork.shared.record(cancelled ? "translation.cancel" : "translation.finish", path: path)
+                }
+            }
+            let text = (1...40).map { "Offline fragment \($0): this stream stays open until its consumer is cancelled." }.joined(separator: "\n")
+            continuation.yield(text)
+        }
+    }
+}
+
+private struct UIFixtureTranslationScene: View {
+    @ObservedObject var state: UIFixtureState
+    @ObservedObject var backend: UIFixtureTranslationBackend
+
+    var body: some View {
+        VStack(spacing: 10) {
+            HStack {
+                Button("Open offline translation") { state.openTranslation() }
+                Text(verbatim: "Active fake streams: \(backend.active)")
+            }
+            Text(verbatim: "The model is retained after Close; view disappearance should still cancel its stream. System engine and all external actions are disabled.")
+                .font(.caption).foregroundStyle(.secondary)
+            if state.translationOpen, let model = state.translation {
+                TranslationCardView(model: model, canReplace: false,
+                                    onAction: { _ in state.notice = "Fixture action ignored" }, onDownload: {},
+                                    onOpenSettings: { _ in state.notice = "Fixture settings action ignored" },
+                                    onClose: { state.translationOpen = false })
             }
         }
     }
