@@ -36,6 +36,16 @@ Pop's interface is available in English and Simplified Chinese and follows your 
 - **Settings backup**: export settings and custom plugins in Settings → Backup, then import them on another Mac. GitHub and App Store builds do not provide automatic iCloud sync.
 - **Your data stays with you**: Pop has no servers. Clipboard history stays on your Mac and API keys stay in the keychain.
 
+## Screenshots
+
+<p align="center">
+  <img src="docs/app-store/listing/screenshots/en-US/1-ring.png" width="19%" alt="Ring">
+  <img src="docs/app-store/listing/screenshots/en-US/2-translate.png" width="19%" alt="Translate">
+  <img src="docs/app-store/listing/screenshots/en-US/3-recognize-text.png" width="19%" alt="OCR">
+  <img src="docs/app-store/listing/screenshots/en-US/4-clipboard.png" width="19%" alt="Clipboard">
+  <img src="docs/app-store/listing/screenshots/en-US/5-actions.png" width="19%" alt="Actions">
+</p>
+
 ## Install
 
 Pop needs macOS 15 or later.
